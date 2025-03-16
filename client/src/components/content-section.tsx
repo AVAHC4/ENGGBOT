@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { Link } from "wouter"
 
 export default function ContentSection() {
   return (
