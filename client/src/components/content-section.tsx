@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import { Link } from "wouter"
@@ -16,7 +15,11 @@ export default function ContentSection() {
               Lyra is evolving to be more than just the models. It supports an entire ecosystem — from products to the
               APIs and platforms helping developers and businesses innovate.
             </p>
-
+            <img 
+              src="/collaboration.jpg" 
+              alt="Team collaboration" 
+              className="w-full h-auto grayscale contrast-125"
+            /> {/* Added image here */}
             <Button asChild variant="secondary" size="sm" className="gap-1 pr-1.5">
               <Link href="#">
                 <span>Learn More</span>
