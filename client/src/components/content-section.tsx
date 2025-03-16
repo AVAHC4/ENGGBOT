@@ -19,11 +19,9 @@ export default function ContentSection() {
               alt="Team collaboration" 
               className="w-full h-auto grayscale contrast-125"
             /> {/* Added image here */}
-            <Button asChild variant="secondary" size="sm" className="gap-1 pr-1.5">
-              <Link href="#">
-                <span>Learn More</span>
-                <ChevronRight className="size-2" />
-              </Link>
+            <Button variant="secondary" size="sm" className="group" onClick={() => window.location.href='#'}>
+              <span>Learn More</span>
+              <ChevronRight className="size-2" />
             </Button>
           </div>
         </div>
