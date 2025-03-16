@@ -5,6 +5,8 @@ import { TextEffect } from "@/components/motion-primitives/text-effect"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { HeroHeader } from "@/components/hero5-header"
 import { Link } from "wouter"
+import { HeroSectionSkeleton } from "./hero-section-skeleton"
+import { useState, useEffect } from "react"
 
 const transitionVariants = {
   item: {
@@ -27,6 +29,20 @@ const transitionVariants = {
 }
 
 export default function HeroSection() {
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Simulate content loading
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return <HeroSectionSkeleton />
+  }
+
   return (
     <>
       <HeroHeader />
