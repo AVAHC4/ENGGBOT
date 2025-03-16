@@ -127,18 +127,19 @@ export default function HeroSection() {
                   }}
                   className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
                 >
-                  <div key={1} className="bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-[calc(var(--radius)+0.5rem)] border p-0.5">
+                  <div key={1} className="relative">
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/80 to-gray-100/80 opacity-80 blur-xl"></div>
                     <Button
                       asChild
                       size="lg"
-                      className="rounded-xl px-8 py-6 text-lg font-semibold bg-gradient-to-b from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 dark:from-gray-800 dark:to-gray-900 text-gray-900 dark:text-gray-100"
+                      className="relative rounded-2xl px-10 py-7 text-xl font-semibold bg-gradient-to-b from-gray-50/90 to-gray-200/90 text-gray-800 hover:from-gray-100/90 hover:to-gray-300/90 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       <Link href="#link">
-                        <span className="text-nowrap">Start Chatting</span>
+                        <span className="text-nowrap">Start Building</span>
                       </Link>
                     </Button>
                   </div>
-                  <Button key={2} asChild size="lg" variant="ghost" className="h-12 rounded-xl px-5">
+                  <Button key={2} asChild size="lg" variant="ghost" className="h-14 rounded-xl px-6 text-lg">
                     <Link href="#link">
                       <span className="text-nowrap">Try Demo</span>
                     </Link>
