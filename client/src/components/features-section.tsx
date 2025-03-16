@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Calculator, Code, Brain } from "lucide-react"
+import { Calculator, Code, Brain } from "lucide-react"
 
 export default function FeaturesSection() {
   return (
