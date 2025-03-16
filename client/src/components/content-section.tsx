@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import { Link } from "wouter"
@@ -6,13 +7,6 @@ export default function ContentSection() {
   return (
     <section className="py-8 md:py-16">
       <div className="mx-auto max-w-5xl space-y-6 px-6 md:space-y-8">
-        <img
-          className="rounded-lg grayscale w-full aspect-video object-cover"
-          src="https://images.unsplash.com/photo-1530099486328-e021101a494a?q=80&w=2747&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-          alt="team image"
-          loading="lazy"
-        />
-
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           <h2 className="text-4xl font-medium">
             The Lyra ecosystem brings together our models, products and platforms.
