@@ -202,6 +202,11 @@ export default function HeroSection() {
             </AnimatedGroup>
           </div>
         </section>
+
+        {/* Inserting FeaturesSection here */}
+        <FeaturesSection />
+
+
         <section className="bg-background pb-16 pt-16 md:pb-32">
           <div className="group relative m-auto max-w-5xl px-6">
             <div className="absolute inset-0 z-10 flex scale-95 items-center justify-center opacity-0 duration-500 group-hover:scale-100 group-hover:opacity-100">
@@ -220,7 +225,6 @@ export default function HeroSection() {
                   width="auto"
                 />
               </div>
-
               <div className="flex">
                 <img
                   className="mx-auto h-4 w-fit dark:invert"
