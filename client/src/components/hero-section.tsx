@@ -127,14 +127,18 @@ export default function HeroSection() {
                   }}
                   className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
                 >
-                  <div key={1} className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5">
-                    <Button asChild size="lg" className="rounded-xl px-5 text-base">
+                  <div key={1} className="bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-[calc(var(--radius)+0.5rem)] border p-0.5">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="rounded-xl px-8 py-6 text-lg font-semibold bg-gradient-to-b from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 dark:from-gray-800 dark:to-gray-900 text-gray-900 dark:text-gray-100"
+                    >
                       <Link href="#link">
                         <span className="text-nowrap">Start Chatting</span>
                       </Link>
                     </Button>
                   </div>
-                  <Button key={2} asChild size="lg" variant="ghost" className="h-10.5 rounded-xl px-5">
+                  <Button key={2} asChild size="lg" variant="ghost" className="h-12 rounded-xl px-5">
                     <Link href="#link">
                       <span className="text-nowrap">Try Demo</span>
                     </Link>
