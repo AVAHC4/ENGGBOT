@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign-up";
+import { ThemeToggle } from "./components/ThemeToggle";
 
 function Router() {
   return (
@@ -20,10 +21,13 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
-    </QueryClientProvider>
+    <div className="min-h-screen bg-background transition-colors duration-300">
+      <ThemeToggle />
+      <QueryClientProvider client={queryClient}>
+        <Router />
+        <Toaster />
+      </QueryClientProvider>
+    </div>
   );
 }
 
