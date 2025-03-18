@@ -38,7 +38,7 @@ export const HeroHeader = () => {
             <div className="flex w-full justify-between lg:w-auto">
               <Link href="/" aria-label="home" className="flex items-center space-x-2">
                 <Logo />
-                <span className="font-semibold">AI Chat</span>
+                <span className="font-semibold">ENGGBOT</span>
               </Link>
 
               <button
@@ -87,17 +87,17 @@ export const HeroHeader = () => {
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
                 <Button asChild variant="outline" size="sm" className={cn(isScrolled && "lg:hidden")}>
-                  <Link href="#">
+                  <Link href="/login">
                     <span>Login</span>
                   </Link>
                 </Button>
                 <Button asChild size="sm" className={cn(isScrolled && "lg:hidden")}>
-                  <Link href="#">
+                  <Link href="/sign-up">
                     <span>Get Started</span>
                   </Link>
                 </Button>
                 <Button asChild size="sm" className={cn(isScrolled ? "lg:inline-flex" : "hidden")}>
-                  <Link href="#">
+                  <Link href="/login">
                     <span>Try AI Chat</span>
                   </Link>
                 </Button>

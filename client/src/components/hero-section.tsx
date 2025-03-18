@@ -115,7 +115,7 @@ export default function HeroSection() {
                   as="h1"
                   className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]"
                 >
-                  Your AI Chat Assistant for Smarter Conversations
+                  Your AI Study Assistant for Smarter Learning
                 </TextEffect>
                 <TextEffect
                   per="line"
@@ -125,8 +125,7 @@ export default function HeroSection() {
                   as="p"
                   className="mx-auto mt-8 max-w-2xl text-balance text-lg"
                 >
-                  Experience the power of AI-driven conversations. Our advanced chat assistant understands context,
-                  learns from interactions, and provides intelligent responses tailored to your needs.
+                  Experience the power of course-driven AI. ENGGBOT answers questions using professors’ notes, textbooks, and slides, delivering expert-approved responses tailored to your academic needs.
                 </TextEffect>
 
                 <AnimatedGroup
