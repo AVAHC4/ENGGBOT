@@ -13,14 +13,6 @@ export default defineConfig({
     react(),
     runtimeErrorOverlay(),
     themePlugin(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-        ]
-      : []),
   ],
   resolve: {
     alias: {
@@ -28,11 +20,26 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
-  root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist"),
+    outDir: "dist",
     emptyOutDir: true,
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "client/index.html"),
+      },
+    },
   },
-  base: '/ENGGBOT/',
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
+      "/ws": {
+        target: "ws://localhost:3000",
+        ws: true,
+      },
+    },
+  },
 });
