@@ -4,30 +4,30 @@ import { useEffect, useState } from "react";
 export function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("theme") || "dark";
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) {
+        return savedTheme;
+      }
+      // If no theme is saved, check system preference
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "dark"; // Default to dark if no preference
     }
     return "dark";
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.classList.remove("light", "dark");
+    root.classList.add(theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.add("dark");
-  }, []);
 
   return (
     <button
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="fixed top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300"
+      className="fixed top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 z-50"
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (

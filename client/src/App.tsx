@@ -7,6 +7,7 @@ import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign-up";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { useEffect } from "react";
 
 function Router() {
   return (
@@ -20,6 +21,12 @@ function Router() {
 }
 
 function App() {
+  // Initialize theme from localStorage or system preference
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    document.documentElement.classList.add(savedTheme);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <ThemeToggle />
