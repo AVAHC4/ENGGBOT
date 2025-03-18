@@ -7,23 +7,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
-  plugins: [
-    react(),
-  ],
+  plugins: [react()],
+  root: "./client",
+  publicDir: "./client/public",
+  build: {
+    outDir: "../dist",
+    emptyOutDir: true,
+    sourcemap: true
+  },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "client", "src"),
-      "@shared": path.resolve(__dirname, "shared"),
-    },
-  },
-  build: {
-    outDir: "dist",
-    emptyOutDir: true,
-    sourcemap: true,
-    rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, "client/index.html"),
-      },
+      "@": path.resolve(__dirname, "./client/src"),
+      "@shared": path.resolve(__dirname, "./shared"),
     },
   },
   server: {
