@@ -4,16 +4,17 @@
   "type": "module",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   },
   "homepage": "https://avahc4.github.io/ENGGBOT/",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist/server",
+    "build": "vite build && tsx --build server/index.ts --outDir dist/server",
     "preview": "vite preview",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push",
+    "vercel-build": "npm run build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
@@ -101,7 +102,7 @@
     "gh-pages": "^6.3.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "tsx": "^4.19.1",
+    "tsx": "^4.19.3",
     "typescript": "5.6.3",
     "vite": "^5.4.14"
   },
