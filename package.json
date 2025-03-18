@@ -9,7 +9,9 @@
   "homepage": "https://avahc4.github.io/ENGGBOT/",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsx --build server/index.ts --outDir dist/server",
+    "build:frontend": "vite build",
+    "build:backend": "esbuild server/index.ts --bundle --platform=node --format=esm --outdir=dist/server --external:express --external:pg --external:ws",
+    "build": "npm run build:frontend && npm run build:backend",
     "preview": "vite preview",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc",
