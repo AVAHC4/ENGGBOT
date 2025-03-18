@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "homepage": "https://avahc4.github.io/ENGGBOT/",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm install && vite build",
     "preview": "vite preview",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
