@@ -30,9 +30,9 @@ export default defineConfig({
   },
   root: path.resolve(__dirname, "client"),
   build: {
-    outDir: path.resolve(__dirname, "dist/public"),
+    outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
     sourcemap: true,
   },
-  base: process.env.NODE_ENV === 'production' ? '/ENGGBOT/' : '/',
+  base: '/ENGGBOT/',
 });
