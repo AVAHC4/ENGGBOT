@@ -11,7 +11,6 @@
     "dev:backend": "node api/index.js",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
-    "vercel-build": "vite build",
     "preview": "vite preview",
     "start": "node api/index.js"
   },
