@@ -13,6 +13,12 @@
     "esm": true,
     "experimentalSpecifierResolution": "node"
   },
-  "include": ["./**/*.ts"],
+  "include": [
+    "index.ts",
+    "auth/google.ts",
+    "auth/test.ts",
+    "lib/**/*.ts",
+    "db/**/*.ts"
+  ],
   "exclude": ["node_modules"]
-} 
+}
