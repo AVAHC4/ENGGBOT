@@ -6,6 +6,8 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign-up";
+import WelcomePage from "@/pages/welcome";
+import LoadingPage from "@/pages/loading";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useEffect } from "react";
 
@@ -15,6 +17,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={LoginPage} />
       <Route path="/sign-up" component={SignUpPage} />
+      <Route path="/welcome" component={WelcomePage} />
+      <Route path="/auth-loading" component={LoadingPage} />
       <Route component={NotFound} />
     </Switch>
   );

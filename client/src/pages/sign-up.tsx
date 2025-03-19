@@ -27,6 +27,16 @@ const transitionVariants = {
 }
 
 export default function SignUpPage() {
+  const handleGoogleSignIn = () => {
+    // Create an anchor element to navigate properly
+    const a = document.createElement('a');
+    a.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    a.target = "_self"; // Important: use _self to avoid popup blockers
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black">
       <div className="absolute inset-0 -z-20">
@@ -112,9 +122,17 @@ export default function SignUpPage() {
                 <hr className="border-dashed" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button type="button" variant="outline">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="0.98em" height="1em" viewBox="0 0 256 262">
+              <div className="w-full">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    // Use the global function we defined in index.html
+                    (window as any).showGoogleAuth();
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="0.98em" height="1em" viewBox="0 0 256 262" className="mr-2">
                     <path
                       fill="#4285f4"
                       d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"
@@ -133,15 +151,6 @@ export default function SignUpPage() {
                     ></path>
                   </svg>
                   <span>Google</span>
-                </Button>
-                <Button type="button" variant="outline">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256">
-                    <path fill="#f1511b" d="M121.666 121.666H0V0h121.666z"></path>
-                    <path fill="#80cc28" d="M256 121.666H134.335V0H256z"></path>
-                    <path fill="#00adef" d="M121.663 256.002H0V134.336h121.663z"></path>
-                    <path fill="#fbbc09" d="M256 256.002H134.335V134.336H256z"></path>
-                  </svg>
-                  <span>Microsoft</span>
                 </Button>
               </div>
             </div>
