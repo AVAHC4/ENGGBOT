@@ -6,6 +6,7 @@ import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
 import BackgroundPaths from "@/components/background-paths"
+import BeamsBackground from "@/components/beams-background"
 
 const transitionVariants = {
   item: {
@@ -44,7 +45,9 @@ export default function SignUpPage() {
         <div className="block dark:hidden" style={{ position: 'absolute', inset: 0 }}>
           <BackgroundPaths />
         </div>
-        <div className="hidden dark:block" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, #000, #1f2937, #000)' }}></div>
+        <div className="hidden dark:block" style={{ position: 'absolute', inset: 0 }}>
+          <BeamsBackground intensity="medium" />
+        </div>
       </div>
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
