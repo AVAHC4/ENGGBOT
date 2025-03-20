@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
+import BackgroundPaths from "@/components/background-paths"
 
 const transitionVariants = {
   item: {
@@ -38,17 +39,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black">
-      <div className="absolute inset-0 -z-20">
-        <div className="absolute inset-0 -z-10 size-full bg-gradient-to-b from-black via-gray-800 to-black"></div>
+    <div className="min-h-screen relative">
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <div className="block dark:hidden" style={{ position: 'absolute', inset: 0 }}>
+          <BackgroundPaths />
+        </div>
+        <div className="hidden dark:block" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, #000, #1f2937, #000)' }}></div>
       </div>
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
-            className="bg-muted m-auto h-fit w-full max-w-sm overflow-hidden rounded-[calc(var(--radius)+.125rem)] border shadow-md shadow-zinc-950/5 dark:[--color-muted:var(--color-zinc-900)]"
+            className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
           >
-            <div className="bg-card -m-px rounded-[calc(var(--radius)+.125rem)] border p-8 pb-6">
+            <div className="bg-card -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
                 <Link href="/" aria-label="go home" className="mx-auto block w-fit">
                   <div className="flex items-center space-x-2">
@@ -98,7 +102,7 @@ export default function LoginPage() {
                   <Input type="password" required name="pwd" id="pwd" className="h-12 input sz-md variant-mixed" />
                 </div>
 
-                <Button className="w-full">Sign In</Button>
+                <Button variant="default" className="w-full !bg-black !text-white hover:!bg-black/90 dark:!bg-white dark:!text-black dark:hover:!bg-white/90">Sign In</Button>
               </div>
 
               <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
