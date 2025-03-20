@@ -50,6 +50,13 @@ export default function SignUpPage() {
         </div>
       </div>
 
+      {/* Home Button */}
+      <Link href="/" className="absolute top-6 left-6 z-20">
+        <button className="px-4 py-2 rounded-md bg-white dark:bg-black text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
+          Home
+        </button>
+      </Link>
+
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
