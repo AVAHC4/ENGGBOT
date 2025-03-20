@@ -81,7 +81,7 @@ export default function LoginPage() {
                   <Label htmlFor="email" className="block text-sm">
                     Username
                   </Label>
-                  <Input type="email" required name="email" id="email" />
+                  <Input type="email" required name="email" id="email" className="h-12" />
                 </div>
 
                 <div className="space-y-0.5">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                       </Link>
                     </Button>
                   </div>
-                  <Input type="password" required name="pwd" id="pwd" className="input sz-md variant-mixed" />
+                  <Input type="password" required name="pwd" id="pwd" className="h-12 input sz-md variant-mixed" />
                 </div>
 
                 <Button className="w-full">Sign In</Button>
@@ -143,7 +143,7 @@ export default function LoginPage() {
             <div className="p-3">
               <p className="text-accent-foreground text-center text-sm">
                 Don't have an account?
-                <Button asChild variant="link" className="px-2 text-white">
+                <Button asChild variant="link" className="px-2 text-black dark:text-white">
                   <Link href="/sign-up">Create account</Link>
                 </Button>
               </p>
