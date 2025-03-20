@@ -20,7 +20,7 @@ const BackgroundPaths: React.FC = () => {
         xmlns="http://www.w3.org/2000/svg"
       >
         <g opacity="0.4">
-          {/* Main arcs */}
+          {/* Main arcs from bottom */}
           <path
             d="M-100,900 Q720,850 1540,900"
             fill="none"
@@ -58,7 +58,7 @@ const BackgroundPaths: React.FC = () => {
             strokeWidth="1"
           />
           
-          {/* Additional arcs for the dense effect */}
+          {/* Additional arcs for the dense effect from bottom */}
           <path d="M-100,900 Q150,50 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
           <path d="M-100,900 Q147,55 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
           <path d="M-100,900 Q144,60 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
@@ -79,6 +79,66 @@ const BackgroundPaths: React.FC = () => {
           <path d="M-100,900 Q99,135 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
           <path d="M-100,900 Q96,140 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
           <path d="M-100,900 Q93,145 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          
+          {/* Main arcs from top */}
+          <path
+            d="M-100,0 Q720,50 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          <path
+            d="M-100,0 Q620,200 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          <path
+            d="M-100,0 Q520,350 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          <path
+            d="M-100,0 Q420,500 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          <path
+            d="M-100,0 Q320,650 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          <path
+            d="M-100,0 Q220,800 1540,0"
+            fill="none"
+            stroke="#d1d5db"
+            strokeWidth="1"
+          />
+          
+          {/* Additional arcs for the dense effect from top */}
+          <path d="M-100,0 Q150,850 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q147,845 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q144,840 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q141,835 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q138,830 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q135,825 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q132,820 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q129,815 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q126,810 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q123,805 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q120,800 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q117,795 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q114,790 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q111,785 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q108,780 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q105,775 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q102,770 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q99,765 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q96,760 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          <path d="M-100,0 Q93,755 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
         </g>
       </svg>
     </div>
