@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { motion } from "framer-motion"
 
 const BackgroundPaths: React.FC = () => {
   return (
@@ -19,126 +20,165 @@ const BackgroundPaths: React.FC = () => {
         preserveAspectRatio="xMinYMin slice"
         xmlns="http://www.w3.org/2000/svg"
       >
+        <defs>
+          <linearGradient id="fadeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#d1d5db" stopOpacity="0" />
+            <stop offset="20%" stopColor="#d1d5db" stopOpacity="1" />
+            <stop offset="80%" stopColor="#d1d5db" stopOpacity="1" />
+            <stop offset="100%" stopColor="#d1d5db" stopOpacity="0" />
+          </linearGradient>
+        </defs>
         <g opacity="0.4">
-          {/* Main arcs from bottom */}
-          <path
-            d="M-100,900 Q720,850 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,900 Q620,700 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,900 Q520,550 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,900 Q420,400 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,900 Q320,250 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,900 Q220,100 1540,900"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
+          {/* Bottom rays */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <motion.path
+              key={`bottom-main-${i}`}
+              d={`M-100,900 Q${720 - i * 100},${850 - i * 150} 1540,900`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="1"
+              animate={{ 
+                y: [0, -2, 0, 2, 0],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ 
+                duration: 8 + i * 0.5, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1] 
+              }}
+            />
+          ))}
           
           {/* Additional arcs for the dense effect from bottom */}
-          <path d="M-100,900 Q150,50 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q147,55 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q144,60 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q141,65 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q138,70 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q135,75 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q132,80 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q129,85 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q126,90 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q123,95 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q120,100 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q117,105 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q114,110 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q111,115 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q108,120 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q105,125 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q102,130 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q99,135 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q96,140 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,900 Q93,145 1540,900" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          {Array.from({ length: 20 }).map((_, i) => (
+            <motion.path
+              key={`bottom-${i}`}
+              d={`M-100,900 Q${150 - i * 3},${50 + i * 4} 1540,900`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="0.5"
+              animate={{ 
+                y: [0, -1, 0, 1, 0],
+                opacity: [0.5, 0.8, 0.5]
+              }}
+              transition={{ 
+                duration: 10 + i * 0.2, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1],
+                delay: i * 0.1
+              }}
+            />
+          ))}
           
-          {/* Main arcs from top */}
-          <path
-            d="M-100,0 Q720,50 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,0 Q620,200 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,0 Q520,350 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,0 Q420,500 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,0 Q320,650 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
-          <path
-            d="M-100,0 Q220,800 1540,0"
-            fill="none"
-            stroke="#d1d5db"
-            strokeWidth="1"
-          />
+          {/* Top rays */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <motion.path
+              key={`top-main-${i}`}
+              d={`M-100,0 Q${720 - i * 100},${50 + i * 150} 1540,0`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="1"
+              animate={{ 
+                y: [0, 2, 0, -2, 0],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ 
+                duration: 8 + i * 0.5, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1] 
+              }}
+            />
+          ))}
           
           {/* Additional arcs for the dense effect from top */}
-          <path d="M-100,0 Q150,850 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q147,845 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q144,840 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q141,835 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q138,830 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q135,825 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q132,820 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q129,815 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q126,810 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q123,805 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q120,800 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q117,795 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q114,790 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q111,785 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q108,780 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q105,775 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q102,770 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q99,765 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q96,760 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
-          <path d="M-100,0 Q93,755 1540,0" fill="none" stroke="#d1d5db" strokeWidth="0.5" />
+          {Array.from({ length: 20 }).map((_, i) => (
+            <motion.path
+              key={`top-${i}`}
+              d={`M-100,0 Q${150 - i * 3},${850 - i * 4} 1540,0`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="0.5"
+              animate={{ 
+                y: [0, 1, 0, -1, 0],
+                opacity: [0.5, 0.8, 0.5]
+              }}
+              transition={{ 
+                duration: 10 + i * 0.2, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1],
+                delay: i * 0.1
+              }}
+            />
+          ))}
+          
+          {/* New rays from right side */}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <motion.path
+              key={`right-main-${i}`}
+              d={`M1540,${450 - i * 50} Q${1200 - i * 50},${600 - i * 50} ${800 - i * 50},${700 - i * 50}`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="1"
+              animate={{ 
+                x: [0, -2, 0, 2, 0],
+                opacity: [0.7, 1, 0.7]
+              }}
+              transition={{ 
+                duration: 8 + i * 0.5, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1] 
+              }}
+            />
+          ))}
+          
+          {/* Additional rays from right side */}
+          {Array.from({ length: 15 }).map((_, i) => (
+            <motion.path
+              key={`right-${i}`}
+              d={`M1540,${200 - i * 10} Q${950 - i * 5},${350 - i * 5} ${550 - i * 10},${450 - i * 10}`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="0.5"
+              animate={{ 
+                x: [0, -1, 0, 1, 0],
+                opacity: [0.5, 0.8, 0.5]
+              }}
+              transition={{ 
+                duration: 10 + i * 0.2, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1],
+                delay: i * 0.1
+              }}
+            />
+          ))}
+
+          {/* NEW: Additional rays from right-top side */}
+          {Array.from({ length: 12 }).map((_, i) => (
+            <motion.path
+              key={`right-top-${i}`}
+              d={`M1540,${180 - i * 15} Q${900 - i * 10},${300 - i * 15} ${500 - i * 12},${350 - i * 12}`}
+              fill="none"
+              stroke="url(#fadeGradient)"
+              strokeWidth="0.5"
+              animate={{ 
+                x: [0, -1.5, 0, 1.5, 0],
+                opacity: [0.5, 0.8, 0.5]
+              }}
+              transition={{ 
+                duration: 9 + i * 0.3, 
+                ease: "easeInOut", 
+                repeat: Infinity,
+                times: [0, 0.25, 0.5, 0.75, 1],
+                delay: i * 0.15
+              }}
+            />
+          ))}
         </g>
       </svg>
     </div>
