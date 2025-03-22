@@ -8,6 +8,7 @@ import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign-up";
 import WelcomePage from "@/pages/welcome";
 import LoadingPage from "@/pages/loading";
+import ChatDashboard from "@/pages/chat-dashboard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useEffect } from "react";
 
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/sign-up" component={SignUpPage} />
       <Route path="/welcome" component={WelcomePage} />
       <Route path="/auth-loading" component={LoadingPage} />
+      <Route path="/chat" component={ChatDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

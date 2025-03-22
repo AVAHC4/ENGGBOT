@@ -1,14 +1,78 @@
+import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import { dirname, resolve, join } from 'path';
+import fs from 'fs';
+
+// Improved dotenv loading for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Try multiple potential paths for .env file
+const envPaths = [
+  '.env',
+  './.env',
+  join(__dirname, '.env'),
+  join(__dirname, '../.env'),
+];
+
+let envFile = null;
+for (const path of envPaths) {
+  try {
+    if (fs.existsSync(path)) {
+      console.log(`Found .env file at: ${path}`);
+      envFile = path;
+      dotenv.config({ path });
+      break;
+    }
+  } catch (e) {
+    console.error(`Error checking .env at ${path}:`, e);
+  }
+}
+
+if (!envFile) {
+  console.warn("No .env file found, using environment variables as is");
+  dotenv.config();
+}
+
+// Now import other modules after environment variables are loaded
 import express from "express";
 import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { initGoogleAuth } from "./auth/google.js";
 import { supabase } from "./lib/supabase.js";
-import dotenv from "dotenv";
 import { initTestAuth } from "./auth/test.js";
 
-// Load environment variables
-dotenv.config({ path: '../.env' });
+// Log the full environment variables for debugging
+console.log("Environment Variables:");
+console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID || "Not set");
+console.log("GOOGLE_CLIENT_SECRET:", process.env.GOOGLE_CLIENT_SECRET ? "Set (length: " + process.env.GOOGLE_CLIENT_SECRET.length + ")" : "Not set");
+console.log("CLIENT_URL:", process.env.CLIENT_URL || "Not set");
+
+// After environment variables are loaded
+// Print raw environment variables to identify any issues
+console.log("==== RAW ENVIRONMENT VARIABLES ====");
+console.log("GOOGLE_CLIENT_ID value:", JSON.stringify(process.env.GOOGLE_CLIENT_ID));
+console.log("GOOGLE_CLIENT_SECRET value length:", process.env.GOOGLE_CLIENT_SECRET?.length);
+console.log("====================================");
+
+// Fix any formatting issues in environment variables
+if (process.env.GOOGLE_CLIENT_ID) {
+  // Remove any line breaks, extra spaces or unexpected characters
+  const originalId = process.env.GOOGLE_CLIENT_ID;
+  process.env.GOOGLE_CLIENT_ID = originalId
+    .replace(/\r?\n|\r/g, '') // Remove line breaks
+    .replace(/\s+/g, '') // Remove extra spaces
+    .trim(); // Trim any leading/trailing whitespace
+  
+  // Ensure it ends with .apps.googleusercontent.com
+  if (!process.env.GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com')) {
+    process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID.split('.apps.googleuser')[0] + '.apps.googleusercontent.com';
+  }
+  
+  console.log("Original Client ID:", JSON.stringify(originalId));
+  console.log("Fixed Client ID:", JSON.stringify(process.env.GOOGLE_CLIENT_ID));
+}
 
 const app = express();
 
@@ -48,7 +112,7 @@ apiRouter.get("/check-google-config", (req, res) => {
   console.log("Checking Google OAuth config");
   
   const config = {
-    clientID: process.env.GOOGLE_CLIENT_ID ? "Set (first 5 chars: " + process.env.GOOGLE_CLIENT_ID.substring(0, 5) + "...)" : "Not set",
+    clientID: process.env.GOOGLE_CLIENT_ID || "Not set",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ? "Set (length: " + process.env.GOOGLE_CLIENT_SECRET.length + ")" : "Not set",
     callbackURL: "http://localhost:3000/api/auth/google/callback",
     sessionSecret: process.env.SESSION_SECRET ? "Set (length: " + process.env.SESSION_SECRET.length + ")" : "Not set",
@@ -105,7 +169,67 @@ initGoogleAuth(app);
 // Initialize test auth routes
 initTestAuth(app);
 
+// Add this after the application is set up
+const checkDatabaseStructure = async () => {
+  console.log("Checking database structure...");
+  
+  try {
+    // Check if users table exists and what permissions we have
+    console.log("Testing Supabase connection and permissions...");
+    
+    // First check if we can read from users table
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select('count')
+      .limit(1);
+    
+    if (usersError) {
+      console.error("❌ Error reading from users table:", usersError);
+    } else {
+      console.log("✓ Successfully read from users table");
+    }
+    
+    // Test inserting a temporary user (we'll delete it right after)
+    const testEmail = `test-${Date.now()}@example.com`;
+    console.log(`Testing user insertion with email: ${testEmail}`);
+    
+    const { data: insertData, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        email: testEmail,
+        name: 'Test User',
+        google_id: `test-${Date.now()}`,
+      })
+      .select();
+    
+    if (insertError) {
+      console.error("❌ Error inserting test user:", insertError);
+      console.error("This may indicate permission issues with the Supabase anon key");
+      console.error("Please check your Supabase settings to ensure the anon key has proper permissions");
+    } else {
+      console.log("✓ Successfully inserted test user");
+      
+      // Clean up by deleting the test user
+      if (insertData && insertData[0]?.id) {
+        const { error: deleteError } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', insertData[0].id);
+        
+        if (deleteError) {
+          console.error("❌ Error deleting test user:", deleteError);
+        } else {
+          console.log("✓ Successfully cleaned up test user");
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error checking database structure:", error);
+  }
+};
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  checkDatabaseStructure();
 }); 
