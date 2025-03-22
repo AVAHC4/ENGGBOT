@@ -2,63 +2,141 @@ import { Request, Response } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
-import { eq } from "drizzle-orm";
 
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  console.warn('Google OAuth credentials not found. Authentication will not work.');
-} else {
-  // Configure Google Strategy
-  passport.use(
-    new GoogleStrategy(
-      {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "http://localhost:3000/api/auth/google/callback",
-        proxy: true
-      },
-      async (accessToken, refreshToken, profile, done) => {
-        try {
-          console.log("Google OAuth callback received profile:", profile.id, profile.displayName);
-          
-          // Check if user exists in Supabase
-          const { data: existingUser, error: fetchError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('google_id', profile.id)
-            .single();
+// Configure Google Strategy - always register the strategy
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
-          if (fetchError && fetchError.code !== 'PGRST116') {
+console.log("Configuring Google Strategy with clientID:", CLIENT_ID);
+console.log("Redirect URI:", "http://localhost:3000/api/auth/google/callback");
+
+// Extend session type
+declare module 'express-session' {
+  interface SessionData {
+    oauthState?: string;
+  }
+}
+
+// Always register the strategy, even with placeholder values that will be replaced
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      callbackURL: "http://localhost:3000/api/auth/google/callback",
+      scope: ["profile", "email"],
+      proxy: true
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        console.log("Google OAuth callback received profile:", profile.id, profile.displayName);
+        console.log("Profile details:", {
+          id: profile.id,
+          displayName: profile.displayName,
+          emails: profile.emails,
+          photos: profile.photos
+        });
+        
+        // Check if user exists in Supabase
+        console.log("Checking if user exists in Supabase with google_id:", profile.id);
+        const { data: existingUser, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('google_id', profile.id)
+          .single();
+
+        if (fetchError) {
+          console.error("Error fetching user from Supabase:", fetchError);
+          if (fetchError.code !== 'PGRST116') {
             throw fetchError;
           }
+        }
 
-          if (existingUser) {
-            return done(null, existingUser);
-          }
+        if (existingUser) {
+          console.log("Found existing user:", existingUser.id);
+          return done(null, existingUser);
+        }
 
-          // Create new user in Supabase
+        const email = profile.emails?.[0]?.value || "";
+        if (!email) {
+          console.error("No email found in Google profile");
+          throw new Error("No email found in Google profile");
+        }
+
+        console.log("User not found, creating new user with email:", email);
+        
+        // Create new user in Supabase
+        const userData = {
+          email: email,
+          name: profile.displayName || "",
+          google_id: profile.id,
+          avatar: profile.photos?.[0]?.value || "",
+        };
+        
+        console.log("Inserting new user with data:", userData);
+        console.log("Using SERVICE ROLE KEY which should bypass RLS policies");
+        
+        try {
           const { data: newUser, error: insertError } = await supabase
             .from('users')
-            .insert({
-              email: profile.emails?.[0]?.value || "",
-              name: profile.displayName || "",
-              google_id: profile.id,
-              avatar: profile.photos?.[0]?.value || "",
-            })
+            .insert(userData)
             .select()
             .single();
 
           if (insertError) {
-            throw insertError;
+            console.error("Error inserting new user to Supabase:", insertError);
+            console.error("Insert error details:", {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint
+            });
+            
+            // Try with an SQL insert as a last resort
+            console.log("Attempting direct SQL insert as fallback...");
+            const { data: sqlResult, error: sqlError } = await supabase.rpc('insert_user', { 
+              user_email: email,
+              user_name: profile.displayName || "",
+              user_google_id: profile.id,
+              user_avatar: profile.photos?.[0]?.value || ""
+            });
+            
+            if (sqlError) {
+              console.error("SQL insert failed:", sqlError);
+              throw sqlError;
+            }
+            
+            console.log("SQL insert succeeded:", sqlResult);
+            
+            // Get the inserted user
+            const { data: insertedUser, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', email)
+              .single();
+              
+            if (fetchError) {
+              console.error("Error fetching newly inserted user:", fetchError);
+              throw fetchError;
+            }
+            
+            console.log("Successfully created user via SQL:", insertedUser?.id);
+            return done(null, insertedUser);
           }
 
+          console.log("Successfully created new user:", newUser?.id);
           return done(null, newUser);
         } catch (error) {
+          console.error("Caught error in user creation:", error);
           return done(error as Error);
         }
+      } catch (error) {
+        console.error("Caught error in Google strategy callback:", error);
+        return done(error as Error);
       }
-    )
-  );
-}
+    }
+  )
+);
 
 // Serialize user for the session
 passport.serializeUser((user: any, done) => {
@@ -86,31 +164,21 @@ passport.deserializeUser(async (id: string, done) => {
 
 // Initialize Google auth routes
 export const initGoogleAuth = (app: any) => {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.warn('Google OAuth routes not initialized due to missing credentials');
-    return;
-  }
+  console.log("Initializing Google Auth routes");
 
   // Google auth route
-  app.get("/api/auth/google", (req: Request, res: Response) => {
+  app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
     console.log("Google auth route hit - redirecting to Google");
     
-    // Construct the Google OAuth URL manually
-    const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth";
-    const redirectUri = "http://localhost:3000/api/auth/google/callback";
+    // Generate a random state parameter for security
+    const state = Math.random().toString(36).substring(2, 15);
+    req.session.oauthState = state;
     
-    // Generate URL with parameters
-    const url = new URL(googleAuthUrl);
-    url.searchParams.append("client_id", process.env.GOOGLE_CLIENT_ID || "");
-    url.searchParams.append("redirect_uri", redirectUri);
-    url.searchParams.append("response_type", "code");
-    url.searchParams.append("scope", "profile email");
-    url.searchParams.append("prompt", "select_account");
-    
-    console.log("Redirecting to:", url.toString());
-    
-    // Redirect to Google OAuth
-    res.redirect(url.toString());
+    passport.authenticate("google", { 
+      scope: ["profile", "email"],
+      prompt: "select_account",
+      state: state
+    })(req, res, next);
   });
 
   // Google callback route
@@ -119,6 +187,12 @@ export const initGoogleAuth = (app: any) => {
     (req: Request, res: Response, next: any) => {
       console.log("Google callback route hit with query params:", req.query);
       console.log("Attempting to authenticate with Google...");
+      
+      // Verify state parameter to prevent CSRF
+      if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
+        console.error("OAuth state mismatch - possible CSRF attack");
+        return res.redirect('/login?error=invalid_state');
+      }
       
       if (req.query.error) {
         console.error("Error in Google callback:", req.query.error);
@@ -133,12 +207,33 @@ export const initGoogleAuth = (app: any) => {
       next();
     },
     (req: Request, res: Response, next: any) => {
-      passport.authenticate("google", (err: any, user: any, info: any) => {
+      passport.authenticate("google", { 
+        session: true,
+        failureRedirect: '/login?error=auth_failed',
+      }, (err: any, user: any, info: any) => {
         console.log("Passport authenticate callback executed");
         
         if (err) {
           console.error("Authentication error:", err);
-          return res.redirect('/login?error=auth_error');
+          console.error("Error name:", err.name);
+          console.error("Error message:", err.message);
+          
+          // Show more details about specific errors
+          if (err.name === 'TokenError' && err.message === 'Unauthorized') {
+            console.error("TokenError: Unauthorized - This typically happens when:");
+            console.error("1. The OAuth2 code has already been used (codes can only be used once)");
+            console.error("2. The client_id or client_secret are incorrect");
+            console.error("3. The redirect_uri doesn't match what's registered in Google Cloud Console");
+            console.error("4. The Google OAuth client is restricted by domain or has other restrictions");
+            console.error("Check that your Google Cloud Console configuration exactly matches your code");
+          }
+          
+          if (err.code === 'invalid_client') {
+            console.error("This error usually means the client ID or secret is incorrect or the client was not found in Google Cloud Console");
+            console.error("Make sure your client ID and secret match exactly what's in the Google Cloud Console");
+            console.error("Also check that your redirect URI is correctly configured in Google Cloud Console");
+          }
+          return res.redirect('/login?error=auth_error&code=' + encodeURIComponent(err.code || err.message || 'unknown'));
         }
         
         if (!user) {
@@ -154,8 +249,8 @@ export const initGoogleAuth = (app: any) => {
             return res.redirect('/login?error=login_error');
           }
           
-          console.log("User logged in, redirecting to loading page");
-          return res.redirect('/auth-loading');
+          console.log("User logged in, redirecting to chat page");
+          return res.redirect('/chat');
         });
       })(req, res, next);
     }
