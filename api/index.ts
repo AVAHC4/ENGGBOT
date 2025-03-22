@@ -114,7 +114,7 @@ apiRouter.get("/check-google-config", (req, res) => {
   const config = {
     clientID: process.env.GOOGLE_CLIENT_ID || "Not set",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ? "Set (length: " + process.env.GOOGLE_CLIENT_SECRET.length + ")" : "Not set",
-    callbackURL: "http://localhost:3000/api/auth/google/callback",
+    callbackURL: `${process.env.CLIENT_URL || 'http://localhost:3000'}/api/auth/google/callback`,
     sessionSecret: process.env.SESSION_SECRET ? "Set (length: " + process.env.SESSION_SECRET.length + ")" : "Not set",
   };
   
