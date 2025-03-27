@@ -84,30 +84,41 @@ function Router() {
 }
 
 function App() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     document.documentElement.classList.add(savedTheme);
     
+    console.log("App mounted. Current location:", location);
+    
     // Check if we should redirect to chat
     const redirectToChat = localStorage.getItem('redirectToChat');
     if (redirectToChat) {
-      // Clear the flag
+      console.log("Found redirectToChat flag in localStorage");
       localStorage.removeItem('redirectToChat');
-      // Navigate to chat
+      console.log("Navigating to /chat via localStorage flag");
       setLocation('/chat');
+      return;
     }
     
     // Check for auth success cookie
-    const authSuccess = document.cookie.includes('auth_success=true');
-    if (authSuccess) {
-      console.log("Found auth success cookie in App");
-      document.cookie = 'auth_success=; max-age=0; path=/';
+    const hasAuthCookie = document.cookie.includes('auth_success=true');
+    if (hasAuthCookie) {
+      console.log("Found auth_success cookie in App");
+      document.cookie = 'auth_success=; max-age=0; path=/; domain=' + window.location.hostname;
+      console.log("Navigating to /chat via auth cookie");
+      setLocation('/chat');
+      return;
+    }
+    
+    // Check if we're at the root and should redirect to chat
+    if (location === '/' && sessionStorage.getItem('authenticated') === 'true') {
+      console.log("User is authenticated and at root, redirecting to /chat");
       setLocation('/chat');
     }
-  }, [setLocation]);
+  }, [location, setLocation]);
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">

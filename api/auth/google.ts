@@ -8,8 +8,12 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "1024340638661-6vdanilktc200dd
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "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";
 
 // Update the way we handle the callback and include the BASE_URL
-const BASE_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://enggbot.vercel.app'
+  : (process.env.CLIENT_URL || 'http://localhost:3000');
+  
 console.log("Using BASE_URL for redirection:", BASE_URL);
+console.log("Current NODE_ENV:", process.env.NODE_ENV);
 
 // Extend session type
 declare module 'express-session' {
@@ -121,23 +125,20 @@ export const initGoogleAuth = (app: any) => {
       failureRedirect: '/login?error=auth_failed',
     }),
     (req: Request, res: Response) => {
-      console.log("Authentication successful, redirecting to chat interface");
+      console.log("Authentication successful, attempting redirect to chat interface");
+      console.log("Current BASE_URL:", BASE_URL);
+      console.log("Full redirect URL:", `${BASE_URL}/chat`);
       
-      // Set auth success cookie
+      // Set auth success cookie with broad compatibility
       res.cookie('auth_success', 'true', {
         maxAge: 5000,
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        sameSite: 'none'
       });
       
-      // Use window.location.replace in a script for client-side navigation
-      const script = `
-        <script>
-          document.cookie = "auth_success=true; max-age=5; path=/";
-          window.location.replace("${BASE_URL}/chat");
-        </script>
-      `;
+      // For debugging - redirect to a known working URL first
+      const redirectUrl = `${BASE_URL}/chat`;
       
       // Send HTML with script for client-side navigation
       res.send(`
@@ -145,11 +146,18 @@ export const initGoogleAuth = (app: any) => {
         <html>
           <head>
             <title>Redirecting...</title>
-            <meta http-equiv="refresh" content="0;url=${BASE_URL}/chat">
+            <meta http-equiv="refresh" content="0;url=${redirectUrl}">
           </head>
           <body>
-            <p>Authentication successful! Redirecting to chat interface...</p>
-            ${script}
+            <h1>Authentication successful!</h1>
+            <p>Redirecting to chat interface at: ${redirectUrl}</p>
+            <p>If you are not redirected, <a href="${redirectUrl}">click here</a>.</p>
+            <script>
+              console.log("Setting auth_success cookie");
+              document.cookie = "auth_success=true; max-age=5; path=/";
+              console.log("Redirecting to:", "${redirectUrl}");
+              window.location.href = "${redirectUrl}";
+            </script>
           </body>
         </html>
       `);
