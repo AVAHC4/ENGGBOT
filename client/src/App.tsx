@@ -84,11 +84,30 @@ function Router() {
 }
 
 function App() {
+  const [, setLocation] = useLocation();
+
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     document.documentElement.classList.add(savedTheme);
-  }, []);
+    
+    // Check if we should redirect to chat
+    const redirectToChat = localStorage.getItem('redirectToChat');
+    if (redirectToChat) {
+      // Clear the flag
+      localStorage.removeItem('redirectToChat');
+      // Navigate to chat
+      setLocation('/chat');
+    }
+    
+    // Check for auth success cookie
+    const authSuccess = document.cookie.includes('auth_success=true');
+    if (authSuccess) {
+      console.log("Found auth success cookie in App");
+      document.cookie = 'auth_success=; max-age=0; path=/';
+      setLocation('/chat');
+    }
+  }, [setLocation]);
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
