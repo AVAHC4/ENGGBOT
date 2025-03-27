@@ -7,10 +7,9 @@ import { Logo } from "@/components/logo";
 import { Link } from "wouter";
 
 interface UserData {
-  id: string;
   name: string;
   email: string;
-  avatar?: string;
+  avatar: string;
 }
 
 export default function ChatDashboard() {
@@ -22,19 +21,67 @@ export default function ChatDashboard() {
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["user"],
     queryFn: async () => {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+        console.log("Fetching user data from:", apiUrl);
+        
+        const response = await fetch(`${apiUrl}/api/user`, {
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log("User not authenticated, redirecting to login");
+            setLocation("/login");
+            return null;
+          }
+          console.error("Failed to fetch user data:", response.status, response.statusText);
+          throw new Error("Failed to fetch user data");
+        }
+        
+        const data = await response.json();
+        console.log("Received user data:", data);
+        return data as UserData;
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        throw err;
       }
-      return response.json() as Promise<UserData>;
     },
+    retry: 2,
+    retryDelay: 1000,
+    gcTime: 60000,
+    staleTime: 30000,
   });
 
-  // Redirect to login if not authenticated
+  // Type guard for user data
+  const isUserData = (data: any): data is UserData => {
+    return data && typeof data === 'object' && 
+           'name' in data && 
+           'email' in data && 
+           'avatar' in data;
+  };
+
+  const userData = isUserData(user) ? user : null;
+
+  // Check for authentication success cookie on mount
   useEffect(() => {
-    if (!isLoading && !user && error) {
+    const authSuccess = document.cookie.includes('auth_success=true');
+    if (authSuccess) {
+      console.log("Found auth success cookie in ChatDashboard");
+      // Clear the cookie
+      document.cookie = 'auth_success=; max-age=0; path=/';
+      // Refresh user data
+      queryClient.invalidateQueries({ queryKey: ["user"] });
+    }
+  }, [queryClient]);
+
+  // Handle authentication check
+  useEffect(() => {
+    if (!isLoading && (!user || error)) {
+      console.log("Not authenticated in ChatDashboard, redirecting to login");
       setLocation("/login");
     }
   }, [user, isLoading, error, setLocation]);
@@ -84,7 +131,7 @@ export default function ChatDashboard() {
   }
 
   // If authentication fails, this will redirect (see useEffect above)
-  if (!user) {
+  if (!userData) {
     return null;
   }
 
@@ -102,7 +149,7 @@ export default function ChatDashboard() {
           <div className="flex items-center gap-4">
             <div className="hidden md:block">
               <span className="text-sm text-zinc-400">Logged in as</span>
-              <span className="text-sm font-medium ml-2">{user.name}</span>
+              <span className="text-sm font-medium ml-2">{userData.name}</span>
             </div>
             
             <div className="relative">
@@ -113,8 +160,8 @@ export default function ChatDashboard() {
                 className="rounded-full"
               >
                 <img 
-                  src={user.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"} 
-                  alt={user.name} 
+                  src={userData.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"} 
+                  alt={userData.name} 
                   className="w-8 h-8 rounded-full ring-1 ring-emerald-500/50"
                 />
               </Button>
@@ -127,8 +174,8 @@ export default function ChatDashboard() {
                       <div className="flex items-center gap-4 mb-8">
                         <div className="relative shrink-0">
                           <img
-                            src={user.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"}
-                            alt={user.name}
+                            src={userData.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"}
+                            alt={userData.name}
                             className="w-[72px] h-[72px] rounded-full ring-4 ring-white dark:ring-zinc-900 object-cover"
                           />
                           <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900" />
@@ -136,8 +183,8 @@ export default function ChatDashboard() {
 
                         {/* Profile Info */}
                         <div className="flex-1">
-                          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.name}</h2>
-                          <p className="text-zinc-600 dark:text-zinc-400">{user.email}</p>
+                          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{userData.name}</h2>
+                          <p className="text-zinc-600 dark:text-zinc-400">{userData.email}</p>
                         </div>
                       </div>
                       <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-6" />
