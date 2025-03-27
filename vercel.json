@@ -4,8 +4,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/auth/(.*)", "destination": "/api/auth" },
-    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/api/auth/(.*)", "destination": "/api/api-auth" },
+    { "source": "/api/(.*)", "destination": "/api/api-main" },
     { "source": "/chat", "destination": "/chat/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
