@@ -1,24 +1,99 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>ENGGBOT</title>
-    <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // MIT License
-      // https://github.com/rafgraph/spa-github-pages
-      var pathSegmentsToKeep = 1;
-
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
-    </script>
-  </head>
-  <body>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENGGBOT - Page Not Found</title>
+  <script>
+    // Extract the path from the URL
+    const path = window.location.pathname;
+    
+    // Check if this is a known SPA route
+    if (path === '/chat' || path.startsWith('/chat/')) {
+      // Set redirect flags
+      localStorage.setItem('redirectToChat', 'true');
+      sessionStorage.setItem('authenticated', 'true');
+      
+      // Redirect to home
+      window.location.href = '/';
+    } else {
+      // For unknown routes, we'll show a 404 page
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('current-path').textContent = path;
+      });
+    }
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 600px;
+      padding: 40px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #e53e3e;
+      font-size: 2rem;
+    }
+    p {
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      line-height: 1.5;
+    }
+    .path {
+      font-family: monospace;
+      background-color: #f0f0f0;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .btn {
+      display: inline-block;
+      background: #3182ce;
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-weight: 500;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: #2c5282;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Page Not Found</h1>
+    <p>Sorry, we couldn't find the page you're looking for.</p>
+    <p>The path <span class="path" id="current-path">/unknown</span> does not exist.</p>
+    <p>If you were trying to access the chat interface, please click the button below:</p>
+    <a href="/" class="btn" id="home-button">Go to Home Page</a>
+  </div>
+  
+  <script>
+    document.getElementById('home-button').addEventListener('click', function(e) {
+      // If trying to access chat, set the redirect flag
+      if (window.location.pathname === '/chat' || window.location.pathname.startsWith('/chat/')) {
+        e.preventDefault();
+        localStorage.setItem('redirectToChat', 'true');
+        sessionStorage.setItem('authenticated', 'true');
+        window.location.href = '/';
+      }
+    });
+  </script>
+</body>
 </html> 
