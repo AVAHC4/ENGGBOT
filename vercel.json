@@ -4,8 +4,10 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/auth/(.*)", "destination": "/api/api-auth" },
-    { "source": "/api/(.*)", "destination": "/api/api-main" },
+    { "source": "/api/auth/google/callback", "destination": "/api/auth/google/callback.html" },
+    { "source": "/api/auth/google", "destination": "/api/auth/google.html" },
+    { "source": "/api/auth/status", "destination": "/api/auth/status.html" },
+    { "source": "/api/hello", "destination": "/api/hello.html" },
     { "source": "/chat", "destination": "/chat/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
