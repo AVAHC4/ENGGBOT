@@ -12,7 +12,7 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node dist/index.js"
+    "start": "node api/dist/index.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
