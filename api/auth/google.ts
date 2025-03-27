@@ -96,7 +96,24 @@ export const initGoogleAuth = (app: any) => {
   app.get(
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
-      // ... existing code ...
+      console.log("Google callback route hit with query params:", req.query);
+      
+      // Verify state parameter to prevent CSRF
+      if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
+        console.error("OAuth state mismatch - possible CSRF attack");
+        return res.redirect('/login?error=invalid_state');
+      }
+      
+      if (req.query.error) {
+        console.error("Error in Google callback:", req.query.error);
+        return res.redirect('/login?error=auth_failed');
+      }
+      
+      if (!req.query.code) {
+        console.error("No authorization code received from Google");
+        return res.redirect('/login?error=no_code');
+      }
+      
       next();
     },
     passport.authenticate("google", { 
@@ -104,18 +121,38 @@ export const initGoogleAuth = (app: any) => {
       failureRedirect: '/login?error=auth_failed',
     }),
     (req: Request, res: Response) => {
-      console.log("Authentication successful, redirecting to chat page");
+      console.log("Authentication successful, redirecting to chat interface");
       
       // Set auth success cookie
       res.cookie('auth_success', 'true', {
         maxAge: 5000,
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
       });
       
-      // Use the full URL with BASE_URL for redirection
-      return res.redirect(`${BASE_URL}/chat`);
+      // Use window.location.replace in a script for client-side navigation
+      const script = `
+        <script>
+          document.cookie = "auth_success=true; max-age=5; path=/";
+          window.location.replace("${BASE_URL}/chat");
+        </script>
+      `;
+      
+      // Send HTML with script for client-side navigation
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Redirecting...</title>
+            <meta http-equiv="refresh" content="0;url=${BASE_URL}/chat">
+          </head>
+          <body>
+            <p>Authentication successful! Redirecting to chat interface...</p>
+            ${script}
+          </body>
+        </html>
+      `);
     }
   );
 

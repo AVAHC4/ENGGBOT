@@ -125,7 +125,7 @@ export default function HeroSection() {
                   as="p"
                   className="mx-auto mt-8 max-w-2xl text-balance text-lg"
                 >
-                  Experience the power of course-driven AI. ENGGBOT answers questions using professors’ notes, textbooks, and slides, delivering expert-approved responses tailored to your academic needs.
+                  Experience the power of course-driven AI. ENGGBOT answers questions using professors' notes, textbooks, and slides, delivering expert-approved responses tailored to your academic needs.
                 </TextEffect>
 
                 <AnimatedGroup
@@ -149,8 +149,8 @@ export default function HeroSection() {
                       size="lg"
                       className="relative rounded-2xl px-10 py-7 text-xl font-semibold bg-gradient-to-b from-gray-50/90 to-gray-200/90 text-gray-800 hover:from-gray-100/90 hover:to-gray-300/90 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
-                      <Link href="#link">
-                        <span className="text-nowrap">Start Building</span>
+                      <Link href="/chat">
+                        <span className="text-nowrap">AI Chat Interface</span>
                       </Link>
                     </Button>
                   </div>
