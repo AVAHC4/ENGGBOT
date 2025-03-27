@@ -11,7 +11,7 @@
     "dev:backend": "node api/dist/index.js",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
-    "vercel-build": "vite build && mkdir -p dist/chat && cp client/public/chat/index.html dist/chat/index.html && cp client/chat.html dist/chat.html && cp client/public/200.html dist/200.html && cp dist/index.html dist/404.html",
+    "vercel-build": "vite build && mkdir -p dist/chat dist/api/auth/google && cp client/public/chat/index.html dist/chat/index.html && cp client/chat.html dist/chat.html && cp client/public/200.html dist/200.html && cp dist/index.html dist/404.html && cp -r client/public/api dist/",
     "preview": "vite preview",
     "start": "node api/dist/index.js"
   },
