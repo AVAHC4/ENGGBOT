@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ENGGBOT - Chat Interface</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .loader {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+    }
+    .loader div {
+      position: absolute;
+      top: 33px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    .loader div:nth-child(1) {
+      left: 8px;
+      animation: loader1 0.6s infinite;
+    }
+    .loader div:nth-child(2) {
+      left: 8px;
+      animation: loader2 0.6s infinite;
+    }
+    .loader div:nth-child(3) {
+      left: 32px;
+      animation: loader2 0.6s infinite;
+    }
+    .loader div:nth-child(4) {
+      left: 56px;
+      animation: loader3 0.6s infinite;
+    }
+    @keyframes loader1 {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+    @keyframes loader2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(24px, 0); }
+    }
+    @keyframes loader3 {
+      0% { transform: scale(1); }
+      100% { transform: scale(0); }
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="loader"><div></div><div></div><div></div><div></div></div>
+    <h2>Loading ENGGBOT Chat Interface...</h2>
+    <p>Please wait while we load the application.</p>
+  </div>
+
+  <script>
+    // Store needed flags
+    localStorage.setItem('redirectToChat', 'true');
+    sessionStorage.setItem('authenticated', 'true');
+    
+    // Wait a brief moment and redirect
+    setTimeout(function() {
+      window.location.href = '/';
+    }, 2000);
+  </script>
+</body>
+</html> 
