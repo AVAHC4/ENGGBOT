@@ -74,7 +74,7 @@ if (process.env.GOOGLE_CLIENT_ID) {
   console.log("Fixed Client ID:", JSON.stringify(process.env.GOOGLE_CLIENT_ID));
 }
 
-const app = express();
+export const app = express();
 
 // Middleware
 app.use(cors({
@@ -230,8 +230,11 @@ const checkDatabaseStructure = async () => {
   }
 };
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  checkDatabaseStructure();
-}); 
+// Only start the server if this file is run directly (not imported)
+if (import.meta.url === fileURLToPath(import.meta.url)) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    checkDatabaseStructure();
+  });
+} 
