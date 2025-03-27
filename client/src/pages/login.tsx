@@ -126,10 +126,7 @@ export default function LoginPage() {
                   type="button" 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => {
-                    // Use the global function we defined in index.html
-                    (window as any).showGoogleAuth();
-                  }}
+                  onClick={handleGoogleSignIn}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="0.98em" height="1em" viewBox="0 0 256 262" className="mr-2">
                     <path
