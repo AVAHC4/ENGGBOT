@@ -1,93 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ENGGBOT - AI Chat Interface</title>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ENGGBOT - Chat Interface</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      line-height: 1.6;
-      color: #333;
       background-color: #f9f9f9;
+      text-align: center;
+      padding: 20px;
+      margin: 0;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
     }
-    .container {
-      max-width: 600px;
-      padding: 40px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    .message {
+      margin-bottom: 20px;
     }
-    h1 {
-      margin-top: 0;
-      color: #2d3748;
-    }
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
+      border-left-color: #09f;
+      animation: spin 1s ease infinite;
       margin: 20px auto;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .btn {
-      display: inline-block;
-      background: #4299e1;
+    .button {
+      background-color: #4CAF50;
+      border: none;
       color: white;
+      padding: 15px 32px;
+      text-align: center;
       text-decoration: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      margin-top: 20px;
-      font-weight: 500;
-      transition: background 0.3s;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 8px;
     }
-    .btn:hover {
-      background: #3182ce;
+    .button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>ENGGBOT Chat Interface</h1>
-    <p>Attempting to load the AI chat interface...</p>
-    <div class="loader"></div>
-    <p id="status">Setting up redirection...</p>
-    
-    <a href="/" class="btn">Go to Home Page</a>
-    <a href="javascript:void(0)" id="chatLink" class="btn" style="margin-left: 10px;">Try Direct Chat Link</a>
+  <div id="root">
+    <h1 class="message">Loading ENGGBOT Chat Interface...</h1>
+    <div class="spinner"></div>
+    <p class="message">If you're not redirected automatically, please click the button below:</p>
+    <a href="/" class="button" id="homeButton">Go to Home Page</a>
   </div>
-
+  
   <script>
     // Store that we want to go to chat
     localStorage.setItem('redirectToChat', 'true');
     sessionStorage.setItem('authenticated', 'true');
     
-    // Display status
-    document.getElementById('status').textContent = 'Redirecting to home page, which will then load the chat interface...';
-    
-    // Set up the direct chat link
-    document.getElementById('chatLink').addEventListener('click', function() {
-      const origin = window.location.origin;
-      window.location.href = origin + '/chat';
+    // Set up direct link to SPA router
+    document.getElementById('homeButton').addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.setItem('redirectToChat', 'true');
+      window.location.href = '/';
     });
     
-    // Redirect after a short delay to ensure localStorage is set
+    // Wait a moment and redirect
     setTimeout(function() {
       window.location.href = '/';
-    }, 2000);
+    }, 1500);
   </script>
 </body>
 </html> 
