@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import AiChat from "../../../ai-chat";
+// import AiChat from "../../../ai-chat";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { Link } from "wouter";
+import { 
+  getUserData, 
+  storeUserData, 
+  setRedirectToChat,
+  clearAuthData
+} from "@/lib/auth-storage";
 
 interface UserData {
   name: string;
@@ -16,6 +22,8 @@ export default function ChatDashboard() {
   const [, setLocation] = useLocation();
   const [showProfileCard, setShowProfileCard] = useState(false);
   const queryClient = useQueryClient();
+  // Add a redirect state to handle AI UI redirection
+  const [redirecting, setRedirecting] = useState(false);
 
   // Fetch user data to check authentication
   const { data: user, isLoading, error } = useQuery({
@@ -44,6 +52,10 @@ export default function ChatDashboard() {
         
         const data = await response.json();
         console.log("Received user data:", data);
+        
+        // Store user data using the new helper
+        storeUserData(data);
+        
         return data as UserData;
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -68,14 +80,36 @@ export default function ChatDashboard() {
 
   // Check for authentication success cookie on mount
   useEffect(() => {
-    const authSuccess = document.cookie.includes('auth_success=true');
-    if (authSuccess) {
-      console.log("Found auth success cookie in ChatDashboard");
-      // Clear the cookie
-      document.cookie = 'auth_success=; max-age=0; path=/';
-      // Refresh user data
-      queryClient.invalidateQueries({ queryKey: ["user"] });
-    }
+    // Check for authentication success cookie
+    const checkCookies = () => {
+      const authSuccess = document.cookie.includes('auth_success=true');
+      const authAttempt = document.cookie.includes('auth_attempt=true');
+      
+      if (authSuccess) {
+        console.log("Found auth success cookie in ChatDashboard");
+        // Clear the cookies
+        document.cookie = 'auth_success=; max-age=0; path=/';
+        document.cookie = 'auth_attempt=; max-age=0; path=/';
+        // Refresh user data
+        queryClient.invalidateQueries({ queryKey: ["user"] });
+      } else if (authAttempt) {
+        console.log("Found auth attempt cookie but no success - authentication may have failed");
+        document.cookie = 'auth_attempt=; max-age=0; path=/';
+      }
+    };
+    
+    // Check immediately on mount
+    checkCookies();
+    
+    // Also check for cookies when window gets focus
+    // This helps when returning from the OAuth provider
+    const handleFocus = () => {
+      console.log("Window received focus - checking auth cookies");
+      checkCookies();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [queryClient]);
 
   // Handle authentication check
@@ -95,6 +129,9 @@ export default function ChatDashboard() {
         credentials: "include",
         method: "GET",
       });
+      
+      // Clear auth data using the new helper
+      clearAuthData();
       
       // Clear auth-related query cache
       queryClient.invalidateQueries({ queryKey: ["user"] });
@@ -133,6 +170,24 @@ export default function ChatDashboard() {
   // If authentication fails, this will redirect (see useEffect above)
   if (!userData) {
     return null;
+  }
+
+  // Force redirect to the AI_UI app immediately when component loads
+  if (typeof window !== 'undefined') {
+    console.log("Redirecting to AI_UI at http://localhost:3001");
+    
+    // Store auth info and mark for redirection using new helpers
+    setRedirectToChat(true);
+    
+    // Create URL with user data
+    const redirectUrl = new URL('http://localhost:3001');
+    redirectUrl.searchParams.set('auth_success', 'true');
+    if (userData.name) redirectUrl.searchParams.set('user_name', userData.name);
+    if (userData.email) redirectUrl.searchParams.set('user_email', userData.email);
+    if (userData.avatar) redirectUrl.searchParams.set('user_avatar', userData.avatar);
+    
+    // Redirect
+    window.location.replace(redirectUrl.toString());
   }
 
   // User is authenticated, show the AI chat interface
@@ -235,7 +290,14 @@ export default function ChatDashboard() {
 
       {/* Main content - AI Chat */}
       <main className="flex-1">
-        <AiChat />
+        {/* Redirect to AI_UI */}
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Redirecting to AI Interface...</h1>
+            <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Please wait...</p>
+          </div>
+        </div>
       </main>
     </div>
   );

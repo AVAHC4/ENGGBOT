@@ -76,6 +76,10 @@ if (process.env.GOOGLE_CLIENT_ID) {
 
 export const app = express();
 
+// Determine if we're in production
+const isProduction = process.env.NODE_ENV === 'production';
+console.log("Environment:", isProduction ? "production" : "development");
+
 // Middleware
 app.use(cors({
   origin: [process.env.CLIENT_URL || "http://localhost:3000", "https://enggbot.vercel.app"],
@@ -90,10 +94,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true, // Always use secure cookies in production
+      // Only use secure cookies in production
+      secure: isProduction,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       httpOnly: true,
-      sameSite: 'none' // Required for cross-origin cookies
+      // Use lax for local development to ensure cookies are sent
+      sameSite: isProduction ? 'none' : 'lax'
     },
   })
 );
@@ -231,10 +237,11 @@ const checkDatabaseStructure = async () => {
 };
 
 // Only start the server if this file is run directly (not imported)
-if (import.meta.url === fileURLToPath(import.meta.url)) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    checkDatabaseStructure();
-  });
-} 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  checkDatabaseStructure();
+});
+
+// Keep the export for serverless environments
+export default app; 

@@ -11,12 +11,11 @@
     "dev:backend": "node api/dist/index.js",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
     "build": "vite build",
-    "build:backend": "tsc -p api/tsconfig.json",
+    "vercel-build": "vite build && mkdir -p dist/chat dist/api/auth/google && cp client/public/chat/index.html dist/chat/index.html && cp client/chat.html dist/chat.html && cp client/public/200.html dist/200.html && cp dist/index.html dist/404.html && cp -r client/public/api dist/",
     "preview": "vite preview",
     "start": "node api/dist/index.js"
   },
   "dependencies": {
-    "@chatscope/chat-ui-kit-react": "^2.2.2",
     "@hookform/resolvers": "^3.9.1",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",

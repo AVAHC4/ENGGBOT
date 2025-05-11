@@ -93,7 +93,7 @@ export default function HeroSection() {
             <div className="mx-auto max-w-7xl px-6">
               <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
                 <AnimatedGroup variants={transitionVariants}>
-                  <Link href="#link" className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950">
+                  <Link href="/login" className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950">
                     <span className="text-foreground text-sm">Experience Next-Gen AI Chat</span>
                     <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
                     <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
@@ -155,7 +155,7 @@ export default function HeroSection() {
                     </Button>
                   </div>
                   <Button key={2} asChild size="lg" variant="ghost" className="h-14 rounded-xl px-6 text-lg">
-                    <Link href="#link">
+                    <Link href="/login">
                       <span className="text-nowrap">Try Demo</span>
                     </Link>
                   </Button>

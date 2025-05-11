@@ -4,8 +4,8 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
 
 // Configure Google Strategy - always register the strategy
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "1024340638661-6vdanilktc200ddpj3h1e6vj3tqlrt67.apps.googleusercontent.com";
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "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";
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "634811837961-7cvp7kccpfgdab0i203h36gespsl90ue.apps.googleusercontent.com";
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "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";
 
 // Update the way we handle the callback and include the BASE_URL
 const BASE_URL = process.env.NODE_ENV === 'production' 
@@ -19,6 +19,7 @@ console.log("Current NODE_ENV:", process.env.NODE_ENV);
 declare module 'express-session' {
   interface SessionData {
     oauthState?: string;
+    authenticated?: boolean;
   }
 }
 
@@ -36,15 +37,68 @@ passport.use(
       try {
         console.log("Google auth callback received profile:", profile);
         
-        // Create or update user in your database here
-        const user = {
-          id: profile.id,
-          email: profile.emails?.[0]?.value,
-          name: profile.displayName,
-          picture: profile.photos?.[0]?.value,
-        };
+        // Check if user exists in our database
+        const { data: existingUser, error: findError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('google_id', profile.id)
+          .single();
         
-        return done(null, user);
+        if (findError && findError.code !== 'PGRST116') {
+          console.error("Error finding user:", findError);
+          throw findError;
+        }
+        
+        let userData;
+        
+        if (!existingUser) {
+          // User doesn't exist, create a new one
+          console.log("Creating new user with Google ID:", profile.id);
+          
+          const newUser = {
+            google_id: profile.id,
+            email: profile.emails?.[0]?.value,
+            name: profile.displayName,
+            avatar: profile.photos?.[0]?.value,
+          };
+          
+          const { data: insertedUser, error: insertError } = await supabase
+            .from('users')
+            .insert([newUser])
+            .select();
+          
+          if (insertError) {
+            console.error("Error inserting user:", insertError);
+            throw insertError;
+          }
+          
+          userData = insertedUser[0];
+          console.log("Successfully created user:", userData);
+        } else {
+          // User exists, update their info
+          console.log("User already exists, updating profile");
+          
+          const { data: updatedUser, error: updateError } = await supabase
+            .from('users')
+            .update({
+              email: profile.emails?.[0]?.value,
+              name: profile.displayName,
+              avatar: profile.photos?.[0]?.value,
+            })
+            .eq('google_id', profile.id)
+            .select();
+          
+          if (updateError) {
+            console.error("Error updating user:", updateError);
+            // Continue with existing user data
+            userData = existingUser;
+          } else {
+            userData = updatedUser[0];
+            console.log("User data updated:", userData);
+          }
+        }
+        
+        return done(null, userData);
       } catch (error) {
         console.error("Error in Google Strategy callback:", error);
         return done(error as Error);
@@ -55,6 +109,8 @@ passport.use(
 
 // Serialize user for the session
 passport.serializeUser((user: any, done) => {
+  console.log("Serializing user:", user);
+  // Use the database ID, not the Google ID
   done(null, user.id);
 });
 
@@ -125,39 +181,43 @@ export const initGoogleAuth = (app: any) => {
       failureRedirect: '/login?error=auth_failed',
     }),
     (req: Request, res: Response) => {
-      console.log("Authentication successful, attempting redirect to chat interface");
-      console.log("Current BASE_URL:", BASE_URL);
-      console.log("Full redirect URL:", `${BASE_URL}/chat`);
+      console.log("Authentication successful, attempting redirect to AI_UI chat interface");
       
-      // Set auth success cookie with broad compatibility
+      // For optimal performance, use a minimal HTML response that focuses on speed
+      // The AI_UI chat interface is at the root of the AI_UI application
+      const redirectUrl = `${BASE_URL.replace(':3000', '')}/AI_UI/?auth_success=true`;
+      
+      // Set multiple cookies for redundancy but keep it lightweight
       res.cookie('auth_success', 'true', {
-        maxAge: 5000,
+        maxAge: 10000,
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none'
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/'
       });
       
-      // For debugging - redirect to a known working URL first
-      const redirectUrl = `${BASE_URL}/chat`;
+      // Set session flag
+      if (req.session) {
+        req.session.authenticated = true;
+      }
       
-      // Send HTML with script for client-side navigation
+      // Send a minimal, performance-optimized HTML response
       res.send(`
         <!DOCTYPE html>
         <html>
           <head>
             <title>Redirecting...</title>
-            <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+            <script>
+              // Store auth in multiple places for redundancy
+              localStorage.setItem("authenticated", "true");
+              sessionStorage.setItem("authenticated", "true");
+              
+              // Immediately redirect - don't wait
+              window.location.replace("${redirectUrl}");
+            </script>
           </head>
           <body>
-            <h1>Authentication successful!</h1>
-            <p>Redirecting to chat interface at: ${redirectUrl}</p>
-            <p>If you are not redirected, <a href="${redirectUrl}">click here</a>.</p>
-            <script>
-              console.log("Setting auth_success cookie");
-              document.cookie = "auth_success=true; max-age=5; path=/";
-              console.log("Redirecting to:", "${redirectUrl}");
-              window.location.href = "${redirectUrl}";
-            </script>
+            <p>Redirecting to AI chat interface...</p>
           </body>
         </html>
       `);

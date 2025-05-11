@@ -1,10 +1,13 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
 import { useEffect, useRef } from "react"
-import { motion } from "motion/react"
-import { cn } from "@/lib/utils"
+// @ts-ignore - Ignore the missing type declarations for framer-motion
+import { motion } from "framer-motion"
+
+// Local utility for classname merging
+const cn = (...classes: (string | undefined)[]) => 
+  classes.filter(Boolean).join(' ')
 
 interface AnimatedGradientBackgroundProps {
   className?: string
