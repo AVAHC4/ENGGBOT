@@ -1,10 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from "path";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Serve AI_UI folder statically
+const aiUiPath = path.join(__dirname, '..', 'AI_UI');
+app.use('/AI_UI', express.static(aiUiPath));
 
 app.use((req, res, next) => {
   const start = Date.now();
