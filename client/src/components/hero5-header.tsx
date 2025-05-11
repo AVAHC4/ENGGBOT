@@ -6,13 +6,13 @@ import React from "react"
 import { cn } from "@/lib/utils"
 import { Link, useLocation } from "wouter"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
+import { 
+  getUserData, 
+  storeUserData, 
+  isAuthenticated,
+  clearAuthData,
+  UserData
+} from "@/lib/auth-storage"
 
 const menuItems = [
   { name: "Features", href: "#link" },
@@ -33,13 +33,34 @@ export const HeroHeader = () => {
     queryKey: ["user"],
     queryFn: async () => {
       try {
+        // Check for forced logout
+        if (localStorage.getItem('forceLogout') === 'true') {
+          console.log("Force logout detected, clearing user data");
+          localStorage.removeItem('forceLogout');
+          queryClient.removeQueries({ queryKey: ["user"] });
+          return null;
+        }
+
+        // First check if we already have user data in localStorage
+        const cachedUser = getUserData();
+        if (cachedUser) {
+          console.log("Using cached user data");
+          return cachedUser;
+        }
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user`, {
           credentials: "include",
         });
         if (!response.ok) {
           return null;
         }
-        return response.json() as Promise<UserData>;
+        
+        const userData = await response.json() as UserData;
+        
+        // Store user data in centralized storage
+        storeUserData(userData);
+        
+        return userData;
       } catch (error) {
         console.error("Error fetching user:", error);
         return null;
@@ -79,6 +100,9 @@ export const HeroHeader = () => {
         credentials: "include",
         method: "GET",
       });
+      
+      // Clear auth data using centralized helper
+      clearAuthData();
       
       // Clear auth-related query cache
       queryClient.invalidateQueries({ queryKey: ["user"] });

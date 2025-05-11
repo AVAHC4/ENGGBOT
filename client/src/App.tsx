@@ -11,19 +11,39 @@ import LoadingPage from "@/pages/loading";
 import ChatDashboard from "@/pages/chat-dashboard";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useEffect } from "react";
+import React from "react";
+import { 
+  isAuthenticated, 
+  shouldRedirectToChat, 
+  setRedirectToChat,
+  clearAuthData
+} from "@/lib/auth-storage";
 
 // Wrap the ChatDashboard component to handle authentication
 function ProtectedChatDashboard() {
   const [, setLocation] = useLocation();
+  const [localAuth, setLocalAuth] = React.useState(false);
   
-  // Check authentication status
+  // First check for quick auth indicators before doing a full API check
+  React.useEffect(() => {
+    // Check authentication using the centralized helper
+    if (isAuthenticated() || shouldRedirectToChat()) {
+      // If any auth evidence exists, proceed to chat interface
+      setLocalAuth(true);
+      
+      // Clean up redirect flag
+      if (shouldRedirectToChat()) {
+        setRedirectToChat(false);
+      }
+    }
+  }, []);
+  
+  // Only perform API check if quick auth failed
   const { data: authStatus, isLoading } = useQuery({
     queryKey: ["auth-status"],
     queryFn: async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-        console.log("Checking auth status at:", apiUrl);
-        
         const response = await fetch(`${apiUrl}/api/auth/status`, {
           credentials: "include",
           headers: {
@@ -35,38 +55,34 @@ function ProtectedChatDashboard() {
           throw new Error("Failed to fetch auth status");
         }
 
-        const data = await response.json();
-        console.log("Auth status response:", data);
-        return data;
+        return await response.json();
       } catch (error) {
         console.error("Error checking auth status:", error);
         throw error;
       }
     },
-    retry: 2,
-    retryDelay: 1000,
+    retry: 1, // Reduce retries for faster failure
+    retryDelay: 500, // Faster retry
     staleTime: 30000,
+    // Skip the API call if we already have local auth evidence
+    enabled: !localAuth,
   });
 
-  useEffect(() => {
-    // Check for auth success cookie
-    const authSuccess = document.cookie.includes('auth_success=true');
-    if (authSuccess) {
-      console.log("Found auth success cookie");
-      document.cookie = 'auth_success=; max-age=0; path=/';
-    }
-
-    if (!isLoading && (!authStatus?.authenticated || !authStatus?.user)) {
-      console.log("Not authenticated, redirecting to login");
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    // Only check API auth status if local auth check failed and API call completed
+    if (!localAuth && !isLoading && (!authStatus?.authenticated || !authStatus?.user)) {
       setLocation("/login");
     }
-  }, [authStatus, isLoading, setLocation]);
+  }, [authStatus, isLoading, localAuth, setLocation]);
 
-  if (isLoading) {
+  // Show loading state while checking auth
+  if (isLoading && !localAuth) {
     return <LoadingPage />;
   }
 
-  return authStatus?.authenticated ? <ChatDashboard /> : null;
+  // Show chat if authenticated locally or via API
+  return (localAuth || authStatus?.authenticated) ? <ChatDashboard /> : null;
 }
 
 function Router() {
@@ -86,39 +102,51 @@ function Router() {
 function App() {
   const [location, setLocation] = useLocation();
 
+  // Check for redirects immediately on mount and route changes
+  useEffect(() => {
+    console.log("App useEffect - checking redirects. Current location:", location);
+    
+    // Check if this is a logout or force main page request
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('logout') || urlParams.has('no_redirect') || 
+        localStorage.getItem('forceMainPage') === 'true') {
+      // Clear the flag
+      localStorage.removeItem('forceMainPage');
+      console.log("Detected logout or force main page request, staying on main page");
+      
+      // Check for force logout and clear all user data
+      if (urlParams.has('force_logout') || localStorage.getItem('forceLogout') === 'true') {
+        console.log("Forcing complete logout and clearing all user data");
+        
+        // Clear all auth data using centralized helper
+        clearAuthData();
+        
+        // Forcefully reload the page to reset all state
+        if (!urlParams.has('no_reload')) {
+          window.location.href = '/';
+          return;
+        }
+      }
+      
+      // If we're on a path other than root, redirect to root
+      if (location !== '/') {
+        setLocation('/');
+      }
+      return;
+    }
+    
+    // Check if user should redirect to chat using centralized helper
+    if (location !== '/chat' && shouldRedirectToChat()) {
+      console.log("Auth success detected, redirecting to chat");
+      setLocation('/chat');
+    }
+  }, [location, setLocation]);
+
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     document.documentElement.classList.add(savedTheme);
-    
-    console.log("App mounted. Current location:", location);
-    
-    // Check if we should redirect to chat
-    const redirectToChat = localStorage.getItem('redirectToChat');
-    if (redirectToChat) {
-      console.log("Found redirectToChat flag in localStorage");
-      localStorage.removeItem('redirectToChat');
-      console.log("Navigating to /chat via localStorage flag");
-      setLocation('/chat');
-      return;
-    }
-    
-    // Check for auth success cookie
-    const hasAuthCookie = document.cookie.includes('auth_success=true');
-    if (hasAuthCookie) {
-      console.log("Found auth_success cookie in App");
-      document.cookie = 'auth_success=; max-age=0; path=/; domain=' + window.location.hostname;
-      console.log("Navigating to /chat via auth cookie");
-      setLocation('/chat');
-      return;
-    }
-    
-    // Check if we're at the root and should redirect to chat
-    if (location === '/' && sessionStorage.getItem('authenticated') === 'true') {
-      console.log("User is authenticated and at root, redirecting to /chat");
-      setLocation('/chat');
-    }
-  }, [location, setLocation]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
