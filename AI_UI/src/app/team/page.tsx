@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle } from 'lucide-react';
+import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { TeamMember } from '@/components/layout/nav-team';
@@ -29,6 +29,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -566,6 +567,39 @@ export default function TeamPage() {
     }
   };
   
+  // Add state for notifications
+  const [notifications, setNotifications] = useState([
+    {
+      id: "1",
+      title: "New team member",
+      message: "Sarah Johnson joined the Frontend Squad",
+      time: "10 minutes ago",
+      read: false,
+    },
+    {
+      id: "2",
+      title: "Team created",
+      message: "You were added to Backend Heroes",
+      time: "1 hour ago",
+      read: false,
+    },
+    {
+      id: "3",
+      title: "Member removed",
+      message: "James Taylor left the Project Management team",
+      time: "Yesterday",
+      read: true,
+    }
+  ]);
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  const markAllAsRead = () => {
+    setNotifications(prevNotifications => 
+      prevNotifications.map(n => ({ ...n, read: true }))
+    );
+  };
+  
   return (
     <div className="container py-8 px-6 max-w-6xl team-page">
       <header className="mb-6">
@@ -575,23 +609,73 @@ export default function TeamPage() {
             <p className="text-muted-foreground">Collaborate with your colleagues</p>
           </div>
           
-          {activeTab === 'teams' ? (
-            <Button 
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="flex items-center gap-1"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Create Team
-            </Button>
-          ) : (
-            <Button 
-              onClick={() => setShowAddMemberForm(true)}
-              className="flex items-center gap-1"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add Members
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0">
+                <div className="flex items-center justify-between border-b px-4 py-2">
+                  <h3 className="font-medium">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={markAllAsRead}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Mark all as read
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-auto">
+                  {notifications.length > 0 ? (
+                    <div>
+                      {notifications.map((notification) => (
+                        <div 
+                          key={notification.id} 
+                          className={`border-b px-4 py-3 ${!notification.read ? 'bg-accent/20' : ''}`}
+                        >
+                          <h4 className="text-sm font-medium">{notification.title}</h4>
+                          <p className="text-xs text-muted-foreground">{notification.message}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{notification.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-4 text-center">
+                      <p className="text-sm text-muted-foreground">No notifications</p>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {activeTab === 'teams' ? (
+              <Button 
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="flex items-center gap-1"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Create Team
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => setShowAddMemberForm(true)}
+                className="flex items-center gap-1"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add Members
+              </Button>
+            )}
+          </div>
         </div>
       </header>
       
