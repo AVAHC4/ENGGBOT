@@ -621,8 +621,8 @@ export default function TeamPage() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 p-0">
-                <div className="flex items-center justify-between border-b px-4 py-2">
+              <PopoverContent className="w-80 p-0" align="end" showArrow>
+                <div className="flex items-center justify-between border-b px-4 py-3">
                   <h3 className="font-medium">Notifications</h3>
                   {unreadCount > 0 && (
                     <Button 
@@ -641,7 +641,7 @@ export default function TeamPage() {
                       {notifications.map((notification) => (
                         <div 
                           key={notification.id} 
-                          className={`border-b px-4 py-3 ${!notification.read ? 'bg-accent/20' : ''}`}
+                          className={`px-4 py-3 ${!notification.read ? 'bg-accent/20' : ''} ${notification.id !== notifications[notifications.length-1].id ? 'border-b' : ''}`}
                         >
                           <h4 className="text-sm font-medium">{notification.title}</h4>
                           <p className="text-xs text-muted-foreground">{notification.message}</p>
@@ -650,7 +650,8 @@ export default function TeamPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-4 text-center">
+                    <div className="flex flex-col items-center justify-center p-6 text-center">
+                      <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
                       <p className="text-sm text-muted-foreground">No notifications</p>
                     </div>
                   )}
