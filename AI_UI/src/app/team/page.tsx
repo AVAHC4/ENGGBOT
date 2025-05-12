@@ -9,6 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -223,15 +234,35 @@ function TeamCard({ team, onJoin, onLeave, isMember }: {
             </div>
           </div>
           {isMember ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-destructive hover:text-destructive flex gap-1 items-center"
-              onClick={() => onLeave(team.id)}
-            >
-              <UserMinus className="h-3.5 w-3.5" />
-              Leave
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-destructive hover:text-destructive flex gap-1 items-center"
+                >
+                  <UserMinus className="h-3.5 w-3.5" />
+                  Leave
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Leave {team.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to leave this team? You can always rejoin later if needed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => onLeave(team.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Leave Team
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : (
             <Button 
               variant="outline" 
