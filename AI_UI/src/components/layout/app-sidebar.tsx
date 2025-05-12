@@ -24,7 +24,9 @@ import {
   Search,
   Settings,
   Trash2,
-  Users
+  Users,
+  UserPlus,
+  UserMinus
 } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
@@ -33,7 +35,6 @@ import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
 import { NavSecondary } from "./nav-secondary"
 import { NavUser } from "./nav-user"
-import { TeamMemberAvatar } from "./nav-team"
 import {
   Sidebar,
   SidebarContent,
@@ -105,36 +106,17 @@ function getUserData() {
   }
 }
 
+// Add this type for team members/friends
+interface Friend {
+  id: string;
+  name: string;
+  avatar?: string;
+  isOnline: boolean;
+  lastSeen?: string;
+}
+
 const data = {
   user: getUserData(),
-  team: [
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      isOnline: true,
-    },
-    {
-      id: "2",
-      name: "Michael Chen",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      isOnline: true,
-    },
-    {
-      id: "3",
-      name: "Jessica Smith",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      isOnline: false,
-      lastSeen: "20m ago",
-    },
-    {
-      id: "4",
-      name: "David Rodriguez",
-      avatar: "https://i.pravatar.cc/150?img=3",
-      isOnline: false,
-      lastSeen: "1h ago",
-    },
-  ],
   navMain: [
     {
       title: "Chat",
@@ -220,9 +202,35 @@ const data = {
   documents: [],
 }
 
+// Add initial friends data
+const initialFriends: Friend[] = [
+  {
+    id: "1",
+    name: "Sarah Johnson",
+    avatar: "https://i.pravatar.cc/150?img=1",
+    isOnline: true,
+  },
+  {
+    id: "2",
+    name: "Michael Chen",
+    avatar: "https://i.pravatar.cc/150?img=8",
+    isOnline: true,
+  },
+  {
+    id: "3",
+    name: "Jessica Smith",
+    avatar: "https://i.pravatar.cc/150?img=5",
+    isOnline: false,
+    lastSeen: "20m ago",
+  }
+];
+
 export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [teamExpanded, setTeamExpanded] = React.useState(false);
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
+  const [teamsExpanded, setTeamsExpanded] = React.useState(false);
+  const [friends, setFriends] = React.useState<Friend[]>(initialFriends);
+  const [showAddFriend, setShowAddFriend] = React.useState(false);
+  const [newFriendName, setNewFriendName] = React.useState("");
   const [conversations, setConversations] = React.useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('/');
@@ -486,6 +494,25 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     };
   }, []);
   
+  // Function to add a new friend
+  const handleAddFriend = () => {
+    if (newFriendName.trim()) {
+      const newFriend: Friend = {
+        id: `friend-${Date.now()}`,
+        name: newFriendName,
+        isOnline: true,
+      };
+      setFriends([...friends, newFriend]);
+      setNewFriendName("");
+      setShowAddFriend(false);
+    }
+  };
+  
+  // Function to remove a friend
+  const handleRemoveFriend = (id: string) => {
+    setFriends(friends.filter(friend => friend.id !== id));
+  };
+  
   return (
     <div
       className={cn(
@@ -623,37 +650,108 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                 )}
               </SidebarMenuItem>
               
+              {/* Teams/Friends Section */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  onClick={() => setTeamExpanded(!teamExpanded)}
+                  onClick={() => setTeamsExpanded(!teamsExpanded)}
                   className="justify-between"
                 >
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-2" />
-                    <span>Team</span>
+                    <span>Teams</span>
                   </div>
-                  {teamExpanded ? (
+                  {teamsExpanded ? (
                     <ChevronDown className="h-4 w-4" />
                   ) : (
                     <ChevronRight className="h-4 w-4" />
                   )}
                 </SidebarMenuButton>
                 
-                {teamExpanded && (
+                {teamsExpanded && (
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link href="/team" className="font-medium text-primary w-full">
-                          View All Team Members
+                        <Link href="/team" className="w-full flex items-center font-medium text-primary">
+                          <Users className="h-3.5 w-3.5 mr-2" />
+                          View Teams
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
-                    {data.team.map((member) => (
-                      <SidebarMenuSubItem key={member.id}>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <TeamMemberAvatar member={member} />
-                          </a>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={() => setShowAddFriend(!showAddFriend)}
+                        className="w-full flex items-center"
+                      >
+                        <UserPlus className="h-3.5 w-3.5 mr-2" />
+                        <span className="font-medium text-primary">Add Friend</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    {showAddFriend && (
+                      <SidebarMenuSubItem>
+                        <div className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={newFriendName}
+                            onChange={(e) => setNewFriendName(e.target.value)}
+                            placeholder="Enter friend's name"
+                            className="w-full px-2 py-1 text-sm rounded border border-input bg-background"
+                          />
+                          <div className="flex justify-end mt-2 gap-2">
+                            <button 
+                              onClick={() => setShowAddFriend(false)}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted"
+                            >
+                              Cancel
+                            </button>
+                            <button 
+                              onClick={handleAddFriend}
+                              className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                      </SidebarMenuSubItem>
+                    )}
+                    
+                    {friends.map((friend) => (
+                      <SidebarMenuSubItem key={friend.id}>
+                        <SidebarMenuSubButton className="w-full justify-between group">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              {friend.avatar ? (
+                                <img 
+                                  src={friend.avatar} 
+                                  alt={friend.name}
+                                  className="h-6 w-6 rounded-full object-cover border border-border"
+                                />
+                              ) : (
+                                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                                  <span className="text-xs font-medium">{friend.name.charAt(0)}</span>
+                                </div>
+                              )}
+                              <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-background ${
+                                friend.isOnline ? "bg-green-500" : "bg-gray-400"
+                              }`} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm">{friend.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {friend.isOnline ? "Online" : friend.lastSeen || "Offline"}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveFriend(friend.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
+                          >
+                            <UserMinus className="h-3.5 w-3.5" />
+                          </button>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
