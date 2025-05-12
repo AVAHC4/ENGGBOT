@@ -151,9 +151,43 @@ const initialTeams: Team[] = [
   }
 ];
 
-function TeamMemberCard({ member }: { member: ExtendedTeamMember }) {
+function TeamMemberCard({ member, onRemove }: { 
+  member: ExtendedTeamMember;
+  onRemove: (memberId: string) => void;
+}) {
   return (
-    <div className="flex flex-col items-center p-6 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all">
+    <div className="flex flex-col items-center p-6 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all relative">
+      {/* Remove Button */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="absolute top-2 right-2 h-8 w-8 p-0 rounded-full text-muted-foreground hover:text-destructive"
+          >
+            <UserMinus className="h-4 w-4" />
+            <span className="sr-only">Remove {member.name}</span>
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {member.name} from the team? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => onRemove(member.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <div className="relative mb-4">
         <div className={`absolute inset-0 rounded-full ${
           member.isOnline ? "bg-green-500/20 animate-pulse" : ""
@@ -475,6 +509,22 @@ export default function TeamPage() {
     }
   };
   
+  // Add function to handle team member removal
+  const handleRemoveTeamMember = (memberId: string) => {
+    // In a real app, you would make an API call here
+    // For demo purposes, we'll just show a toast notification
+    const member = teamMembers.find(m => m.id === memberId);
+    if (member) {
+      toast(`Member removed`, {
+        description: `${member.name} has been removed from the team`,
+      });
+      
+      // In a real app, you would update the state after the API call
+      // For demo purposes, we'll just log it
+      console.log(`Removed team member: ${member.name}`);
+    }
+  };
+  
   return (
     <div className="container py-8 px-6 max-w-6xl team-page">
       <header className="mb-6">
@@ -629,7 +679,11 @@ export default function TeamPage() {
         <TabsContent value="members">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {teamMembers.map(member => (
-              <TeamMemberCard key={member.id} member={member} />
+              <TeamMemberCard 
+                key={member.id} 
+                member={member} 
+                onRemove={handleRemoveTeamMember}
+              />
             ))}
           </div>
         </TabsContent>
