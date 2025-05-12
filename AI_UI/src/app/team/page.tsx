@@ -20,6 +20,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -382,6 +390,8 @@ export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [myTeams, setMyTeams] = useState<Team[]>([teams[0], teams[2]]); // Initial joined teams
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
   
   // For filtering teams
   const [searchQuery, setSearchQuery] = useState('');
@@ -427,6 +437,37 @@ export default function TeamPage() {
     return myTeams.some(team => team.id === teamId);
   };
   
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
+      // Create a basic new team member
+      const newMember: ExtendedTeamMember = {
+        id: `member-${Date.now()}`,
+        name: newMemberEmail.split('@')[0], // Use part before @ as name
+        email: newMemberEmail,
+        isOnline: false,
+        role: "New Member",
+        lastSeen: "Just added",
+        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`, // Random avatar
+        bio: "Newly invited team member"
+      };
+      
+      // Add the new member to the list
+      const updatedTeamMembers = [...teamMembers, newMember];
+      
+      // In a real app, you would likely make an API call here
+      // and update state after successful response
+      
+      // For demo purposes, we'll just show an alert
+      alert(`Invitation sent to ${newMemberEmail}`);
+      
+      // Clear form
+      setNewMemberEmail('');
+      setShowAddMemberForm(false);
+    }
+  };
+  
   return (
     <div className="container py-8 px-6 max-w-6xl team-page">
       <header className="mb-6">
@@ -436,15 +477,67 @@ export default function TeamPage() {
             <p className="text-muted-foreground">Collaborate with your colleagues</p>
           </div>
           
-          <Button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="flex items-center gap-1"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Create Team
-          </Button>
+          {activeTab === 'teams' ? (
+            <Button 
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              className="flex items-center gap-1"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Create Team
+            </Button>
+          ) : (
+            <Button 
+              onClick={() => setShowAddMemberForm(true)}
+              className="flex items-center gap-1"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Members
+            </Button>
+          )}
         </div>
       </header>
+      
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMemberForm} onOpenChange={setShowAddMemberForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Invite a new member to join your team by email
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddMember} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email address
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="colleague@example.com"
+                value={newMemberEmail}
+                onChange={(e) => setNewMemberEmail(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                An invitation will be sent to this email address
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={() => setShowAddMemberForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Send Invitation</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       
       {showCreateForm && (
         <Card className="mb-6">
