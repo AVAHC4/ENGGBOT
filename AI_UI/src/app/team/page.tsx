@@ -427,6 +427,7 @@ export default function TeamPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(teamMembers);
   
   // For filtering teams
   const [searchQuery, setSearchQuery] = useState('');
@@ -489,7 +490,7 @@ export default function TeamPage() {
       };
       
       // Add the new member to the list
-      const updatedTeamMembers = [...teamMembers, newMember];
+      setTeamMembersList(prevMembers => [...prevMembers, newMember]);
       
       // Show toast notification instead of alert
       toast("Invitation sent", {
@@ -497,7 +498,10 @@ export default function TeamPage() {
         action: {
           label: "Undo",
           onClick: () => {
-            // In a real app, you would cancel the invitation here
+            // Remove the newly added member
+            setTeamMembersList(prevMembers => 
+              prevMembers.filter(m => m.id !== newMember.id)
+            );
             console.log("Undoing invitation to", newMemberEmail);
           },
         },
@@ -506,22 +510,59 @@ export default function TeamPage() {
       // Clear form
       setNewMemberEmail('');
       setShowAddMemberForm(false);
+      
+      // If you have localStorage persistence, update that too
+      try {
+        localStorage.setItem('teamMembers', JSON.stringify([...teamMembersList, newMember]));
+      } catch (error) {
+        console.error("Failed to update localStorage", error);
+      }
     }
   };
   
-  // Add function to handle team member removal
+  // Update handleRemoveTeamMember to actually remove the member
   const handleRemoveTeamMember = (memberId: string) => {
-    // In a real app, you would make an API call here
-    // For demo purposes, we'll just show a toast notification
-    const member = teamMembers.find(m => m.id === memberId);
+    // Find the member to be removed
+    const member = teamMembersList.find(m => m.id === memberId);
     if (member) {
+      // Remove the member from teamMembersList
+      setTeamMembersList(prevMembers => 
+        prevMembers.filter(m => m.id !== memberId)
+      );
+      
+      // Also remove the member from any teams they're part of
+      setTeams(prevTeams => 
+        prevTeams.map(team => ({
+          ...team,
+          members: team.members.filter(m => m.id !== memberId)
+        }))
+      );
+      
+      // Update myTeams to reflect the change as well
+      setMyTeams(prevMyTeams => 
+        prevMyTeams.map(team => ({
+          ...team,
+          members: team.members.filter(m => m.id !== memberId)
+        }))
+      );
+      
+      // Show toast notification
       toast(`Member removed`, {
         description: `${member.name} has been removed from the team`,
       });
       
-      // In a real app, you would update the state after the API call
-      // For demo purposes, we'll just log it
+      // In a real app, you would also make an API call here
       console.log(`Removed team member: ${member.name}`);
+      
+      // If you have localStorage persistence, update that too
+      try {
+        // Example of updating local storage (implement based on your storage structure)
+        localStorage.setItem('teamMembers', JSON.stringify(
+          teamMembersList.filter(m => m.id !== memberId)
+        ));
+      } catch (error) {
+        console.error("Failed to update localStorage", error);
+      }
     }
   };
   
@@ -678,13 +719,23 @@ export default function TeamPage() {
         
         <TabsContent value="members">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {teamMembers.map(member => (
+            {teamMembersList.map(member => (
               <TeamMemberCard 
                 key={member.id} 
                 member={member} 
                 onRemove={handleRemoveTeamMember}
               />
             ))}
+            
+            {teamMembersList.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                <h3 className="text-lg font-medium">No team members</h3>
+                <p className="text-sm text-muted-foreground">
+                  Click "Add Members" above to invite people to your team
+                </p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
