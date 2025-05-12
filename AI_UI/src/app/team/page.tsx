@@ -36,6 +36,7 @@ interface ExtendedTeamMember extends TeamMember {
   role: string;
   email: string;
   bio?: string;
+  pending?: boolean; // Add pending flag for invitation status
 }
 
 // Team interface for managing teams
@@ -152,12 +153,44 @@ const initialTeams: Team[] = [
   }
 ];
 
+// Define a type for notifications to properly type the properties
+interface BaseNotification {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  type: string;
+}
+
+interface InvitationNotification extends BaseNotification {
+  type: 'invitation';
+  memberId: string;
+  teamName: string;
+}
+
+interface InfoNotification extends BaseNotification {
+  type: 'info';
+}
+
+type Notification = InvitationNotification | InfoNotification;
+
 function TeamMemberCard({ member, onRemove }: { 
   member: ExtendedTeamMember;
   onRemove: (memberId: string) => void;
 }) {
   return (
     <div className="flex flex-col items-center p-6 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all relative">
+      {/* Show pending badge if member is pending */}
+      {member.pending && (
+        <Badge 
+          variant="outline" 
+          className="absolute top-3 left-3 bg-yellow-500/10 text-yellow-600 border-yellow-200"
+        >
+          Pending
+        </Badge>
+      )}
+      
       {/* Remove Button */}
       <AlertDialog>
         <AlertDialogTrigger asChild>
@@ -172,9 +205,14 @@ function TeamMemberCard({ member, onRemove }: {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogTitle>
+              {member.pending ? "Cancel Invitation" : "Remove Team Member"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove {member.name} from the team? This action cannot be undone.
+              {member.pending
+                ? `Are you sure you want to cancel the invitation to ${member.name}?`
+                : `Are you sure you want to remove ${member.name} from the team? This action cannot be undone.`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -183,7 +221,7 @@ function TeamMemberCard({ member, onRemove }: {
               onClick={() => onRemove(member.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove
+              {member.pending ? "Cancel Invitation" : "Remove"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -254,6 +292,13 @@ function TeamMemberCard({ member, onRemove }: {
           </Tooltip>
         </TooltipProvider>
       </div>
+      
+      {/* Add banner for pending members */}
+      {member.pending && (
+        <div className="w-full mt-4 py-2 px-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-md text-xs text-center">
+          <p className="text-yellow-700 dark:text-yellow-300">Invitation pending</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -500,26 +545,104 @@ export default function TeamPage() {
     return myTeams.some(team => team.id === teamId);
   };
   
+  // Update notification state to use the new type
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: "1",
+      title: "New team member",
+      message: "Sarah Johnson joined the Frontend Squad",
+      time: "10 minutes ago",
+      read: false,
+      type: "info"
+    },
+    {
+      id: "2",
+      title: "Team created",
+      message: "You were added to Backend Heroes",
+      time: "1 hour ago",
+      read: false,
+      type: "info"
+    },
+    {
+      id: "3",
+      title: "Member removed",
+      message: "James Taylor left the Project Management team",
+      time: "Yesterday",
+      read: true,
+      type: "info"
+    }
+  ]);
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  const markAllAsRead = () => {
+    setNotifications(prevNotifications => 
+      prevNotifications.map(n => ({ ...n, read: true }))
+    );
+  };
+  
+  // Function to add new notification for invitations
+  const addInvitationNotification = (emailOrName: string, inviterId = "you") => {
+    const newNotification: InfoNotification = {
+      id: `notification-${Date.now()}`,
+      title: "Team Invitation",
+      message: `${inviterId === "you" ? "You invited" : inviterId + " invited"} ${emailOrName} to join the team`,
+      time: "Just now",
+      read: false,
+      type: "info"
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  // Function to add invitation received notification
+  const addReceivedInvitationNotification = (inviterName: string, teamName: string, memberId: string) => {
+    const newNotification: InvitationNotification = {
+      id: `invitation-${Date.now()}`,
+      title: "Team Invitation Received",
+      message: `${inviterName} invited you to join ${teamName}`,
+      time: "Just now",
+      read: false,
+      type: "invitation",
+      memberId: memberId, // Store the member ID for accept/reject actions
+      teamName: teamName
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
+  // Update handleAddMember to create pending members and add notifications
   const handleAddMember = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
-      // Create a basic new team member
+      // Create a basic new team member with pending status
       const newMember: ExtendedTeamMember = {
         id: `member-${Date.now()}`,
         name: newMemberEmail.split('@')[0], // Use part before @ as name
         email: newMemberEmail,
         isOnline: false,
         role: "New Member",
-        lastSeen: "Just added",
+        lastSeen: "Just invited",
         avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`, // Random avatar
-        bio: "Newly invited team member"
+        bio: "Newly invited team member",
+        pending: true // Mark as pending until accepted
       };
       
       // Add the new member to the list
       setTeamMembersList(prevMembers => [...prevMembers, newMember]);
       
-      // Show toast notification instead of alert
+      // Add notification for the sender
+      addInvitationNotification(newMemberEmail);
+      
+      // In a real app, this would send an email or notification to the user
+      // For demo purposes, we'll simulate the invited user receiving the notification
+      // by adding it to their notifications
+      setTimeout(() => {
+        addReceivedInvitationNotification("You", "Your Team", newMember.id);
+      }, 2000);
+      
+      // Show toast notification
       toast("Invitation sent", {
         description: `${newMemberEmail} has been invited to join the team`,
         action: {
@@ -538,6 +661,69 @@ export default function TeamPage() {
       setNewMemberEmail('');
       setShowAddMemberForm(false);
     }
+  };
+  
+  // Update handleAcceptInvitation function return notification creation
+  const handleAcceptInvitation = (memberId: string, notificationId: string) => {
+    // Update the team member's pending status
+    setTeamMembersList(prevMembers => 
+      prevMembers.map(member => 
+        member.id === memberId 
+          ? { ...member, pending: false, lastSeen: "Just now", isOnline: true } 
+          : member
+      )
+    );
+    
+    // Remove the invitation notification
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    
+    // Add a confirmation notification
+    const member = teamMembersList.find(m => m.id === memberId);
+    if (member) {
+      const newNotification: InfoNotification = {
+        id: `accepted-${Date.now()}`,
+        title: "Invitation Accepted",
+        message: `You have joined the team`,
+        time: "Just now",
+        read: false,
+        type: "info"
+      };
+      
+      setNotifications(prev => [newNotification, ...prev]);
+      
+      // Show toast notification
+      toast("Invitation accepted", {
+        description: `You have joined the team`,
+      });
+    }
+  };
+
+  // Update handleRejectInvitation function notification creation
+  const handleRejectInvitation = (memberId: string, notificationId: string) => {
+    // Remove the member from the team
+    setTeamMembersList(prevMembers => 
+      prevMembers.filter(m => m.id !== memberId)
+    );
+    
+    // Remove the invitation notification
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    
+    // Add a confirmation notification
+    const newNotification: InfoNotification = {
+      id: `rejected-${Date.now()}`,
+      title: "Invitation Rejected",
+      message: `You declined the team invitation`,
+      time: "Just now",
+      read: false,
+      type: "info"
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Show toast notification
+    toast("Invitation declined", {
+      description: `You have declined to join the team`,
+    });
   };
   
   // Update handleRemoveTeamMember to actually remove the member
@@ -574,39 +760,6 @@ export default function TeamPage() {
       // In a real app, you would also make an API call here
       console.log(`Removed team member: ${member.name}`);
     }
-  };
-  
-  // Add state for notifications
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "New team member",
-      message: "Sarah Johnson joined the Frontend Squad",
-      time: "10 minutes ago",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Team created",
-      message: "You were added to Backend Heroes",
-      time: "1 hour ago",
-      read: false,
-    },
-    {
-      id: "3",
-      title: "Member removed",
-      message: "James Taylor left the Project Management team",
-      time: "Yesterday",
-      read: true,
-    }
-  ]);
-  
-  const unreadCount = notifications.filter(n => !n.read).length;
-  
-  const markAllAsRead = () => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(n => ({ ...n, read: true }))
-    );
   };
   
   return (
@@ -655,6 +808,28 @@ export default function TeamPage() {
                           <h4 className="text-sm font-medium">{notification.title}</h4>
                           <p className="text-xs text-muted-foreground">{notification.message}</p>
                           <p className="mt-1 text-xs text-muted-foreground">{notification.time}</p>
+                          
+                          {/* Add accept/reject buttons for invitations */}
+                          {notification.type === 'invitation' && (
+                            <div className="mt-2 flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="default" 
+                                className="h-7 text-xs px-2 py-0"
+                                onClick={() => handleAcceptInvitation(notification.memberId, notification.id)}
+                              >
+                                Accept
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="h-7 text-xs px-2 py-0"
+                                onClick={() => handleRejectInvitation(notification.memberId, notification.id)}
+                              >
+                                Decline
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
