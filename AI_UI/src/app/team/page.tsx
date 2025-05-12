@@ -28,6 +28,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -456,11 +457,17 @@ export default function TeamPage() {
       // Add the new member to the list
       const updatedTeamMembers = [...teamMembers, newMember];
       
-      // In a real app, you would likely make an API call here
-      // and update state after successful response
-      
-      // For demo purposes, we'll just show an alert
-      alert(`Invitation sent to ${newMemberEmail}`);
+      // Show toast notification instead of alert
+      toast("Invitation sent", {
+        description: `${newMemberEmail} has been invited to join the team`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            // In a real app, you would cancel the invitation here
+            console.log("Undoing invitation to", newMemberEmail);
+          },
+        },
+      });
       
       // Clear form
       setNewMemberEmail('');

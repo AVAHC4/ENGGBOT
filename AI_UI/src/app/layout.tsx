@@ -5,9 +5,9 @@ import "./sidebar-fixes.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider } from "@/components/blocks/sidebar";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { Toaster } from "sonner";
 import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
+import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 
 const geistSans = Geist({
