@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -428,7 +428,33 @@ export default function TeamPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(teamMembers);
+  
+  // Initialize teamMembersList with a function to check localStorage first
+  const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(() => {
+    // Only run in the browser, not during SSR
+    if (typeof window !== 'undefined') {
+      try {
+        const savedMembers = localStorage.getItem('teamMembers');
+        if (savedMembers) {
+          return JSON.parse(savedMembers);
+        }
+      } catch (error) {
+        console.error("Failed to load team members from localStorage", error);
+      }
+    }
+    return teamMembers;
+  });
+  
+  // Save to localStorage whenever teamMembersList changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('teamMembers', JSON.stringify(teamMembersList));
+      } catch (error) {
+        console.error("Failed to save team members to localStorage", error);
+      }
+    }
+  }, [teamMembersList]);
   
   // For filtering teams
   const [searchQuery, setSearchQuery] = useState('');
@@ -511,13 +537,6 @@ export default function TeamPage() {
       // Clear form
       setNewMemberEmail('');
       setShowAddMemberForm(false);
-      
-      // If you have localStorage persistence, update that too
-      try {
-        localStorage.setItem('teamMembers', JSON.stringify([...teamMembersList, newMember]));
-      } catch (error) {
-        console.error("Failed to update localStorage", error);
-      }
     }
   };
   
@@ -554,16 +573,6 @@ export default function TeamPage() {
       
       // In a real app, you would also make an API call here
       console.log(`Removed team member: ${member.name}`);
-      
-      // If you have localStorage persistence, update that too
-      try {
-        // Example of updating local storage (implement based on your storage structure)
-        localStorage.setItem('teamMembers', JSON.stringify(
-          teamMembersList.filter(m => m.id !== memberId)
-        ));
-      } catch (error) {
-        console.error("Failed to update localStorage", error);
-      }
     }
   };
   
