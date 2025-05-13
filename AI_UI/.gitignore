@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Build and dependency directories
+.next/
+node_modules/
+build/
+dist/
+
+# Large files
+*.zip
+*.tar.gz
+*.tgz
