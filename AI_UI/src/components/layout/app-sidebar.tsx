@@ -702,4 +702,4 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       </Button>
     </div>
   )
-} 
+} // Updated sidebar navigation components
