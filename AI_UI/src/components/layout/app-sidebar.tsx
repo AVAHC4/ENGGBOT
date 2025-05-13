@@ -129,6 +129,11 @@ const data = {
       icon: FileCode,
     },
     {
+      title: "Teams",
+      url: "/team",
+      icon: Users,
+    },
+    {
       title: "Projects",
       url: "#",
       icon: Folder,
@@ -203,32 +208,25 @@ const data = {
 }
 
 // Add initial friends data
-const initialFriends: Friend[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    isOnline: true,
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    isOnline: true,
-  },
-  {
-    id: "3",
-    name: "Jessica Smith",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    isOnline: false,
-    lastSeen: "20m ago",
-  }
-];
+const initialFriends: Friend[] = [];
 
 export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
-  const [friends, setFriends] = React.useState<Friend[]>(initialFriends);
+  const [friends, setFriends] = React.useState<Friend[]>(() => {
+    // Initialize from localStorage if available, otherwise use empty array
+    if (typeof window !== 'undefined') {
+      try {
+        const savedFriends = localStorage.getItem('sidebar_friends');
+        if (savedFriends) {
+          return JSON.parse(savedFriends);
+        }
+      } catch (error) {
+        console.error("Failed to load friends from localStorage", error);
+      }
+    }
+    return initialFriends;
+  });
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
   const [conversations, setConversations] = React.useState<any[]>([]);
@@ -316,6 +314,13 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     if (typeof window !== 'undefined') {
       const updateActivePath = () => {
         const pathname = window.location.pathname;
+        
+        // Special handling for the team page
+        if (pathname.startsWith('/team')) {
+          setActivePath('/team');
+          return;
+        }
+        
         // Find the matching nav item with the longest URL match
         // This ensures more specific paths like /compiler take precedence over /
         const matchingItem = data.navMain.find(item => 
@@ -513,6 +518,17 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     setFriends(friends.filter(friend => friend.id !== id));
   };
   
+  // Save friends to localStorage whenever they change
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('sidebar_friends', JSON.stringify(friends));
+      } catch (error) {
+        console.error("Failed to save friends to localStorage", error);
+      }
+    }
+  }, [friends]);
+  
   return (
     <div
       className={cn(
@@ -649,115 +665,6 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                   </SidebarMenuSub>
                 )}
               </SidebarMenuItem>
-              
-              {/* Teams/Friends Section */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setTeamsExpanded(!teamsExpanded)}
-                  className="justify-between"
-                >
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-2" />
-                    <span>Teams</span>
-                  </div>
-                  {teamsExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </SidebarMenuButton>
-                
-                {teamsExpanded && (
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton asChild>
-                        <Link href="/team" className="w-full flex items-center font-medium text-primary">
-                          <Users className="h-3.5 w-3.5 mr-2" />
-                          View Teams
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton 
-                        onClick={() => setShowAddFriend(!showAddFriend)}
-                        className="w-full flex items-center"
-                      >
-                        <UserPlus className="h-3.5 w-3.5 mr-2" />
-                        <span className="font-medium text-primary">Add Friend</span>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    
-                    {showAddFriend && (
-                      <SidebarMenuSubItem>
-                        <div className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={newFriendName}
-                            onChange={(e) => setNewFriendName(e.target.value)}
-                            placeholder="Enter friend's name"
-                            className="w-full px-2 py-1 text-sm rounded border border-input bg-background"
-                          />
-                          <div className="flex justify-end mt-2 gap-2">
-                            <button 
-                              onClick={() => setShowAddFriend(false)}
-                              className="px-2 py-1 text-xs rounded hover:bg-muted"
-                            >
-                              Cancel
-                            </button>
-                            <button 
-                              onClick={handleAddFriend}
-                              className="px-2 py-1 text-xs rounded bg-primary text-primary-foreground hover:bg-primary/90"
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </div>
-                      </SidebarMenuSubItem>
-                    )}
-                    
-                    {friends.map((friend) => (
-                      <SidebarMenuSubItem key={friend.id}>
-                        <SidebarMenuSubButton className="w-full justify-between group">
-                          <div className="flex items-center gap-2">
-                            <div className="relative">
-                              {friend.avatar ? (
-                                <img 
-                                  src={friend.avatar} 
-                                  alt={friend.name}
-                                  className="h-6 w-6 rounded-full object-cover border border-border"
-                                />
-                              ) : (
-                                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                                  <span className="text-xs font-medium">{friend.name.charAt(0)}</span>
-                                </div>
-                              )}
-                              <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-background ${
-                                friend.isOnline ? "bg-green-500" : "bg-gray-400"
-                              }`} />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm">{friend.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {friend.isOnline ? "Online" : friend.lastSeen || "Offline"}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRemoveFriend(friend.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-destructive"
-                          >
-                            <UserMinus className="h-3.5 w-3.5" />
-                          </button>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
-                  </SidebarMenuSub>
-                )}
-              </SidebarMenuItem>
             </SidebarMenu>
           </div>
           <NavSecondary items={data.navSecondary} className="mt-auto" />
@@ -775,19 +682,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
             padding: '12px'
           }}
         >
-          <div className="flex items-center gap-3 px-2 py-1.5" data-slot="nav-user">
-            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary text-sm flex items-center justify-center">
-              {userData.name ? userData.name.substring(0, 1).toUpperCase() : "U"}
-            </div>
-            <div className="grid flex-1 gap-px">
-              <span className="truncate font-semibold">
-                {userData.name || "User"}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {userData.email || "user@example.com"}
-              </span>
-            </div>
-          </div>
+          <NavUser user={userData} />
         </SidebarFooter>
       </Sidebar>
 
