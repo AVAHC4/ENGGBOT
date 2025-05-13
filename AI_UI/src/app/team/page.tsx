@@ -1054,3 +1054,4 @@ export default function TeamPage() {
     </div>
   );
 } // Updated team member display component
+// Enhanced team invitation dialog
