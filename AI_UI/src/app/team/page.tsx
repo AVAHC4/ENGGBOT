@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { supabase } from "../lib/supabase";
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -474,6 +475,10 @@ export default function TeamPage() {
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   
+  // Add state for email invitation dialog
+  const [showEmailInviteDialog, setShowEmailInviteDialog] = useState(false);
+  const [pendingInviteEmail, setPendingInviteEmail] = useState('');
+  
   // Initialize teamMembersList with a function to check localStorage first
   const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(() => {
     // Only run in the browser, not during SSR
@@ -649,40 +654,109 @@ export default function TeamPage() {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
-  // Update handleAddMember to create pending members and add notifications
-  const handleAddMember = (e: React.FormEvent) => {
+  // Update handleAddMember to use custom AlertDialog instead of browser confirm
+  const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
-      // Create a basic new team member with pending status
+      // Show loading toast
+      const loadingToast = toast.loading("Checking email in database...");
+      
+      try {
+        console.log("Checking if email exists in Supabase:", newMemberEmail);
+        
+        // Check if email exists in Supabase users table
+        const { data: existingUsers, error } = await supabase
+          .from('users')
+          .select('id, email, name, avatar')
+          .eq('email', newMemberEmail)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error checking email in Supabase:", error);
+          toast.dismiss(loadingToast);
+          toast.error("Error checking email. Please try again.");
+          return;
+        }
+        
+        console.log("Supabase query result:", existingUsers);
+        
+        // Verify we got a valid response back before proceeding
+        if (existingUsers) {
+          console.log("User found in database:", existingUsers);
+          
+          // Create member with existing user info
+          const newMember: ExtendedTeamMember = {
+            id: `member-${existingUsers.id}`,
+            name: existingUsers.name || newMemberEmail.split('@')[0],
+            email: newMemberEmail,
+            isOnline: false,
+            role: "New Member",
+            lastSeen: "Just invited",
+            avatar: existingUsers.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
+            bio: "Newly invited team member",
+            pending: true
+          };
+          
+          // Add the new member to the list
+          setTeamMembersList(prevMembers => [...prevMembers, newMember]);
+          
+          // Add notification for the sender
+          addInvitationNotification(newMemberEmail);
+          
+          // In a real app, you would trigger a server action to send notification to the user
+          setTimeout(() => {
+            addReceivedInvitationNotification("You", "Your Team", newMember.id);
+          }, 1000);
+          
+          toast.dismiss(loadingToast);
+          toast.success("User found & invitation sent", {
+            description: `${newMemberEmail} was notified in-app about your team invitation`,
+          });
+        } else {
+          console.log("User NOT found in database, would send email invitation");
+          
+          // Show custom alert dialog instead of browser confirm
+          toast.dismiss(loadingToast);
+          setPendingInviteEmail(newMemberEmail);
+          setShowEmailInviteDialog(true);
+        }
+        
+        // Clear form
+        setNewMemberEmail('');
+        setShowAddMemberForm(false);
+      } catch (err) {
+        console.error("Error in team member invitation process:", err);
+        toast.dismiss(loadingToast);
+        toast.error("Something went wrong. Please try again.");
+      }
+    }
+  };
+
+  // Handler for sending email invitation
+  const handleSendEmailInvitation = () => {
+    if (pendingInviteEmail) {
+      // Create placeholder member (will only be visible to the sender)
       const newMember: ExtendedTeamMember = {
         id: `member-${Date.now()}`,
-        name: newMemberEmail.split('@')[0], // Use part before @ as name
-        email: newMemberEmail,
+        name: pendingInviteEmail.split('@')[0],
+        email: pendingInviteEmail,
         isOnline: false,
         role: "New Member",
         lastSeen: "Just invited",
-        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`, // Random avatar
-        bio: "Newly invited team member",
-        pending: true // Mark as pending until accepted
+        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
+        bio: "Invited via email",
+        pending: true
       };
       
       // Add the new member to the list
       setTeamMembersList(prevMembers => [...prevMembers, newMember]);
       
       // Add notification for the sender
-      addInvitationNotification(newMemberEmail);
+      addInvitationNotification(pendingInviteEmail);
       
-      // In a real app, this would send an email or notification to the user
-      // For demo purposes, we'll simulate the invited user receiving the notification
-      // by adding it to their notifications
-      setTimeout(() => {
-        addReceivedInvitationNotification("You", "Your Team", newMember.id);
-      }, 2000);
-      
-      // Show toast notification
-      toast("Invitation sent", {
-        description: `${newMemberEmail} has been invited to join the team`,
+      toast.success("Email invitation sent", {
+        description: `${pendingInviteEmail} has been invited to join via email`,
         action: {
           label: "Undo",
           onClick: () => {
@@ -690,14 +764,14 @@ export default function TeamPage() {
             setTeamMembersList(prevMembers => 
               prevMembers.filter(m => m.id !== newMember.id)
             );
-            console.log("Undoing invitation to", newMemberEmail);
+            console.log("Undoing invitation to", pendingInviteEmail);
           },
         },
       });
       
-      // Clear form
-      setNewMemberEmail('');
-      setShowAddMemberForm(false);
+      // Reset state
+      setPendingInviteEmail('');
+      setShowEmailInviteDialog(false);
     }
   };
   
@@ -964,6 +1038,29 @@ export default function TeamPage() {
         </Card>
       )}
       
+      {/* Email Invitation Dialog */}
+      <AlertDialog open={showEmailInviteDialog} onOpenChange={setShowEmailInviteDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Email Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingInviteEmail} is not registered in the system. Send an email invitation instead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowEmailInviteDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSendEmailInvitation}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="teams">Browse Teams</TabsTrigger>
@@ -1023,8 +1120,8 @@ export default function TeamPage() {
                     onLeave={handleLeaveTeam}
                     isMember={true}
                   />
-        ))}
-      </div>
+                ))}
+              </div>
             </div>
           )}
         </TabsContent>
