@@ -46,4 +46,4 @@ export function NavSecondary({ items, className, ...props }: NavSecondaryProps) 
       </SidebarMenu>
     </div>
   );
-} 
+} // Fixed theme settings removal
