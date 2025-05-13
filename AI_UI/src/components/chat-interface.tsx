@@ -3,7 +3,7 @@ import { ChatMessageList } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
 import { useChat } from '@/context/chat-context';
-import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb } from 'lucide-react';
+import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BOT_CONFIG } from '@/lib/ai/response-middleware';
 import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
+import { performWebSearch, SearchResult } from '@/lib/web-search';
 
 // Enhanced typing animation component
 function TypingIndicator() {
@@ -76,8 +77,11 @@ export function ChatInterface() {
     clearMessages,
     thinkingMode,
     toggleThinkingMode,
+    webSearchMode,
+    toggleWebSearchMode,
     currentModel,
-    conversationId
+    conversationId,
+    addMessage
   } = useChat();
   
   // Add local loading state to ensure animation shows immediately
@@ -193,7 +197,45 @@ export function ChatInterface() {
   // Helper to create a wrapped sendMessage that also triggers local loading
   const handleSendMessage = async (content: string, files?: File[], replyToId?: string) => {
     setLocalLoading(true);
-    await sendMessage(content, files, replyToId);
+    
+    // If web search mode is enabled, perform a search before sending the message
+    if (webSearchMode && content.trim()) {
+      try {
+        // No need to set searching state visibly anymore
+        // setIsSearching(true);
+        
+        // Perform the web search (now returns almost immediately)
+        const results = await performWebSearch(content);
+        
+        // Add search context to the message that will be passed to the API
+        let messageWithContext = content;
+        
+        if (results.length > 0) {
+          // Format search results as context
+          const currentDate = new Date().toLocaleDateString();
+          let searchContext = `\n\n[WEB SEARCH RESULTS FROM ${currentDate}]\n`;
+          
+          results.forEach((result, index) => {
+            searchContext += `\nSource ${index + 1}: ${result.title}\n`;
+            searchContext += `Content: ${result.snippet}\n`;
+            searchContext += `URL: ${result.url}\n`;
+          });
+          
+          // Append search results to the message sent to the API
+          messageWithContext = content + "\n\n" + searchContext;
+        }
+        
+        // Send the message with search context
+        await sendMessage(messageWithContext, files, replyToId);
+      } catch (error) {
+        console.error("Web search failed:", error);
+        // Fall back to sending the original message
+        await sendMessage(content, files, replyToId);
+      }
+    } else {
+      // Normal message sending without web search
+      await sendMessage(content, files, replyToId);
+    }
   };
 
   // Helper to check if showing the thinking animation is appropriate
@@ -261,7 +303,9 @@ export function ChatInterface() {
             disabled={isLoading && !isGenerating || isAIInitializing}
             thinkingMode={thinkingMode}
             onToggleThinking={toggleThinkingMode}
-            placeholder={isAIInitializing ? "AI is initializing..." : `Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}...`}
+            webSearchMode={webSearchMode}
+            onToggleWebSearch={toggleWebSearchMode}
+            placeholder={isAIInitializing ? "AI is initializing..." : `Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}...`}
             isAwaitingResponse={isLoading || isGenerating}
             onStopGeneration={stopGeneration}
           />
