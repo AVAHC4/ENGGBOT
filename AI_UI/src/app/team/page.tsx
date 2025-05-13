@@ -519,11 +519,38 @@ export default function TeamPage() {
     const team = teams.find(t => t.id === teamId);
     if (team && !myTeams.some(t => t.id === teamId)) {
       setMyTeams([...myTeams, team]);
+      
+      // Add notification when joining a team
+      const newNotification: InfoNotification = {
+        id: `joined-${Date.now()}`,
+        title: "Joined Team",
+        message: `You joined the ${team.name} team`,
+        time: "Just now",
+        read: false,
+        type: "info"
+      };
+      
+      setNotifications(prev => [newNotification, ...prev]);
     }
   };
   
   const handleLeaveTeam = (teamId: string) => {
-    setMyTeams(myTeams.filter(team => team.id !== teamId));
+    const team = myTeams.find(t => t.id === teamId);
+    if (team) {
+      setMyTeams(myTeams.filter(t => t.id !== teamId));
+      
+      // Add notification when leaving a team
+      const newNotification: InfoNotification = {
+        id: `left-${Date.now()}`,
+        title: "Left Team",
+        message: `You left the ${team.name} team`,
+        time: "Just now",
+        read: false,
+        type: "info"
+      };
+      
+      setNotifications(prev => [newNotification, ...prev]);
+    }
   };
   
   const handleCreateTeam = (name: string, description: string, category: string) => {
@@ -539,39 +566,50 @@ export default function TeamPage() {
     setTeams([...teams, newTeam]);
     setMyTeams([...myTeams, newTeam]); // Auto-join created team
     setShowCreateForm(false);
+    
+    // Add notification for team creation
+    const newNotification: InfoNotification = {
+      id: `team-created-${Date.now()}`,
+      title: "Team Created",
+      message: `You created the ${name} team`,
+      time: "Just now",
+      read: false,
+      type: "info"
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
   };
   
   const isInMyTeam = (teamId: string) => {
     return myTeams.some(team => team.id === teamId);
   };
   
-  // Update notification state to use the new type
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      title: "New team member",
-      message: "Sarah Johnson joined the Frontend Squad",
-      time: "10 minutes ago",
-      read: false,
-      type: "info"
-    },
-    {
-      id: "2",
-      title: "Team created",
-      message: "You were added to Backend Heroes",
-      time: "1 hour ago",
-      read: false,
-      type: "info"
-    },
-    {
-      id: "3",
-      title: "Member removed",
-      message: "James Taylor left the Project Management team",
-      time: "Yesterday",
-      read: true,
-      type: "info"
+  // Initialize notifications from localStorage or with an empty array
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    // Only run in the browser, not during SSR
+    if (typeof window !== 'undefined') {
+      try {
+        const savedNotifications = localStorage.getItem('notifications');
+        if (savedNotifications) {
+          return JSON.parse(savedNotifications);
+        }
+      } catch (error) {
+        console.error("Failed to load notifications from localStorage", error);
+      }
     }
-  ]);
+    return []; // Start with empty notifications instead of predefined ones
+  });
+  
+  // Save notifications to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('notifications', JSON.stringify(notifications));
+      } catch (error) {
+        console.error("Failed to save notifications to localStorage", error);
+      }
+    }
+  }, [notifications]);
   
   const unreadCount = notifications.filter(n => !n.read).length;
   
@@ -786,16 +824,18 @@ export default function TeamPage() {
               <PopoverContent className="w-80 p-0" align="end" showArrow>
                 <div className="flex items-center justify-between border-b px-4 py-3">
                   <h3 className="font-medium">Notifications</h3>
-                  {unreadCount > 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={markAllAsRead}
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Mark all as read
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {notifications.length > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setNotifications([])}
+                        className="text-xs text-destructive hover:text-destructive"
+                      >
+                        Clear all
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div className="max-h-80 overflow-auto">
                   {notifications.length > 0 ? (
@@ -836,7 +876,10 @@ export default function TeamPage() {
                   ) : (
                     <div className="flex flex-col items-center justify-center p-6 text-center">
                       <Bell className="h-8 w-8 text-muted-foreground/50 mb-2" />
-                      <p className="text-sm text-muted-foreground">No notifications</p>
+                      <p className="text-sm font-medium text-muted-foreground">No notifications yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        You'll receive notifications when someone invites you to a team or when team events occur.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -980,8 +1023,8 @@ export default function TeamPage() {
                     onLeave={handleLeaveTeam}
                     isMember={true}
                   />
-                ))}
-              </div>
+        ))}
+      </div>
             </div>
           )}
         </TabsContent>
