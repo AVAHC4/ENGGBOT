@@ -47,3 +47,4 @@ export function NavSecondary({ items, className, ...props }: NavSecondaryProps) 
     </div>
   );
 } // Fixed theme settings removal
+// Additional improvements to theme handling
