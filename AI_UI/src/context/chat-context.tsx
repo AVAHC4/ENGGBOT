@@ -15,6 +15,7 @@ export interface Attachment {
 export interface ExtendedChatMessage extends ChatMessage {
   attachments?: Attachment[];
   replyToId?: string; // ID of the message being replied to
+  metadata?: Record<string, any>; // Add metadata field for additional data like search results
 }
 
 interface ChatContextType {
@@ -26,6 +27,8 @@ interface ChatContextType {
   clearMessages: () => void;
   thinkingMode: boolean;
   toggleThinkingMode: () => void;
+  webSearchMode: boolean;
+  toggleWebSearchMode: () => void;
   currentModel: string;
   conversationId: string;
   switchConversation: (id: string) => void;
@@ -33,6 +36,8 @@ interface ChatContextType {
   deleteCurrentConversation: () => void;
   replyToMessage: ExtendedChatMessage | null;
   setReplyToMessage: (message: ExtendedChatMessage | null) => void;
+  addMessage: (message: Partial<ExtendedChatMessage>) => void;
+  displayedMessageIds: Set<string>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -42,9 +47,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(true);
+  const [webSearchMode, setWebSearchMode] = useState(false);
   const currentModel = "deepseek-v3";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Track which message IDs have been fully displayed
+  const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
   
   // Add conversation management with a default ID that will be updated after client-side mount
   const [conversationId, setConversationId] = useState<string>(crypto.randomUUID());
@@ -96,6 +105,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       saveConversation(conversationId, messages);
     }
   }, [messages, conversationId, isMounted]);
+
+  // Update the displayed message IDs when messages change
+  useEffect(() => {
+    setDisplayedMessageIds(new Set(messages.map(m => m.id)));
+  }, [messages]);
 
   // Helper function to process file attachments
   const processAttachments = (files: File[]): Attachment[] => {
@@ -149,10 +163,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Process any attachments
       const attachments = files.length > 0 ? processAttachments(files) : undefined;
       
-      // Add user message
+      // Add user message - remove any web search data for user display
+      // The web search data will be appended after [WEB SEARCH RESULTS] marker
+      const userDisplayContent = content.split('\n\n[WEB SEARCH RESULTS')[0];
+      
       const userMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
-        content,
+        content: userDisplayContent, // Only show the user's original message, not the web search data
         isUser: true,
         timestamp: new Date().toISOString(),
         attachments,
@@ -182,7 +199,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          message: content,
+          message: content, // Send full content including web search data to the API
           hasAttachments: !!attachments,
           model: currentModel,
           thinkingMode: thinkingMode,
@@ -259,17 +276,44 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const clearMessages = useCallback(() => {
     setMessages([]);
-    // Also stop any ongoing generation
-    if (isGenerating) {
-      stopGeneration();
-    }
-    
-    // Save the empty conversation
+    // Clear the conversation from storage
     if (typeof window !== 'undefined') {
       saveConversation(conversationId, []);
     }
-  }, [conversationId, isGenerating, stopGeneration]);
+  }, [conversationId]);
   
+  const addMessage = useCallback((message: Partial<ExtendedChatMessage>) => {
+    const newMessage: ExtendedChatMessage = {
+      id: message.id || crypto.randomUUID(),
+      content: message.content || '',
+      isUser: message.isUser || false,
+      timestamp: getTimestamp(message.timestamp),
+      attachments: message.attachments,
+      replyToId: message.replyToId,
+      metadata: message.metadata
+    };
+    
+    setMessages(prev => {
+      const updatedMessages = [...prev, newMessage];
+      // Save conversation after adding message
+      if (typeof window !== 'undefined') {
+        saveConversation(conversationId, updatedMessages);
+      }
+      return updatedMessages;
+    });
+  }, [conversationId]);
+
+  // Helper function to handle timestamp conversion
+  const getTimestamp = (timestamp: any): string => {
+    if (typeof timestamp === 'string') {
+      return timestamp;
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toISOString();
+    }
+    return new Date().toISOString();
+  };
+
   // Switch to an existing conversation
   const switchConversation = useCallback((id: string) => {
     // Stop any ongoing generation
@@ -325,6 +369,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setThinkingMode(prev => !prev);
   }, []);
 
+  const toggleWebSearchMode = useCallback(() => {
+    setWebSearchMode(prev => !prev);
+  }, []);
+
   // Return context value
   const value = {
     messages,
@@ -335,6 +383,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     clearMessages,
     thinkingMode,
     toggleThinkingMode,
+    webSearchMode,
+    toggleWebSearchMode,
     currentModel,
     conversationId,
     switchConversation,
@@ -342,6 +392,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     deleteCurrentConversation,
     replyToMessage,
     setReplyToMessage,
+    addMessage,
+    displayedMessageIds,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
