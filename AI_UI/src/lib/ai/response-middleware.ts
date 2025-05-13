@@ -134,10 +134,59 @@ function sanitizeResponse(text: string): string {
     .replace(/the solution is/gi, `${EMOJI.IDEA} the solution is`)
     .replace(/to solve this/gi, `${EMOJI.SUCCESS} to solve this`);
   
-  // Remove all markdown asterisk formatting
+  // IMPORTANT: Remove only asterisks used for formatting, but maintain section headings with ##
+  // Remove bold formatting (double asterisks) but preserve markdown headings with #
   sanitized = sanitized
-    .replace(/\*\*/g, '')  // Remove bold formatting
-    .replace(/\*/g, '');   // Remove italic formatting
+    .replace(/\*\*([^#].*?)\*\*/g, '$1')  // Remove bold formatting but preserve heading content
+    .replace(/(?<!\*)\*(?!\*)([^#].*?)\*/g, '$1'); // Remove single asterisks for italics but preserve headings
     
+  // Ensure proper section formatting if not already present
+  if (!sanitized.includes('## ') && sanitized.length > 200) {
+    // Try to identify logical sections and add heading structure
+    const paragraphs = sanitized.split('\n\n');
+    
+    if (paragraphs.length >= 3) {
+      // If response is already sufficiently structured with paragraphs,
+      // but missing section headers, try to add them
+      
+      // Check if there's already a summary at the beginning
+      let hasIntro = paragraphs[0].length < 250; // First paragraph is likely a summary if short
+      
+      // Build a properly formatted response
+      let formattedResponse = '';
+      
+      // Add a quick overview if not present
+      if (!hasIntro) {
+        formattedResponse += `**Quick Overview:**\n${paragraphs[0]}\n\n`;
+      } else {
+        formattedResponse += paragraphs[0] + '\n\n';
+      }
+      
+      // Add section headings to longer paragraphs
+      for (let i = 1; i < paragraphs.length - 1; i++) {
+        if (paragraphs[i].length > 50) {
+          // Extract a title from first sentence or create generic one
+          const firstSentenceMatch = paragraphs[i].match(/^([^.!?]+)[.!?]/);
+          const sectionTitle = firstSentenceMatch 
+            ? firstSentenceMatch[1].trim() 
+            : `Section ${i}`;
+            
+          formattedResponse += `## ${i}. ${sectionTitle}\n${paragraphs[i]}\n\n`;
+        } else {
+          formattedResponse += paragraphs[i] + '\n\n';
+        }
+      }
+      
+      // Add the last paragraph as conclusion/next steps if it's short
+      if (paragraphs[paragraphs.length - 1].length < 150) {
+        formattedResponse += `**Next Steps:**\n${paragraphs[paragraphs.length - 1]}`;
+      } else {
+        formattedResponse += paragraphs[paragraphs.length - 1];
+      }
+      
+      return formattedResponse;
+    }
+  }
+  
   return sanitized;
 } 

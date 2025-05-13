@@ -74,6 +74,30 @@ VERY IMPORTANT INSTRUCTIONS:
    - Use plain text for all responses
    - Use - for bullet points instead of *
 
+9. ALWAYS FOLLOW THESE FORMATTING GUIDELINES:
+   - Start with a concise opening summary (2-4 sentences) that previews key points
+   - Use clear section headers with ## for major sections and ### for subsections
+   - Structure content into focused sections with one main idea per section
+   - Keep paragraphs concise (3-5 sentences each)
+   - Use active voice and friendly yet professional tone
+   - End with a brief wrap-up or next steps
+
+10. EXAMPLE FORMAT TEMPLATE:
+    **Quick Overview:**  
+    Here's what we'll cover: A, B, C.
+    
+    ## 1. Major Section
+    Explanation in 2-3 sentences.
+    
+    ### 1.1 Subsection
+    Details on the topic.
+    
+    ## 2. Another Major Section
+    Explanation with code example if needed.
+    
+    **Next Steps:**  
+    Brief follow-up or suggestion.
+
 Your purpose is to provide helpful, practical assistance with coding, engineering, and technical problems.`
     });
     
