@@ -30,6 +30,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
+import { SpeechToText } from '@/components/speech-to-text';
+import { useRouter } from 'next/navigation';
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
@@ -233,6 +235,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('/');
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
+  const router = useRouter();
   
   // Use default empty values for initial server-side rendering
   const [userData, setUserData] = React.useState({
@@ -529,6 +532,25 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     }
   }, [friends]);
   
+  // Add handler for speech-to-text results
+  const handleTranscription = (text: string) => {
+    console.log('Transcribed text:', text);
+    
+    // You can implement logic here to handle the transcribed text
+    // For example, search for commands or navigate to specific pages
+    
+    if (text.toLowerCase().includes('chat') || text.toLowerCase().includes('message')) {
+      router.push('/');
+    } else if (text.toLowerCase().includes('team') || text.toLowerCase().includes('members')) {
+      router.push('/team');
+    } else if (text.toLowerCase().includes('compiler') || text.toLowerCase().includes('code')) {
+      router.push('/compiler');
+    }
+    
+    // You could also add the transcribed text to a chat input field
+    // or dispatch an action in your state management system
+  };
+
   return (
     <div
       className={cn(
@@ -556,12 +578,20 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-                <Link href="/" className="focus:outline-none">
-                  <ArrowUpCircle className="h-5 w-5" />
-                  <span className="text-base font-semibold">ENGGBOT</span>
-                </Link>
-              </SidebarMenuButton>
+              <div className="flex items-center justify-between w-full px-1">
+                <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+                  <Link href="/" className="focus:outline-none">
+                    <ArrowUpCircle className="h-5 w-5" />
+                    <span className="text-base font-semibold">ENGGBOT</span>
+                  </Link>
+                </SidebarMenuButton>
+                
+                {/* Add Speech To Text button */}
+                <SpeechToText 
+                  onTranscriptionComplete={handleTranscription}
+                  className="h-8 w-8 rounded-full p-0 ml-2"
+                />
+              </div>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
