@@ -15,22 +15,12 @@ interface NavSecondaryProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function NavSecondary({ items, className, ...props }: NavSecondaryProps) {
-  // Add theme settings at the top with highlight
-  const settingsItems = [
-    {
-      title: "Theme Settings",
-      url: "/examples/forms/appearance",
-      icon: Moon,
-      highlight: true
-    },
-    ...items
-  ];
-
+  // Use the original items directly without adding Theme Settings
   return (
     <div className={cn('py-6', className)} {...props}>
       <SidebarGroupLabel>General</SidebarGroupLabel>
       <SidebarMenu>
-        {settingsItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           return (
             <SidebarMenuItem key={item.title}>
