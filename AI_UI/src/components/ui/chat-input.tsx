@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -15,6 +15,8 @@ interface ChatInputProps {
   onToggleThinking?: () => void;
   isAwaitingResponse?: boolean;
   onStopGeneration?: () => void;
+  webSearchMode?: boolean;
+  onToggleWebSearch?: () => void;
 }
 
 export function ChatInput({
@@ -25,6 +27,8 @@ export function ChatInput({
   onToggleThinking,
   isAwaitingResponse = false,
   onStopGeneration,
+  webSearchMode = false,
+  onToggleWebSearch,
 }: ChatInputProps) {
   const { replyToMessage, setReplyToMessage } = useChat();
   const [message, setMessage] = useState("");
@@ -125,10 +129,10 @@ export function ChatInput({
 
   return (
     <>
-      <div className="flex flex-col w-full max-w-3xl mx-auto p-4 bg-background dark:bg-gray-900">
+      <div className="flex flex-col w-full max-w-3xl mx-auto px-2 py-1">
         {/* Reply indicator */}
         {replyToMessage && (
-          <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-md bg-muted/50 dark:bg-gray-800/50">
+          <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-full bg-muted/50 dark:bg-gray-800/50">
             <div className="flex items-start gap-2">
               <CornerUpLeft className="h-4 w-4 mt-0.5 shrink-0" />
               <div>
@@ -170,37 +174,61 @@ export function ChatInput({
           </div>
         )}
         
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1 py-1">
           {/* File attachment button */}
           <Button 
-            type="button" 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 rounded-full dark:hover:bg-gray-800" 
-            disabled={disabled || awaitingResponse}
+            className="h-9 w-9 shrink-0 rounded-full" 
             onClick={() => fileInputRef.current?.click()}
+            disabled={disabled || awaitingResponse}
           >
-            <Paperclip className="h-5 w-5" />
-            <input 
-              ref={fileInputRef} 
-              type="file" 
-              className="hidden" 
-              onChange={handleFileChange} 
-              multiple 
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={disabled || awaitingResponse}
             />
+            <Paperclip className="h-5 w-5" />
           </Button>
           
-          {/* Voice recording button */}
+          {/* Voice input button */}
           <Button 
-            type="button" 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 rounded-full dark:hover:bg-gray-800" 
+            className="h-9 w-9 shrink-0 rounded-full" 
+            onClick={() => setIsVoiceModalOpen(true)}
             disabled={disabled || awaitingResponse}
-            onClick={handleVoiceClick}
           >
             <Mic className="h-5 w-5" />
           </Button>
+          
+          {/* Web search mode toggle button */}
+          {onToggleWebSearch && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn(
+                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                    webSearchMode && "text-green-500 dark:text-green-400"
+                  )}
+                  onClick={onToggleWebSearch}
+                  disabled={awaitingResponse}
+                >
+                  <Globe className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">
+                  {webSearchMode ? "Web search enabled" : "Enable web search"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           
           {/* Thinking mode toggle button */}
           {onToggleThinking && (
@@ -230,19 +258,19 @@ export function ChatInput({
 
           <textarea
             ref={textareaRef}
+            placeholder={replyToMessage ? "Type your reply..." : placeholder}
+            className={cn(
+              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-3 py-2 text-sm",
+              "ring-offset-background placeholder:text-muted-foreground",
+              "focus-visible:outline-none focus-visible:ring-0",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
+              "dark:placeholder:text-gray-500"
+            )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={replyToMessage ? "Type your reply..." : placeholder}
             disabled={disabled || awaitingResponse}
-            className={cn(
-              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-md border bg-background px-3 py-2 text-sm",
-              "ring-offset-background placeholder:text-muted-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              "dark:bg-gray-800 dark:border-gray-700 dark:focus-visible:ring-gray-500",
-              "dark:placeholder:text-gray-500"
-            )}
             rows={1}
           />
           
@@ -258,13 +286,18 @@ export function ChatInput({
             </Button>
           ) : (
             <Button 
-              onClick={handleSend} 
+              variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
               size="icon" 
-              variant="ghost"
-              disabled={(!message.trim() && attachments.length === 0) || disabled}
-              className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+              className={cn(
+                "h-9 w-9 shrink-0 rounded-full",
+                message.trim() || attachments.length > 0 
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                  : "text-muted-foreground"
+              )}
+              onClick={handleSend}
+              disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           )}
         </div>
