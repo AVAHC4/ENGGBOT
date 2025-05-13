@@ -1053,4 +1053,4 @@ export default function TeamPage() {
       </Tabs>
     </div>
   );
-} 
+} // Updated team member display component
