@@ -10,6 +10,11 @@ import { ChutesClient } from '@/lib/ai/chutes-client';
 // Global state to track initialization
 let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
+let initializationAttempts = 0;
+const MAX_INIT_ATTEMPTS = 2;
+
+// Check if we're in development mode
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 
 // Flag to prevent console logs during client creation in development hot reloads
 const SUPPRESS_INIT_LOG = true;
@@ -58,29 +63,68 @@ export const chutesClient = getChutesClient();
  * This warms up the connection and any server-side resources
  */
 export async function initializeAIClient(): Promise<Promise<void>> {
-  if (isInitialized || initializationPromise) {
-    return initializationPromise || Promise.resolve();
+  // If already initialized or in the process of initializing, return the existing promise
+  if (isInitialized) {
+    return Promise.resolve();
+  }
+  
+  if (initializationPromise) {
+    return initializationPromise;
   }
 
   console.log("🔄 Pre-initializing Chutes AI client...");
   
+  // In development mode, we can skip the real initialization and just mark as initialized
+  if (IS_DEVELOPMENT) {
+    console.log("🧪 DEV MODE: Skipping actual API initialization, using local fallback mode");
+    isInitialized = true;
+    return Promise.resolve();
+  }
+  
   initializationPromise = new Promise<void>(async (resolve) => {
     try {
       // Make a minimal request to warm up the client and connection
-      await chutesClient.generate({
+      // with a shorter timeout for initialization
+      const response = await chutesClient.generate({
         prompt: "System initialization. Respond with a single word: 'Ready'",
         temperature: 0.1,
-        max_tokens: 10
+        max_tokens: 5
       });
+      
+      // Check if the response indicates an error
+      if (response.startsWith('Error:')) {
+        throw new Error(response);
+      }
       
       isInitialized = true;
       console.log("✅ Chutes AI client successfully pre-initialized");
       resolve();
     } catch (error) {
       console.error("❌ Failed to pre-initialize Chutes AI client:", error);
-      // Even if initialization fails, we consider it "done" to avoid repeated attempts
-      isInitialized = true;
-      resolve();
+      
+      initializationAttempts++;
+      
+      if (initializationAttempts < MAX_INIT_ATTEMPTS) {
+        console.log(`Retrying initialization (attempt ${initializationAttempts+1}/${MAX_INIT_ATTEMPTS})...`);
+        // Reset the promise to allow retrying
+        initializationPromise = null;
+        
+        // Wait a bit before retrying
+        setTimeout(() => {
+          initializeAIClient()
+            .then(() => resolve())
+            .catch(() => {
+              // Consider it initialized even if it fails after retries
+              isInitialized = true;
+              resolve();
+            });
+        }, 2000);
+      } else {
+        // Even if initialization fails after all attempts, we consider it "done" to avoid further attempts
+        console.error("⛔ Failed to initialize Chutes AI client after multiple attempts");
+        isInitialized = true;
+        resolve();
+      }
     }
   });
 
