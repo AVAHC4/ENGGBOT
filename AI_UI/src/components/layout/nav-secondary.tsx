@@ -15,14 +15,9 @@ interface NavSecondaryProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function NavSecondary({ items, className, ...props }: NavSecondaryProps) {
-  // Add theme settings at the top with highlight
+  // Theme Settings item removed
   const settingsItems = [
-    {
-      title: "Theme Settings",
-      url: "/examples/forms/appearance",
-      icon: Moon,
-      highlight: true
-    },
+    // The "Theme Settings" item that was here previously has been removed.
     ...items
   ];
 
