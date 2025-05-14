@@ -168,78 +168,15 @@ export function ChatMessage({
   // Process headings in text content
   const processHeadings = (text: string) => {
     // Replace heading markdown with formatted headings
-    return text
-      // Match ### headings
-      .replace(/^###\s+(.+)$/gm, '<h3 class="text-base font-semibold my-3">$1</h3>')
-      // Match ## headings
-      .replace(/^##\s+(.+)$/gm, '<h2 class="text-lg font-semibold my-4">$1</h2>')
-      // Match # headings
-      .replace(/^#\s+(.+)$/gm, '<h1 class="text-xl font-bold my-4">$1</h1>');
+    // Match ### headings
+    return text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
+              // Match ## headings
+              .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
+              // Match # headings
+              .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
   };
 
-  // Process lists and tables
-  const processLists = (text: string) => {
-    // Process bullet lists
-    let processed = text.replace(/^(?:- (.+))$/gm, '<li class="ml-6 list-disc my-1">$1</li>');
-    
-    // Process numbered lists
-    processed = processed.replace(/^(?:\d+\.\s+(.+))$/gm, '<li class="ml-6 list-decimal my-1">$1</li>');
-    
-    // Group list items into ul/ol elements
-    // Use non-s flag compatible regex for grouping list items
-    processed = processed.replace(
-      /(<li class="ml-6 list-disc my-1">.*?<\/li>)(\s*<li class="ml-6 list-disc my-1">)/gm, 
-      '<ul class="my-2">$1$2'
-    );
-    processed = processed.replace(
-      /(<li class="ml-6 list-decimal my-1">.*?<\/li>)(\s*<li class="ml-6 list-decimal my-1">)/gm, 
-      '<ol class="my-2">$1$2'
-    );
-    
-    // Close the lists - simplified approach without 's' flag
-    processed = processed.replace(/<ul class="my-2">(.*?<\/li>)(\s*)(?!<li)/gm, '<ul class="my-2">$1$2</ul>');
-    processed = processed.replace(/<ol class="my-2">(.*?<\/li>)(\s*)(?!<li)/gm, '<ol class="my-2">$1$2</ol>');
-    
-    // Process tables
-    const tableRegex = /\|\s*(.*?)\s*\|\s*\n\|\s*[-:]+\s*\|\s*[-:]+\s*\|(?:\s*[-:]+\s*\|)*\s*\n((?:\|\s*.*?\s*\|\s*\n?)+)/g;
-    processed = processed.replace(tableRegex, (match, headerRow, bodyRows) => {
-      // Process header
-      const headers: string[] = headerRow.split('|').map((h: string) => h.trim()).filter((h: string) => h);
-      
-      // Process body rows
-      const rows: string[][] = bodyRows.trim().split('\n').map((row: string) => {
-        const cells: string[] = row.split('|').map((c: string) => c.trim()).filter((c: string) => c);
-        return cells;
-      });
-      
-      // Build table HTML
-      let tableHtml = '<div class="overflow-x-auto my-4"><table class="min-w-full border-collapse border border-border">';
-      
-      // Add header
-      tableHtml += '<thead><tr>';
-      headers.forEach((header: string) => {
-        tableHtml += `<th class="bg-muted/50 px-4 py-2 text-left font-semibold border border-border">${header}</th>`;
-      });
-      tableHtml += '</tr></thead>';
-      
-      // Add body
-      tableHtml += '<tbody>';
-      rows.forEach((row: string[]) => {
-        tableHtml += '<tr>';
-        row.forEach((cell: string) => {
-          tableHtml += `<td class="px-4 py-2 border border-border">${cell}</td>`;
-        });
-        tableHtml += '</tr>';
-      });
-      tableHtml += '</tbody></table></div>';
-      
-      return tableHtml;
-    });
-    
-    return processed;
-  };
-
-  // Enhanced renderer for message content with better formatting
+  // Render the message content with code blocks
   const renderMessageContent = (content: string, skipAnim = false) => {
     const parts = processMessageContent(content);
     
@@ -255,16 +192,8 @@ export function ChatMessage({
           </div>
         );
       } else {
-        // Process headings, lists, and tables in text content
-        let processedContent = processHeadings(part.content);
-        processedContent = processLists(processedContent);
-        
-        // Process horizontal rules
-        processedContent = processedContent.replace(/^---+$/gm, '<hr class="my-4 border-t border-border" />');
-        
-        // Process bold and italic text
-        processedContent = processedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        processedContent = processedContent.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        // Process headings in text content
+        const processedContent = processHeadings(part.content);
         
         return skipAnim ? (
           <div 
