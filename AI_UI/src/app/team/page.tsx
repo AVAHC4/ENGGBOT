@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell } from 'lucide-react';
+import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Check } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { TeamMember } from '@/components/layout/nav-team';
@@ -474,6 +474,14 @@ export default function TeamPage() {
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   
+  // Add a state to track client-side hydration
+  const [isClient, setIsClient] = useState(false);
+  
+  // Set isClient to true after component mounts (client-side only)
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
   // Initialize teamMembersList with a function to check localStorage first
   const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(() => {
     // Only run in the browser, not during SSR
@@ -800,6 +808,15 @@ export default function TeamPage() {
     }
   };
   
+  // Add a function to mark a single notification as read
+  const markAsRead = (notificationId: string) => {
+    setNotifications(prevNotifications => 
+      prevNotifications.map(n => 
+        n.id === notificationId ? { ...n, read: true } : n
+      )
+    );
+  };
+  
   return (
     <div className="container py-8 px-6 max-w-6xl team-page">
       <header className="mb-6">
@@ -814,7 +831,7 @@ export default function TeamPage() {
               <PopoverTrigger asChild>
                 <Button variant="outline" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
-                  {unreadCount > 0 && (
+                  {isClient && unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white">
                       {unreadCount}
                     </span>
@@ -845,9 +862,25 @@ export default function TeamPage() {
                           key={notification.id} 
                           className={`px-4 py-3 ${!notification.read ? 'bg-accent/20' : ''} ${notification.id !== notifications[notifications.length-1].id ? 'border-b' : ''}`}
                         >
-                          <h4 className="text-sm font-medium">{notification.title}</h4>
-                          <p className="text-xs text-muted-foreground">{notification.message}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{notification.time}</p>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-sm font-medium">{notification.title}</h4>
+                              <p className="text-xs text-muted-foreground">{notification.message}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">{notification.time}</p>
+                            </div>
+                            {!notification.read && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                                onClick={() => markAsRead(notification.id)}
+                                title="Mark as read"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                <span className="sr-only">Mark as read</span>
+                              </Button>
+                            )}
+                          </div>
                           
                           {/* Add accept/reject buttons for invitations */}
                           {notification.type === 'invitation' && (
