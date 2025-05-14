@@ -1055,3 +1055,4 @@ export default function TeamPage() {
   );
 } // Updated team member display component
 // Enhanced team invitation dialog
+// Enhanced notification badge for better visibility
