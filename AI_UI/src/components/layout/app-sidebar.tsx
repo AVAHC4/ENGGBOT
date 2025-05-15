@@ -703,3 +703,4 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     </div>
   )
 } // Updated sidebar navigation components
+// Updated sidebar for improved navigation workflow
