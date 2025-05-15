@@ -120,4 +120,10 @@ This project can be deployed on various platforms:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details. // Updated email configuration for better contribution tracking
+
+## Enhanced Features
+
+- Improved response formatting
+- Better code block highlighting
+- Responsive UI for mobile devices
