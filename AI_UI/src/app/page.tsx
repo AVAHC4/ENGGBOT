@@ -82,3 +82,4 @@ export default function Home() {
   // Should not reach here due to redirect
   return null;
 }
+// Enhanced user experience with optimized rendering
