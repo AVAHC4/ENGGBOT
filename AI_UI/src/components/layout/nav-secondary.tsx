@@ -3,7 +3,6 @@ import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/blocks/sidebar';
 import { cn } from '@/lib/utils';
-import { Moon } from 'lucide-react';
 
 interface NavSecondaryProps extends React.HTMLAttributes<HTMLDivElement> {
   items: {
@@ -15,22 +14,11 @@ interface NavSecondaryProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function NavSecondary({ items, className, ...props }: NavSecondaryProps) {
-  // Add theme settings at the top with highlight
-  const settingsItems = [
-    {
-      title: "Theme Settings",
-      url: "/examples/forms/appearance",
-      icon: Moon,
-      highlight: true
-    },
-    ...items
-  ];
-
   return (
     <div className={cn('py-6', className)} {...props}>
       <SidebarGroupLabel>General</SidebarGroupLabel>
       <SidebarMenu>
-        {settingsItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           return (
             <SidebarMenuItem key={item.title}>
@@ -46,5 +34,4 @@ export function NavSecondary({ items, className, ...props }: NavSecondaryProps) 
       </SidebarMenu>
     </div>
   );
-} // Fixed theme settings removal
-// Additional improvements to theme handling
+}
