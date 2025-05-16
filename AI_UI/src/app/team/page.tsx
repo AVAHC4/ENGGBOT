@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell } from 'lucide-react';
+import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Share2, Upload } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { TeamMember } from '@/components/layout/nav-team';
@@ -30,6 +30,9 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { getAllConversationsMetadata } from '@/lib/storage';
+import { useChat } from '@/context/chat-context';
+import { formatDistanceToNow } from 'date-fns';
 
 // Extended team member data with more information
 interface ExtendedTeamMember extends TeamMember {
@@ -174,6 +177,29 @@ interface InfoNotification extends BaseNotification {
 }
 
 type Notification = InvitationNotification | InfoNotification;
+
+// Add a new interface for shared conversations
+interface SharedConversation {
+  id: string;
+  conversationId: string;
+  title: string;
+  sharedBy: string;
+  sharedAt: string;
+  message?: string;
+  teamId: string;
+}
+
+// Add TeamMessage interface after SharedConversation interface
+interface TeamMessage {
+  id: string;
+  teamId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  timestamp: string;
+  isRead: boolean;
+}
 
 function TeamMemberCard({ member, onRemove }: { 
   member: ExtendedTeamMember;
@@ -463,6 +489,370 @@ function CreateTeamForm({ onSubmit, onCancel }: {
         <Button type="submit">Create Team</Button>
       </div>
     </form>
+  );
+}
+
+// Add a component for the conversation sharing dialog
+function ShareConversationDialog({ 
+  isOpen, 
+  onClose, 
+  onShare, 
+  teamId 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onShare: (conversationId: string, message: string, teamId: string) => void;
+  teamId: string;
+}) {
+  const [selectedConversation, setSelectedConversation] = useState<string>('');
+  const [message, setMessage] = useState<string>('');
+  const [conversations, setConversations] = useState<any[]>([]);
+  
+  // Load conversations when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      // Get all available conversations
+      const allConversations = getAllConversationsMetadata();
+      setConversations(allConversations);
+      setSelectedConversation('');
+      setMessage('');
+    }
+  }, [isOpen]);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedConversation) {
+      onShare(selectedConversation, message, teamId);
+      onClose();
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Share Conversation</DialogTitle>
+          <DialogDescription>
+            Select a conversation to share with the team.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <label htmlFor="conversation" className="text-sm font-medium">
+              Conversation
+            </label>
+            <select
+              id="conversation"
+              value={selectedConversation}
+              onChange={(e) => setSelectedConversation(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2"
+              required
+            >
+              <option value="">Select a conversation</option>
+              {conversations.map((convo) => (
+                <option key={convo.id} value={convo.id}>
+                  {convo.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="message" className="text-sm font-medium">
+              Message (optional)
+            </label>
+            <textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 min-h-[100px]"
+              placeholder="Add a message about this conversation..."
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={!selectedConversation}
+              className="flex items-center gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Add a component for displaying shared conversations
+function SharedConversationCard({ 
+  conversation, 
+  onView 
+}: { 
+  conversation: SharedConversation; 
+  onView: (conversationId: string) => void;
+}) {
+  return (
+    <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => onView(conversation.conversationId)}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <MessageSquare className="h-4 w-4" />
+          {conversation.title}
+        </CardTitle>
+        <CardDescription className="text-xs flex justify-between">
+          <span>Shared by {conversation.sharedBy}</span>
+          <span>{formatDistanceToNow(new Date(conversation.sharedAt), { addSuffix: true })}</span>
+        </CardDescription>
+      </CardHeader>
+      {conversation.message && (
+        <CardContent className="pt-0 pb-4">
+          <p className="text-sm text-muted-foreground">{conversation.message}</p>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// Replace the TeamChatDialog component with a full-page version
+function TeamChatView({
+  team,
+  currentUserId,
+  userData,
+  onBack
+}: {
+  team: Team | null;
+  currentUserId: string;
+  userData: { name: string; email: string; avatar: string };
+  onBack: () => void;
+}) {
+  const [message, setMessage] = useState('');
+  const [teamMessages, setTeamMessages] = useState<TeamMessage[]>([]);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  // Load messages when team changes
+  useEffect(() => {
+    if (team) {
+      // Get stored messages for this team
+      if (typeof window !== 'undefined') {
+        try {
+          const savedMessages = localStorage.getItem(`team_chat_${team.id}`);
+          if (savedMessages) {
+            setTeamMessages(JSON.parse(savedMessages));
+          } else {
+            // If no messages, initialize with empty array
+            setTeamMessages([]);
+          }
+        } catch (error) {
+          console.error("Failed to load team messages", error);
+          setTeamMessages([]);
+        }
+      }
+    }
+  }, [team]);
+
+  // Save messages when they change
+  useEffect(() => {
+    if (team && teamMessages.length > 0) {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(`team_chat_${team.id}`, JSON.stringify(teamMessages));
+        } catch (error) {
+          console.error("Failed to save team messages", error);
+        }
+      }
+    }
+  }, [teamMessages, team]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [teamMessages]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!message.trim() || !team) return;
+    
+    // Create new message
+    const newMessage: TeamMessage = {
+      id: `msg-${Date.now()}`,
+      teamId: team.id,
+      senderId: currentUserId,
+      senderName: userData.name,
+      senderAvatar: userData.avatar,
+      content: message,
+      timestamp: new Date().toISOString(),
+      isRead: false
+    };
+    
+    // Add to messages
+    setTeamMessages(prev => [...prev, newMessage]);
+    
+    // Clear input
+    setMessage('');
+  };
+
+  if (!team) return null;
+
+  // Group messages by date
+  const groupedMessages: { [date: string]: TeamMessage[] } = {};
+  
+  teamMessages.forEach(msg => {
+    const date = new Date(msg.timestamp).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    
+    if (!groupedMessages[date]) {
+      groupedMessages[date] = [];
+    }
+    
+    groupedMessages[date].push(msg);
+  });
+
+  return (
+    <div className="flex flex-col h-full w-full bg-background">
+      {/* Chat header */}
+      <div className="flex items-center px-4 py-2 border-b">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onBack} 
+          className="mr-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          <span className="sr-only">Back</span>
+        </Button>
+        
+        <div className="flex items-center">
+          <div className={`${team.avatarColor} h-10 w-10 rounded-md flex items-center justify-center text-white font-semibold mr-3`}>
+            {team.name.charAt(0)}
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold">{team.name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {team.members.length} team members
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Chat messages area */}
+      <div className="flex-1 overflow-y-auto p-4 bg-accent/10">
+        {Object.keys(groupedMessages).length > 0 ? (
+          Object.entries(groupedMessages).map(([date, messages]) => (
+            <div key={date} className="mb-6">
+              <div className="flex justify-center mb-4">
+                <div className="bg-accent/30 text-muted-foreground text-xs px-2 py-1 rounded-full">
+                  {date}
+                </div>
+              </div>
+              
+              {messages.map((msg) => {
+                const isMine = msg.senderId === currentUserId;
+                const time = new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+                
+                return (
+                  <div 
+                    key={msg.id} 
+                    className={`flex mb-4 ${isMine ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {!isMine && (
+                      <div className="flex-shrink-0 mr-2">
+                        {msg.senderAvatar ? (
+                          <img 
+                            src={msg.senderAvatar} 
+                            alt={msg.senderName} 
+                            className="h-8 w-8 rounded-full"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">
+                              {msg.senderName.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div 
+                      className={`max-w-[70%] rounded-lg px-3 py-2 ${
+                        isMine 
+                          ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                          : 'bg-card rounded-tl-none'
+                      }`}
+                    >
+                      {!isMine && (
+                        <div className="text-xs font-medium text-muted-foreground mb-1">
+                          {msg.senderName}
+                        </div>
+                      )}
+                      <div className="text-sm">{msg.content}</div>
+                      <div className="text-right">
+                        <span className={`text-[10px] ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                          {time}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-center p-4">
+            <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Be the first to start a conversation with your team members.
+            </p>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+      
+      {/* Message input area */}
+      <form onSubmit={handleSendMessage} className="border-t p-3 flex items-center gap-2">
+        <Input
+          placeholder="Type a message..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          className="flex-1"
+          autoFocus
+        />
+        <Button type="submit" size="icon" disabled={!message.trim()}>
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className="h-5 w-5"
+          >
+            <path d="m3 3 3 9-3 9 19-9Z" />
+            <path d="M6 12h16" />
+          </svg>
+        </Button>
+      </form>
+    </div>
   );
 }
 
@@ -800,6 +1190,148 @@ export default function TeamPage() {
     }
   };
   
+  // Add states for conversation sharing
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [activeTeamId, setActiveTeamId] = useState<string>('');
+  const [sharedConversations, setSharedConversations] = useState<SharedConversation[]>(() => {
+    // Load from localStorage on client side
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('shared_conversations');
+        if (saved) return JSON.parse(saved);
+      } catch (error) {
+        console.error("Failed to load shared conversations", error);
+      }
+    }
+    return [];
+  });
+  
+  // Get current user data
+  const [userData, setUserData] = useState<{ name: string; email: string; avatar: string }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem('user_data') || '{}') || {
+          name: "User",
+          email: "user@example.com",
+          avatar: "",
+        };
+      } catch (error) {
+        return {
+          name: "User",
+          email: "user@example.com",
+          avatar: "",
+        };
+      }
+    }
+    return {
+      name: "User",
+      email: "user@example.com",
+      avatar: "",
+    };
+  });
+  
+  // Access chat context for handling conversations
+  const chat = useChat();
+  
+  // Save shared conversations to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('shared_conversations', JSON.stringify(sharedConversations));
+      } catch (error) {
+        console.error("Failed to save shared conversations", error);
+      }
+    }
+  }, [sharedConversations]);
+  
+  // Add function to handle sharing a conversation
+  const handleShareConversation = (conversationId: string, message: string, teamId: string) => {
+    // Get conversation metadata
+    const allConversations = getAllConversationsMetadata();
+    const conversation = allConversations.find((c: { id: string }) => c.id === conversationId);
+    
+    if (!conversation) return;
+    
+    // Create a new shared conversation object
+    const sharedConversation: SharedConversation = {
+      id: `shared-${Date.now()}`,
+      conversationId,
+      title: conversation.title,
+      sharedBy: userData.name,
+      sharedAt: new Date().toISOString(),
+      message: message || undefined,
+      teamId
+    };
+    
+    // Add to shared conversations
+    setSharedConversations([...sharedConversations, sharedConversation]);
+    
+    // Add notification for the share
+    const newNotification: InfoNotification = {
+      id: `share-${Date.now()}`,
+      title: "Conversation Shared",
+      message: `You shared the conversation "${conversation.title}" with your team`,
+      time: "Just now",
+      read: false,
+      type: "info"
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+  
+  // Add function to view a shared conversation
+  const handleViewSharedConversation = (conversationId: string) => {
+    // Switch to the conversation using the chat context
+    chat.switchConversation(conversationId);
+    // Navigate to chat page
+    window.location.href = "/";
+  };
+  
+  // Function to get shared conversations for a specific team
+  const getTeamSharedConversations = (teamId: string) => {
+    return sharedConversations.filter(convo => convo.teamId === teamId);
+  };
+
+  // Add these new state variables after existing state variables
+  const [activeChatTeam, setActiveChatTeam] = useState<Team | null>(null);
+  const [currentUserId] = useState<string>(() => {
+    // Generate or retrieve user ID
+    if (typeof window !== 'undefined') {
+      const savedId = localStorage.getItem('current_user_id');
+      if (savedId) return savedId;
+      
+      const newId = `user-${Date.now()}`;
+      localStorage.setItem('current_user_id', newId);
+      return newId;
+    }
+    return `user-${Date.now()}`;
+  });
+
+  // Add this function to handle opening the team chat
+  const handleOpenTeamChat = (team: Team) => {
+    setActiveChatTeam(team);
+  };
+
+  // Add function to close the chat view
+  const handleCloseTeamChat = () => {
+    setActiveChatTeam(null);
+  };
+
+  // If a team chat is active, show the chat view instead of the regular content
+  if (activeChatTeam) {
+    return (
+      <div className="container py-0 px-0 max-w-full h-screen team-page">
+        <TeamChatView 
+          team={activeChatTeam}
+          currentUserId={currentUserId}
+          userData={userData}
+          onBack={handleCloseTeamChat}
+        />
+      </div>
+    );
+  }
+
+  // Normal view when no chat is active
   return (
     <div className="container py-8 px-6 max-w-6xl team-page">
       <header className="mb-6">
@@ -968,6 +1500,7 @@ export default function TeamPage() {
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="teams">Browse Teams</TabsTrigger>
           <TabsTrigger value="members">Team Members</TabsTrigger>
+          <TabsTrigger value="shared">Shared Conversations</TabsTrigger>
         </TabsList>
         
         <TabsContent value="teams" className="space-y-4">
@@ -993,38 +1526,115 @@ export default function TeamPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredTeams.map(team => (
-              <TeamCard 
-                key={team.id} 
-                team={team} 
-                onJoin={handleJoinTeam}
-                onLeave={handleLeaveTeam}
-                isMember={isInMyTeam(team.id)}
-              />
+              <Card key={team.id} className="overflow-hidden border border-border">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`${team.avatarColor} h-10 w-10 rounded-md flex items-center justify-center text-white font-semibold`}>
+                      {team.name.charAt(0)}
+                    </div>
+                    <div>
+                      <CardTitle 
+                        className="text-xl cursor-pointer hover:text-primary transition-colors"
+                        onClick={() => {
+                          if (isInMyTeam(team.id)) {
+                            handleOpenTeamChat(team);
+                          } else {
+                            // Show toast for non-members
+                            toast("Join team to chat", {
+                              description: "You need to join this team to access the chat."
+                            });
+                          }
+                        }}
+                      >
+                        {team.name}
+                      </CardTitle>
+                      <CardDescription>{team.category}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  <p className="text-sm text-muted-foreground">{team.description}</p>
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2">Members ({team.members.length})</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {team.members.slice(0, 3).map((member) => (
+                        <TooltipProvider key={member.id}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="relative">
+                                {member.avatar ? (
+                                  <img 
+                                    src={member.avatar} 
+                                    alt={member.name}
+                                    className="h-8 w-8 rounded-full border border-border"
+                                  />
+                                ) : (
+                                  <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                    <span className="text-xs font-medium">{member.name.charAt(0)}</span>
+                                  </div>
+                                )}
+                                <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-background ${
+                                  member.isOnline ? "bg-green-500" : "bg-gray-400"
+                                }`} />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{member.name}</p>
+                              <p className="text-xs text-muted-foreground">{member.role}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                      {team.members.length > 3 && (
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                          <span className="text-xs font-medium">+{team.members.length - 3}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between pt-2">
+                  {isInMyTeam(team.id) ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleLeaveTeam(team.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                        Leave
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setActiveTeamId(team.id);
+                          setShowShareDialog(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Share Conversation
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      onClick={() => handleJoinTeam(team.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Join Team
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
             ))}
-            
-            {filteredTeams.length === 0 && (
-              <div className="col-span-full text-center py-8">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                <h3 className="text-lg font-medium">No teams found</h3>
-                <p className="text-sm text-muted-foreground">Try adjusting your search or create a new team</p>
-              </div>
-            )}
           </div>
           
-          {myTeams.length > 0 && (
-            <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4">My Teams</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {myTeams.map(team => (
-                  <TeamCard 
-                    key={team.id} 
-                    team={team} 
-                    onJoin={handleJoinTeam}
-                    onLeave={handleLeaveTeam}
-                    isMember={true}
-                  />
-        ))}
-      </div>
+          {filteredTeams.length === 0 && (
+            <div className="col-span-full text-center py-8">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+              <h3 className="text-lg font-medium">No teams found</h3>
+              <p className="text-sm text-muted-foreground">Try adjusting your search or create a new team</p>
             </div>
           )}
         </TabsContent>
@@ -1050,10 +1660,86 @@ export default function TeamPage() {
             )}
           </div>
         </TabsContent>
+        
+        <TabsContent value="shared" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold tracking-tight">Shared Conversations</h2>
+          </div>
+          
+          {myTeams.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                <Users className="h-10 w-10 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Teams Joined</h3>
+                <p className="text-muted-foreground max-w-md">
+                  Join or create a team to see shared conversations.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-8">
+              {myTeams.map((team) => {
+                const teamSharedConversations = getTeamSharedConversations(team.id);
+                
+                return (
+                  <div key={team.id}>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold flex items-center">
+                        <div className={`${team.avatarColor} h-6 w-6 rounded-md flex items-center justify-center text-white font-semibold mr-2`}>
+                          {team.name.charAt(0)}
+                        </div>
+                        {team.name}
+                      </h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setActiveTeamId(team.id);
+                          setShowShareDialog(true);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Share with Team
+                      </Button>
+                    </div>
+                    
+                    {teamSharedConversations.length === 0 ? (
+                      <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                          <MessageSquare className="h-8 w-8 text-muted-foreground mb-3" />
+                          <h4 className="text-base font-medium mb-2">No Conversations Shared</h4>
+                          <p className="text-sm text-muted-foreground max-w-md">
+                            No one has shared any conversations with this team yet.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {teamSharedConversations.map((conversation) => (
+                          <SharedConversationCard 
+                            key={conversation.id} 
+                            conversation={conversation}
+                            onView={handleViewSharedConversation}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
+      
+      {/* Share Conversation Dialog */}
+      <ShareConversationDialog
+        isOpen={showShareDialog}
+        onClose={() => setShowShareDialog(false)}
+        onShare={handleShareConversation}
+        teamId={activeTeamId}
+      />
     </div>
   );
-} // Updated team member display component
-// Enhanced team invitation dialog
-// Enhanced notification badge for better visibility
-// Improved loading state for better user experience
+}
