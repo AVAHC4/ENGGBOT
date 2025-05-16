@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Share2, Upload } from 'lucide-react';
+import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Share2, Upload, ArrowLeft } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { TeamMember } from '@/components/layout/nav-team';
@@ -33,9 +33,15 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { getAllConversationsMetadata } from '@/lib/storage';
 import { useChat } from '@/context/chat-context';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from "@/lib/supabase";
 
 // Extended team member data with more information
-interface ExtendedTeamMember extends TeamMember {
+interface ExtendedTeamMember {
+  id: string;
+  name: string;
+  avatar: string;
+  isOnline: boolean;
+  lastSeen?: string;
   role: string;
   email: string;
   bio?: string;
@@ -619,29 +625,37 @@ function SharedConversationCard({
   );
 }
 
-// Replace the TeamChatDialog component with a full-page version
+// Replace the TeamChatView component with a full-page version
 function TeamChatView({
-  team,
-  currentUserId,
-  userData,
-  onBack
+  activeTeam,
+  memberID,
+  userInfo,
+  onClose,
+  onInvite,
+  membersList
 }: {
-  team: Team | null;
-  currentUserId: string;
-  userData: { name: string; email: string; avatar: string };
-  onBack: () => void;
+  activeTeam: Team | null;
+  memberID: string;
+  userInfo: { name: string; email: string; avatar: string };
+  onClose: () => void;
+  onInvite: (email: string) => void;
+  membersList: ExtendedTeamMember[];
 }) {
   const [message, setMessage] = useState('');
   const [teamMessages, setTeamMessages] = useState<TeamMessage[]>([]);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [showMembersList, setShowMembersList] = useState(false);
 
   // Load messages when team changes
   useEffect(() => {
-    if (team) {
+    if (activeTeam) {
       // Get stored messages for this team
       if (typeof window !== 'undefined') {
         try {
-          const savedMessages = localStorage.getItem(`team_chat_${team.id}`);
+          const savedMessages = localStorage.getItem(`team_chat_${activeTeam.id}`);
           if (savedMessages) {
             setTeamMessages(JSON.parse(savedMessages));
           } else {
@@ -654,20 +668,20 @@ function TeamChatView({
         }
       }
     }
-  }, [team]);
+  }, [activeTeam]);
 
   // Save messages when they change
   useEffect(() => {
-    if (team && teamMessages.length > 0) {
+    if (activeTeam && teamMessages.length > 0) {
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem(`team_chat_${team.id}`, JSON.stringify(teamMessages));
+          localStorage.setItem(`team_chat_${activeTeam.id}`, JSON.stringify(teamMessages));
         } catch (error) {
           console.error("Failed to save team messages", error);
         }
       }
     }
-  }, [teamMessages, team]);
+  }, [teamMessages, activeTeam]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -676,18 +690,19 @@ function TeamChatView({
     }
   }, [teamMessages]);
 
+  // Update handleSendMessage
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() || !team) return;
+    if (!message.trim() || !activeTeam) return;
     
     // Create new message
     const newMessage: TeamMessage = {
       id: `msg-${Date.now()}`,
-      teamId: team.id,
-      senderId: currentUserId,
-      senderName: userData.name,
-      senderAvatar: userData.avatar,
+      teamId: activeTeam.id,
+      senderId: memberID,
+      senderName: userInfo.name,
+      senderAvatar: userInfo.avatar,
       content: message,
       timestamp: new Date().toISOString(),
       isRead: false
@@ -700,158 +715,126 @@ function TeamChatView({
     setMessage('');
   };
 
-  if (!team) return null;
-
-  // Group messages by date
-  const groupedMessages: { [date: string]: TeamMessage[] } = {};
-  
-  teamMessages.forEach(msg => {
-    const date = new Date(msg.timestamp).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Handle adding a member from chat view
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (!groupedMessages[date]) {
-      groupedMessages[date] = [];
+    if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
+      // Call parent component's add member function
+      onInvite(newMemberEmail);
+      
+      // Clear input and close dialog
+      setNewMemberEmail('');
+      setShowAddMemberDialog(false);
     }
-    
-    groupedMessages[date].push(msg);
-  });
+  };
 
   return (
-    <div className="flex flex-col h-full w-full bg-background">
-      {/* Chat header */}
-      <div className="flex items-center px-4 py-2 border-b">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onBack} 
-          className="mr-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
-            <path d="m15 18-6-6 6-6" />
-          </svg>
-          <span className="sr-only">Back</span>
-        </Button>
+    <div className="container h-screen flex flex-col">
+      <div className="border-b p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+          <h2 className="text-xl font-semibold">{activeTeam?.name || 'Team Chat'}</h2>
+        </div>
         
-        <div className="flex items-center">
-          <div className={`${team.avatarColor} h-10 w-10 rounded-md flex items-center justify-center text-white font-semibold mr-3`}>
-            {team.name.charAt(0)}
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold">{team.name}</h2>
-            <p className="text-xs text-muted-foreground">
-              {team.members.length} team members
-            </p>
-          </div>
+        {/* Chat conversation area */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            size="sm" 
+            onClick={() => setShowAddMemberDialog(true)}
+          >
+            <UserPlus className="h-4 w-4 mr-1" /> Add Member
+          </Button>
         </div>
       </div>
       
-      {/* Chat messages area */}
-      <div className="flex-1 overflow-y-auto p-4 bg-accent/10">
-        {Object.keys(groupedMessages).length > 0 ? (
-          Object.entries(groupedMessages).map(([date, messages]) => (
-            <div key={date} className="mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="bg-accent/30 text-muted-foreground text-xs px-2 py-1 rounded-full">
-                  {date}
-                </div>
-              </div>
-              
-              {messages.map((msg) => {
-                const isMine = msg.senderId === currentUserId;
-                const time = new Date(msg.timestamp).toLocaleTimeString('en-US', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                });
-                
-                return (
-                  <div 
-                    key={msg.id} 
-                    className={`flex mb-4 ${isMine ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {!isMine && (
-                      <div className="flex-shrink-0 mr-2">
-                        {msg.senderAvatar ? (
-                          <img 
-                            src={msg.senderAvatar} 
-                            alt={msg.senderName} 
-                            className="h-8 w-8 rounded-full"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">
-                              {msg.senderName.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    <div 
-                      className={`max-w-[70%] rounded-lg px-3 py-2 ${
-                        isMine 
-                          ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                          : 'bg-card rounded-tl-none'
-                      }`}
-                    >
-                      {!isMine && (
-                        <div className="text-xs font-medium text-muted-foreground mb-1">
-                          {msg.senderName}
-                        </div>
-                      )}
-                      <div className="text-sm">{msg.content}</div>
-                      <div className="text-right">
-                        <span className={`text-[10px] ${isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                          {time}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Chat conversation area */}
+      <div className="flex-1 overflow-auto p-4">
+        {teamMessages.map((msg) => (
+          <div 
+            key={msg.id}
+            className={`mb-4 max-w-[80%] ${msg.senderId === memberID ? 'ml-auto' : ''}`}
+          >
+            <div className={`rounded-lg p-3 ${
+              msg.senderId === memberID 
+                ? 'bg-primary text-primary-foreground' 
+                : 'bg-muted'
+            }`}>
+              {msg.content}
             </div>
-          ))
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-4">
-            <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              Be the first to start a conversation with your team members.
-            </p>
+            <div className="text-xs text-muted-foreground mt-1 flex items-center">
+              {msg.senderId !== memberID && (
+                <span className="font-medium mr-2">{msg.senderName}</span>
+              )}
+              <span>{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
           </div>
-        )}
-        <div ref={messagesEndRef} />
+        ))}
+        <div ref={messagesEndRef}></div>
       </div>
       
       {/* Message input area */}
-      <form onSubmit={handleSendMessage} className="border-t p-3 flex items-center gap-2">
-        <Input
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="flex-1"
-          autoFocus
-        />
-        <Button type="submit" size="icon" disabled={!message.trim()}>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-            className="h-5 w-5"
-          >
-            <path d="m3 3 3 9-3 9 19-9Z" />
-            <path d="M6 12h16" />
-          </svg>
-        </Button>
-      </form>
+      <div className="border-t p-4">
+        <form onSubmit={handleSendMessage} className="flex gap-2">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type a message..."
+            className="flex-1"
+          />
+          <Button type="submit">Send</Button>
+        </form>
+      </div>
+      
+      {/* Add Member Dialog */}
+      <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogDescription>
+              Invite a new member to join your team by email
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAddMember} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email address
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="colleague@example.com"
+                value={newMemberEmail}
+                onChange={(e) => setNewMemberEmail(e.target.value)}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                An invitation will be sent to this email address
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={() => setShowAddMemberDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Send Invitation</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -864,20 +847,69 @@ export default function TeamPage() {
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
   
-  // Initialize teamMembersList with a function to check localStorage first
-  const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(() => {
-    // Only run in the browser, not during SSR
+  // Add state for email invitation dialog
+  const [showEmailInviteDialog, setShowEmailInviteDialog] = useState(false);
+  const [pendingInviteEmail, setPendingInviteEmail] = useState('');
+  
+  // Initialize teamMembersList state
+  const [teamMembersList, setTeamMembersList] = useState<ExtendedTeamMember[]>(teamMembers);
+  
+  // Add missing state variables for sharing functionality
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [activeTeamId, setActiveTeamId] = useState<string>('');
+  
+  // Initialize notifications state
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedMembers = localStorage.getItem('teamMembers');
-        if (savedMembers) {
-          return JSON.parse(savedMembers);
-        }
+        const savedNotifications = localStorage.getItem('notifications');
+        if (savedNotifications) return JSON.parse(savedNotifications);
       } catch (error) {
-        console.error("Failed to load team members from localStorage", error);
+        console.error("Failed to load notifications", error);
       }
     }
-    return teamMembers;
+    return [];
+  });
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
+  // Get current user data
+  const [userData, setUserData] = useState<{ name: string; email: string; avatar: string }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return JSON.parse(localStorage.getItem('user_data') || '{}') || {
+          name: "User",
+          email: "user@example.com",
+          avatar: "",
+        };
+      } catch (error) {
+        return {
+          name: "User",
+          email: "user@example.com",
+          avatar: "",
+        };
+      }
+    }
+    return {
+      name: "User",
+      email: "user@example.com",
+      avatar: "",
+    };
+  });
+  
+  // Add these new state variables after existing state variables
+  const [activeChatTeam, setActiveChatTeam] = useState<Team | null>(null);
+  const [currentUserId] = useState<string>(() => {
+    // Generate or retrieve user ID
+    if (typeof window !== 'undefined') {
+      const savedId = localStorage.getItem('current_user_id');
+      if (savedId) return savedId;
+      
+      const newId = `user-${Date.now()}`;
+      localStorage.setItem('current_user_id', newId);
+      return newId;
+    }
+    return `user-${Date.now()}`;
   });
   
   // Save to localStorage whenever teamMembersList changes
@@ -904,6 +936,27 @@ export default function TeamPage() {
     const matchesCategory = categoryFilter === 'All' || team.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+  
+  // Function to handle removing a team member
+  const handleRemoveTeamMember = (memberId: string) => {
+    setTeamMembersList(prevMembers => prevMembers.filter(member => member.id !== memberId));
+    
+    // Add notification for removal
+    const newNotification: InfoNotification = {
+      id: `member-removed-${Date.now()}`,
+      title: "Team Member Removed",
+      message: `A team member has been removed`,
+      time: "Just now",
+      read: false,
+      type: "info"
+    };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    toast.success("Team member removed", {
+      description: "The team member has been successfully removed",
+    });
+  };
   
   const handleJoinTeam = (teamId: string) => {
     const team = teams.find(t => t.id === teamId);
@@ -974,42 +1027,7 @@ export default function TeamPage() {
     return myTeams.some(team => team.id === teamId);
   };
   
-  // Initialize notifications from localStorage or with an empty array
-  const [notifications, setNotifications] = useState<Notification[]>(() => {
-    // Only run in the browser, not during SSR
-    if (typeof window !== 'undefined') {
-      try {
-        const savedNotifications = localStorage.getItem('notifications');
-        if (savedNotifications) {
-          return JSON.parse(savedNotifications);
-        }
-      } catch (error) {
-        console.error("Failed to load notifications from localStorage", error);
-      }
-    }
-    return []; // Start with empty notifications instead of predefined ones
-  });
-  
-  // Save notifications to localStorage when they change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('notifications', JSON.stringify(notifications));
-      } catch (error) {
-        console.error("Failed to save notifications to localStorage", error);
-      }
-    }
-  }, [notifications]);
-  
-  const unreadCount = notifications.filter(n => !n.read).length;
-  
-  const markAllAsRead = () => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(n => ({ ...n, read: true }))
-    );
-  };
-  
-  // Function to add new notification for invitations
+  // Function to add invitation notification
   const addInvitationNotification = (emailOrName: string, inviterId = "you") => {
     const newNotification: InfoNotification = {
       id: `notification-${Date.now()}`,
@@ -1031,281 +1049,13 @@ export default function TeamPage() {
       message: `${inviterName} invited you to join ${teamName}`,
       time: "Just now",
       read: false,
-      type: "invitation",
-      memberId: memberId, // Store the member ID for accept/reject actions
+      type: 'invitation',
+      memberId: memberId,
       teamName: teamName
     };
     
     setNotifications(prev => [newNotification, ...prev]);
   };
-
-  // Update handleAddMember to create pending members and add notifications
-  const handleAddMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
-      // Create a basic new team member with pending status
-      const newMember: ExtendedTeamMember = {
-        id: `member-${Date.now()}`,
-        name: newMemberEmail.split('@')[0], // Use part before @ as name
-        email: newMemberEmail,
-        isOnline: false,
-        role: "New Member",
-        lastSeen: "Just invited",
-        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`, // Random avatar
-        bio: "Newly invited team member",
-        pending: true // Mark as pending until accepted
-      };
-      
-      // Add the new member to the list
-      setTeamMembersList(prevMembers => [...prevMembers, newMember]);
-      
-      // Add notification for the sender
-      addInvitationNotification(newMemberEmail);
-      
-      // In a real app, this would send an email or notification to the user
-      // For demo purposes, we'll simulate the invited user receiving the notification
-      // by adding it to their notifications
-      setTimeout(() => {
-        addReceivedInvitationNotification("You", "Your Team", newMember.id);
-      }, 2000);
-      
-      // Show toast notification
-      toast("Invitation sent", {
-        description: `${newMemberEmail} has been invited to join the team`,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            // Remove the newly added member
-            setTeamMembersList(prevMembers => 
-              prevMembers.filter(m => m.id !== newMember.id)
-            );
-            console.log("Undoing invitation to", newMemberEmail);
-          },
-        },
-      });
-      
-      // Clear form
-      setNewMemberEmail('');
-      setShowAddMemberForm(false);
-    }
-  };
-  
-  // Update handleAcceptInvitation function return notification creation
-  const handleAcceptInvitation = (memberId: string, notificationId: string) => {
-    // Update the team member's pending status
-    setTeamMembersList(prevMembers => 
-      prevMembers.map(member => 
-        member.id === memberId 
-          ? { ...member, pending: false, lastSeen: "Just now", isOnline: true } 
-          : member
-      )
-    );
-    
-    // Remove the invitation notification
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    
-    // Add a confirmation notification
-    const member = teamMembersList.find(m => m.id === memberId);
-    if (member) {
-      const newNotification: InfoNotification = {
-        id: `accepted-${Date.now()}`,
-        title: "Invitation Accepted",
-        message: `You have joined the team`,
-        time: "Just now",
-        read: false,
-        type: "info"
-      };
-      
-      setNotifications(prev => [newNotification, ...prev]);
-      
-      // Show toast notification
-      toast("Invitation accepted", {
-        description: `You have joined the team`,
-      });
-    }
-  };
-
-  // Update handleRejectInvitation function notification creation
-  const handleRejectInvitation = (memberId: string, notificationId: string) => {
-    // Remove the member from the team
-    setTeamMembersList(prevMembers => 
-      prevMembers.filter(m => m.id !== memberId)
-    );
-    
-    // Remove the invitation notification
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    
-    // Add a confirmation notification
-    const newNotification: InfoNotification = {
-      id: `rejected-${Date.now()}`,
-      title: "Invitation Rejected",
-      message: `You declined the team invitation`,
-      time: "Just now",
-      read: false,
-      type: "info"
-    };
-    
-    setNotifications(prev => [newNotification, ...prev]);
-    
-    // Show toast notification
-    toast("Invitation declined", {
-      description: `You have declined to join the team`,
-    });
-  };
-  
-  // Update handleRemoveTeamMember to actually remove the member
-  const handleRemoveTeamMember = (memberId: string) => {
-    // Find the member to be removed
-    const member = teamMembersList.find(m => m.id === memberId);
-    if (member) {
-      // Remove the member from teamMembersList
-      setTeamMembersList(prevMembers => 
-        prevMembers.filter(m => m.id !== memberId)
-      );
-      
-      // Also remove the member from any teams they're part of
-      setTeams(prevTeams => 
-        prevTeams.map(team => ({
-          ...team,
-          members: team.members.filter(m => m.id !== memberId)
-        }))
-      );
-      
-      // Update myTeams to reflect the change as well
-      setMyTeams(prevMyTeams => 
-        prevMyTeams.map(team => ({
-          ...team,
-          members: team.members.filter(m => m.id !== memberId)
-        }))
-      );
-      
-      // Show toast notification
-      toast(`Member removed`, {
-        description: `${member.name} has been removed from the team`,
-      });
-      
-      // In a real app, you would also make an API call here
-      console.log(`Removed team member: ${member.name}`);
-    }
-  };
-  
-  // Add states for conversation sharing
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [activeTeamId, setActiveTeamId] = useState<string>('');
-  const [sharedConversations, setSharedConversations] = useState<SharedConversation[]>(() => {
-    // Load from localStorage on client side
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('shared_conversations');
-        if (saved) return JSON.parse(saved);
-      } catch (error) {
-        console.error("Failed to load shared conversations", error);
-      }
-    }
-    return [];
-  });
-  
-  // Get current user data
-  const [userData, setUserData] = useState<{ name: string; email: string; avatar: string }>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return JSON.parse(localStorage.getItem('user_data') || '{}') || {
-          name: "User",
-          email: "user@example.com",
-          avatar: "",
-        };
-      } catch (error) {
-        return {
-          name: "User",
-          email: "user@example.com",
-          avatar: "",
-        };
-      }
-    }
-    return {
-      name: "User",
-      email: "user@example.com",
-      avatar: "",
-    };
-  });
-  
-  // Access chat context for handling conversations
-  const chat = useChat();
-  
-  // Save shared conversations to localStorage when they change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('shared_conversations', JSON.stringify(sharedConversations));
-      } catch (error) {
-        console.error("Failed to save shared conversations", error);
-      }
-    }
-  }, [sharedConversations]);
-  
-  // Add function to handle sharing a conversation
-  const handleShareConversation = (conversationId: string, message: string, teamId: string) => {
-    // Get conversation metadata
-    const allConversations = getAllConversationsMetadata();
-    const conversation = allConversations.find((c: { id: string }) => c.id === conversationId);
-    
-    if (!conversation) return;
-    
-    // Create a new shared conversation object
-    const sharedConversation: SharedConversation = {
-      id: `shared-${Date.now()}`,
-      conversationId,
-      title: conversation.title,
-      sharedBy: userData.name,
-      sharedAt: new Date().toISOString(),
-      message: message || undefined,
-      teamId
-    };
-    
-    // Add to shared conversations
-    setSharedConversations([...sharedConversations, sharedConversation]);
-    
-    // Add notification for the share
-    const newNotification: InfoNotification = {
-      id: `share-${Date.now()}`,
-      title: "Conversation Shared",
-      message: `You shared the conversation "${conversation.title}" with your team`,
-      time: "Just now",
-      read: false,
-      type: "info"
-    };
-    
-    setNotifications(prev => [newNotification, ...prev]);
-  };
-  
-  // Add function to view a shared conversation
-  const handleViewSharedConversation = (conversationId: string) => {
-    // Switch to the conversation using the chat context
-    chat.switchConversation(conversationId);
-    // Navigate to chat page
-    window.location.href = "/";
-  };
-  
-  // Function to get shared conversations for a specific team
-  const getTeamSharedConversations = (teamId: string) => {
-    return sharedConversations.filter(convo => convo.teamId === teamId);
-  };
-
-  // Add these new state variables after existing state variables
-  const [activeChatTeam, setActiveChatTeam] = useState<Team | null>(null);
-  const [currentUserId] = useState<string>(() => {
-    // Generate or retrieve user ID
-    if (typeof window !== 'undefined') {
-      const savedId = localStorage.getItem('current_user_id');
-      if (savedId) return savedId;
-      
-      const newId = `user-${Date.now()}`;
-      localStorage.setItem('current_user_id', newId);
-      return newId;
-    }
-    return `user-${Date.now()}`;
-  });
 
   // Add this function to handle opening the team chat
   const handleOpenTeamChat = (team: Team) => {
@@ -1317,15 +1067,193 @@ export default function TeamPage() {
     setActiveChatTeam(null);
   };
 
+  // Add function to handle adding a team member from the chat view
+  const handleAddMemberFromChat = (emailOrName: string) => {
+    if (emailOrName.trim() && emailOrName.includes('@') && activeChatTeam) {
+      // Call the main handleAddMember function with a synthetic form event
+      const syntheticEvent = { preventDefault: () => {} } as React.FormEvent;
+      setNewMemberEmail(emailOrName);
+      
+      // Call the main add member function which will handle Supabase checks
+      setTimeout(() => {
+        handleAddMember(syntheticEvent);
+      }, 0);
+    }
+  };
+
+  // Update handleAddMember to use custom AlertDialog instead of browser confirm
+  const handleAddMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
+      // Show loading toast
+      const loadingToast = toast.loading("Checking email in database...");
+      
+      try {
+        console.log("Checking if email exists in Supabase:", newMemberEmail);
+        
+        // Check if email exists in Supabase users table
+        const { data: existingUsers, error } = await supabase
+          .from('users')
+          .select('id, email, name, avatar')
+          .eq('email', newMemberEmail)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error checking email in Supabase:", error);
+          toast.dismiss(loadingToast);
+          toast.error("Error checking email. Please try again.");
+          return;
+        }
+        
+        console.log("Supabase query result:", existingUsers);
+        
+        // Verify we got a valid response back before proceeding
+        if (existingUsers) {
+          console.log("User found in database:", existingUsers);
+          
+          // Create member with existing user info
+      const newMember: ExtendedTeamMember = {
+            id: `member-${existingUsers.id}`,
+            name: existingUsers.name || newMemberEmail.split('@')[0],
+        email: newMemberEmail,
+        isOnline: false,
+        role: "New Member",
+        lastSeen: "Just invited",
+            avatar: existingUsers.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
+        bio: "Newly invited team member",
+            pending: true
+      };
+      
+      // Add the new member to the list
+      setTeamMembersList(prevMembers => [...prevMembers, newMember]);
+      
+      // Add notification for the sender
+      addInvitationNotification(newMemberEmail);
+      
+          // In a real app, you would trigger a server action to send notification to the user
+      setTimeout(() => {
+        addReceivedInvitationNotification("You", "Your Team", newMember.id);
+          }, 1000);
+          
+          toast.dismiss(loadingToast);
+          toast.success("User found & invitation sent", {
+            description: `${newMemberEmail} was notified in-app about your team invitation`,
+          });
+        } else {
+          console.log("User NOT found in database, would send email invitation");
+          
+          // Show custom alert dialog instead of browser confirm
+          toast.dismiss(loadingToast);
+          setPendingInviteEmail(newMemberEmail);
+          setShowEmailInviteDialog(true);
+        }
+      
+      // Clear form
+      setNewMemberEmail('');
+      setShowAddMemberForm(false);
+      } catch (err) {
+        console.error("Error in team member invitation process:", err);
+        toast.dismiss(loadingToast);
+        toast.error("Something went wrong. Please try again.");
+      }
+    }
+  };
+
+  // Handler for sending email invitation
+  const handleSendEmailInvitation = () => {
+    if (pendingInviteEmail) {
+      // Create placeholder member (will only be visible to the sender)
+      const newMember: ExtendedTeamMember = {
+        id: `member-${Date.now()}`,
+        name: pendingInviteEmail.split('@')[0],
+        email: pendingInviteEmail,
+        isOnline: false,
+        role: "New Member",
+        lastSeen: "Just invited",
+        avatar: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
+        bio: "Invited via email",
+        pending: true
+      };
+      
+      // Add the new member to the list
+      setTeamMembersList(prevMembers => [...prevMembers, newMember]);
+      
+      // Add notification for the sender
+      addInvitationNotification(pendingInviteEmail);
+      
+      toast.success("Email invitation sent", {
+        description: `${pendingInviteEmail} has been invited to join via email`,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            // Remove the newly added member
+      setTeamMembersList(prevMembers => 
+              prevMembers.filter((m: ExtendedTeamMember) => m.id !== newMember.id)
+            );
+            console.log("Undoing invitation to", pendingInviteEmail);
+          },
+        },
+      });
+      
+      // Reset state
+      setPendingInviteEmail('');
+      setShowEmailInviteDialog(false);
+    }
+  };
+  
+  // Functions for team conversation sharing
+  const getTeamSharedConversations = (teamId: string): SharedConversation[] => {
+    // In a real application, this would fetch from a database
+    // For now, just return mock data based on the team ID
+    return [
+      {
+        id: `shared-${teamId}-1`,
+        conversationId: `conv-${teamId}-1`,
+        title: "Project Planning Discussion",
+        sharedBy: "Sarah Johnson",
+        sharedAt: "2 days ago",
+        message: "Important notes about our upcoming project timeline",
+        teamId: teamId
+      },
+      {
+        id: `shared-${teamId}-2`,
+        conversationId: `conv-${teamId}-2`,
+        title: "Client Meeting Notes",
+        sharedBy: "Michael Chen",
+        sharedAt: "5 days ago",
+        message: "Summary of client requirements and feedback",
+        teamId: teamId
+      }
+    ];
+  };
+
+  const handleShareConversation = (conversationId: string, message: string, teamId: string) => {
+    toast.success("Conversation shared with team", {
+      description: "Team members will now be able to view this conversation",
+    });
+    setShowShareDialog(false);
+  };
+
+  const handleViewSharedConversation = (conversationId: string) => {
+    toast.info("Opening shared conversation", {
+      description: "This would open the shared conversation",
+    });
+    // In a real application, this would navigate to the conversation view
+    console.log("Opening conversation:", conversationId);
+  };
+
   // If a team chat is active, show the chat view instead of the regular content
   if (activeChatTeam) {
     return (
       <div className="container py-0 px-0 max-w-full h-screen team-page">
         <TeamChatView 
-          team={activeChatTeam}
-          currentUserId={currentUserId}
-          userData={userData}
-          onBack={handleCloseTeamChat}
+          activeTeam={activeChatTeam}
+          memberID={currentUserId}
+          userInfo={userData}
+          onClose={handleCloseTeamChat}
+          onInvite={handleAddMemberFromChat}
+          membersList={teamMembersList}
         />
       </div>
     );
@@ -1387,16 +1315,70 @@ export default function TeamPage() {
                               <Button 
                                 size="sm" 
                                 variant="default" 
-                                className="h-7 text-xs px-2 py-0"
-                                onClick={() => handleAcceptInvitation(notification.memberId, notification.id)}
+                                onClick={() => {
+                                  // Find the member in our list
+                                  const memberId = (notification as InvitationNotification).memberId;
+                                  const member = teamMembersList.find((m) => m.id === memberId);
+                                  
+                                  if (member) {
+                                    // Update the member's pending status
+                                    setTeamMembersList(prevMembers => prevMembers.map(m => 
+                                      m.id === memberId ? { ...m, pending: false } : m
+                                    ));
+                                    
+                                    // Remove this notification
+                                    setNotifications(prevNotifications => 
+                                      prevNotifications.filter(n => n.id !== notification.id)
+                                    );
+                                    
+                                    // Add a success notification
+                                    const successNotification: InfoNotification = {
+                                      id: `accepted-${Date.now()}`,
+                                      title: "Invitation Accepted",
+                                      message: `You have joined ${(notification as InvitationNotification).teamName}`,
+                                      time: "Just now",
+                                      read: false,
+                                      type: "info"
+                                    };
+                                    
+                                    setNotifications(prevNotifications => 
+                                      [successNotification, ...prevNotifications]
+                                    );
+                                  }
+                                }}
                               >
                                 Accept
                               </Button>
                               <Button 
                                 size="sm" 
                                 variant="outline" 
-                                className="h-7 text-xs px-2 py-0"
-                                onClick={() => handleRejectInvitation(notification.memberId, notification.id)}
+                                onClick={() => {
+                                  const memberId = (notification as InvitationNotification).memberId;
+                                  
+                                  // Remove the member from the list
+                                  setTeamMembersList(prevMembers => 
+                                    prevMembers.filter((m) => m.id !== memberId)
+                                  );
+                                  
+                                  // Remove this notification
+                                  setNotifications(prevNotifications => 
+                                    prevNotifications.filter(n => n.id !== notification.id)
+                                  );
+                                  
+                                  // Add a rejection notification
+                                  const rejectionNotification: InfoNotification = {
+                                    id: `rejected-${Date.now()}`,
+                                    title: "Invitation Declined",
+                                    message: `You declined to join ${(notification as InvitationNotification).teamName}`,
+                                    time: "Just now",
+                                    read: false,
+                                    type: "info"
+                                  };
+                                  
+                                  setNotifications(prevNotifications => 
+                                    [rejectionNotification, ...prevNotifications]
+                                  );
+                                }}
                               >
                                 Decline
                               </Button>
@@ -1670,7 +1652,7 @@ export default function TeamPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-10 text-center">
                 <Users className="h-10 w-10 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Teams Joined</h3>
+                <h3 className="text-base font-medium mb-2">No Teams Joined</h3>
                 <p className="text-muted-foreground max-w-md">
                   Join or create a team to see shared conversations.
                 </p>
@@ -1740,6 +1722,29 @@ export default function TeamPage() {
         onShare={handleShareConversation}
         teamId={activeTeamId}
       />
+
+      {/* Email Invitation Dialog */}
+      <AlertDialog open={showEmailInviteDialog} onOpenChange={setShowEmailInviteDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Email Invitation</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingInviteEmail} is not registered in the system. Send an email invitation instead?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowEmailInviteDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleSendEmailInvitation}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Send Invitation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
