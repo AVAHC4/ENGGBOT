@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Share2, Upload, ArrowLeft } from 'lucide-react';
+import { Mail, MessageSquare, Users, UserPlus, UserMinus, PlusCircle, Bell, Share2, Upload, ArrowLeft, MoreHorizontal, Search, Send, Paperclip, Image, Smile } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { TeamMember } from '@/components/layout/nav-team';
@@ -23,10 +23,11 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -58,65 +59,7 @@ interface Team {
   category: string;
 }
 
-const teamMembers: ExtendedTeamMember[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    isOnline: true,
-    role: "Product Manager",
-    email: "sarah.johnson@example.com",
-    bio: "Leading product strategy and roadmap development"
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    isOnline: true,
-    role: "Senior Developer",
-    email: "michael.chen@example.com",
-    bio: "Full-stack developer with 8+ years experience"
-  },
-  {
-    id: "3",
-    name: "Jessica Smith",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    isOnline: false,
-    lastSeen: "20m ago",
-    role: "UI/UX Designer",
-    email: "jessica.smith@example.com",
-    bio: "Creating intuitive and beautiful user experiences"
-  },
-  {
-    id: "4",
-    name: "David Rodriguez",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    isOnline: false,
-    lastSeen: "1h ago",
-    role: "Frontend Developer",
-    email: "david.rodriguez@example.com",
-    bio: "Specializing in React and modern JavaScript frameworks"
-  },
-  {
-    id: "5",
-    name: "Emma Wilson",
-    avatar: "https://i.pravatar.cc/150?img=9",
-    isOnline: true,
-    role: "Project Manager",
-    email: "emma.wilson@example.com",
-    bio: "Coordinating team efforts and managing deadlines"
-  },
-  {
-    id: "6",
-    name: "James Taylor",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    isOnline: false,
-    lastSeen: "3h ago",
-    role: "Backend Developer",
-    email: "james.taylor@example.com",
-    bio: "Focused on scalable architecture and performance optimization"
-  }
-];
+const teamMembers: ExtendedTeamMember[] = [];
 
 // Initial teams data
 const initialTeams: Team[] = [
@@ -124,7 +67,7 @@ const initialTeams: Team[] = [
     id: "team1",
     name: "Frontend Squad",
     description: "Responsible for UI/UX implementation and frontend development",
-    members: [teamMembers[2], teamMembers[3]], // Jessica and David
+    members: [], 
     avatarColor: "bg-blue-500",
     category: "Development",
   },
@@ -132,7 +75,7 @@ const initialTeams: Team[] = [
     id: "team2",
     name: "Backend Heroes",
     description: "Handling server-side logic and database architecture",
-    members: [teamMembers[1], teamMembers[5]], // Michael and James
+    members: [],
     avatarColor: "bg-green-500",
     category: "Development",
   },
@@ -140,7 +83,7 @@ const initialTeams: Team[] = [
     id: "team3",
     name: "Project Management",
     description: "Overseeing project timelines and coordination",
-    members: [teamMembers[0], teamMembers[4]], // Sarah and Emma
+    members: [],
     avatarColor: "bg-purple-500",
     category: "Management",
   },
@@ -148,7 +91,7 @@ const initialTeams: Team[] = [
     id: "team4",
     name: "Design Wizards",
     description: "Creating beautiful and intuitive user experiences",
-    members: [teamMembers[2]], // Jessica
+    members: [],
     avatarColor: "bg-amber-500",
     category: "Design",
   },
@@ -156,7 +99,7 @@ const initialTeams: Team[] = [
     id: "team5",
     name: "Full Stack Force",
     description: "End-to-end development across the stack",
-    members: [teamMembers[1], teamMembers[3], teamMembers[5]], // Michael, David, James
+    members: [],
     avatarColor: "bg-rose-500",
     category: "Development",
   }
@@ -733,34 +676,34 @@ function TeamChatView({
     <div className="container h-screen flex flex-col">
       <div className="border-b p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
+        <Button 
+          variant="ghost" 
             size="sm" 
             onClick={onClose}
-            className="mr-2"
-          >
+          className="mr-2"
+        >
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
+        </Button>
           <h2 className="text-xl font-semibold">{activeTeam?.name || 'Team Chat'}</h2>
-        </div>
+          </div>
         
         {/* Chat conversation area */}
         <div className="flex items-center gap-2">
-          <Button 
+                  <Button 
             variant="outline"
             size="sm" 
             onClick={() => setShowAddMemberDialog(true)}
           >
             <UserPlus className="h-4 w-4 mr-1" /> Add Member
-          </Button>
+                  </Button>
         </div>
       </div>
       
       {/* Chat conversation area */}
       <div className="flex-1 overflow-auto p-4">
         {teamMessages.map((msg) => (
-          <div 
-            key={msg.id}
+                  <div 
+                    key={msg.id} 
             className={`mb-4 max-w-[80%] ${msg.senderId === memberID ? 'ml-auto' : ''}`}
           >
             <div className={`rounded-lg p-3 ${
@@ -769,14 +712,14 @@ function TeamChatView({
                 : 'bg-muted'
             }`}>
               {msg.content}
-            </div>
+                          </div>
             <div className="text-xs text-muted-foreground mt-1 flex items-center">
               {msg.senderId !== memberID && (
                 <span className="font-medium mr-2">{msg.senderName}</span>
-              )}
+                        )}
               <span>{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            </div>
-          </div>
+                      </div>
+                        </div>
         ))}
         <div ref={messagesEndRef}></div>
       </div>
@@ -784,55 +727,92 @@ function TeamChatView({
       {/* Message input area */}
       <div className="border-t p-4">
         <form onSubmit={handleSendMessage} className="flex gap-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+        <Input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1"
+          className="flex-1"
           />
           <Button type="submit">Send</Button>
-        </form>
+      </form>
       </div>
-      
+
       {/* Add Member Dialog */}
       <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add Team Member</DialogTitle>
             <DialogDescription>
-              Invite a new member to join your team by email
+              Select an existing team member to add to this team
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleAddMember} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email address
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="colleague@example.com"
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                An invitation will be sent to this email address
+          <div className="py-4 max-h-[60vh] overflow-auto">
+            {teamMembers.length === 0 ? (
+              <div className="text-center py-6">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                <p className="font-medium">No team members available</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Add team members from the main Teams page first
               </p>
             </div>
-            
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={() => setShowAddMemberDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Send Invitation</Button>
-            </DialogFooter>
-          </form>
+            ) : teamMembers.filter(member => 
+              !activeTeam?.members.some(teamMember => teamMember.id === member.id)
+            ).length > 0 ? (
+              <div className="space-y-2">
+                {teamMembers.filter(member => 
+                  !activeTeam?.members.some(teamMember => teamMember.id === member.id)
+                ).map(member => (
+                  <div 
+                    key={member.id}
+                    className="flex items-center justify-between p-3 border rounded-md hover:bg-accent cursor-pointer"
+                    onClick={() => {
+                      onInvite(member.email);
+                      setShowAddMemberDialog(false);
+                    }}
+                  >
+                  <div className="flex items-center gap-3">
+                    {member.avatar ? (
+                      <img 
+                        src={member.avatar} 
+                        alt={member.name}
+                        className="h-10 w-10 rounded-full object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                        <span className="text-sm font-medium">{member.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div>
+                        <p className="font-medium">{member.name}</p>
+                        <p className="text-sm text-muted-foreground">{member.role}</p>
+                    </div>
+                  </div>
+                    <Button variant="ghost" size="sm" className="rounded-full">
+                      <UserPlus className="h-4 w-4" />
+                      </Button>
+                </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                <p className="font-medium">No available members</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  All team members have already been added to this team
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowAddMemberDialog(false)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -842,7 +822,7 @@ function TeamChatView({
 export default function TeamPage() {
   const [activeTab, setActiveTab] = useState('teams');
   const [teams, setTeams] = useState<Team[]>(initialTeams);
-  const [myTeams, setMyTeams] = useState<Team[]>([teams[0], teams[2]]); // Initial joined teams
+  const [myTeams, setMyTeams] = useState<Team[]>([]); // No initial joined teams
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState('');
@@ -1085,79 +1065,71 @@ export default function TeamPage() {
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (newMemberEmail.trim() && newMemberEmail.includes('@')) {
-      // Show loading toast
-      const loadingToast = toast.loading("Checking email in database...");
-      
-      try {
-        console.log("Checking if email exists in Supabase:", newMemberEmail);
+    // Validate that we have an email
+    if (!newMemberEmail || !newMemberEmail.trim()) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    // Create loading toast
+    const loadingToastId = toast.loading("Checking if the user exists in our system");
+
+    try {
+      // Check if the email exists in the Supabase users table
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', newMemberEmail.trim())
+        .maybeSingle();
+
+      // Remove loading toast
+      toast.dismiss(loadingToastId);
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // User exists in Supabase, add as team member with proper data
+        const newMember: ExtendedTeamMember = {
+          id: `member-${Date.now()}`,
+          name: data.full_name || data.email.split('@')[0],
+          avatar: data.avatar_url || '',
+          email: data.email,
+          role: 'Team Member',
+          bio: '',
+          isOnline: false,
+          lastSeen: new Date().toISOString(),
+          pending: false
+        };
+
+        // Update team members list
+        setTeamMembersList(prevMembers => [...prevMembers, newMember]);
         
-        // Check if email exists in Supabase users table
-        const { data: existingUsers, error } = await supabase
-          .from('users')
-          .select('id, email, name, avatar')
-          .eq('email', newMemberEmail)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Error checking email in Supabase:", error);
-          toast.dismiss(loadingToast);
-          toast.error("Error checking email. Please try again.");
-          return;
-        }
-        
-        console.log("Supabase query result:", existingUsers);
-        
-        // Verify we got a valid response back before proceeding
-        if (existingUsers) {
-          console.log("User found in database:", existingUsers);
-          
-          // Create member with existing user info
-      const newMember: ExtendedTeamMember = {
-            id: `member-${existingUsers.id}`,
-            name: existingUsers.name || newMemberEmail.split('@')[0],
-        email: newMemberEmail,
-        isOnline: false,
-        role: "New Member",
-        lastSeen: "Just invited",
-            avatar: existingUsers.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
-        bio: "Newly invited team member",
-            pending: true
-      };
-      
-      // Add the new member to the list
-      setTeamMembersList(prevMembers => [...prevMembers, newMember]);
-      
-      // Add notification for the sender
-      addInvitationNotification(newMemberEmail);
-      
-          // In a real app, you would trigger a server action to send notification to the user
-      setTimeout(() => {
-        addReceivedInvitationNotification("You", "Your Team", newMember.id);
-          }, 1000);
-          
-          toast.dismiss(loadingToast);
-          toast.success("User found & invitation sent", {
-            description: `${newMemberEmail} was notified in-app about your team invitation`,
-          });
-        } else {
-          console.log("User NOT found in database, would send email invitation");
-          
-          // Show custom alert dialog instead of browser confirm
-          toast.dismiss(loadingToast);
+        // Add notification for the sender
+        toast.success(`${newMember.name} has been added to your team.`);
+
+        // Add notification for the person who was added
+        addInvitationNotification(newMember.email);
+
+      } else {
+        // User doesn't exist in Supabase, show custom confirmation
+        if (window.confirm(`${newMemberEmail} doesn't have an account yet. Would you like to send them an email invitation?`)) {
           setPendingInviteEmail(newMemberEmail);
           setShowEmailInviteDialog(true);
         }
-      
-      // Clear form
-      setNewMemberEmail('');
-      setShowAddMemberForm(false);
-      } catch (err) {
-        console.error("Error in team member invitation process:", err);
-        toast.dismiss(loadingToast);
-        toast.error("Something went wrong. Please try again.");
       }
+      } catch (error) {
+      // Remove loading toast
+      toast.dismiss(loadingToastId);
+      
+      // Show error toast
+      toast.error("There was an error checking this email. Please try again.");
+      console.error("Error checking email:", error);
     }
+
+    // Clear the input
+    setNewMemberEmail('');
   };
 
   // Handler for sending email invitation
@@ -1211,7 +1183,7 @@ export default function TeamPage() {
         id: `shared-${teamId}-1`,
         conversationId: `conv-${teamId}-1`,
         title: "Project Planning Discussion",
-        sharedBy: "Sarah Johnson",
+        sharedBy: "Team Member",
         sharedAt: "2 days ago",
         message: "Important notes about our upcoming project timeline",
         teamId: teamId
@@ -1220,7 +1192,7 @@ export default function TeamPage() {
         id: `shared-${teamId}-2`,
         conversationId: `conv-${teamId}-2`,
         title: "Client Meeting Notes",
-        sharedBy: "Michael Chen",
+        sharedBy: "Team Lead",
         sharedAt: "5 days ago",
         message: "Summary of client requirements and feedback",
         teamId: teamId
@@ -1724,27 +1696,75 @@ export default function TeamPage() {
       />
 
       {/* Email Invitation Dialog */}
-      <AlertDialog open={showEmailInviteDialog} onOpenChange={setShowEmailInviteDialog}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Email Invitation</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingInviteEmail} is not registered in the system. Send an email invitation instead?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowEmailInviteDialog(false)}>
+      <Dialog open={showEmailInviteDialog} onOpenChange={setShowEmailInviteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Email Invitation</DialogTitle>
+            <DialogDescription>
+              {pendingInviteEmail} doesn't have an account yet. Send them an email invitation to join your team.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <div className="bg-muted p-4 rounded-md mb-4">
+              <p className="text-sm font-medium mb-2">Email Preview:</p>
+              <div className="border rounded-md p-3 bg-card">
+                <p className="text-sm mb-2"><strong>To:</strong> {pendingInviteEmail}</p>
+                <p className="text-sm mb-2"><strong>Subject:</strong> You've been invited to join a team</p>
+                <div className="border-t pt-2 mt-2">
+                  <p className="text-sm mb-2">Hi there,</p>
+                  <p className="text-sm mb-2">
+                    You've been invited to join a team on our platform. Click the link below to join:
+                  </p>
+                  <div className="bg-primary/10 text-primary p-2 rounded text-sm font-medium my-2 text-center">
+                    [Invitation Link]
+                  </div>
+                  <p className="text-sm">
+                    If you don't have an account yet, you'll be able to create one.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEmailInviteDialog(false)}
+            >
               Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleSendEmailInvitation}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            </Button>
+            <Button 
+              onClick={() => {
+                // Send email invitation logic would go here
+                toast.success(`Invitation email sent to ${pendingInviteEmail}`);
+                
+                // Create pending team member
+                const newMember: ExtendedTeamMember = {
+                  id: `pending-${Date.now()}`,
+                  name: pendingInviteEmail.split('@')[0],
+                  email: pendingInviteEmail,
+                  avatar: '',
+                  role: 'Pending Member',
+                  bio: '',
+                  isOnline: false,
+                  lastSeen: 'Invited',
+                  pending: true
+                };
+                
+                // Add to team members list
+                setTeamMembersList(prevMembers => [...prevMembers, newMember]);
+                
+                // Reset and close dialog
+                setPendingInviteEmail('');
+                setShowEmailInviteDialog(false);
+              }}
             >
               Send Invitation
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
