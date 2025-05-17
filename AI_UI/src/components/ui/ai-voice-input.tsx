@@ -1,7 +1,8 @@
 "use client";
 
-import { Mic } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Mic, MicOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
 
 interface AIVoiceInputProps {
@@ -24,7 +25,7 @@ export function AIVoiceInput({
   const [submitted, setSubmitted] = useState(false);
   const [time, setTime] = useState(0);
   const [isClient, setIsClient] = useState(false);
-  const [isDemo, setIsDemo] = useState(demoMode);
+  const [isDemoState, setIsDemo] = useState(demoMode);
 
   useEffect(() => {
     setIsClient(true);
@@ -34,20 +35,18 @@ export function AIVoiceInput({
     let intervalId: NodeJS.Timeout;
 
     if (submitted) {
-      onStart?.();
       intervalId = setInterval(() => {
         setTime((t) => t + 1);
       }, 1000);
     } else {
-      onStop?.(time);
       setTime(0);
     }
 
     return () => clearInterval(intervalId);
-  }, [submitted, time, onStart, onStop]);
+  }, [submitted]);
 
   useEffect(() => {
-    if (!isDemo) return;
+    if (!isDemoState) return;
 
     let timeoutId: NodeJS.Timeout;
     const runAnimation = () => {
@@ -63,7 +62,7 @@ export function AIVoiceInput({
       clearTimeout(timeoutId);
       clearTimeout(initialTimeout);
     };
-  }, [isDemo, demoInterval]);
+  }, [isDemoState, demoInterval]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -72,10 +71,15 @@ export function AIVoiceInput({
   };
 
   const handleClick = () => {
-    if (isDemo) {
+    if (isDemoState) {
       setIsDemo(false);
       setSubmitted(false);
     } else {
+      if (!submitted) {
+        onStart?.();
+      } else {
+        onStop?.(time);
+      }
       setSubmitted((prev) => !prev);
     }
   };
@@ -83,25 +87,20 @@ export function AIVoiceInput({
   return (
     <div className={cn("w-full py-4", className)}>
       <div className="relative max-w-xl w-full mx-auto flex items-center flex-col gap-2">
-        <button
-          className={cn(
-            "group w-16 h-16 rounded-xl flex items-center justify-center transition-colors",
-            submitted
-              ? "bg-none"
-              : "bg-none hover:bg-black/10 dark:hover:bg-white/10"
-          )}
-          type="button"
+        <Button
+          variant="outline"
+          size="icon"
+          className={`h-16 w-16 rounded-full transition-all duration-300 ${
+            submitted ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary/90'
+          }`}
           onClick={handleClick}
         >
           {submitted ? (
-            <div
-              className="w-6 h-6 rounded-sm animate-spin bg-black dark:bg-white cursor-pointer pointer-events-auto"
-              style={{ animationDuration: "3s" }}
-            />
+            <MicOff className="h-6 w-6 text-white" />
           ) : (
-            <Mic className="w-6 h-6 text-black/70 dark:text-white/70" />
+            <Mic className="h-6 w-6 text-white" />
           )}
-        </button>
+        </Button>
 
         <span
           className={cn(
