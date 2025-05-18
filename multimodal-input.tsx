@@ -1,8 +1,138 @@
 "use client"
 
 import React from "react"
-import { Bot, FileText, RotateCw, Search, SendIcon } from "lucide-react"
-import { useState } from "react"
+import { Bot, FileText, RotateCw, Search, SendIcon, Mic, MicOff, Loader2 } from "lucide-react"
+import { useState, useRef } from "react"
+
+// VoiceInput component inline
+interface VoiceInputProps {
+  onTranscription: (text: string) => void;
+  disabled?: boolean;
+}
+
+const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = false }) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  
+  const startRecording = async () => {
+    try {
+      setError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        setIsProcessing(true);
+        
+        try {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          await processAudio(audioBlob);
+        } catch (e) {
+          console.error("Error processing audio:", e);
+          setError("Failed to process speech. Please try again.");
+        } finally {
+          setIsProcessing(false);
+        }
+        
+        // Stop all tracks from the stream
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Error accessing microphone:", e);
+      setError("Could not access microphone. Please check permissions.");
+      setIsRecording(false);
+    }
+  };
+  
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+  
+  const processAudio = async (audioBlob: Blob): Promise<void> => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.wav');
+    
+    try {
+      console.log("Sending audio to transcribe endpoint...");
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log("Speech recognition result:", data);
+      
+      if (data.text) {
+        if (data.fallback) {
+          console.warn("Using fallback transcription:", data.error);
+          setError("Using fallback: NVIDIA service unavailable");
+          setTimeout(() => setError(null), 3000);
+        }
+        
+        onTranscription(data.text);
+      } else {
+        setError("No speech detected. Please try again.");
+      }
+    } catch (e) {
+      console.error("Speech recognition error:", e);
+      setError("Failed to connect to speech recognition server. Check console for details.");
+      throw e;
+    }
+  };
+  
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={isRecording ? stopRecording : startRecording}
+        disabled={disabled || isProcessing}
+        className={`p-2 rounded-full transition-all ${
+          isRecording 
+            ? 'bg-red-500 text-white animate-pulse' 
+            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+        } ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+        title={isRecording ? "Stop recording" : "Start voice input"}
+      >
+        {isProcessing ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : isRecording ? (
+          <MicOff className="w-5 h-5" />
+        ) : (
+          <Mic className="w-5 h-5" />
+        )}
+      </button>
+      
+      {error && (
+        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-red-500 text-white text-xs px-2 py-1 rounded">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Mock component replacements for missing modules
 const Button = ({ className, disabled, onClick, children }) => (
@@ -92,6 +222,13 @@ export function MultimodalInput({ onSubmit, isLoading }) {
     setInput("")
   }
 
+  // Handle voice input transcription
+  const handleTranscription = (text) => {
+    if (text) {
+      setInput(prev => prev + (prev ? ' ' : '') + text)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto">
       <div className="relative bg-zinc-900 rounded-xl border border-zinc-800">
@@ -118,18 +255,24 @@ export function MultimodalInput({ onSubmit, isLoading }) {
           )}
         />
         <div className="flex items-center justify-between p-3">
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-[140px] h-8 px-3 bg-zinc-800 border-zinc-700 text-zinc-100 text-xs">
-              <SelectValue placeholder="Select model" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-100">
-              {AIModels.map((model) => (
-                <SelectItem key={model.id} value={model.id} className="text-xs">
-                  {model.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center space-x-2">
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger className="w-[140px] h-8 px-3 bg-zinc-800 border-zinc-700 text-zinc-100 text-xs">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-100">
+                {AIModels.map((model) => (
+                  <SelectItem key={model.id} value={model.id} className="text-xs">
+                    {model.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <VoiceInput
+              onTranscription={handleTranscription}
+              disabled={isLoading}
+            />
+          </div>
           
           <Button
             className={cn(

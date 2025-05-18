@@ -9,6 +9,7 @@ import SignUpPage from "@/pages/sign-up";
 import WelcomePage from "@/pages/welcome";
 import LoadingPage from "@/pages/loading";
 import ChatDashboard from "@/pages/chat-dashboard";
+import RivaTest from "@/components/RivaTest";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useEffect } from "react";
 import React from "react";
@@ -94,6 +95,7 @@ function Router() {
       <Route path="/welcome" component={WelcomePage} />
       <Route path="/auth-loading" component={LoadingPage} />
       <Route path="/chat" component={ProtectedChatDashboard} />
+      <Route path="/test-riva" component={RivaTest} />
       <Route component={NotFound} />
     </Switch>
   );
