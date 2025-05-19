@@ -32,7 +32,7 @@ export default function Features() {
             <div className="flex items-center gap-2">
               <Fingerprint className="size-4" />
 
-              <h3 className="text-sm font-medium"><strong>Privacy-First Design</strong></h3>
+              <h3 className="text-sm font-medium"><strong>Privacy-first Design</strong></h3>
             </div>
             <p className="text-sm">No personal data collection. Your queries and history remain confidential.</p>
           </div>
