@@ -26,7 +26,7 @@ export default function Features() {
               <Cpu className="size-4" />
               <h3 className="text-sm font-medium"><strong>Faculty-Validated Content</strong></h3>
             </div>
-            <p className="text-sm">All answers ar cross-checked with university materials to ensure accuracy.</p>
+            <p className="text-sm">All answers are cross-checked with university materials to ensure accuracy.</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
