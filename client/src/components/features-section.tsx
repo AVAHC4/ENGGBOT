@@ -50,7 +50,7 @@ export default function Features() {
 
               <h3 className="text-sm font-medium"><strong>Exam Prep Tools</strong></h3>
             </div>
-            <p className="text-sm">Access interactive past papers and quizzes to test your knowledge.</p>
+            <p className="text-sm">Access interactive past pape and quizzes to test your knowledge.</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
