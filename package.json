@@ -10,13 +10,14 @@
     "dev:frontend": "vite",
     "dev:backend": "node api/dist/index.js",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "build": "npx vite build",
-    "vercel-build": "npx vite build && mkdir -p dist/chat dist/api/auth/google && cp client/public/chat/index.html dist/chat/index.html && cp client/chat.html dist/chat.html && cp client/public/200.html dist/200.html && cp dist/index.html dist/404.html && cp -r client/public/api dist/",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "vercel-build": "node ./node_modules/vite/bin/vite.js build && mkdir -p dist/chat dist/api/auth/google && cp client/public/chat/index.html dist/chat/index.html && cp client/chat.html dist/chat.html && cp client/public/200.html dist/200.html && cp dist/index.html dist/404.html && cp -r client/public/api dist/",
     "preview": "vite preview",
     "start": "node api/dist/index.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "vite": "6.3.5",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.1",
@@ -121,7 +122,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.19.3",
     "typescript": "5.6.3",
-    "vercel": "^42.1.1",
-    "vite": "6.3.5"
+    "vercel": "^42.1.1"
   }
 }
