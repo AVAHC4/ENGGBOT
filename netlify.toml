@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm install vite@5.4.14 --save-dev && npm run build"
+  command = "npm install && npm install vite@6.3.5 --save-dev && npm run build"
   publish = "dist"
   functions = "api"
 
