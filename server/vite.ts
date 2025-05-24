@@ -2,14 +2,20 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer, createLogger } from "vite";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 import { type Server } from "http";
-import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
-const viteLogger = createLogger();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Only declare Vite-related modules
+let createViteServer: any = null;
+let createLogger: any = null;
+let viteLogger: any = null;
+let viteConfig: any = {};
+
+// We'll dynamically import these in the setupVite function
+// to avoid top-level await issues
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -28,6 +34,27 @@ export async function setupVite(app: Express, server: Server) {
     log('Running in production mode, skipping Vite setup');
     return;
   }
+  
+  try {
+    // Dynamically import Vite modules only when needed
+    const vite = await import('vite');
+    createViteServer = vite.createServer;
+    createLogger = vite.createLogger;
+    viteLogger = createLogger();
+    
+    try {
+      // Use dynamic import for vite.config to avoid issues during build
+      const viteConfigModule = await import('../vite.config.js');
+      viteConfig = viteConfigModule.default;
+    } catch (error) {
+      console.error('Failed to import vite config:', error);
+      // Provide a minimal default config if needed
+      viteConfig = {};
+    }
+  } catch (error) {
+    log(`Error loading Vite: ${error instanceof Error ? error.message : String(error)}`);
+    return;
+  }
 
   const serverOptions = {
     middlewareMode: true,
@@ -40,8 +67,19 @@ export async function setupVite(app: Express, server: Server) {
     configFile: false,
     customLogger: {
       ...viteLogger,
+      sendMsg: function sendMsg(msg: string, options?: any) {
+        if (viteLogger) {
+          viteLogger(msg, options);
+        } else {
+          console.log(msg);
+        }
+      },
       error: (msg, options) => {
-        viteLogger.error(msg, options);
+        if (viteLogger) {
+          viteLogger.error(msg, options);
+        } else {
+          console.log(msg);
+        }
         process.exit(1);
       },
     },
