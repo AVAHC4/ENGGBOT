@@ -23,6 +23,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
+    "@tailwindcss/typography": "^0.5.15",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-accordion": "^1.2.1",
@@ -108,7 +109,6 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.15",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/dotenv": "^6.1.1",
     "@types/express": "4.17.21",
