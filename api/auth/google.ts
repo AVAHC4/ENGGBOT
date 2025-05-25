@@ -8,8 +8,8 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
 // Update the way we handle the callback and include the BASE_URL
-const BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://enggbot.vercel.app'
+const BASE_URL = process.env.NODE_ENV === 'production'
+  ? (process.env.CLIENT_URL || process.env.URL || 'https://enggbot.netlify.app') // Prioritize CLIENT_URL, then Netlify's URL, then fallback
   : (process.env.CLIENT_URL || 'http://localhost:3000');
   
 console.log("Using BASE_URL for redirection:", BASE_URL);
