@@ -14,7 +14,7 @@ const BASE_URL = process.env.NODE_ENV === 'production'
   
 // Set the correct callback URL format based on environment
 const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? `${BASE_URL}/api/auth/google/callback` // This matches what's registered in Google Cloud Console
+  ? `${BASE_URL}/.netlify/functions/auth-google/callback` // Use the Netlify function naming convention
   : `${BASE_URL}/api/auth/google/callback`;
   
 console.log("=== Google Auth Configuration ===");

@@ -11,7 +11,7 @@
 # Special redirect for Google OAuth callback
 [[redirects]]
   from = "/api/auth/google/callback"
-  to = "/.netlify/functions/auth/google/callback"
+  to = "/.netlify/functions/auth-google/callback"
   status = 200
   force = true
 
