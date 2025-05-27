@@ -40,6 +40,7 @@ import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { initGoogleAuth } from "./auth/google.js";
+import { initNetlifyGoogleAuth } from "./auth/netlify-google.js";
 import { supabase } from "./lib/supabase.js";
 import { initTestAuth } from "./auth/test.js";
 
@@ -171,8 +172,15 @@ apiRouter.get("/user", (req, res) => {
 // Mount API routes under /api
 app.use("/api", apiRouter);
 
-// Initialize Google auth
-initGoogleAuth(app);
+// For local development, use the regular Google auth
+// For Netlify production, use the specialized Netlify Google auth
+if (process.env.NODE_ENV === 'production' && process.env.CLIENT_URL?.includes('netlify')) {
+  console.log("Using Netlify-specific Google Auth implementation");
+  initNetlifyGoogleAuth(app);
+} else {
+  console.log("Using standard Google Auth implementation");
+  initGoogleAuth(app);
+}
 
 // Initialize test auth routes
 initTestAuth(app);
