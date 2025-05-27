@@ -110,6 +110,19 @@ app.use(passport.session());
 // API routes
 const apiRouter = express.Router();
 
+// Special proxy route for Netlify Google OAuth callback
+app.get("/.netlify/functions/auth/google/callback", (req, res, next) => {
+  console.log("Netlify function path OAuth callback received - proxying to /api/auth/google/callback");
+  console.log("Original URL:", req.originalUrl);
+  console.log("Query params:", req.query);
+  
+  // Store original query parameters
+  const queryParams = new URLSearchParams(req.query as any).toString();
+  
+  // Redirect to the expected callback URL with original query parameters
+  res.redirect(`/api/auth/google/callback?${queryParams}`);
+});
+
 // Simple test endpoint
 apiRouter.get("/hello", (req, res) => {
   console.log("Hello endpoint hit");

@@ -17,7 +17,9 @@ const NETLIFY_URL = 'https://enggbot.netlify.app';
 const BASE_URL = process.env.NODE_ENV === 'production' ? NETLIFY_URL : 'http://localhost:3000';
 
 // The exact callback URL that matches Google Cloud Console
-const CALLBACK_URL = `${BASE_URL}/api/auth/google/callback`;
+const CALLBACK_URL = process.env.NODE_ENV === 'production'
+  ? `${NETLIFY_URL}/.netlify/functions/auth/google/callback` // Use actual Netlify functions path
+  : `http://localhost:3000/api/auth/google/callback`; // Local development path
 
 console.log("=== Netlify Google Auth Configuration ===");
 console.log("NODE_ENV:", process.env.NODE_ENV);
