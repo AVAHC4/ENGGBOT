@@ -35,7 +35,7 @@ passport.use(
     {
       clientID: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
-      callbackURL: `${BASE_URL}/api/auth/google/callback`,
+      callbackURL: `${BASE_URL}/.netlify/functions/auth/google/callback`,
       scope: ["profile", "email"],
       proxy: true
     },
@@ -144,7 +144,7 @@ export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
 
   // Google auth route
-  app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
+  app.get("/.netlify/functions/auth/google", (req: Request, res: Response, next: any) => {
     console.log("Google auth route hit - redirecting to Google");
     console.log("Request headers:", req.headers);
     console.log("Request host:", req.get('host'));
@@ -163,7 +163,7 @@ export const initGoogleAuth = (app: any) => {
 
   // Google callback route
   app.get(
-    "/api/auth/google/callback",
+    "/.netlify/functions/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
       console.log("Google callback route hit");
     console.log("Query params:", req.query);
