@@ -12,8 +12,14 @@ const BASE_URL = process.env.NODE_ENV === 'production'
   ? (process.env.CLIENT_URL || process.env.URL || 'https://enggbot.netlify.app') // Prioritize CLIENT_URL, then Netlify's URL, then fallback
   : (process.env.CLIENT_URL || 'http://localhost:3000');
   
-console.log("Using BASE_URL for redirection:", BASE_URL);
-console.log("Current NODE_ENV:", process.env.NODE_ENV);
+console.log("=== Google Auth Configuration ===");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("CLIENT_URL:", process.env.CLIENT_URL);
+console.log("BASE_URL:", BASE_URL);
+console.log("Google Client ID:", CLIENT_ID ? 'Set' : 'Missing');
+console.log("Google Client Secret:", CLIENT_SECRET ? 'Set' : 'Missing');
+console.log("Callback URL:", `${BASE_URL}/api/auth/google/callback`);
+console.log("===============================");
 
 // Extend session type
 declare module 'express-session' {
@@ -140,6 +146,9 @@ export const initGoogleAuth = (app: any) => {
   // Google auth route
   app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
     console.log("Google auth route hit - redirecting to Google");
+    console.log("Request headers:", req.headers);
+    console.log("Request host:", req.get('host'));
+    console.log("Request protocol:", req.protocol);
     
     // Generate a random state parameter for security
     const state = Math.random().toString(36).substring(2, 15);
@@ -156,7 +165,10 @@ export const initGoogleAuth = (app: any) => {
   app.get(
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
-      console.log("Google callback route hit with query params:", req.query);
+      console.log("Google callback route hit");
+    console.log("Query params:", req.query);
+    console.log("Headers:", req.headers);
+    console.log("Session state:", req.session?.oauthState);
       
       // Verify state parameter to prevent CSRF
       if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {

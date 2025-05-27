@@ -12,8 +12,17 @@
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
+  force = true  # Add this to ensure redirects work with POST requests
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Add these headers for OAuth
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
