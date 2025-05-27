@@ -12,13 +12,19 @@ const BASE_URL = process.env.NODE_ENV === 'production'
   ? (process.env.CLIENT_URL || process.env.URL || 'https://enggbot.netlify.app') // Prioritize CLIENT_URL, then Netlify's URL, then fallback
   : (process.env.CLIENT_URL || 'http://localhost:3000');
   
+// Set the correct callback URL format based on environment
+const CALLBACK_URL = process.env.NODE_ENV === 'production'
+  ? `${BASE_URL}/api/auth/google/callback` // This matches what's registered in Google Cloud Console
+  : `${BASE_URL}/api/auth/google/callback`;
+  
 console.log("=== Google Auth Configuration ===");
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("CLIENT_URL:", process.env.CLIENT_URL);
+console.log("URL:", process.env.URL);
 console.log("BASE_URL:", BASE_URL);
+console.log("CALLBACK_URL:", CALLBACK_URL);
 console.log("Google Client ID:", CLIENT_ID ? 'Set' : 'Missing');
 console.log("Google Client Secret:", CLIENT_SECRET ? 'Set' : 'Missing');
-console.log("Callback URL:", `${BASE_URL}/api/auth/google/callback`);
 console.log("===============================");
 
 // Extend session type
@@ -35,7 +41,7 @@ passport.use(
     {
       clientID: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
-      callbackURL: `${BASE_URL}/.netlify/functions/auth/google/callback`,
+      callbackURL: CALLBACK_URL, // Use the environment-specific callback URL
       scope: ["profile", "email"],
       proxy: true
     },
@@ -144,7 +150,7 @@ export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
 
   // Google auth route
-  app.get("/.netlify/functions/auth/google", (req: Request, res: Response, next: any) => {
+  app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
     console.log("Google auth route hit - redirecting to Google");
     console.log("Request headers:", req.headers);
     console.log("Request host:", req.get('host'));
@@ -161,14 +167,16 @@ export const initGoogleAuth = (app: any) => {
     })(req, res, next);
   });
 
-  // Google callback route
+  // Google callback route with enhanced logging
   app.get(
-    "/.netlify/functions/auth/google/callback",
+    "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
       console.log("Google callback route hit");
-    console.log("Query params:", req.query);
-    console.log("Headers:", req.headers);
-    console.log("Session state:", req.session?.oauthState);
+      console.log("Path:", req.path);
+      console.log("Full URL:", req.originalUrl);
+      console.log("Query params:", req.query);
+      console.log("Headers:", req.headers);
+      console.log("Session state:", req.session?.oauthState);
       
       // Verify state parameter to prevent CSRF
       if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
