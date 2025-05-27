@@ -8,17 +8,26 @@
   port = 3000
   targetPort = 5173
 
+# Special redirect for Google OAuth callback
+[[redirects]]
+  from = "/api/auth/google/callback"
+  to = "/.netlify/functions/auth/google/callback"
+  status = 200
+  force = true
+
+# General API redirects
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-  force = true  # Add this to ensure redirects work with POST requests
+  force = true
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# CORS headers for API endpoints
 # Add these headers for OAuth
 [[headers]]
   for = "/api/*"
