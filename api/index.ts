@@ -7,31 +7,24 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Try multiple potential paths for .env file
-const envPaths = [
-  '.env',
-  './.env',
-  join(__dirname, '.env'),
-  join(__dirname, '../.env'),
-];
+// Load environment variables from .env file
+// First try to load from the project root
+let envFile = join(__dirname, '../.env');
 
-let envFile = null;
-for (const path of envPaths) {
-  try {
-    if (fs.existsSync(path)) {
-      console.log(`Found .env file at: ${path}`);
-      envFile = path;
-      dotenv.config({ path });
-      break;
-    }
-  } catch (e) {
-    console.error(`Error checking .env at ${path}:`, e);
+if (fs.existsSync(envFile)) {
+  console.log(`Loading environment variables from: ${envFile}`);
+  dotenv.config({ path: envFile });
+} else {
+  // Fallback to .env.local if it exists
+  envFile = join(__dirname, '../.env.local');
+  if (fs.existsSync(envFile)) {
+    console.log(`Loading environment variables from: ${envFile}`);
+    dotenv.config({ path: envFile });
+  } else {
+    // Finally, try a standard .env in the current directory
+    console.log('No .env file found at project root, trying default locations');
+    dotenv.config();
   }
-}
-
-if (!envFile) {
-  console.warn("No .env file found, using environment variables as is");
-  dotenv.config();
 }
 
 // Now import other modules after environment variables are loaded
@@ -40,7 +33,6 @@ import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { initGoogleAuth } from "./auth/google.js";
-import { initNetlifyGoogleAuth } from "./auth/netlify-google.js";
 import { supabase } from "./lib/supabase.js";
 import { initTestAuth } from "./auth/test.js";
 
@@ -110,19 +102,6 @@ app.use(passport.session());
 // API routes
 const apiRouter = express.Router();
 
-// Special proxy route for Netlify Google OAuth callback
-app.get("/.netlify/functions/auth/google/callback", (req, res, next) => {
-  console.log("Netlify function path OAuth callback received - proxying to /api/auth/google/callback");
-  console.log("Original URL:", req.originalUrl);
-  console.log("Query params:", req.query);
-  
-  // Store original query parameters
-  const queryParams = new URLSearchParams(req.query as any).toString();
-  
-  // Redirect to the expected callback URL with original query parameters
-  res.redirect(`/api/auth/google/callback?${queryParams}`);
-});
-
 // Simple test endpoint
 apiRouter.get("/hello", (req, res) => {
   console.log("Hello endpoint hit");
@@ -185,15 +164,8 @@ apiRouter.get("/user", (req, res) => {
 // Mount API routes under /api
 app.use("/api", apiRouter);
 
-// For local development, use the regular Google auth
-// For Netlify production, use the specialized Netlify Google auth
-if (process.env.NODE_ENV === 'production' && process.env.CLIENT_URL?.includes('netlify')) {
-  console.log("Using Netlify-specific Google Auth implementation");
-  initNetlifyGoogleAuth(app);
-} else {
-  console.log("Using standard Google Auth implementation");
-  initGoogleAuth(app);
-}
+// Initialize Google auth
+initGoogleAuth(app);
 
 // Initialize test auth routes
 initTestAuth(app);

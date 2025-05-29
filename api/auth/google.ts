@@ -3,29 +3,25 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
 
-// Configure Google Strategy - always register the strategy
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
+// Configure Google Strategy using environment variables
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.error("ERROR: GOOGLE_CLIENT_ID environment variable is not set!");
+}
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+  console.error("ERROR: GOOGLE_CLIENT_SECRET environment variable is not set!");
+}
+
+// Provide default values for TypeScript (these won't be used in production)
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
 // Update the way we handle the callback and include the BASE_URL
-const BASE_URL = process.env.NODE_ENV === 'production'
-  ? (process.env.CLIENT_URL || process.env.URL || 'https://enggbot.netlify.app') // Prioritize CLIENT_URL, then Netlify's URL, then fallback
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://enggbot.vercel.app'
   : (process.env.CLIENT_URL || 'http://localhost:3000');
   
-// Set the correct callback URL format based on environment
-const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? `${BASE_URL}/.netlify/functions/auth-google/callback` // Use the Netlify function naming convention
-  : `${BASE_URL}/api/auth/google/callback`;
-  
-console.log("=== Google Auth Configuration ===");
-console.log("NODE_ENV:", process.env.NODE_ENV);
-console.log("CLIENT_URL:", process.env.CLIENT_URL);
-console.log("URL:", process.env.URL);
-console.log("BASE_URL:", BASE_URL);
-console.log("CALLBACK_URL:", CALLBACK_URL);
-console.log("Google Client ID:", CLIENT_ID ? 'Set' : 'Missing');
-console.log("Google Client Secret:", CLIENT_SECRET ? 'Set' : 'Missing');
-console.log("===============================");
+console.log("Using BASE_URL for redirection:", BASE_URL);
+console.log("Current NODE_ENV:", process.env.NODE_ENV);
 
 // Extend session type
 declare module 'express-session' {
@@ -36,16 +32,26 @@ declare module 'express-session' {
 }
 
 // Always register the strategy with the correct callback URL
+// Define types for the Google Strategy callback
+type GoogleProfile = {
+  id: string;
+  displayName: string;
+  emails?: Array<{value: string}>;
+  photos?: Array<{value: string}>;
+};
+
+type DoneCallback = (err: Error | null, user?: any) => void;
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
-      callbackURL: CALLBACK_URL, // Use the environment-specific callback URL
+      callbackURL: `${BASE_URL}/api/auth/google/callback`,
       scope: ["profile", "email"],
       proxy: true
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: DoneCallback) => {
       try {
         console.log("Google auth callback received profile:", profile);
         
@@ -152,12 +158,12 @@ export const initGoogleAuth = (app: any) => {
   // Google auth route
   app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
     console.log("Google auth route hit - redirecting to Google");
-    console.log("Request headers:", req.headers);
-    console.log("Request host:", req.get('host'));
-    console.log("Request protocol:", req.protocol);
     
-    // Generate a random state parameter for security
-    const state = Math.random().toString(36).substring(2, 15);
+    // Use the state parameter from the client if provided, or generate a new one
+    const state = req.query.state as string || Math.random().toString(36).substring(2, 15);
+    console.log("Using OAuth state parameter:", state);
+    
+    // Store state in session for verification during callback
     req.session.oauthState = state;
     
     passport.authenticate("google", { 
@@ -167,16 +173,11 @@ export const initGoogleAuth = (app: any) => {
     })(req, res, next);
   });
 
-  // Google callback route with enhanced logging
+  // Google callback route
   app.get(
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
-      console.log("Google callback route hit");
-      console.log("Path:", req.path);
-      console.log("Full URL:", req.originalUrl);
-      console.log("Query params:", req.query);
-      console.log("Headers:", req.headers);
-      console.log("Session state:", req.session?.oauthState);
+      console.log("Google callback route hit with query params:", req.query);
       
       // Verify state parameter to prevent CSRF
       if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {

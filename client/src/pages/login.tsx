@@ -78,19 +78,14 @@ export default function LoginPage() {
     // Get the API URL from environment or fallback to origin
     const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
     
-    // Build optimized Google auth URL directly
-    const clientId = "***REMOVED***";
-    const redirectUri = `${apiUrl}/api/auth/google/callback`;
-    const scope = "profile email";
-    const responseType = "code";
-    const prompt = "select_account";
+    // Use the server's OAuth endpoint instead of building the URL directly
+    // This ensures we use the same clientId as configured on the server
+    // and avoids duplicating/hardcoding sensitive information
+    const googleAuthUrl = `${apiUrl}/api/auth/google`;
     
-    const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    googleAuthUrl.searchParams.append("client_id", clientId);
-    googleAuthUrl.searchParams.append("redirect_uri", redirectUri);
-    googleAuthUrl.searchParams.append("response_type", responseType);
-    googleAuthUrl.searchParams.append("scope", scope);
-    googleAuthUrl.searchParams.append("prompt", prompt);
+    // Set a state parameter as a security measure
+    const state = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('oauth_state', state);
     
     // Set a timeout to reset loading state if redirect takes too long
     const timeout = setTimeout(() => {
@@ -98,8 +93,8 @@ export default function LoginPage() {
       alert("Authentication request is taking longer than expected. Please try again.");
     }, 10000);
     
-    // Navigate directly to Google auth URL instead of going through your server first
-    window.location.href = googleAuthUrl.toString();
+    // Navigate to the server's Google auth endpoint with the state parameter
+    window.location.href = `${googleAuthUrl}?state=${state}`;
     
     // Clear timeout if navigation happens quickly
     window.onbeforeunload = () => {
