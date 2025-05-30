@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { PlayCircle, Download, Copy, Trash, Check, Loader2 } from "lucide-react";
+import { PlayCircle, Download, Copy, Trash, Check, Loader2, MessageSquare } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { executeCode } from '@/lib/judge0';
+import compilerChatService from '@/lib/compiler-chat-service';
 
 const languages = [
   { id: "python", name: "Python", extension: ".py", template: "# Python code here\nprint('Hello, World!')" },
@@ -812,12 +813,27 @@ export default function CompilerPage() {
           <div className="text-xs text-muted-foreground mt-1">
             Using Judge0 compiler API - supports all language features
           </div>
+          
+
         </div>
         
         {/* Output Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Output</h2>
+            {output && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  compilerChatService.sendOutputToInputField(code, selectedLanguage.id, output);
+                  alert('Output sent to chat input field!');
+                }}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Send to Chat
+              </Button>
+            )}
           </div>
           
           {(selectedLanguage.id === "html" || selectedLanguage.id === "css") ? (

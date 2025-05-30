@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import compilerChatService from "./AI_UI/src/lib/compiler-chat-service"
 import { Bot, User } from "lucide-react"
 import { useState, useEffect } from "react"
 import { MultimodalInput } from "./multimodal-input"
@@ -22,14 +23,41 @@ const motion = {
 type Message = {
   id: string
   content: string
-  role: "user" | "assistant"
+  role: "user" | "assistant" | "system"
   model: string
   timestamp: Date
+  isCompilerOutput?: boolean
+  language?: string
+  code?: string
 }
 
 export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Subscribe to compiler output events
+  useEffect(() => {
+    const unsubscribe = compilerChatService.subscribeToOutput((compilerOutput) => {
+      // Create a system message with compiler output
+      const compilerMessage: Message = {
+        id: Date.now().toString(),
+        content: `Code output from ${compilerOutput.language}:
+
+${compilerOutput.output}`,
+        role: "system",
+        model: "compiler",
+        timestamp: compilerOutput.timestamp,
+        isCompilerOutput: true,
+        language: compilerOutput.language,
+        code: compilerOutput.code
+      }
+      
+      setMessages(prev => [...prev, compilerMessage])
+    })
+    
+    // Cleanup subscription on component unmount
+    return () => unsubscribe()
+  }, [])
 
   // Function to handle new message submission
   const handleSubmit = (content: string, model: string) => {
@@ -104,15 +132,23 @@ export default function AiChat() {
                   "flex items-start gap-3 p-4 rounded-lg",
                   message.role === "user" 
                     ? "bg-zinc-800/50 ml-6" 
+                    : message.role === "system" && message.isCompilerOutput
+                    ? "bg-amber-900/20 border border-amber-800/50 mr-6"
                     : "bg-zinc-900/70 border border-zinc-800 mr-6"
                 )}
               >
                 <div className={cn(
                   "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-                  message.role === "user" ? "bg-zinc-700" : "bg-indigo-600"
+                  message.role === "user" 
+                    ? "bg-zinc-700" 
+                    : message.role === "system" && message.isCompilerOutput
+                    ? "bg-amber-600"
+                    : "bg-indigo-600"
                 )}>
                   {message.role === "user" ? (
                     <User size={16} className="text-white" />
+                  ) : message.role === "system" && message.isCompilerOutput ? (
+                    <span className="text-white font-mono text-xs">{"{ }"}</span>
                   ) : (
                     <Bot size={16} className="text-white" />
                   )}
@@ -120,15 +156,34 @@ export default function AiChat() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium text-zinc-200">
-                      {message.role === "user" ? "You" : "AI Assistant"}
+                      {message.role === "user" 
+                        ? "You" 
+                        : message.role === "system" && message.isCompilerOutput 
+                        ? "Compiler Output" 
+                        : "AI Assistant"}
                     </p>
-                    {message.role === "assistant" && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                        {message.model}
+                    {(message.role === "assistant" || (message.role === "system" && message.isCompilerOutput)) && (
+                      <span className={cn(
+                        "text-xs px-1.5 py-0.5 rounded text-zinc-400",
+                        message.isCompilerOutput ? "bg-amber-900/40" : "bg-zinc-800"
+                      )}>
+                        {message.isCompilerOutput ? message.language : message.model}
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-300">{message.content}</p>
+                  {message.isCompilerOutput ? (
+                    <div>
+                      <p className="text-sm text-zinc-300 whitespace-pre-wrap">{message.content}</p>
+                      {message.code && (
+                        <div className="mt-2 p-2 bg-zinc-900 rounded border border-zinc-800">
+                          <p className="text-xs text-zinc-500 mb-1">Original code:</p>
+                          <pre className="text-xs text-zinc-400 overflow-x-auto">{message.code}</pre>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-zinc-300">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}

@@ -6,6 +6,7 @@
 
 // Model definitions
 export const AVAILABLE_MODELS = {
+  "deepseek-r1": "deepseek-ai/DeepSeek-R1-0528",
   "deepseek-v3": "deepseek-ai/DeepSeek-V3-0324",
   "deepseek-lite": "deepseek-ai/DeepSeek-Lite",
   "mistral": "mistralai/Mistral-7B-Instruct-v0.2"
@@ -41,7 +42,7 @@ export class ChutesClient {
   constructor(options?: ChutesClientOptions) {
     this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://llm.chutes.ai/v1/chat/completions";
-    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-v3"];
+    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
     
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
