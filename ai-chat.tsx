@@ -35,33 +35,15 @@ export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   
-  // Add initial welcome message on component mount
-  useEffect(() => {
-    console.log('[AiChat] Component mounted');
-    
-    // Initialize with a welcome message
-    const welcomeMessage: Message = {
-      id: 'welcome-' + Date.now().toString(),
-      content: 'Welcome to ENGGBOT! This is your AI study assistant. You can ask questions or send compiler output here.',
-      role: 'system',
-      model: 'system',
-      timestamp: new Date()
-    };
-    
-    setMessages([welcomeMessage]);
-  }, [])
-  
   // Subscribe to compiler output events
   useEffect(() => {
-    console.log('[AiChat] Setting up subscription to compiler output');
-    
     const unsubscribe = compilerChatService.subscribeToOutput((compilerOutput) => {
-      console.log('[AiChat] Received compiler output:', compilerOutput);
-      
       // Create a system message with compiler output
       const compilerMessage: Message = {
         id: Date.now().toString(),
-        content: `Code output from ${compilerOutput.language}:\n\n${compilerOutput.output}`,
+        content: `Code output from ${compilerOutput.language}:
+
+${compilerOutput.output}`,
         role: "system",
         model: "compiler",
         timestamp: compilerOutput.timestamp,
@@ -70,11 +52,7 @@ export default function AiChat() {
         code: compilerOutput.code
       }
       
-      console.log('[AiChat] Adding compiler message to chat:', compilerMessage);
-      setMessages(prev => {
-        console.log('[AiChat] Previous messages:', prev.length);
-        return [...prev, compilerMessage];
-      })
+      setMessages(prev => [...prev, compilerMessage])
     })
     
     // Cleanup subscription on component unmount

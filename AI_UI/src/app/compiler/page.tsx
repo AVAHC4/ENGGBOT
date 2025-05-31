@@ -826,16 +826,16 @@ export default function CompilerPage() {
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  console.log('Sending to chat conversation...');
+                  console.log('Sending to chat input field...');
                   console.log('Code:', code.substring(0, 50) + '...');
                   console.log('Language:', selectedLanguage.id);
                   console.log('Output:', output.substring(0, 50) + '...');
                   
-                  // Call the service method to send to chat conversation
-                  compilerChatService.sendOutputToChat(code, selectedLanguage.id, output);
+                  // Call the service method to send to input field
+                  compilerChatService.sendOutputToInputField(code, selectedLanguage.id, output);
                   
                   // Show confirmation to user
-                  alert('Output sent to chat conversation!');
+                  alert('Output sent to chat input field!');
                 }}
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
