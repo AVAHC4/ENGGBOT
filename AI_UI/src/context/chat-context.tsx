@@ -1,9 +1,11 @@
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { ChatMessage } from '@/app/api/chat/route';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
+import compilerChatService from "@/lib/compiler-chat-service";
 
 export interface Attachment {
   id: string;
@@ -56,13 +58,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
   
   // Add conversation management with a default ID that will be updated after client-side mount
-  const [conversationId, setConversationId] = useState<string>(crypto.randomUUID());
+  const [conversationId, setConversationId] = useState<string>(uuidv4());
   
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
 
-  // Set isMounted flag on client-side
+  useEffect(() => {
+    // Set up a global function on the window object to allow compiler outputs to be sent directly to the chat
+    try {
+      if (typeof window !== 'undefined') {
+        console.log('[ChatContext] Setting up window._addCompilerMessageToChat function');
+        
+        // Define function to add compiler messages to chat
+        (window as any)._addCompilerMessageToChat = (content: string, metadata: any) => {
+          console.log('[ChatContext] window._addCompilerMessageToChat called with:', { content, metadata });
+          
+          // Add the message to our state
+          const newMessage = {
+            id: uuidv4(),
+            content: content,
+            isUser: false,
+            metadata: metadata,
+            timestamp: metadata?.timestamp || new Date()
+          };
+          
+          setMessages(prev => [...prev, newMessage]);
+          return newMessage.id; // Return the ID of the newly created message
+        };
+      }
+    } catch (error) {
+      console.error('[ChatContext] Error setting up compiler integration:', error);
+    }
+    
+    return () => {
+      // Clean up when the context unmounts
+      if (typeof window !== 'undefined' && (window as any)._addCompilerMessageToChat) {
+        console.log('[ChatContext] Cleaning up window function on unmount');
+        delete (window as any)._addCompilerMessageToChat;
+      }
+    };
+  }, [setMessages]);
+  
+  // Initialize isMounted flag on client-side
   useEffect(() => {
     setIsMounted(true);
   }, []);

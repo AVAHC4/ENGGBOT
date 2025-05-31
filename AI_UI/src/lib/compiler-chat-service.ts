@@ -9,11 +9,23 @@ type CompilerOutput = {
   toInputField?: boolean; // New flag to indicate if output should go to input field
 };
 
-class CompilerChatService {
+export type CompilerOutputListener = (data: CompilerOutput) => void;
+export type InputFieldListener = (text: string) => void;
+
+export class CompilerChatService {
   private static instance: CompilerChatService;
-  private listeners: ((data: CompilerOutput) => void)[] = [];
-  private inputFieldListeners: ((text: string) => void)[] = []; // New listeners for input field updates
+  private listeners: CompilerOutputListener[] = [];
+  private inputFieldListeners: InputFieldListener[] = []; // New listeners for input field updates
   private lastOutput: CompilerOutput | null = null;
+  
+  // Global callback that can be set by the chat context
+  private static globalAddMessageCallback: ((content: string, isUser: boolean, metadata?: any) => void) | null = null;
+
+  // Method to register the global callback from chat context
+  static registerGlobalAddMessage(callback: (content: string, isUser: boolean, metadata?: any) => void): void {
+    console.log('[CompilerChatService] Registered global add message callback');
+    CompilerChatService.globalAddMessageCallback = callback;
+  }
 
   private constructor() {}
 
@@ -26,6 +38,9 @@ class CompilerChatService {
 
   // Send compiler output to the chat interface as a message
   sendOutputToChat(code: string, language: string, output: string): void {
+    console.log('[CompilerChatService] sendOutputToChat called');
+    console.log('[CompilerChatService] Number of chat listeners:', this.listeners.length);
+    
     const compilerOutput: CompilerOutput = {
       code,
       language,
@@ -35,7 +50,36 @@ class CompilerChatService {
     };
     
     this.lastOutput = compilerOutput;
+    
+    // Create formatted content for the chat message
+    const formattedContent = `Code output from ${language}:\n\n${output}\n\nOriginal code:\n${code}`;
+    
+    // Check if window._addCompilerMessageToChat function exists (should be set up by chat context)
+    if (typeof window !== 'undefined' && (window as any)._addCompilerMessageToChat) {
+      console.log('[CompilerChatService] Using window._addCompilerMessageToChat function');
+      try {
+        // Call the global function to add the message to chat
+        (window as any)._addCompilerMessageToChat(formattedContent, {
+          isCompilerOutput: true,
+          language,
+          code,
+          timestamp: new Date()
+        });
+        
+        // Show confirmation to user
+        alert('Output sent to chat conversation!');
+        return;
+      } catch (error) {
+        console.error('[CompilerChatService] Error calling window function:', error);
+      }
+    }
+    
+    // Fall back to the original notification mechanism
+    console.log('[CompilerChatService] Using standard listeners');
     this.notifyListeners(compilerOutput);
+    
+    // Show confirmation to user
+    alert('Output sent to chat conversation!');
   }
   
   // Send compiler output to the chat input field
@@ -93,7 +137,35 @@ ${code}`;
 
   // Notify all listeners about new compiler output
   private notifyListeners(data: CompilerOutput): void {
-    this.listeners.forEach(listener => listener(data));
+    console.log(`[CompilerChatService] Notifying ${this.listeners.length} listeners`);
+    
+    if (this.listeners.length === 0) {
+      console.warn('[CompilerChatService] No listeners registered! Message will be lost.');
+      // Store the message temporarily in case listeners register late
+      setTimeout(() => {
+        if (this.listeners.length > 0) {
+          console.log('[CompilerChatService] Delayed notification - listeners now available');
+          this.listeners.forEach(listener => {
+            try {
+              listener(data);
+            } catch (error) {
+              console.error('[CompilerChatService] Error in listener:', error);
+            }
+          });
+        }
+      }, 500); // Try again after a short delay
+      return;
+    }
+    
+    // Notify all registered listeners
+    this.listeners.forEach((listener, index) => {
+      try {
+        console.log(`[CompilerChatService] Calling listener ${index}`);
+        listener(data);
+      } catch (error) {
+        console.error(`[CompilerChatService] Error in listener ${index}:`, error);
+      }
+    });
   }
   
   // Notify input field listeners about new text
@@ -102,4 +174,6 @@ ${code}`;
   }
 }
 
-export default CompilerChatService.getInstance();
+// Export the singleton instance as default
+const compilerChatService = CompilerChatService.getInstance();
+export default compilerChatService;
