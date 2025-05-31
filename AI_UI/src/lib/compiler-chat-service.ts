@@ -40,6 +40,8 @@ class CompilerChatService {
   
   // Send compiler output to the chat input field
   sendOutputToInputField(code: string, language: string, output: string): void {
+    console.log('[CompilerChatService] sendOutputToInputField called');
+    
     // Format the output in a way that's useful for the chat
     const formattedText = `Output from ${language}:
 
@@ -47,6 +49,9 @@ ${output}
 
 Original code:
 ${code}`;
+    
+    console.log('[CompilerChatService] Formatted text:', formattedText.substring(0, 100) + '...');
+    console.log('[CompilerChatService] Number of input field listeners:', this.inputFieldListeners.length);
     
     // Notify input field listeners
     this.notifyInputFieldListeners(formattedText);
