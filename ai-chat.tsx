@@ -2,8 +2,8 @@
 
 import React from "react"
 import compilerChatService from "./AI_UI/src/lib/compiler-chat-service"
-import { Bot, User } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Bot, User, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
 
 // Mock implementations for missing modules
@@ -31,9 +31,177 @@ type Message = {
   code?: string
 }
 
+// Conversation type definition
+type Conversation = {
+  id: string
+  name: string
+  messages: Message[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+// Menu state type
+type MenuState = {
+  isOpen: boolean
+  conversationId: string | null
+  position: { x: number, y: number } | null
+}
+
+// Context menu component
+const ContextMenu = ({ isOpen, position, onClose, onEdit, onDelete }) => {
+  if (!isOpen || !position) return null;
+  
+  return (
+    <div
+      className="absolute z-50 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg py-1 w-32"
+      style={{ top: position.y, left: position.x }}
+    >
+      <button
+        className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
+        onClick={() => {
+          onEdit();
+          onClose();
+        }}
+      >
+        <Pencil size={14} className="mr-2" />
+        Edit name
+      </button>
+      <button
+        className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
+        onClick={() => {
+          onDelete();
+          onClose();
+        }}
+      >
+        <Trash2 size={14} className="mr-2" />
+        Delete
+      </button>
+    </div>
+  );
+};
+
 export default function AiChat() {
+  const [conversations, setConversations] = useState<Conversation[]>([
+    {
+      id: 'default',
+      name: 'New Conversation',
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ])
+  const [activeConversationId, setActiveConversationId] = useState<string>('default')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [menuState, setMenuState] = useState<MenuState>({
+    isOpen: false,
+    conversationId: null,
+    position: null
+  })
+  const [editingConversation, setEditingConversation] = useState<{id: string, name: string} | null>(null)
+  
+  // Ref for the click outside handler
+  const menuRef = useRef<HTMLDivElement>(null)
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuState({ isOpen: false, conversationId: null, position: null });
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  // Get active conversation
+  const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0]
+  
+  // Update messages when active conversation changes
+  useEffect(() => {
+    if (activeConversation) {
+      setMessages(activeConversation.messages)
+    }
+  }, [activeConversation])
+  
+  // Handle opening the menu
+  const handleOpenMenu = (e: React.MouseEvent, conversationId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setMenuState({
+      isOpen: true,
+      conversationId,
+      position: { x: e.clientX, y: e.clientY }
+    })
+  }
+  
+  // Handle closing the menu
+  const handleCloseMenu = () => {
+    setMenuState({ isOpen: false, conversationId: null, position: null })
+  }
+  
+  // Handle editing a conversation name
+  const handleEditConversation = (id: string) => {
+    const conversation = conversations.find(c => c.id === id)
+    if (conversation) {
+      setEditingConversation({ id, name: conversation.name })
+    }
+  }
+  
+  // Handle saving edited conversation name
+  const handleSaveConversationName = (id: string, newName: string) => {
+    setConversations(prevConversations => 
+      prevConversations.map(c => 
+        c.id === id ? { ...c, name: newName, updatedAt: new Date() } : c
+      )
+    )
+    setEditingConversation(null)
+  }
+  
+  // Handle cancelling edit
+  const handleCancelEdit = () => {
+    setEditingConversation(null)
+  }
+  
+  // Handle deleting a conversation
+  const handleDeleteConversation = (id: string) => {
+    // Don't delete if it's the only conversation
+    if (conversations.length <= 1) {
+      // Create a new empty conversation instead
+      const newConversation = {
+        id: Date.now().toString(),
+        name: 'New Conversation',
+        messages: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      setConversations([newConversation])
+      setActiveConversationId(newConversation.id)
+      return
+    }
+    
+    setConversations(prevConversations => prevConversations.filter(c => c.id !== id))
+    
+    // If the active conversation was deleted, set a new active conversation
+    if (activeConversationId === id) {
+      const newActiveId = conversations.find(c => c.id !== id)?.id || conversations[0].id
+      setActiveConversationId(newActiveId)
+    }
+  }
+  
+  // Create a new conversation
+  const createNewConversation = () => {
+    const newConversation = {
+      id: Date.now().toString(),
+      name: 'New Conversation',
+      messages: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    setConversations(prev => [...prev, newConversation])
+    setActiveConversationId(newConversation.id)
+  }
   
   // Subscribe to compiler output events
   useEffect(() => {
@@ -52,12 +220,22 @@ ${compilerOutput.output}`,
         code: compilerOutput.code
       }
       
+      // Update the active conversation with the new message
+      setConversations(prevConversations => 
+        prevConversations.map(c => 
+          c.id === activeConversationId 
+            ? { ...c, messages: [...c.messages, compilerMessage], updatedAt: new Date() } 
+            : c
+        )
+      )
+      
+      // Also update the current messages state for immediate display
       setMessages(prev => [...prev, compilerMessage])
     })
     
     // Cleanup subscription on component unmount
     return () => unsubscribe()
-  }, [])
+  }, [activeConversationId])
 
   // Function to handle new message submission
   const handleSubmit = (content: string, model: string) => {
@@ -70,6 +248,16 @@ ${compilerOutput.output}`,
       timestamp: new Date()
     }
     
+    // Update the active conversation with the user message
+    setConversations(prevConversations => 
+      prevConversations.map(c => 
+        c.id === activeConversationId 
+          ? { ...c, messages: [...c.messages, userMessage], updatedAt: new Date() } 
+          : c
+      )
+    )
+    
+    // Also update the current messages state for immediate display
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
     
@@ -83,6 +271,16 @@ ${compilerOutput.output}`,
         timestamp: new Date()
       }
       
+      // Update the active conversation with the AI response
+      setConversations(prevConversations => 
+        prevConversations.map(c => 
+          c.id === activeConversationId 
+            ? { ...c, messages: [...c.messages, aiMessage], updatedAt: new Date() } 
+            : c
+        )
+      )
+      
+      // Also update the current messages state for immediate display
       setMessages(prev => [...prev, aiMessage])
       setIsLoading(false)
     }, 1500)
@@ -93,6 +291,15 @@ ${compilerOutput.output}`,
     //   body: JSON.stringify({ message: content, model })
     // })
     // const data = await response.json()
+    
+    // Update both states with the response
+    // setConversations(prevConversations => 
+    //   prevConversations.map(c => 
+    //     c.id === activeConversationId 
+    //       ? { ...c, messages: [...c.messages, { ...data.message }], updatedAt: new Date() } 
+    //       : c
+    //   )
+    // )
     // setMessages(prev => [...prev, { ...data.message }])
     // setIsLoading(false)
   }
@@ -100,6 +307,67 @@ ${compilerOutput.output}`,
   return (
     <div className="w-full min-h-screen flex flex-col items-center justify-between bg-gradient-to-br from-black via-zinc-900 to-black dark:from-black dark:via-zinc-800/40 dark:to-black px-4 py-8">
       <div className="w-full p-4 flex flex-col items-center justify-between h-screen mx-auto">
+        {/* Conversation Header */}
+        <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {/* Conversation selector dropdown could go here */}
+            <div className="flex items-center">
+              {editingConversation && editingConversation.id === activeConversationId ? (
+                <div className="flex items-center bg-zinc-800 rounded-md pr-1">
+                  <input
+                    type="text"
+                    value={editingConversation.name}
+                    onChange={(e) => setEditingConversation({...editingConversation, name: e.target.value})}
+                    className="bg-transparent text-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-md max-w-[200px]"
+                  />
+                  <button 
+                    onClick={() => handleSaveConversationName(editingConversation.id, editingConversation.name)}
+                    className="text-green-400 hover:text-green-300 p-1"
+                    title="Save"
+                  >
+                    <Check size={14} />
+                  </button>
+                  <button 
+                    onClick={handleCancelEdit}
+                    className="text-red-400 hover:text-red-300 p-1"
+                    title="Cancel"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <h2 className="text-zinc-200 text-sm font-medium">{activeConversation.name}</h2>
+                  <button 
+                    onClick={(e) => handleOpenMenu(e, activeConversationId)}
+                    className="ml-1 text-zinc-400 hover:text-zinc-200 p-1 rounded-full hover:bg-zinc-800"
+                    title="Conversation options"
+                  >
+                    <MoreVertical size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <button
+            onClick={createNewConversation}
+            className="text-xs bg-zinc-800 hover:bg-zinc-700 text-white px-2 py-1 rounded-md transition-colors"
+          >
+            New Chat
+          </button>
+        </div>
+        
+        {/* Context menu */}
+        <div ref={menuRef}>
+          <ContextMenu
+            isOpen={menuState.isOpen}
+            position={menuState.position}
+            onClose={handleCloseMenu}
+            onEdit={() => handleEditConversation(menuState.conversationId!)}
+            onDelete={() => handleDeleteConversation(menuState.conversationId!)}
+          />
+        </div>
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
