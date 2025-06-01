@@ -206,7 +206,7 @@ export const initGoogleAuth = (app: any) => {
       
       // For optimal performance, use a minimal HTML response that focuses on speed
       // The AI_UI chat interface is at the root of the AI_UI application
-      const redirectUrl = `${BASE_URL.replace(':3000', '')}/AI_UI/?auth_success=true`;
+      const redirectUrl = `http://localhost:3001/?auth_success=true`;
       
       // Set multiple cookies for redundancy but keep it lightweight
       res.cookie('auth_success', 'true', {

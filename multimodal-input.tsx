@@ -2,8 +2,7 @@
 
 import React from "react"
 import { Bot, FileText, RotateCw, Search, SendIcon, Mic, MicOff, Loader2 } from "lucide-react"
-import { useState, useRef, useEffect } from "react"
-import compilerChatService from "./AI_UI/src/lib/compiler-chat-service"
+import { useState, useRef } from "react"
 
 // VoiceInput component inline
 interface VoiceInputProps {
@@ -215,32 +214,6 @@ const QuickActions = [
 export function MultimodalInput({ onSubmit, isLoading }) {
   const [input, setInput] = useState("")
   const [selectedModel, setSelectedModel] = useState(AIModels[0].id)
-  
-  // Subscribe to compiler output updates to input field
-  useEffect(() => {
-    // Subscribe to compiler output updates for the input field
-    const unsubscribe = compilerChatService.subscribeToInputField((text) => {
-      // Update the input field with the compiler output
-      console.log('Received text for input field:', text)
-      setInput(text)
-      
-      // Force focus on the input after setting the text
-      setTimeout(() => {
-        const textarea = document.querySelector('textarea')
-        if (textarea) {
-          textarea.focus()
-        }
-      }, 100)
-    })
-    
-    // Cleanup subscription when component unmounts
-    return () => unsubscribe()
-  }, [])
-  
-  // For debugging - log when input changes
-  useEffect(() => {
-    console.log('Input value changed:', input)
-  }, [input])
 
   function handleSubmit() {
     if (input.length > 0) {
