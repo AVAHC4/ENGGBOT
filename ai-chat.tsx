@@ -2,7 +2,7 @@
 
 import React from "react"
 import compilerChatService from "./AI_UI/src/lib/compiler-chat-service"
-import { Bot, User, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react"
+import { Bot, User, MoreVertical, Pencil, Trash2, X, Check, Share2 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
 
@@ -40,42 +40,80 @@ type Conversation = {
   updatedAt: Date
 }
 
-// Menu state type
-type MenuState = {
-  isOpen: boolean
-  conversationId: string | null
-  position: { x: number, y: number } | null
-}
+// No longer need MenuState type as we're using a hover-based dropdown
 
-// Context menu component
-const ContextMenu = ({ isOpen, position, onClose, onEdit, onDelete }) => {
-  if (!isOpen || !position) return null;
+// Dropdown menu component
+const ConversationMenu = ({ conversationId, onEdit, onDelete }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Handle share functionality
+  const handleShare = () => {
+    // Share functionality can be implemented here
+    // For now just showing a simple alert
+    alert('Share functionality will be implemented here');
+    setIsOpen(false);
+  };
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const handleClickOutside = (e) => {
+      setIsOpen(false);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
   
   return (
-    <div
-      className="absolute z-50 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg py-1 w-32"
-      style={{ top: position.y, left: position.x }}
-    >
-      <button
-        className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
-        onClick={() => {
-          onEdit();
-          onClose();
+    <div className="relative inline-block ml-1">
+      <button 
+        className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-full focus:outline-none"
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setIsOpen(!isOpen);
         }}
       >
-        <Pencil size={14} className="mr-2" />
-        Edit name
+        <MoreVertical size={16} />
       </button>
-      <button
-        className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
-        onClick={() => {
-          onDelete();
-          onClose();
-        }}
-      >
-        <Trash2 size={14} className="mr-2" />
-        Delete
-      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-1 z-50 bg-zinc-800 border border-zinc-700 rounded-md shadow-lg py-1 w-32">
+          <button
+            className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleShare();
+            }}
+          >
+            <Share2 size={14} className="mr-2" />
+            Share
+          </button>
+          <button
+            className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(conversationId);
+              setIsOpen(false);
+            }}
+          >
+            <Pencil size={14} className="mr-2" />
+            Edit name
+          </button>
+          <button
+            className="flex items-center w-full px-3 py-2 text-sm text-left text-zinc-200 hover:bg-zinc-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(conversationId);
+              setIsOpen(false);
+            }}
+          >
+            <Trash2 size={14} className="mr-2" />
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -93,27 +131,10 @@ export default function AiChat() {
   const [activeConversationId, setActiveConversationId] = useState<string>('default')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [menuState, setMenuState] = useState<MenuState>({
-    isOpen: false,
-    conversationId: null,
-    position: null
-  })
+  // No longer need menu state as we're using a hover-based dropdown
   const [editingConversation, setEditingConversation] = useState<{id: string, name: string} | null>(null)
   
-  // Ref for the click outside handler
-  const menuRef = useRef<HTMLDivElement>(null)
-  
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuState({ isOpen: false, conversationId: null, position: null });
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // No longer need click outside handler as we're using a hover-based dropdown
   
   // Get active conversation
   const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0]
@@ -124,22 +145,6 @@ export default function AiChat() {
       setMessages(activeConversation.messages)
     }
   }, [activeConversation])
-  
-  // Handle opening the menu
-  const handleOpenMenu = (e: React.MouseEvent, conversationId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setMenuState({
-      isOpen: true,
-      conversationId,
-      position: { x: e.clientX, y: e.clientY }
-    })
-  }
-  
-  // Handle closing the menu
-  const handleCloseMenu = () => {
-    setMenuState({ isOpen: false, conversationId: null, position: null })
-  }
   
   // Handle editing a conversation name
   const handleEditConversation = (id: string) => {
@@ -336,15 +341,13 @@ ${compilerOutput.output}`,
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center">
+                <div className="flex items-center group">
                   <h2 className="text-zinc-200 text-sm font-medium">{activeConversation.name}</h2>
-                  <button 
-                    onClick={(e) => handleOpenMenu(e, activeConversationId)}
-                    className="ml-1 text-zinc-400 hover:text-zinc-200 p-1 rounded-full hover:bg-zinc-800"
-                    title="Conversation options"
-                  >
-                    <MoreVertical size={14} />
-                  </button>
+                  <ConversationMenu 
+                    conversationId={activeConversationId}
+                    onEdit={handleEditConversation}
+                    onDelete={handleDeleteConversation}
+                  />
                 </div>
               )}
             </div>
@@ -358,16 +361,7 @@ ${compilerOutput.output}`,
           </button>
         </div>
         
-        {/* Context menu */}
-        <div ref={menuRef}>
-          <ContextMenu
-            isOpen={menuState.isOpen}
-            position={menuState.position}
-            onClose={handleCloseMenu}
-            onEdit={() => handleEditConversation(menuState.conversationId!)}
-            onDelete={() => handleDeleteConversation(menuState.conversationId!)}
-          />
-        </div>
+        {/* No longer need separate context menu */}
         {messages.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
