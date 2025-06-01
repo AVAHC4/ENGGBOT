@@ -2,7 +2,7 @@
 
 import React from "react"
 import compilerChatService from "./AI_UI/src/lib/compiler-chat-service"
-import { Bot, User, MoreVertical, Edit, Trash2 } from "lucide-react"
+import { Bot, User, MoreVertical, Pencil, Trash2, X, Check } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
 
@@ -93,7 +93,11 @@ export default function AiChat() {
   const [activeConversationId, setActiveConversationId] = useState<string>('default')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [menuState, setMenuState] = useState<MenuState>({
+    isOpen: false,
+    conversationId: null,
+    position: null
+  })
   const [editingConversation, setEditingConversation] = useState<{id: string, name: string} | null>(null)
   
   // Ref for the click outside handler
@@ -103,7 +107,7 @@ export default function AiChat() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
+        setMenuState({ isOpen: false, conversationId: null, position: null });
       }
     };
     
@@ -120,6 +124,22 @@ export default function AiChat() {
       setMessages(activeConversation.messages)
     }
   }, [activeConversation])
+  
+  // Handle opening the menu
+  const handleOpenMenu = (e: React.MouseEvent, conversationId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setMenuState({
+      isOpen: true,
+      conversationId,
+      position: { x: e.clientX, y: e.clientY }
+    })
+  }
+  
+  // Handle closing the menu
+  const handleCloseMenu = () => {
+    setMenuState({ isOpen: false, conversationId: null, position: null })
+  }
   
   // Handle editing a conversation name
   const handleEditConversation = (id: string) => {
@@ -289,37 +309,41 @@ ${compilerOutput.output}`,
       <div className="w-full p-4 flex flex-col items-center justify-between h-screen mx-auto">
         {/* Conversation Header */}
         <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <h2 className="text-zinc-200 text-sm font-medium">{activeConversation.name}</h2>
-            <div className="ml-2 relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-full"
-              >
-                <MoreVertical size={18} />
-              </button>
-              
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-zinc-800 rounded-md shadow-lg py-1 z-50 border border-zinc-700">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false)
-                      handleEditConversation(activeConversationId)
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-700"
+          <div className="flex items-center space-x-3">
+            {/* Conversation selector dropdown could go here */}
+            <div className="flex items-center">
+              {editingConversation && editingConversation.id === activeConversationId ? (
+                <div className="flex items-center bg-zinc-800 rounded-md pr-1">
+                  <input
+                    type="text"
+                    value={editingConversation.name}
+                    onChange={(e) => setEditingConversation({...editingConversation, name: e.target.value})}
+                    className="bg-transparent text-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded-md max-w-[200px]"
+                  />
+                  <button 
+                    onClick={() => handleSaveConversationName(editingConversation.id, editingConversation.name)}
+                    className="text-green-400 hover:text-green-300 p-1"
+                    title="Save"
                   >
-                    <Edit size={14} className="mr-2" />
-                    Edit
+                    <Check size={14} />
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false)
-                      handleDeleteConversation(activeConversationId)
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-zinc-700"
+                  <button 
+                    onClick={handleCancelEdit}
+                    className="text-red-400 hover:text-red-300 p-1"
+                    title="Cancel"
                   >
-                    <Trash2 size={14} className="mr-2" />
-                    Delete
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <h2 className="text-zinc-200 text-sm font-medium">{activeConversation.name}</h2>
+                  <button 
+                    onClick={(e) => handleOpenMenu(e, activeConversationId)}
+                    className="ml-1 text-zinc-400 hover:text-zinc-200 p-1 rounded-full hover:bg-zinc-800"
+                    title="Conversation options"
+                  >
+                    <MoreVertical size={14} />
                   </button>
                 </div>
               )}
@@ -332,6 +356,17 @@ ${compilerOutput.output}`,
           >
             New Chat
           </button>
+        </div>
+        
+        {/* Context menu */}
+        <div ref={menuRef}>
+          <ContextMenu
+            isOpen={menuState.isOpen}
+            position={menuState.position}
+            onClose={handleCloseMenu}
+            onEdit={() => handleEditConversation(menuState.conversationId!)}
+            onDelete={() => handleDeleteConversation(menuState.conversationId!)}
+          />
         </div>
         {messages.length === 0 && (
           <motion.div
