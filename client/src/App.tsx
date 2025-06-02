@@ -147,6 +147,9 @@ function App() {
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
+    // Remove both theme classes first
+    document.documentElement.classList.remove('light', 'dark');
+    // Then add the correct one
     document.documentElement.classList.add(savedTheme);
   }, []);
 

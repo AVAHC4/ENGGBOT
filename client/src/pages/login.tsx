@@ -7,8 +7,9 @@ import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
 import BackgroundPaths from "@/components/background-paths"
 import BeamsBackground from "@/components/beams-background"
-import React from "react"
+import React, { useEffect } from "react"
 import { setRedirectToChat } from "@/lib/auth-storage"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const transitionVariants = {
   item: {
@@ -119,6 +120,11 @@ export default function LoginPage() {
           Home
         </button>
       </Link>
+
+      {/* Theme Toggle Button */}
+      <div className="absolute top-6 right-6 z-20">
+        <ThemeToggle />
+      </div>
 
       <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>

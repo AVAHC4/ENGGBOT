@@ -12,7 +12,7 @@ const cn = (...classes) => classes.filter(Boolean).join(" ")
 // Motion div component replacement
 const motion = {
   div: ({ initial, animate, transition, className, children }) => (
-    <div className={className}>
+    <div classNam={className}>
       {children}
     </div>
   ),
