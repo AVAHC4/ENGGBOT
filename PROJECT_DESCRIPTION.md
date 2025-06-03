@@ -1,7 +1,7 @@
 # ENGGBOT - AI Study Assistant Platform
 
 ## Project Overview
-ENGGBO is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
+ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
 
 ## Core Components
 
