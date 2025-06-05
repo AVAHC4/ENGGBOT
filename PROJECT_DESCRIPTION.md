@@ -13,7 +13,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
   - Modern UI with custom animations, gradients, and transitions
   - Compelling hero section introducing the AI study assistant concept
 
-- **Chat Inerface**
+- **Chat Interface**
   - Interactive messaging UI with user/assistant format
   - Support for multiple AI models (DeepSeek-V3, Mistral, etc.)
   - Multimodal input capabilities
