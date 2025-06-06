@@ -11,7 +11,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
   - Features smooth animations via Framer Motion
   - Responsive design using Tailwind CSS
   - Modern UI with custom animations, gradients, and transitions
-  - Compelling hero section introducing the AI tudy assistant concept
+  - Compelling hero section introducing the AI study assistant concept
 
 - **Chat Interface**
   - Interactive messaging UI with user/assistant format
