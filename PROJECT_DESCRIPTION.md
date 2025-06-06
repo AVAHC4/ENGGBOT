@@ -18,7 +18,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
   - Support for multiple AI models (DeepSeek-V3, Mistral, etc.)
   - Multimodal input capabilities
   - Streaming responses for real-time interaction
-  - Thinking mode to display AI reasoning process
+  - Thinking mode to display A reasoning process
   - Voice input via microphone for hands-free interaction
 
 ### Backend
