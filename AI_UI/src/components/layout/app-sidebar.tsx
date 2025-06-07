@@ -47,16 +47,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
@@ -237,7 +227,7 @@ const data = {
 // Add initial friends data
 const initialFriends: Friend[] = [];
 
-export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
@@ -274,8 +264,10 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   // Add state for editing conversation title
   const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
   const [newConversationTitle, setNewConversationTitle] = React.useState("");
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [conversationToDelete, setConversationToDelete] = React.useState<string | null>(null);
+  
+  // Simple modal state instead of AlertDialog
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [conversationToDelete, setConversationToDelete] = React.useState<{id: string, title: string} | null>(null);
   
   // Function to toggle sidebar collapse state
   const toggleSidebar = () => {
@@ -615,25 +607,30 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   };
   
   // Function to handle delete request
-  const handleDeleteRequest = (e: React.MouseEvent, id: string) => {
+  const handleDeleteRequest = (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation();
-    setConversationToDelete(id);
-    setDeleteDialogOpen(true);
+    setConversationToDelete({id, title});
+    setShowDeleteModal(true);
   };
   
   // Function to confirm deletion
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
       try {
-        deleteCurrentConversation(); // This function is already set up to delete the current conversation
+        deleteCurrentConversation();
       } catch (error) {
         console.error("Error deleting conversation:", error);
-      } finally {
-        // Ensure these state updates happen even if there's an error
-        setDeleteDialogOpen(false);
-        setConversationToDelete(null);
       }
     }
+    // Always close the modal and reset state
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
+  };
+  
+  // Function to cancel deletion
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
   };
   
   return (
@@ -804,7 +801,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                                         Share
                                       </DropdownMenuItem>
                                       <DropdownMenuItem 
-                                        onClick={(e) => handleDeleteRequest(e, convo.id)}
+                                        onClick={(e) => handleDeleteRequest(e, convo.id, convo.title)}
                                         className="text-destructive focus:text-destructive"
                                       >
                                         <Trash2 className="h-3 w-3 mr-2" />
@@ -864,41 +861,34 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
         </Button>
       </div>
       
-      {/* Alert Dialog for delete confirmation */}
-      <AlertDialog 
-        open={deleteDialogOpen} 
-        onOpenChange={(open) => {
-          setDeleteDialogOpen(open);
-          if (!open) setConversationToDelete(null); // Make sure we clean up state when dialog is closed
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+      {/* Simple custom modal instead of AlertDialog */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+             onClick={handleCancelDelete}>
+          <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto"
+               onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-2">Are you sure?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
               This conversation will be permanently deleted.
               This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setConversationToDelete(null);
-              setDeleteDialogOpen(false);
-            }}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e: React.MouseEvent) => {
-                e.preventDefault();
-                handleConfirmDelete();
-                // Force close the dialog
-                setDeleteDialogOpen(false);
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelDelete}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 } // Updated sidebar navigation components

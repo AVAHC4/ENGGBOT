@@ -30,16 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface ConversationItemProps {
   id: string;
@@ -64,7 +54,7 @@ function ConversationItem({
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   const formatTime = (timestamp: string) => {
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -103,7 +93,7 @@ function ConversationItem({
 
   const handleDeleteRequest = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowDeleteAlert(true);
+    setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = () => {
@@ -111,9 +101,12 @@ function ConversationItem({
       onDelete(id);
     } catch (error) {
       console.error("Error deleting conversation:", error);
-    } finally {
-      setShowDeleteAlert(false);
     }
+    setShowDeleteModal(false);
+  };
+  
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
   
   return (
@@ -182,38 +175,33 @@ function ConversationItem({
         )}
       </div>
 
-      <AlertDialog 
-        open={showDeleteAlert} 
-        onOpenChange={(open) => {
-          setShowDeleteAlert(open);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+             onClick={handleCancelDelete}>
+          <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto"
+               onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-2">Are you sure?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
               This will permanently delete the conversation "{title}".
               This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowDeleteAlert(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e: React.MouseEvent) => {
-                e.preventDefault();
-                handleConfirmDelete();
-                // Force close the dialog
-                setShowDeleteAlert(false);
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={handleCancelDelete}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
