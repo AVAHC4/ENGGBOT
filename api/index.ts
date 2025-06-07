@@ -81,11 +81,20 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 app.use(express.json());
+
+// Create a fast in-memory session store
+import memoryStore from 'memorystore';
+const MemoryStore = memoryStore(session);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
+    // Use in-memory store for faster session access
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
     cookie: {
       // Only use secure cookies in production
       secure: isProduction,

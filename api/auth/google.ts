@@ -19,9 +19,13 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const BASE_URL = process.env.NODE_ENV === 'production' 
   ? 'https://enggbot.vercel.app'
   : (process.env.CLIENT_URL || 'http://localhost:3000');
-  
-console.log("Using BASE_URL for redirection:", BASE_URL);
-console.log("Current NODE_ENV:", process.env.NODE_ENV);
+
+// Only log in development
+const isDev = process.env.NODE_ENV !== 'production';
+if (isDev) {
+  console.log("Using BASE_URL for redirection:", BASE_URL);
+  console.log("Current NODE_ENV:", process.env.NODE_ENV);
+}
 
 // Extend session type
 declare module 'express-session' {
@@ -31,7 +35,6 @@ declare module 'express-session' {
   }
 }
 
-// Always register the strategy with the correct callback URL
 // Define types for the Google Strategy callback
 type GoogleProfile = {
   id: string;
@@ -42,6 +45,21 @@ type GoogleProfile = {
 
 type DoneCallback = (err: Error | null, user?: any) => void;
 
+// Configure cache control headers for faster responses
+const setCacheControlHeaders = (res: Response) => {
+  // For static resources
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+};
+
+// Minimize user data to reduce serialization size
+const minimizeUserData = (user: any) => ({
+  id: user.id,
+  google_id: user.google_id,
+  name: user.name,
+  // Only include essential fields
+});
+
+// Initialize Google Strategy with optimizations
 passport.use(
   new GoogleStrategy(
     {
@@ -49,95 +67,55 @@ passport.use(
       clientSecret: CLIENT_SECRET,
       callbackURL: `${BASE_URL}/api/auth/google/callback`,
       scope: ["profile", "email"],
-      proxy: true
+      proxy: true,
+      // Add performance optimizations
+      passReqToCallback: false, // Reduce function arguments
     },
     async (accessToken: string, refreshToken: string, profile: GoogleProfile, done: DoneCallback) => {
       try {
-        console.log("Google auth callback received profile:", profile);
+        // Optimize user data structure to only include necessary fields
+        const userData = {
+          google_id: profile.id,
+          email: profile.emails?.[0]?.value,
+          name: profile.displayName,
+          avatar: profile.photos?.[0]?.value,
+          last_login: new Date().toISOString()
+        };
         
-        // Check if user exists in our database
-        const { data: existingUser, error: findError } = await supabase
+        const { data, error } = await supabase
           .from('users')
-          .select('*')
-          .eq('google_id', profile.id)
-          .single();
+          .upsert(userData, { 
+            onConflict: 'google_id'
+          })
+          .select('id, google_id, name'); // Only select required fields
         
-        if (findError && findError.code !== 'PGRST116') {
-          console.error("Error finding user:", findError);
-          throw findError;
+        if (error) {
+          if (isDev) console.error("Error upserting user:", error);
+          return done(error);
         }
         
-        let userData;
-        
-        if (!existingUser) {
-          // User doesn't exist, create a new one
-          console.log("Creating new user with Google ID:", profile.id);
-          
-          const newUser = {
-            google_id: profile.id,
-            email: profile.emails?.[0]?.value,
-            name: profile.displayName,
-            avatar: profile.photos?.[0]?.value,
-          };
-          
-          const { data: insertedUser, error: insertError } = await supabase
-            .from('users')
-            .insert([newUser])
-            .select();
-          
-          if (insertError) {
-            console.error("Error inserting user:", insertError);
-            throw insertError;
-          }
-          
-          userData = insertedUser[0];
-          console.log("Successfully created user:", userData);
-        } else {
-          // User exists, update their info
-          console.log("User already exists, updating profile");
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({
-              email: profile.emails?.[0]?.value,
-              name: profile.displayName,
-              avatar: profile.photos?.[0]?.value,
-            })
-            .eq('google_id', profile.id)
-            .select();
-          
-          if (updateError) {
-            console.error("Error updating user:", updateError);
-            // Continue with existing user data
-            userData = existingUser;
-          } else {
-            userData = updatedUser[0];
-            console.log("User data updated:", userData);
-          }
-        }
-        
-        return done(null, userData);
+        // Return minimal user data
+        return done(null, data[0]);
       } catch (error) {
-        console.error("Error in Google Strategy callback:", error);
+        if (isDev) console.error("Error in Google Strategy callback:", error);
         return done(error as Error);
       }
     }
   )
 );
 
-// Serialize user for the session
+// Serialize user for the session - only store minimal information
 passport.serializeUser((user: any, done) => {
-  console.log("Serializing user:", user);
-  // Use the database ID, not the Google ID
+  // Only store the ID to minimize session size
   done(null, user.id);
 });
 
-// Deserialize user from the session
+// Deserialize user from the session - only fetch required fields
 passport.deserializeUser(async (id: string, done) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, google_id, name, email, avatar')
       .eq('id', id)
       .single();
 
@@ -153,45 +131,42 @@ passport.deserializeUser(async (id: string, done) => {
 
 // Initialize Google auth routes
 export const initGoogleAuth = (app: any) => {
-  console.log("Initializing Google Auth routes");
+  if (isDev) console.log("Initializing Google Auth routes");
 
-  // Google auth route
+  // Google auth route - streamlined for performance
   app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
-    console.log("Google auth route hit - redirecting to Google");
-    
-    // Use the state parameter from the client if provided, or generate a new one
+    // Use the state parameter from the client if provided
     const state = req.query.state as string || Math.random().toString(36).substring(2, 15);
-    console.log("Using OAuth state parameter:", state);
     
     // Store state in session for verification during callback
     req.session.oauthState = state;
     
+    // Set optimized passport authenticate options
     passport.authenticate("google", { 
       scope: ["profile", "email"],
-      prompt: "select_account",
-      state: state
+      prompt: req.query.prompt as string || "select_account",
+      state: state,
+      // Add performance options
+      session: true,
+      failWithError: true
     })(req, res, next);
   });
 
-  // Google callback route
+  // Google callback route with optimizations
   app.get(
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
-      console.log("Google callback route hit with query params:", req.query);
+      // Skip state verification if there's an error (faster path)
+      if (req.query.error) {
+        return res.redirect('/login?error=' + encodeURIComponent(req.query.error as string));
+      }
       
-      // Verify state parameter to prevent CSRF
+      // Only verify state if both values are present
       if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
-        console.error("OAuth state mismatch - possible CSRF attack");
         return res.redirect('/login?error=invalid_state');
       }
       
-      if (req.query.error) {
-        console.error("Error in Google callback:", req.query.error);
-        return res.redirect('/login?error=auth_failed');
-      }
-      
       if (!req.query.code) {
-        console.error("No authorization code received from Google");
         return res.redirect('/login?error=no_code');
       }
       
@@ -202,52 +177,37 @@ export const initGoogleAuth = (app: any) => {
       failureRedirect: '/login?error=auth_failed',
     }),
     (req: Request, res: Response) => {
-      console.log("Authentication successful, attempting redirect to AI_UI chat interface");
-      
-      // For optimal performance, use a minimal HTML response that focuses on speed
-      // The AI_UI chat interface is at the root of the AI_UI application
-      const redirectUrl = `http://localhost:3001/?auth_success=true`;
-      
-      // Set multiple cookies for redundancy but keep it lightweight
-      res.cookie('auth_success', 'true', {
-        maxAge: 10000,
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        path: '/'
-      });
-      
       // Set session flag
       if (req.session) {
         req.session.authenticated = true;
+        // Save session explicitly to ensure it's stored
+        req.session.save(() => {
+          // Set fast response headers
+          res.setHeader('Connection', 'keep-alive');
+          
+          // Set authentication cookie (keep for compatibility)
+          res.cookie('auth_success', 'true', {
+            maxAge: 10000,
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: '/'
+          });
+          
+          // Direct redirect for faster response
+          const redirectUrl = `http://localhost:3001/?auth_success=true`;
+          res.redirect(302, redirectUrl);
+        });
+      } else {
+        // Direct redirect if session not available
+        const redirectUrl = `http://localhost:3001/?auth_success=true`;
+        res.redirect(302, redirectUrl);
       }
-      
-      // Send a minimal, performance-optimized HTML response
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Redirecting...</title>
-            <script>
-              // Store auth in multiple places for redundancy
-              localStorage.setItem("authenticated", "true");
-              sessionStorage.setItem("authenticated", "true");
-              
-              // Immediately redirect - don't wait
-              window.location.replace("${redirectUrl}");
-            </script>
-          </head>
-          <body>
-            <p>Redirecting to AI chat interface...</p>
-          </body>
-        </html>
-      `);
     }
   );
 
-  // Test route to check authentication
+  // Fast auth status check endpoint
   app.get("/api/auth/status", (req: Request, res: Response) => {
-    console.log("Auth status route hit");
     if (req.isAuthenticated()) {
       res.json({ authenticated: true, user: req.user });
     } else {

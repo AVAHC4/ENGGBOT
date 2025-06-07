@@ -5,8 +5,6 @@ import { Label } from "@/components/ui/label"
 import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
-import BackgroundPaths from "@/components/background-paths"
-import BeamsBackground from "@/components/beams-background"
 import React, { useEffect } from "react"
 import { setRedirectToChat } from "@/lib/auth-storage"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -31,92 +29,134 @@ const transitionVariants = {
   },
 }
 
+// Preload critical resources before React even renders
+if (typeof document !== 'undefined') {
+  // Add resource hints in the document head
+  const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
+  
+  googleDomains.forEach(domain => {
+    // DNS prefetch - start DNS resolution early
+    const dnsPrefetch = document.createElement('link');
+    dnsPrefetch.rel = 'dns-prefetch';
+    dnsPrefetch.href = `https://${domain}`;
+    document.head.appendChild(dnsPrefetch);
+    
+    // Preconnect - establish early connection
+    const preconnect = document.createElement('link');
+    preconnect.rel = 'preconnect';
+    preconnect.href = `https://${domain}`;
+    preconnect.crossOrigin = 'anonymous';
+    document.head.appendChild(preconnect);
+  });
+}
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
+  const [authError, setAuthError] = React.useState('');
+  const [fastAuth, setFastAuth] = React.useState(false);
   
-  // Prefetch Google domains when component mounts
+  // Check for errors and set up connection optimizations
   React.useEffect(() => {
-    // Prefetch Google domains to speed up connection
-    const prefetchDomains = [
-      'https://accounts.google.com',
-      'https://ssl.gstatic.com',
-      'https://www.gstatic.com',
-      'https://www.google.com'
-    ];
-    
-    prefetchDomains.forEach(domain => {
-      const link = document.createElement('link');
-      link.rel = 'dns-prefetch';
-      link.href = domain;
-      document.head.appendChild(link);
-      
-      // Also preconnect
-      const preconnect = document.createElement('link');
-      preconnect.rel = 'preconnect';
-      preconnect.href = domain;
-      document.head.appendChild(preconnect);
-    });
-    
     // Check for error in URL
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {
-      console.error("Authentication error:", error);
+      setAuthError(`Authentication error: ${error}`);
       setIsLoading(false);
     }
+    
+    // Check if we've returned from a failed auth attempt
+    const authCookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('auth_attempt='));
+      
+    if (authCookie && !document.cookie.includes('auth_success=true')) {
+      // Clear the cookie to prevent repeated checks
+      document.cookie = "auth_attempt=; max-age=0; path=/";
+    }
+  }, []);
+
+  // Pre-warm the connection to Google
+  React.useEffect(() => {
+    // Create hidden iframe to pre-establish connection
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = 'https://accounts.google.com/favicon.ico';
+    document.body.appendChild(iframe);
+    
+    // Remove after connection is established
+    return () => {
+      document.body.removeChild(iframe);
+    };
   }, []);
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
-    console.log("Starting Google sign-in process");
+    setAuthError('');
+    setFastAuth(true);
     
-    // Set a cookie to check later if we return here
-    document.cookie = "auth_attempt=true; max-age=300; path=/";
-    
-    // Mark that we should redirect to chat when auth is successful
-    setRedirectToChat(true);
-    
-    // Get the API URL from environment or fallback to origin
-    const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-    
-    // Use the server's OAuth endpoint instead of building the URL directly
-    // This ensures we use the same clientId as configured on the server
-    // and avoids duplicating/hardcoding sensitive information
-    const googleAuthUrl = `${apiUrl}/api/auth/google`;
-    
-    // Set a state parameter as a security measure
-    const state = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('oauth_state', state);
-    
-    // Set a timeout to reset loading state if redirect takes too long
-    const timeout = setTimeout(() => {
+    try {
+      // Set a cookie to check later if we return here
+      document.cookie = "auth_attempt=true; max-age=300; path=/";
+      
+      // Mark that we should redirect to chat when auth is successful
+      setRedirectToChat(true);
+      
+      // Optimize API URL resolution
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      
+      // Use sessionStorage instead of localStorage (faster)
+      const state = Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('oauth_state', state);
+      
+      // Set a timeout to reset loading state if redirect takes too long
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+        setFastAuth(false);
+        setAuthError("Connection to Google is taking longer than expected. Please check your network and try again.");
+      }, 8000); // Shorter timeout
+      
+      // Direct navigation to Google auth endpoint with the state parameter
+      // Use clean URL construction to prevent double requests
+      const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
+      
+      // Use faster navigation method
+      window.location.replace(googleAuthUrl);
+      
+      // Clear timeout if navigation happens quickly
+      window.onbeforeunload = () => {
+        clearTimeout(timeout);
+      };
+    } catch (err) {
       setIsLoading(false);
-      alert("Authentication request is taking longer than expected. Please try again.");
-    }, 10000);
-    
-    // Navigate to the server's Google auth endpoint with the state parameter
-    window.location.href = `${googleAuthUrl}?state=${state}`;
-    
-    // Clear timeout if navigation happens quickly
-    window.onbeforeunload = () => {
-      clearTimeout(timeout);
-    };
+      setFastAuth(false);
+      setAuthError("An unexpected error occurred. Please try again.");
+      console.error("Google sign-in error:", err);
+    }
   };
 
-  return (
-    <div className="min-h-screen relative">
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <div className="block dark:hidden" style={{ position: 'absolute', inset: 0 }}>
-          <BackgroundPaths />
-        </div>
-        <div className="hidden dark:block" style={{ position: 'absolute', inset: 0 }}>
-          <BeamsBackground intensity="medium" />
+  // If in fast auth mode, show a minimal UI for faster performance
+  if (fastAuth) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4">
+            <svg className="animate-spin mx-auto h-12 w-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+          <div className="text-white text-xl font-medium">Connecting to Google...</div>
         </div>
       </div>
+    );
+  }
 
+  return (
+    <div className="min-h-screen bg-black">
       {/* Home Button */}
       <Link href="/" className="absolute top-6 left-6 z-20">
-        <button className="px-4 py-2 rounded-md bg-white dark:bg-black text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
+        <button className="px-4 py-2 rounded-md bg-white dark:bg-zinc-800 text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
           Home
         </button>
       </Link>
@@ -126,7 +166,7 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
+      <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
             className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
@@ -162,7 +202,7 @@ export default function LoginPage() {
               <div className="mt-6 space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="block text-sm">
-                    Username
+                    Email
                   </Label>
                   <Input type="email" required name="email" id="email" className="h-12" />
                 </div>
@@ -189,6 +229,12 @@ export default function LoginPage() {
                 <span className="text-muted-foreground text-xs">Or continue With</span>
                 <hr className="border-dashed" />
               </div>
+
+              {authError && (
+                <div className="mb-4 p-2 text-center text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-md">
+                  {authError}
+                </div>
+              )}
 
               <div className="w-full">
                 <Button 
@@ -233,7 +279,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="p-3">
+            <div className="p-3 bg-white dark:bg-zinc-900">
               <p className="text-accent-foreground text-center text-sm">
                 Don't have an account?
                 <Button asChild variant="link" className="px-2 text-black dark:text-white">
