@@ -624,9 +624,15 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   // Function to confirm deletion
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
-      deleteCurrentConversation(); // This function is already set up to delete the current conversation
-      setDeleteDialogOpen(false);
-      setConversationToDelete(null);
+      try {
+        deleteCurrentConversation(); // This function is already set up to delete the current conversation
+      } catch (error) {
+        console.error("Error deleting conversation:", error);
+      } finally {
+        // Ensure these state updates happen even if there's an error
+        setDeleteDialogOpen(false);
+        setConversationToDelete(null);
+      }
     }
   };
   
@@ -859,7 +865,13 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       </div>
       
       {/* Alert Dialog for delete confirmation */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog 
+        open={deleteDialogOpen} 
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setConversationToDelete(null); // Make sure we clean up state when dialog is closed
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -869,9 +881,17 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConversationToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => {
+              setConversationToDelete(null);
+              setDeleteDialogOpen(false);
+            }}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleConfirmDelete}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                handleConfirmDelete();
+                // Force close the dialog
+                setDeleteDialogOpen(false);
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

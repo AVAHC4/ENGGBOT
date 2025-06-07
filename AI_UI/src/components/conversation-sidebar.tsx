@@ -107,8 +107,13 @@ function ConversationItem({
   };
 
   const handleConfirmDelete = () => {
-    onDelete(id);
-    setShowDeleteAlert(false);
+    try {
+      onDelete(id);
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    } finally {
+      setShowDeleteAlert(false);
+    }
   };
   
   return (
@@ -177,7 +182,12 @@ function ConversationItem({
         )}
       </div>
 
-      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+      <AlertDialog 
+        open={showDeleteAlert} 
+        onOpenChange={(open) => {
+          setShowDeleteAlert(open);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -187,9 +197,16 @@ function ConversationItem({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowDeleteAlert(false)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleConfirmDelete}
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                handleConfirmDelete();
+                // Force close the dialog
+                setShowDeleteAlert(false);
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
