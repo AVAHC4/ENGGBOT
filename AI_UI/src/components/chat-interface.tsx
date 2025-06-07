@@ -7,6 +7,17 @@ import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Glob
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -253,16 +264,30 @@ export function ChatInterface() {
   return (
     <div className="flex flex-col overflow-hidden chat-interface transition-all duration-300 max-w-4xl mx-auto px-4">
       <div className="p-1.5 flex justify-between items-center">
-        <h2 className="text-base font-medium">
-          {BOT_CONFIG.EMOJI.DEFAULT} {BOT_CONFIG.NAME} Chat
-        </h2>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={clearMessages}
-            className="text-xs bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded px-2 py-0.5 transition-colors dark:bg-gray-800/50 dark:hover:bg-gray-700/50"
-          >
-            Clear chat
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button 
+                className="text-xs bg-primary-foreground/10 hover:bg-primary-foreground/20 rounded px-2 py-0.5 transition-colors dark:bg-gray-800/50 dark:hover:bg-gray-700/50"
+              >
+                Clear chat
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action will permanently delete all messages in the current conversation. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={clearMessages} className="bg-red-600 hover:bg-red-700 text-white">
+                  Clear Chat
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
       
