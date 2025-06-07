@@ -757,7 +757,7 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                                       }}
                                     >
                                       <Pencil className="h-3 w-3 mr-2" />
-                                      Edit
+                                      Rename
                                     </DropdownMenuItem>
                                     <DropdownMenuItem 
                                       onClick={(e) => {
