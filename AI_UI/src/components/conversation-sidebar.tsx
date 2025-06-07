@@ -30,16 +30,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface ConversationItemProps {
   id: string;
@@ -47,7 +37,7 @@ interface ConversationItemProps {
   updated: string;
   isActive: boolean;
   onSwitch: (id: string) => void;
-  onDelete: (id: string, e: React.MouseEvent) => void;
+  onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onShare?: (id: string) => void;
 }
@@ -156,7 +146,7 @@ function ConversationItem({
             <DropdownMenuItem 
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(id, e);
+                onDelete(id);
               }}
               className="text-destructive focus:text-destructive"
             >
@@ -180,10 +170,6 @@ export function ConversationSidebar() {
   
   const [conversations, setConversations] = useState<(ConversationMetadata & { id: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Add state for delete confirmation dialog
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   
   // Update conversations list
   useEffect(() => {
@@ -260,149 +246,87 @@ export function ConversationSidebar() {
       });
   };
   
-  // Handle showing delete confirmation dialog
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setConversationToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-  
-  // Handle confirm delete
-  const confirmDelete = () => {
-    if (conversationToDelete) {
-      try {
-        handleDelete(conversationToDelete);
-      } catch (error) {
-        console.error("Error deleting conversation:", error);
-      } finally {
-        // Ensure dialog is closed and state is reset regardless of success or failure
-        setDeleteDialogOpen(false);
-        setConversationToDelete(null);
-      }
-    }
-  };
-  
-  // Handle cancel delete
-  const cancelDelete = () => {
-    // Use a small timeout to ensure the state is updated after the animation completes
-    setTimeout(() => {
-      setConversationToDelete(null);
-    }, 100);
-    setDeleteDialogOpen(false);
-  };
-  
   return (
-    <>
-      {/* Alert Dialog for Delete Confirmation */}
-      <AlertDialog 
-        open={deleteDialogOpen} 
-        onOpenChange={(open) => {
-          setDeleteDialogOpen(open);
-          if (!open) {
-            // When dialog is closed without clicking buttons
-            setTimeout(() => setConversationToDelete(null), 100);
-          }
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this conversation? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel asChild>
-              <Button variant="outline" onClick={cancelDelete}>Cancel</Button>
-            </AlertDialogCancel>
-            <AlertDialogAction asChild>
-              <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className="flex flex-col h-full border-r border-border dark:border-gray-700 overflow-hidden">
+      {/* Header */}
+      <div className="p-4 border-b border-border dark:border-gray-700 flex justify-between items-center">
+        <h2 className="font-medium">Conversations</h2>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={startNewConversation}
+              className="h-8 w-8"
+            >
+              <PlusCircle className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>New conversation</TooltipContent>
+        </Tooltip>
+      </div>
       
-      <div className="flex flex-col h-full border-r border-border dark:border-gray-700 overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-border dark:border-gray-700 flex justify-between items-center">
-          <h2 className="font-medium">Conversations</h2>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                onClick={startNewConversation}
-                className="h-8 w-8"
-              >
-                <PlusCircle className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>New conversation</TooltipContent>
-          </Tooltip>
-        </div>
-        
-        {/* Search */}
-        <div className="p-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search conversations..."
-              className="pl-8 h-9 text-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button 
-                className="absolute right-2 top-2.5"
-                onClick={() => setSearchTerm('')}
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {/* Conversation list */}
-        <ScrollArea className="flex-1 px-2">
-          <div className="space-y-1 py-2">
-            {filteredConversations.length > 0 ? (
-              filteredConversations.map((conversation) => (
-                <ConversationItem
-                  key={conversation.id}
-                  id={conversation.id}
-                  title={conversation.title}
-                  updated={conversation.updated}
-                  isActive={conversation.id === conversationId}
-                  onSwitch={switchConversation}
-                  onDelete={handleDeleteClick}
-                  onRename={handleRename}
-                  onShare={handleShare}
-                />
-              ))
-            ) : searchTerm ? (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                No conversations match your search
-              </div>
-            ) : (
-              <div className="text-center py-8 text-sm text-muted-foreground">
-                No conversations yet
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-        
-        {/* Footer */}
-        <div className="p-4 border-t border-border dark:border-gray-700">
-          <Button
-            variant="outline"
-            className="w-full justify-start text-sm"
-            onClick={startNewConversation}
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New chat
-          </Button>
+      {/* Search */}
+      <div className="p-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            className="pl-8 h-9 text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button 
+              className="absolute right-2 top-2.5"
+              onClick={() => setSearchTerm('')}
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
         </div>
       </div>
-    </>
+      
+      {/* Conversation list */}
+      <ScrollArea className="flex-1 px-2">
+        <div className="space-y-1 py-2">
+          {filteredConversations.length > 0 ? (
+            filteredConversations.map((conversation) => (
+              <ConversationItem
+                key={conversation.id}
+                id={conversation.id}
+                title={conversation.title}
+                updated={conversation.updated}
+                isActive={conversation.id === conversationId}
+                onSwitch={switchConversation}
+                onDelete={handleDelete}
+                onRename={handleRename}
+                onShare={handleShare}
+              />
+            ))
+          ) : searchTerm ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              No conversations match your search
+            </div>
+          ) : (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              No conversations yet
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+      
+      {/* Footer */}
+      <div className="p-4 border-t border-border dark:border-gray-700">
+        <Button
+          variant="outline"
+          className="w-full justify-start text-sm"
+          onClick={startNewConversation}
+        >
+          <PlusCircle className="h-4 w-4 mr-2" />
+          New chat
+        </Button>
+      </div>
+    </div>
   );
 } 
