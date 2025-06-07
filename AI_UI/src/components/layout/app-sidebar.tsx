@@ -26,10 +26,27 @@ import {
   Trash2,
   Users,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Mail,
+  LogOut,
+  X,
+  Zap,
+  Activity,
+  Plus,
+  Tag,
+  Crown,
+  Pencil,
+  Share2,
+  MoreVertical
 } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
@@ -50,7 +67,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadata } from "@/lib/storage"
+import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -243,6 +260,10 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   
   // Flag to track if component is mounted (client-side only)
   const [isMounted, setIsMounted] = React.useState(false);
+  
+  // Add state for editing conversation title
+  const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
+  const [newConversationTitle, setNewConversationTitle] = React.useState("");
   
   // Function to toggle sidebar collapse state
   const toggleSidebar = () => {
@@ -529,6 +550,58 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
     }
   }, [friends]);
   
+  // Function to handle conversation rename
+  const handleRenameConversation = (id: string, newTitle: string) => {
+    if (!newTitle.trim()) {
+      setEditingConversationId(null);
+      return;
+    }
+    
+    // Get all conversations from storage
+    const allConversations = getAllConversationsMetadata();
+    
+    // Find the conversation that needs to be renamed
+    const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
+    
+    if (conversationToUpdate) {
+      // Get existing metadata
+      const existingMeta = getConversationMetadata(id) || {
+        title: `Conversation ${id.substring(0, 6)}`,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString()
+      };
+      
+      // Update metadata with new title and timestamp
+      const updatedMeta = {
+        ...existingMeta,
+        title: newTitle,
+        updated: new Date().toISOString()
+      };
+      
+      // Save updated metadata
+      saveConversationMetadata(id, updatedMeta);
+      
+      // Force update conversations list to reflect the change
+      const updatedConversations = getAllConversationsMetadata();
+      setConversations(updatedConversations);
+    }
+    
+    // Reset editing state
+    setEditingConversationId(null);
+  };
+  
+  // Function to handle conversation share
+  const handleShareConversation = (id: string) => {
+    // Copy conversation link/id to clipboard
+    navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
+      .then(() => {
+        alert('Conversation link copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+  };
+  
   return (
     <div
       className={cn(
@@ -633,23 +706,80 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
                             )}
                           >
                             <div className="flex flex-col items-start overflow-hidden">
-                              <span className="text-xs truncate w-full text-left">{convo.title}</span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {formatTime(convo.updated)}
-                              </span>
+                              {editingConversationId === convo.id ? (
+                                <input
+                                  type="text"
+                                  value={newConversationTitle}
+                                  onChange={(e) => setNewConversationTitle(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleRenameConversation(convo.id, newConversationTitle);
+                                    } else if (e.key === 'Escape') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setEditingConversationId(null);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                    handleRenameConversation(convo.id, newConversationTitle);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  autoFocus
+                                  className="text-xs w-full p-0.5 bg-background border border-input rounded"
+                                />
+                              ) : (
+                                <>
+                                  <span className="text-xs truncate w-full text-left">{convo.title}</span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {formatTime(convo.updated)}
+                                  </span>
+                                </>
+                              )}
                             </div>
                             
-                            {convo.id === conversationId && (
+                            {/* Replace direct delete button with dropdown menu */}
+                            {!editingConversationId && convo.id === conversationId && (
                               <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteCurrentConversation();
-                                  }}
-                                  className="p-1 hover:text-destructive"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <button className="p-1">
+                                      <MoreVertical className="h-3 w-3" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" side="right">
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingConversationId(convo.id);
+                                        setNewConversationTitle(convo.title);
+                                      }}
+                                    >
+                                      <Pencil className="h-3 w-3 mr-2" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShareConversation(convo.id);
+                                      }}
+                                    >
+                                      <Share2 className="h-3 w-3 mr-2" />
+                                      Share
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteCurrentConversation();
+                                      }}
+                                      className="text-destructive focus:text-destructive"
+                                    >
+                                      <Trash2 className="h-3 w-3 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                             )}
                           </SidebarMenuSubButton>

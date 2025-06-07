@@ -2,7 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useChat } from '@/context/chat-context';
-import { getAllConversationsMetadata, ConversationMetadata } from '@/lib/storage';
+import { 
+  getAllConversationsMetadata, 
+  ConversationMetadata,
+  getConversationMetadata,
+  saveConversationMetadata
+} from '@/lib/storage';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Search, 
@@ -11,6 +16,7 @@ import {
   MoreVertical, 
   Trash2,
   Pencil,
+  Share2,
   X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -33,6 +39,7 @@ interface ConversationItemProps {
   onSwitch: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  onShare?: (id: string) => void;
 }
 
 function ConversationItem({ 
@@ -42,7 +49,8 @@ function ConversationItem({
   isActive, 
   onSwitch, 
   onDelete, 
-  onRename 
+  onRename,
+  onShare
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
@@ -64,6 +72,22 @@ function ConversationItem({
   const handleBlur = () => {
     onRename(id, newTitle);
     setIsEditing(false);
+  };
+  
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onShare) {
+      onShare(id);
+    } else {
+      // Default share behavior - copy conversation link/id to clipboard
+      navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
+        .then(() => {
+          alert('Conversation link copied to clipboard!');
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+    }
   };
   
   return (
@@ -112,6 +136,12 @@ function ConversationItem({
             }}>
               <Pencil className="h-4 w-4 mr-2" />
               Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={(e) => {
@@ -176,11 +206,44 @@ export function ConversationSidebar() {
   
   // Handle conversation rename
   const handleRename = (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return; // Don't save empty titles
+    
+    // Get existing metadata
+    const existingMeta = getConversationMetadata(id) || {
+      title: `Conversation ${id.substring(0, 6)}`,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    };
+    
+    // Update metadata with new title and timestamp
+    const updatedMeta = {
+      ...existingMeta,
+      title: newTitle,
+      updated: new Date().toISOString()
+    };
+    
+    // Save updated metadata
+    saveConversationMetadata(id, updatedMeta);
+    
+    // Update local state to immediately reflect the change
     setConversations(conversations.map(c => 
       c.id === id 
-        ? { ...c, title: newTitle } 
+        ? { ...c, title: newTitle, updated: new Date().toISOString() } 
         : c
     ));
+  };
+  
+  // Handle conversation sharing
+  const handleShare = (id: string) => {
+    // Copy conversation link/id to clipboard
+    navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
+      .then(() => {
+        // Use a more subtle notification approach in a real app
+        alert('Conversation link copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
   };
   
   return (
@@ -238,6 +301,7 @@ export function ConversationSidebar() {
                 onSwitch={switchConversation}
                 onDelete={handleDelete}
                 onRename={handleRename}
+                onShare={handleShare}
               />
             ))
           ) : searchTerm ? (
