@@ -30,6 +30,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ConversationItemProps {
   id: string;
@@ -54,6 +64,7 @@ function ConversationItem({
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   
   const formatTime = (timestamp: string) => {
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -89,74 +100,104 @@ function ConversationItem({
         });
     }
   };
+
+  const handleDeleteRequest = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteAlert(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(id);
+    setShowDeleteAlert(false);
+  };
   
   return (
-    <div 
-      className={cn(
-        "flex items-center justify-between p-2 rounded-md hover:bg-primary/5 transition-all cursor-pointer group",
-        isActive && "bg-primary/10 hover:bg-primary/10"
-      )}
-      onClick={() => onSwitch(id)}
-    >
-      <div className="flex items-center space-x-2 overflow-hidden flex-1">
-        <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
-        {isEditing ? (
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onBlur={handleBlur}
-            autoFocus
-            className="h-6 py-1 text-xs"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-sm truncate">{title}</span>
-            <span className="text-xs text-muted-foreground">{formatTime(updated)}</span>
-          </div>
+    <>
+      <div 
+        className={cn(
+          "flex items-center justify-between p-2 rounded-md hover:bg-primary/5 transition-all cursor-pointer group",
+          isActive && "bg-primary/10 hover:bg-primary/10"
+        )}
+        onClick={() => onSwitch(id)}
+      >
+        <div className="flex items-center space-x-2 overflow-hidden flex-1">
+          <MessageCircle className="h-4 w-4 shrink-0 text-muted-foreground" />
+          {isEditing ? (
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              autoFocus
+              className="h-6 py-1 text-xs"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-sm truncate">{title}</span>
+              <span className="text-xs text-muted-foreground">{formatTime(updated)}</span>
+            </div>
+          )}
+        </div>
+        
+        {!isEditing && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-7 w-7 opacity-0 group-hover:opacity-100"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleDeleteRequest}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
-      
-      {!isEditing && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7 opacity-0 group-hover:opacity-100"
+
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the conversation "{title}".
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-            }}>
-              <Pencil className="h-4 w-4 mr-2" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(id);
-              }}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
               Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

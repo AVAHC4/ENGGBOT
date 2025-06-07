@@ -47,6 +47,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
@@ -264,6 +274,8 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
   // Add state for editing conversation title
   const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
   const [newConversationTitle, setNewConversationTitle] = React.useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [conversationToDelete, setConversationToDelete] = React.useState<string | null>(null);
   
   // Function to toggle sidebar collapse state
   const toggleSidebar = () => {
@@ -602,235 +614,272 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       });
   };
   
+  // Function to handle delete request
+  const handleDeleteRequest = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConversationToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+  
+  // Function to confirm deletion
+  const handleConfirmDelete = () => {
+    if (conversationToDelete) {
+      deleteCurrentConversation(); // This function is already set up to delete the current conversation
+      setDeleteDialogOpen(false);
+      setConversationToDelete(null);
+    }
+  };
+  
   return (
-    <div
-      className={cn(
-        "app-layout grid",
-        sidebarCollapsed ? "grid-template-columns: 80px 1fr sidebar-collapsed" : "grid-template-columns: 200px 1fr",
-        "transition-all duration-300 ease-in-out",
-        { "sidebar-collapsed": sidebarCollapsed }
-      )}
-    >
-      <Sidebar 
-        collapsible={sidebarCollapsed ? "none" : "offcanvas"} 
+    <>
+      <div
         className={cn(
-          "transition-all duration-300 border-none", 
-          sidebarCollapsed ? "opacity-0 invisible" : "opacity-100 visible",
-          className
+          "app-layout grid",
+          sidebarCollapsed ? "grid-template-columns: 80px 1fr sidebar-collapsed" : "grid-template-columns: 200px 1fr",
+          "transition-all duration-300 ease-in-out",
+          { "sidebar-collapsed": sidebarCollapsed }
         )}
-        style={{
-          width: '200px',
-          minWidth: '200px',
-          maxWidth: '200px',
-          overflow: 'hidden'
-        }}
-        {...props}
       >
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-                <Link href="/" className="focus:outline-none">
-                  <ArrowUpCircle className="h-5 w-5" />
-                  <span className="text-base font-semibold">ENGGBOT</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <div className="py-4">
+        <Sidebar 
+          collapsible={sidebarCollapsed ? "none" : "offcanvas"} 
+          className={cn(
+            "transition-all duration-300 border-none", 
+            sidebarCollapsed ? "opacity-0 invisible" : "opacity-100 visible",
+            className
+          )}
+          style={{
+            width: '200px',
+            minWidth: '200px',
+            maxWidth: '200px',
+            overflow: 'hidden'
+          }}
+          {...props}
+        >
+          <SidebarHeader>
             <SidebarMenu>
-              {data.navMain.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.url === activePath || 
-                  (item.url === '/' && activePath === '/') ||
-                  (item.url !== '/' && activePath.startsWith(item.url));
-                
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      data-active={isActive}
-                    >
-                      <Link 
-                        href={item.url} 
-                        className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                        onClick={(e) => {
-                          // Update active path for all nav items, not just chat
-                          setActivePath(item.url);
-                        }}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-              
-              {/* Conversations Menu */}
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => setConversationsExpanded(!conversationsExpanded)}
-                  className="justify-between"
-                >
-                  <div className="flex items-center">
-                    <History className="h-4 w-4 mr-2" />
-                    <span>Conversations</span>
-                  </div>
-                  {conversationsExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
+                <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+                  <Link href="/" className="focus:outline-none">
+                    <ArrowUpCircle className="h-5 w-5" />
+                    <span className="text-base font-semibold">ENGGBOT</span>
+                  </Link>
                 </SidebarMenuButton>
-                
-                {conversationsExpanded && (
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                      <SidebarMenuSubButton onClick={startNewConversation} className="w-full flex items-center">
-                        <PlusCircle className="h-3.5 w-3.5 mr-2" />
-                        <span className="font-medium text-primary">New Conversation</span>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    
-                    {conversations.length > 0 ? (
-                      conversations.map((convo) => (
-                        <SidebarMenuSubItem key={convo.id}>
-                          <SidebarMenuSubButton 
-                            onClick={() => switchConversation(convo.id)}
-                            className={cn(
-                              "w-full justify-between group pr-1", 
-                              convo.id === conversationId && "bg-muted/50"
-                            )}
-                          >
-                            <div className="flex flex-col items-start overflow-hidden">
-                              {editingConversationId === convo.id ? (
-                                <input
-                                  type="text"
-                                  value={newConversationTitle}
-                                  onChange={(e) => setNewConversationTitle(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleRenameConversation(convo.id, newConversationTitle);
-                                    } else if (e.key === 'Escape') {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setEditingConversationId(null);
-                                    }
-                                  }}
-                                  onBlur={() => {
-                                    handleRenameConversation(convo.id, newConversationTitle);
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  autoFocus
-                                  className="text-xs w-full p-0.5 bg-background border border-input rounded"
-                                />
-                              ) : (
-                                <>
-                                  <span className="text-xs truncate w-full text-left">{convo.title}</span>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {formatTime(convo.updated)}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            
-                            {/* Replace direct delete button with dropdown menu */}
-                            {!editingConversationId && convo.id === conversationId && (
-                              <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                    <button className="p-1">
-                                      <MoreVertical className="h-3 w-3" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" side="right">
-                                    <DropdownMenuItem 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingConversationId(convo.id);
-                                        setNewConversationTitle(convo.title);
-                                      }}
-                                    >
-                                      <Pencil className="h-3 w-3 mr-2" />
-                                      Rename
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleShareConversation(convo.id);
-                                      }}
-                                    >
-                                      <Share2 className="h-3 w-3 mr-2" />
-                                      Share
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        deleteCurrentConversation();
-                                      }}
-                                      className="text-destructive focus:text-destructive"
-                                    >
-                                      <Trash2 className="h-3 w-3 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            )}
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))
-                    ) : (
-                      <SidebarMenuSubItem>
-                        <div className="px-4 py-2 text-xs text-muted-foreground">
-                          No conversations yet
-                        </div>
-                      </SidebarMenuSubItem>
-                    )}
-                  </SidebarMenuSub>
-                )}
               </SidebarMenuItem>
             </SidebarMenu>
-          </div>
-          <NavSecondary items={data.navSecondary} className="mt-auto" />
-        </SidebarContent>
-        <SidebarFooter 
-          className="relative z-30 border-t border-border bg-background" 
-          style={{
-            position: 'relative',
-            zIndex: 30,
-            backgroundColor: 'var(--background)',
-            visibility: 'visible',
-            opacity: 1,
-            marginTop: 'auto',
-            borderTop: '1px solid var(--border)',
-            padding: '12px'
-          }}
-        >
-          <NavUser user={userData} />
-        </SidebarFooter>
-      </Sidebar>
+          </SidebarHeader>
+          <SidebarContent>
+            <div className="py-4">
+              <SidebarMenu>
+                {data.navMain.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.url === activePath || 
+                    (item.url === '/' && activePath === '/') ||
+                    (item.url !== '/' && activePath.startsWith(item.url));
+                  
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        data-active={isActive}
+                      >
+                        <Link 
+                          href={item.url} 
+                          className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                          onClick={(e) => {
+                            // Update active path for all nav items, not just chat
+                            setActivePath(item.url);
+                          }}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+                
+                {/* Conversations Menu */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setConversationsExpanded(!conversationsExpanded)}
+                    className="justify-between"
+                  >
+                    <div className="flex items-center">
+                      <History className="h-4 w-4 mr-2" />
+                      <span>Conversations</span>
+                    </div>
+                    {conversationsExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </SidebarMenuButton>
+                  
+                  {conversationsExpanded && (
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton onClick={startNewConversation} className="w-full flex items-center">
+                          <PlusCircle className="h-3.5 w-3.5 mr-2" />
+                          <span className="font-medium text-primary">New Conversation</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      
+                      {conversations.length > 0 ? (
+                        conversations.map((convo) => (
+                          <SidebarMenuSubItem key={convo.id}>
+                            <SidebarMenuSubButton 
+                              onClick={() => switchConversation(convo.id)}
+                              className={cn(
+                                "w-full justify-between group pr-1", 
+                                convo.id === conversationId && "bg-muted/50"
+                              )}
+                            >
+                              <div className="flex flex-col items-start overflow-hidden">
+                                {editingConversationId === convo.id ? (
+                                  <input
+                                    type="text"
+                                    value={newConversationTitle}
+                                    onChange={(e) => setNewConversationTitle(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleRenameConversation(convo.id, newConversationTitle);
+                                      } else if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setEditingConversationId(null);
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      handleRenameConversation(convo.id, newConversationTitle);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    autoFocus
+                                    className="text-xs w-full p-0.5 bg-background border border-input rounded"
+                                  />
+                                ) : (
+                                  <>
+                                    <span className="text-xs truncate w-full text-left">{convo.title}</span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {formatTime(convo.updated)}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                              
+                              {/* Replace direct delete button with dropdown menu */}
+                              {!editingConversationId && convo.id === conversationId && (
+                                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                      <button className="p-1">
+                                        <MoreVertical className="h-3 w-3" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" side="right">
+                                      <DropdownMenuItem 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingConversationId(convo.id);
+                                          setNewConversationTitle(convo.title);
+                                        }}
+                                      >
+                                        <Pencil className="h-3 w-3 mr-2" />
+                                        Rename
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleShareConversation(convo.id);
+                                        }}
+                                      >
+                                        <Share2 className="h-3 w-3 mr-2" />
+                                        Share
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        onClick={(e) => handleDeleteRequest(e, convo.id)}
+                                        className="text-destructive focus:text-destructive"
+                                      >
+                                        <Trash2 className="h-3 w-3 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              )}
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))
+                      ) : (
+                        <SidebarMenuSubItem>
+                          <div className="px-4 py-2 text-xs text-muted-foreground">
+                            No conversations yet
+                          </div>
+                        </SidebarMenuSubItem>
+                      )}
+                    </SidebarMenuSub>
+                  )}
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </div>
+            <NavSecondary items={data.navSecondary} className="mt-auto" />
+          </SidebarContent>
+          <SidebarFooter 
+            className="relative z-30 border-t border-border bg-background" 
+            style={{
+              position: 'relative',
+              zIndex: 30,
+              backgroundColor: 'var(--background)',
+              visibility: 'visible',
+              opacity: 1,
+              marginTop: 'auto',
+              borderTop: '1px solid var(--border)',
+              padding: '12px'
+            }}
+          >
+            <NavUser user={userData} />
+          </SidebarFooter>
+        </Sidebar>
 
-      {/* Standalone toggle button that will remain visible */}
-      <Button 
-        variant="outline" 
-        size="icon" 
-        className="sidebar-toggle-btn h-8 w-8 rounded-full hover:bg-accent hover:text-accent-foreground"
-        onClick={toggleSidebar}
-        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-      >
-        {sidebarCollapsed ? (
-          <PanelLeftOpen className="h-4 w-4" />
-        ) : (
-          <PanelLeftClose className="h-4 w-4" />
-        )}
-      </Button>
-    </div>
+        {/* Standalone toggle button that will remain visible */}
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="sidebar-toggle-btn h-8 w-8 rounded-full hover:bg-accent hover:text-accent-foreground"
+          onClick={toggleSidebar}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+      
+      {/* Alert Dialog for delete confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This conversation will be permanently deleted.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConversationToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 } // Updated sidebar navigation components
 // Updated sidebar for improved navigation workflow
