@@ -28,6 +28,7 @@ export interface GenerateOptions {
   max_tokens?: number;
   thinking_mode?: boolean;
   messages?: Array<{role: string, content: string}>;
+  stream?: boolean;
 }
 
 /**
@@ -57,7 +58,7 @@ export class ChutesClient {
    */
   async generate(options: GenerateOptions): Promise<string> {
     try {
-      const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages } = options;
+      const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages, stream = false } = options;
       
       // Use model or default
       const modelName = model || this.defaultModel;
@@ -87,7 +88,8 @@ export class ChutesClient {
         "model": modelName,
         "messages": messagePayload,
         "temperature": temperature,
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
+        "stream": stream
       };
       
       // Make the API call
@@ -112,6 +114,59 @@ export class ChutesClient {
       console.error("Error generating AI response:", error);
       return `Error: ${error instanceof Error ? error.message : String(error)}`;
     }
+  }
+
+  /**
+   * Generate a streaming response from the AI model
+   */
+  async generateStream(options: GenerateOptions): Promise<ReadableStream> {
+    const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages } = options;
+    
+    // Use model or default
+    const modelName = model || this.defaultModel;
+    
+    // Determine whether to use messages array or prompt
+    let messagePayload;
+    if (messages && messages.length > 0) {
+      // Use provided messages array
+      messagePayload = messages;
+    } else {
+      // Modify prompt to encourage thinking if thinking_mode is enabled
+      let actualPrompt = prompt;
+      if (thinking_mode) {
+        if (prompt.includes("?")) {
+          actualPrompt = prompt + " Please think step by step and show your reasoning process.";
+        } else {
+          actualPrompt = prompt + " Please think step by step and explain your thought process.";
+        }
+      }
+      
+      // Use single message with prompt
+      messagePayload = [{"role": "user", "content": actualPrompt}];
+    }
+    
+    // Prepare the payload
+    const payload = {
+      "model": modelName,
+      "messages": messagePayload,
+      "temperature": temperature,
+      "max_tokens": max_tokens,
+      "stream": true
+    };
+    
+    // Make the API call with streaming
+    const response = await fetch(this.apiUrl, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    
+    // Return the raw stream
+    return response.body!;
   }
   
   /**

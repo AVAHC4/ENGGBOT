@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, ZapIcon } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +17,8 @@ interface ChatInputProps {
   onStopGeneration?: () => void;
   webSearchMode?: boolean;
   onToggleWebSearch?: () => void;
+  useStreaming?: boolean;
+  toggleStreaming?: () => void;
 }
 
 export function ChatInput({
@@ -29,8 +31,10 @@ export function ChatInput({
   onStopGeneration,
   webSearchMode = false,
   onToggleWebSearch,
+  useStreaming,
+  toggleStreaming,
 }: ChatInputProps) {
-  const { replyToMessage, setReplyToMessage } = useChat();
+  const { replyToMessage, setReplyToMessage, useStreaming: contextUseStreaming } = useChat();
   const [message, setMessage] = useState("");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -251,6 +255,31 @@ export function ChatInput({
               <TooltipContent side="top">
                 <p className="text-xs">
                   {thinkingMode ? "Thinking mode enabled" : "Enable thinking mode"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Streaming toggle button */}
+          {toggleStreaming && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                    contextUseStreaming && "text-primary hover:text-primary"
+                  )}
+                  onClick={toggleStreaming}
+                  title={contextUseStreaming ? "Streaming Mode On" : "Streaming Mode Off"}
+                >
+                  <ZapIcon className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">
+                  {contextUseStreaming ? "Streaming Mode On" : "Streaming Mode Off"}
                 </p>
               </TooltipContent>
             </Tooltip>

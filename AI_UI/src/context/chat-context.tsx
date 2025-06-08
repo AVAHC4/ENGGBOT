@@ -16,6 +16,7 @@ export interface ExtendedChatMessage extends ChatMessage {
   attachments?: Attachment[];
   replyToId?: string; // ID of the message being replied to
   metadata?: Record<string, any>; // Add metadata field for additional data like search results
+  isStreaming?: boolean; // Add streaming status indicator
 }
 
 interface ChatContextType {
@@ -38,6 +39,8 @@ interface ChatContextType {
   setReplyToMessage: (message: ExtendedChatMessage | null) => void;
   addMessage: (message: Partial<ExtendedChatMessage>) => void;
   displayedMessageIds: Set<string>;
+  useStreaming: boolean; // Add streaming option
+  toggleStreaming: () => void; // Add toggle function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -61,6 +64,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
+  const [useStreaming, setUseStreaming] = useState<boolean>(true); // Default to streaming
 
   // Set isMounted flag on client-side
   useEffect(() => {
@@ -123,33 +127,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   };
 
   const stopGeneration = useCallback(() => {
-    // Mark the current request as canceled
+    // Set canceled flag
     isCanceledRef.current = true;
     
-    setIsGenerating(false);
+    // Reset states
     setIsLoading(false);
-    
-    // Optionally add a message indicating generation was stopped
-    setMessages(prev => {
-      // Check if the last message is from the AI and incomplete
-      const lastMessage = prev[prev.length - 1];
-      if (lastMessage && !lastMessage.isUser) {
-        // Add an indicator that generation was stopped
-        const updatedMessages = [...prev.slice(0, -1), {
-          ...lastMessage,
-          content: lastMessage.content + " [Generation stopped]"
-        }];
-        
-        // Save the updated messages
-        if (typeof window !== 'undefined') {
-          saveConversation(conversationId, updatedMessages);
-        }
-        
-        return updatedMessages;
-      }
-      return prev;
-    });
-  }, [conversationId]);
+    setIsGenerating(false);
+  }, []);
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
     try {
@@ -192,7 +176,148 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Set generating state to true immediately when sending message
       setIsGenerating(true);
 
-      // Send to API with model, thinking mode preferences, and conversation history
+      // Check if streaming should be used
+      if (useStreaming) {
+        // Create a placeholder for the AI response
+        const aiMessageId = crypto.randomUUID();
+        const aiMessage: ExtendedChatMessage = {
+          id: aiMessageId,
+          content: "",
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isStreaming: true
+        };
+        
+        // Add the placeholder to messages
+        const messagesWithPlaceholder = [...updatedMessages, aiMessage];
+        setMessages(messagesWithPlaceholder);
+        
+        try {
+          // Make a fetch request with streaming response instead of EventSource
+          const response = await fetch('/api/chat/stream', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: content,
+              hasAttachments: !!attachments,
+              model: currentModel,
+              thinkingMode: thinkingMode,
+              conversationId: conversationId,
+              replyToId,
+              conversationHistory: updatedMessages.slice(-10)
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error("Stream reader could not be created");
+          }
+          
+          const decoder = new TextDecoder();
+          let buffer = "";
+          
+          // Process the stream chunks
+          while (true) {
+            // Check if the request was canceled
+            if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
+              reader.cancel();
+              break;
+            }
+            
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              // Update message to mark as no longer streaming
+              setMessages(prev => prev.map(m => 
+                m.id === aiMessageId ? { ...m, isStreaming: false } : m
+              ));
+              
+              // Reset states
+              setIsLoading(false);
+              setIsGenerating(false);
+              
+              // Save conversation
+              if (typeof window !== 'undefined') {
+                saveConversation(
+                  conversationId, 
+                  messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
+                );
+              }
+              break;
+            }
+            
+            // Decode and process the chunk
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Split buffer by lines and process each line
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+            
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              if (!line.startsWith('data:')) continue;
+              
+              try {
+                const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+                
+                if (eventData === "[DONE]") {
+                  // End of stream
+                  continue;
+                }
+                
+                const data = JSON.parse(eventData);
+                
+                // Update the streaming message
+                if (data.text) {
+                  setMessages(prev => {
+                    const updatedMessages = prev.map(m => 
+                      m.id === aiMessageId 
+                        ? { ...m, content: m.content + data.text } 
+                        : m
+                    );
+                    
+                    // Save intermediate state periodically
+                    if (typeof window !== 'undefined') {
+                      saveConversation(conversationId, updatedMessages);
+                    }
+                    
+                    return updatedMessages;
+                  });
+                }
+              } catch (error) {
+                console.error("Error parsing stream data:", error);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error in streaming:", error);
+          
+          // Update message to show error
+          setMessages(prev => prev.map(m => 
+            m.id === aiMessageId 
+              ? { 
+                  ...m, 
+                  isStreaming: false, 
+                  content: m.content || "Sorry, there was an error generating a response."
+                } 
+              : m
+          ));
+          
+          // Reset states
+          setIsLoading(false);
+          setIsGenerating(false);
+        }
+        
+        return;
+      }
+      
+      // Non-streaming path (existing implementation)
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -272,7 +397,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // We've handled state resetting in both success and error cases
       // No additional state handling needed here
     }
-  }, [conversationId, currentModel, messages, thinkingMode]);
+  }, [conversationId, currentModel, messages, thinkingMode, useStreaming]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -373,6 +498,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setWebSearchMode(prev => !prev);
   }, []);
 
+  // Add toggle streaming function
+  const toggleStreaming = useCallback(() => {
+    setUseStreaming(prev => !prev);
+  }, []);
+
+  // Add useEffect to clean up resources on unmount
+  useEffect(() => {
+    return () => {
+      // Nothing to clean up with the fetch-based approach
+    };
+  }, []);
+
   // Return context value
   const value = {
     messages,
@@ -394,6 +531,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setReplyToMessage,
     addMessage,
     displayedMessageIds,
+    useStreaming,
+    toggleStreaming,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

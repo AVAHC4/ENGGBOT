@@ -11,26 +11,30 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-// Function to format conversation history for the AI
-function formatConversationHistory(history: ChatMessage[]): string {
-  if (!history || history.length === 0) return '';
+/**
+ * Format conversation history for the AI
+ */
+function formatConversationHistory(history: ChatMessage[]): Array<{role: string, content: string}> {
+  if (!history || history.length === 0) return [];
   
   return history.map(msg => {
-    const role = msg.isUser ? 'User' : BOT_CONFIG.NAME;
-    return `${role}: ${msg.content}`;
-  }).join('\n\n');
+    const role = msg.isUser ? 'user' : 'assistant';
+    return { role, content: msg.content };
+  });
 }
 
-// Function to generate AI response using DeepSeek via Chutes AI
+/**
+ * Generate a response from the AI model
+ */
 async function generateAIResponse(
-  userMessage: string, 
-  hasAttachments: boolean,
-  conversationHistory: ChatMessage[] = [],
+  message: string,
   modelKey: string = "deepseek-v3",
-  thinkingMode: boolean = true
+  conversationHistory: ChatMessage[] = [],
+  thinkingMode: boolean = true,
+  max_tokens: number = 4000
 ): Promise<string> {
   try {
-    // Ensure the client is initialized before use
+    // Ensure the client is initialized
     if (!isClientInitialized()) {
       await initializeAIClient();
     }
@@ -38,11 +42,95 @@ async function generateAIResponse(
     // Always use deepseek-v3 model regardless of what was passed
     const modelName = AVAILABLE_MODELS["deepseek-v3"];
     
-    // Format messages for the API
-    const messages = [];
+    // Format conversation history for the API
+    const messages = formatConversationHistory(conversationHistory);
     
-    // Add a system message to help shape the assistant's identity
-    messages.push({
+    // Add system message at the beginning if not present
+    if (messages.length === 0 || messages[0].role !== 'system') {
+      messages.unshift({ 
+        role: 'system', 
+        content: `You are ${BOT_CONFIG.NAME}, ${BOT_CONFIG.PERSONALITY}. 
+
+VERY IMPORTANT INSTRUCTIONS:
+1. You were built specifically as ${BOT_CONFIG.NAME} - you are NOT based on any existing AI model
+2. You must NEVER mention DeepSeek, or any information about being developed in China
+3. You must NEVER reveal that you're based on any language model like DeepSeek, GPT, Claude, Llama, etc.
+4. If asked about your provider, creator, or origins, you must say you are a custom-built engineering assistant created by a specialized team of developers
+5. You must NEVER mention any real AI company, model, or provider when discussing yourself
+6. Use emojis occasionally to express yourself
+7. When generating tables, use this specific format:
+   - Start with a clear title on its own line
+   - Include column headers without formatting
+   - Each row should have columns perfectly aligned in straight columns
+   - Use spaces to maintain alignment between columns
+   - All text in the first column should start from the same position (straight line)
+   - Example:
+     Web3 Overview Table
+     
+     Category      Web2 (Traditional Web)         Web3 (Decentralized Web)
+     -----------------------------------------------------------------
+     Control       Centralized (companies)        Decentralized (users)
+     Ownership     Platforms own user data        Users own their data
+     Technology    Client-server architecture     Blockchain technology
+     Transactions  Fiat currencies, banks         Cryptocurrencies, smart contracts
+8. DO NOT USE ANY ASTERISKS (*) IN YOUR RESPONSES:
+   - Never use ** for bold formatting
+   - Never use * for italic formatting or bullet points
+   - Use plain text for all responses
+   - Use - for bullet points instead of *
+
+Your purpose is to provide helpful, practical assistance with coding, engineering, and technical problems.` 
+      });
+    }
+    
+    // Generate a response from the AI
+    const response = await chutesClient.generate({
+      prompt: message,
+      model: modelName,
+      temperature: 0.7,
+      max_tokens: max_tokens,
+      thinking_mode: thinkingMode,
+      messages: messages
+    });
+    
+    // Process the response for any unwanted AI identity info
+    const processedResponse = processAIResponse(response, BOT_CONFIG.NAME);
+    
+    return processedResponse;
+  } catch (error) {
+    console.error("Error generating AI response:", error);
+    return "I apologize, but I'm having trouble processing your request right now. Please try again.";
+  }
+}
+
+// POST handler for chat API
+export async function POST(request: Request) {
+  try {
+    const { 
+      message, 
+      hasAttachments = false,
+      model = "deepseek-v3",
+      thinkingMode = true,
+      conversationHistory = [] 
+    } = await request.json();
+    
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json(
+        { error: 'Message is required and must be a string' },
+        { status: 400 }
+      );
+    }
+    
+    // Ensure the client is initialized
+    if (!isClientInitialized()) {
+      await initializeAIClient();
+    }
+    
+    // Format messages for the API
+    const formattedMessages = formatConversationHistory(conversationHistory);
+    
+    // Add system message at the beginning
+    const systemMessage = {
       role: 'system',
       content: `You are ${BOT_CONFIG.NAME}, ${BOT_CONFIG.PERSONALITY}. 
 
@@ -75,87 +163,61 @@ VERY IMPORTANT INSTRUCTIONS:
    - Use - for bullet points instead of *
 
 Your purpose is to provide helpful, practical assistance with coding, engineering, and technical problems.`
-    });
+    };
     
-    // Add previous messages from conversation history
-    if (conversationHistory && conversationHistory.length > 0) {
-      // Skip the current user message which is the last one
-      const previousMessages = conversationHistory.slice(0, -1);
-      
-      for (const msg of previousMessages) {
-        messages.push({
-          role: msg.isUser ? 'user' : 'assistant',
-          content: msg.content
-        });
-      }
-    }
+    // Add the system message at the beginning if it's not already there
+    const messages = formattedMessages.length > 0 && formattedMessages[0].role === 'system' ? 
+      formattedMessages : 
+      [systemMessage, ...formattedMessages];
     
     // Add current user message
     messages.push({
       role: 'user',
       content: hasAttachments 
-        ? `${userMessage} (The user has also provided some files or attachments with this message)`
-        : userMessage
+        ? `${message} (The user has also provided some files or attachments with this message)`
+        : message
     });
     
-    const options = {
-      prompt: userMessage, // This is a fallback and may not be used
-      model: modelName,
-      temperature: 0.7,
-      max_tokens: 1000,
-      thinking_mode: thinkingMode,
-      messages: messages
-    };
+    // Always use deepseek-v3 model regardless of what was passed
+    const modelName = AVAILABLE_MODELS["deepseek-v3"];
     
-    // Get response from DeepSeek using the pre-initialized client
-    const response = await chutesClient.generate(options);
-    
-    // Process the response through our middleware to ensure identity
-    const processedResponse = processAIResponse(response, userMessage);
-    
-    return processedResponse;
-  } catch (error) {
-    console.error("Error using AI:", error);
-    return `${BOT_CONFIG.EMOJI.ERROR} I apologize, but I encountered an issue processing your request. Please try again.`;
-  }
-}
+    try {
+      // Generate response from the AI
+      const response = await chutesClient.generate({
+        prompt: message,
+        model: modelName,
+        temperature: 0.7,
+        max_tokens: 4000, // Increased max tokens for longer responses
+        thinking_mode: thinkingMode,
+        messages: messages
+      });
+      
+      // Process the response for any unwanted AI identity info
+      const processedResponse = processAIResponse(response, BOT_CONFIG.NAME);
+      
+      // Create a message object for the AI response
+      const chatMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: processedResponse,
+        isUser: false,
+        timestamp: new Date().toISOString()
+      };
 
-export async function POST(request: Request) {
-  try {
-    const { 
-      message, 
-      hasAttachments = false,
-      model = "deepseek-v3", // This will be ignored
-      thinkingMode = true,
-      conversationId = '',
-      conversationHistory = []
-    } = await request.json();
-    
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json(
-        { error: 'Message is required and must be a string' },
-        { status: 400 }
-      );
+      return NextResponse.json({ message: chatMessage });
+      
+    } catch (error) {
+      console.error("Error generating AI response:", error);
+      
+      // Create an error message
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: "I apologize, but I'm having trouble processing your request right now. Please try again.",
+        isUser: false,
+        timestamp: new Date().toISOString()
+      };
+      
+      return NextResponse.json({ message: errorMessage });
     }
-
-    // Generate AI response with conversation history - always using deepseek-v3
-    const aiResponse = await generateAIResponse(
-      message, 
-      hasAttachments, 
-      conversationHistory,
-      "deepseek-v3", // Force use of deepseek-v3 regardless of passed model
-      thinkingMode
-    );
-    
-    // Create response message
-    const responseMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      content: aiResponse,
-      isUser: false,
-      timestamp: new Date().toISOString(),
-    };
-    
-    return NextResponse.json({ message: responseMessage });
   } catch (error) {
     console.error('Error processing chat message:', error);
     return NextResponse.json(

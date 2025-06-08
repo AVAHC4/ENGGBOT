@@ -27,12 +27,15 @@ export function ChatMessage({
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, setReplyToMessage } = useChat();
+  const { messages, setReplyToMessage, useStreaming } = useChat();
   
   // Get the message being replied to if replyToId exists
   const replyToMessage = messageData.replyToId 
     ? messages.find(msg => msg.id === messageData.replyToId) 
     : null;
+
+  // Determine if this message is currently streaming
+  const isStreaming = messageData.isStreaming === true;
 
   // Function to handle reply to this message
   const handleReply = () => {
@@ -117,6 +120,22 @@ export function ChatMessage({
     );
   };
   
+  // Render streaming indicator if message is being streamed
+  const renderStreamingIndicator = () => {
+    if (!isStreaming) return null;
+    
+    return (
+      <div className="flex items-center gap-1.5 opacity-70 text-xs mt-1 ml-1">
+        <div className="flex space-x-1 items-center">
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse delay-150"></div>
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse delay-300"></div>
+        </div>
+        <span>AI is typing...</span>
+      </div>
+    );
+  };
+  
   // Detect and process code blocks and headings in the message
   const processMessageContent = (content: string) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
@@ -177,7 +196,7 @@ export function ChatMessage({
   };
 
   // Render the message content with code blocks
-  const renderMessageContent = (content: string, skipAnim = false) => {
+  const renderMessageContent = (content: string, skipAnim = skipGeneration || isUser) => {
     const parts = processMessageContent(content);
     
     return parts.map((part, index) => {
@@ -195,19 +214,18 @@ export function ChatMessage({
         // Process headings in text content
         const processedContent = processHeadings(part.content);
         
-        return skipAnim ? (
+        // Use streaming effect or normal text based on settings and state
+        const shouldUseStreamingEffect = !skipAnim && !isUser && useStreaming && !isStreaming;
+        
+        return shouldUseStreamingEffect ? (
+          <div key={index} className="prose dark:prose-invert max-w-none">
+            <TextGenerateEffect words={part.content} />
+          </div>
+        ) : (
           <div 
             key={index} 
-            className="text-sm leading-relaxed whitespace-pre-wrap break-words markdown-content"
-            dangerouslySetInnerHTML={{ __html: processedContent }}
-          />
-        ) : (
-          <TextGenerateEffect 
-            key={index}
-            words={part.content} 
-            className="!font-normal !text-sm leading-relaxed !text-current !mt-0" 
-            duration={0.4}
-            filter={true}
+            className="prose dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: processedContent }} 
           />
         );
       }
@@ -258,94 +276,56 @@ export function ChatMessage({
           >
             <Reply className="h-3 w-3" />
           </Button>
+          {renderStreamingIndicator()}
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "flex items-start gap-2 w-full max-w-[95%] group",
-        isUser ? "ml-auto" : "mr-auto"
-      )}
-    >
-      {isUser ? (
-        <div className="flex flex-col items-end w-full">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium">You</span>
-            {timestamp && (
-              <span className="text-[10px] opacity-70 dark:opacity-50">{timestamp}</span>
-            )}
-            <div
-              className={cn(
-                "flex items-center justify-center w-6 h-6 rounded-full shrink-0",
-                "bg-primary text-primary-foreground"
-              )}
-            >
-              <User className="w-3 h-3" />
-            </div>
-          </div>
-          
-          {renderReplyQuote()}
-          
-          <div className="rounded-none p-0 relative group">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {message}
-            </p>
-            {renderAttachments()}
-            
-            {/* Reply button (visible on hover) */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 -ml-7 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5"
-              onClick={handleReply}
-            >
-              <Reply className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div
-            className={cn(
-              "flex items-center justify-center w-6 h-6 rounded-full shrink-0",
-              "bg-primary/20 dark:bg-gray-700"
-            )}
-          >
-            <Wrench className="w-3 h-3 text-primary dark:text-gray-300" />
-          </div>
-
-          <div className="flex flex-col gap-1 min-w-0 relative w-full">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium">
-                {`${BOT_CONFIG.EMOJI.DEFAULT} ${BOT_CONFIG.NAME}`}
-              </span>
-              {timestamp && (
-                <span className="text-[10px] opacity-70 dark:opacity-50">{timestamp}</span>
-              )}
-            </div>
-            
-            {renderReplyQuote()}
-            
-            <div className="rounded-none p-0 relative">
+    <div className={cn(
+      "flex flex-col max-w-full", 
+      isUser ? "items-end" : "items-start"
+    )}>
+      {renderReplyQuote()}
+      <div className={cn(
+        "flex gap-3 max-w-[85%]",
+        isUser ? "flex-row-reverse" : "flex-row"
+      )}>
+        <Avatar className={cn(
+          "h-8 w-8 rounded-full ring-2 ring-offset-2 flex items-center justify-center",
+          isUser 
+            ? "bg-primary text-white ring-primary/10" 
+            : "bg-muted text-muted-foreground ring-muted/20"
+        )}>
+          {isUser ? <User size={14} /> : <Bot size={14} />}
+        </Avatar>
+        <div className="space-y-1 max-w-full">
+          <div className={cn(
+            "bg-muted rounded-lg p-3 text-sm relative flex flex-col",
+            !isUser && "dark:bg-gray-800"
+          )}>
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/5" />
+            <div className="relative">
               {renderMessageContent(message)}
               {renderAttachments()}
-              
-              {/* Reply button (visible on hover) */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute -left-7 top-0 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5"
-                onClick={handleReply}
-              >
+            </div>
+          </div>
+          {renderStreamingIndicator()}
+          <div className="flex items-center gap-2 ml-1">
+            {timestamp && (
+              <span className="text-[10px] text-muted-foreground">
+                {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" onClick={handleReply} className="text-muted-foreground h-5 w-5">
                 <Reply className="h-3 w-3" />
               </Button>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 } 
