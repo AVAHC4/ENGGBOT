@@ -3,6 +3,15 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
 
+// Define extended Response type with flush method
+declare global {
+  namespace Express {
+    interface Response {
+      flush?: () => void;
+    }
+  }
+}
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -42,6 +51,25 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Add flush helper to response objects
+  const originalSend = express.response.send;
+  express.response.send = function(...args) {
+    // Call the original send
+    const result = originalSend.apply(this, args);
+    
+    // Add flush method if it doesn't exist
+    if (!this.flush) {
+      this.flush = function() {
+        // If the response has a flushHeaders method (Express), use it
+        if (typeof this.flushHeaders === 'function') {
+          this.flushHeaders();
+        }
+      };
+    }
+    
+    return result;
+  };
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -65,5 +93,6 @@ app.use((req, res, next) => {
   const port = 3000;
   server.listen(port, () => {
     log(`serving on port ${port}`);
+    log(`streaming endpoints available at /api/chat/stream`);
   });
 })();

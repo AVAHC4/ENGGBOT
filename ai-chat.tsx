@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Bot, User } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
 
 // Mock implementations for missing modules
@@ -25,11 +25,112 @@ type Message = {
   role: "user" | "assistant"
   model: string
   timestamp: Date
+  isStreaming?: boolean
 }
 
 export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const eventSourceRef = useRef<EventSource | null>(null)
+
+  // Clean up event source on component unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
+  }, [])
+
+  // Function to handle streaming response
+  const handleStreamResponse = (content: string, model: string) => {
+    // Create a placeholder for the streaming response
+    const streamingMessageId = Date.now().toString()
+    const streamingMessage: Message = {
+      id: streamingMessageId,
+      content: "",
+      role: "assistant",
+      model: model || "streaming",
+      timestamp: new Date(),
+      isStreaming: true
+    }
+    
+    // Add the streaming message placeholder to the messages
+    setMessages(prev => [...prev, streamingMessage])
+    
+    // Close any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+    
+    console.log("Starting manual streaming simulation")
+    
+    // Since the server streaming isn't working, let's simulate it client-side
+    const simulateStreaming = () => {
+      const responses = {
+        hello: "Hello! I'm a streaming AI assistant. How can I help you today?",
+        weather: "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.",
+        help: "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, character by character.",
+        default: `Thank you for your message: "${content}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`
+      }
+      
+      // Select appropriate response
+      let responseText = ""
+      if (content.toLowerCase().includes("hello")) {
+        responseText = responses.hello
+      } else if (content.toLowerCase().includes("weather")) {
+        responseText = responses.weather
+      } else if (content.toLowerCase().includes("help")) {
+        responseText = responses.help
+      } else {
+        responseText = responses.default
+      }
+      
+      // Stream character by character
+      const chars = responseText.split('')
+      let charIndex = 0
+      
+      const streamNextChar = () => {
+        if (charIndex < chars.length) {
+          const char = chars[charIndex]
+          // Determine if this is a natural pause point
+          const isWordBreak = char === ' ' || char === '.' || char === ',' || char === '!'
+          
+          // Update the streaming message with new content
+          setMessages(prev => 
+            prev.map(m => 
+              m.id === streamingMessageId 
+                ? { ...m, content: m.content + char } 
+                : m
+            )
+          )
+          
+          charIndex++
+          
+          // Vary timing for more natural reading
+          const delay = isWordBreak ? 100 : 30
+          setTimeout(streamNextChar, delay)
+        } else {
+          // End of stream
+          setMessages(prev => 
+            prev.map(m => 
+              m.id === streamingMessageId 
+                ? { ...m, isStreaming: false } 
+                : m
+            )
+          )
+          setIsLoading(false)
+        }
+      }
+      
+      // Start streaming
+      streamNextChar()
+    }
+    
+    // Start the simulation
+    simulateStreaming()
+  }
 
   // Function to handle new message submission
   const handleSubmit = (content: string, model: string) => {
@@ -45,7 +146,13 @@ export default function AiChat() {
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
     
-    // Simulate AI response after a delay
+    // Check if the user wants to use streaming response
+    if (content.toLowerCase().includes("stream") || model === "streaming") {
+      handleStreamResponse(content, model)
+      return
+    }
+    
+    // Simulate AI response after a delay (non-streaming)
     setTimeout(() => {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -83,6 +190,7 @@ export default function AiChat() {
               Welcome Traveler
             </h1>
             <p className="text-xl text-zinc-400">What can I do for you today?</p>
+            <p className="text-md text-zinc-500 mt-2">Try typing "show me streaming" to see streaming responses in action!</p>
           </motion.div>
         )}
 
@@ -127,13 +235,18 @@ export default function AiChat() {
                         {message.model}
                       </span>
                     )}
+                    {message.isStreaming && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-green-900/50 text-green-400 animate-pulse">
+                        streaming...
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-zinc-300">{message.content}</p>
                 </div>
               </div>
             ))}
             
-            {isLoading && (
+            {isLoading && !messages.some(m => m.isStreaming) && (
               <div className="flex items-start gap-3 p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 mr-6">
                 <div className="shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
                   <Bot size={16} className="text-white" />

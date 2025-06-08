@@ -157,6 +157,85 @@ apiRouter.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Streaming response endpoint
+apiRouter.get("/chat/stream", (req, res) => {
+  console.log("Streaming chat endpoint called with message:", req.query.message);
+  
+  // Get message and model from query parameters
+  const message = req.query.message as string;
+  const model = (req.query.model as string) || "streaming-chat";
+  
+  if (!message) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+  
+  // Important: Send headers explicitly for streaming
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  
+  // Generate a response based on the message
+  let responseText = "";
+  
+  if (message.toLowerCase().includes("hello")) {
+    responseText = "Hello! I'm a streaming AI assistant. How can I help you today?";
+  } else if (message.toLowerCase().includes("weather")) {
+    responseText = "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.";
+  } else if (message.toLowerCase().includes("help")) {
+    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, character by character.";
+  } else {
+    responseText = `Thank you for your message: "${message}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`;
+  }
+  
+  console.log('Sending streaming response:', responseText);
+  
+  // Stream character by character
+  const chars = responseText.split('');
+  let charIndex = 0;
+  
+  // Function to send the next character
+  const sendNextChar = () => {
+    if (charIndex < chars.length) {
+      const char = chars[charIndex];
+      // Determine if this is a natural pause point
+      const isWordBreak = char === ' ' || char === '.' || char === ',' || char === '!';
+      
+      // Send data
+      const data = JSON.stringify({ 
+        text: char,
+        chunk: charIndex + 1,
+        total: chars.length,
+        model: model,
+      });
+      
+      // Write in SSE format
+      res.write(`data: ${data}\n\n`);
+      
+      charIndex++;
+      
+      // Vary timing for more natural reading
+      const delay = isWordBreak ? 100 : 30;
+      setTimeout(sendNextChar, delay);
+    } else {
+      // End of stream
+      res.write(`data: [DONE]\n\n`);
+      res.end();
+    }
+  };
+  
+  // Start sending characters
+  sendNextChar();
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    charIndex = chars.length; // Stop the sequence
+    console.log('Client disconnected from stream');
+  });
+});
+
 // Get current user
 apiRouter.get("/user", (req, res) => {
   console.log("User endpoint hit. User authenticated:", !!req.user);
