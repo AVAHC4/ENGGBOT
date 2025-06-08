@@ -30,7 +30,7 @@ export default function FormsLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-6 p-10 pb-16 bg-black text-white min-h-screen">
+    <div className="space-y-6 p-10 pb-16 bg-white text-black dark:bg-black dark:text-white min-h-screen">
       <div className="space-y-0.5">
         <h2 className="text-2xl font-bold tracking-tight">Forms</h2>
         <p className="text-muted-foreground">

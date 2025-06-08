@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useTheme } from "next-themes"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -38,21 +38,22 @@ const defaultValues: Partial<AppearanceFormValues> = {
 }
 
 export function AppearanceForm() {
+  // Add a mounted state to prevent hydration mismatch
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme()
+  
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
-    defaultValues: {
-      ...defaultValues,
-      theme: (theme as "light" | "dark" | "system") || "system"
-    },
+    defaultValues,
   })
 
-  // Update form when theme changes externally
+  // Wait until mounted to update form values
   useEffect(() => {
+    setMounted(true);
     if (theme) {
-      form.setValue("theme", theme as "light" | "dark" | "system")
+      form.setValue("theme", theme as "light" | "dark" | "system");
     }
-  }, [theme, form])
+  }, [theme, form]);
 
   function onSubmit(data: AppearanceFormValues) {
     // Actually change the theme
@@ -62,6 +63,11 @@ export function AppearanceForm() {
       title: "Appearance updated",
       description: "Your appearance settings have been updated.",
     })
+  }
+
+  // Don't render form until client-side to prevent hydration mismatch
+  if (!mounted) {
+    return <div className="py-4">Loading theme preferences...</div>;
   }
 
   return (
@@ -83,7 +89,7 @@ export function AppearanceForm() {
                   // Apply theme immediately when selected
                   setTheme(value);
                 }}
-                defaultValue={field.value}
+                value={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
               >
                 <FormItem>
@@ -153,11 +159,8 @@ export function AppearanceForm() {
               </FormDescription>
               <FormMessage />
               <RadioGroup
-                onValueChange={(value) => {
-                  field.onChange(value);
-                  // No need to call setTheme here since it's just changing the font
-                }}
-                defaultValue={field.value}
+                onValueChange={field.onChange}
+                value={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
               >
                 <FormItem>

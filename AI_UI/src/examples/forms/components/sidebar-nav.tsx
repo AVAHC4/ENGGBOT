@@ -18,7 +18,7 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
   return (
     <nav
       className={cn(
-        "flex flex-col space-y-1 bg-black/90 rounded-lg p-2",
+        "flex flex-col space-y-1 bg-gray-100 dark:bg-black/90 rounded-lg p-2",
         className
       )}
       {...props}
@@ -30,9 +30,10 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
           className={cn(
             "flex items-center px-4 py-3 text-sm font-medium rounded-md cursor-pointer",
             pathname === item.href
-              ? "bg-gray-800 text-white"
-              : "text-gray-300 hover:text-white hover:bg-gray-800",
-            item.title === "Profile" && pathname !== item.href && "text-gray-300 hover:text-white hover:bg-gray-800"
+              ? "bg-gray-200 text-black dark:bg-gray-800 dark:text-white"
+              : "text-gray-700 hover:text-black hover:bg-gray-200 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800",
+            item.title === "Profile" && pathname !== item.href && 
+              "text-gray-700 hover:text-black hover:bg-gray-200 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
           )}
         >
           {item.title}
