@@ -61,75 +61,82 @@ export default function AiChat() {
     // Close any existing EventSource
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
-      eventSourceRef.current = null
     }
     
-    console.log("Starting manual streaming simulation")
+    // Connect to the streaming chat endpoint with timestamp to prevent caching
+    const timestamp = Date.now()
+    const eventSource = new EventSource(`/api/chat/stream?message=${encodeURIComponent(content)}&model=${encodeURIComponent(model)}&t=${timestamp}`)
+    eventSourceRef.current = eventSource
     
-    // Since the server streaming isn't working, let's simulate it client-side
-    const simulateStreaming = () => {
-      const responses = {
-        hello: "Hello! I'm a streaming AI assistant. How can I help you today?",
-        weather: "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.",
-        help: "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, character by character.",
-        default: `Thank you for your message: "${content}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`
+    // Listen for connection open event
+    eventSource.onopen = () => {
+      console.log("EventSource connection opened")
+    }
+    
+    // Listen for message events
+    eventSource.onmessage = (event) => {
+      console.log("Received event data:", event.data)
+      
+      if (event.data === "[DONE]") {
+        // End of stream
+        console.log("Stream complete")
+        setMessages(prev => 
+          prev.map(m => 
+            m.id === streamingMessageId 
+              ? { ...m, isStreaming: false } 
+              : m
+          )
+        )
+        eventSource.close()
+        eventSourceRef.current = null
+        setIsLoading(false)
+        return
       }
       
-      // Select appropriate response
-      let responseText = ""
-      if (content.toLowerCase().includes("hello")) {
-        responseText = responses.hello
-      } else if (content.toLowerCase().includes("weather")) {
-        responseText = responses.weather
-      } else if (content.toLowerCase().includes("help")) {
-        responseText = responses.help
-      } else {
-        responseText = responses.default
+      try {
+        const data = JSON.parse(event.data)
+        console.log("Parsed data:", data)
+        
+        // Update the streaming message with new content
+        setMessages(prev => {
+          // Find the current message
+          const currentMessage = prev.find(m => m.id === streamingMessageId)
+          // Only append if the content is new
+          if (currentMessage) {
+            return prev.map(m => 
+              m.id === streamingMessageId 
+                ? { ...m, content: m.content + data.text } 
+                : m
+            )
+          }
+          return prev
+        })
+      } catch (error) {
+        console.error("Error parsing stream data:", error)
       }
-      
-      // Stream character by character
-      const chars = responseText.split('')
-      let charIndex = 0
-      
-      const streamNextChar = () => {
-        if (charIndex < chars.length) {
-          const char = chars[charIndex]
-          // Determine if this is a natural pause point
-          const isWordBreak = char === ' ' || char === '.' || char === ',' || char === '!'
-          
-          // Update the streaming message with new content
-          setMessages(prev => 
-            prev.map(m => 
-              m.id === streamingMessageId 
-                ? { ...m, content: m.content + char } 
-                : m
-            )
-          )
-          
-          charIndex++
-          
-          // Vary timing for more natural reading
-          const delay = isWordBreak ? 100 : 30
-          setTimeout(streamNextChar, delay)
-        } else {
-          // End of stream
-          setMessages(prev => 
-            prev.map(m => 
-              m.id === streamingMessageId 
-                ? { ...m, isStreaming: false } 
-                : m
-            )
-          )
+    }
+    
+    // Handle errors
+    eventSource.onerror = (error) => {
+      console.error("EventSource error:", error)
+      // Try to reconnect a few times before giving up
+      setTimeout(() => {
+        if (eventSourceRef.current === eventSource) {
+          eventSource.close()
+          eventSourceRef.current = null
           setIsLoading(false)
+          
+          // Mark the message as no longer streaming
+          setMessages(prev => 
+            prev.map(m => 
+              m.id === streamingMessageId 
+                ? { ...m, isStreaming: false, content: m.content + " [Stream error - connection lost]" } 
+                : m
+            )
+          )
         }
-      }
-      
-      // Start streaming
-      streamNextChar()
+      }, 2000)
     }
-    
-    // Start the simulation
-    simulateStreaming()
   }
 
   // Function to handle new message submission

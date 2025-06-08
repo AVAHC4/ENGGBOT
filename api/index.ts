@@ -157,25 +157,86 @@ apiRouter.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Type definition for Express response with flush
+interface StreamableResponse extends express.Response {
+  flush?: () => void;
+}
+
 // Streaming response endpoint
-apiRouter.get("/chat/stream", (req, res) => {
-  console.log("Streaming chat endpoint called with message:", req.query.message);
+apiRouter.get("/stream", (req, res: StreamableResponse) => {
+  // Set headers for streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  // Prevent buffering
+  res.setHeader('X-Accel-Buffering', 'no');
+  // Force flush for each chunk
+  res.flushHeaders();
   
-  // Get message and model from query parameters
-  const message = req.query.message as string;
-  const model = (req.query.model as string) || "streaming-chat";
+  let count = 0;
+  const messageIntervals = [
+    "Hello", 
+    "from", 
+    "the", 
+    "streaming", 
+    "API!", 
+    "This", 
+    "message", 
+    "is", 
+    "coming", 
+    "in", 
+    "chunks."
+  ];
+  
+  // Send data in chunks with an interval
+  const interval = setInterval(() => {
+    if (count >= messageIntervals.length) {
+      // End the stream when all messages are sent
+      res.write(`data: [DONE]\n\n`);
+      // Try to force flush
+      if (res.flush) res.flush();
+      clearInterval(interval);
+      res.end();
+      return;
+    }
+
+    // Send a chunk of data
+    const data = JSON.stringify({ 
+      text: messageIntervals[count],
+      chunk: count + 1,
+      total: messageIntervals.length
+    });
+
+    res.write(`data: ${data}\n\n`);
+    // Try to force flush
+    if (res.flush) res.flush();
+    count++;
+  }, 300); // Send a new chunk every 300ms
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    clearInterval(interval);
+  });
+});
+
+// Streaming chat API endpoint
+apiRouter.post("/chat/stream", (req, res: StreamableResponse) => {
+  // Get message and model from POST body or query parameters
+  const message = req.body.message || req.query.message;
+  const model = req.body.model || req.query.model || "streaming-chat";
   
   if (!message) {
     return res.status(400).json({ error: "Message is required" });
   }
   
-  // Important: Send headers explicitly for streaming
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no'
-  });
+  // Set headers for streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  // Prevent buffering
+  res.setHeader('X-Accel-Buffering', 'no');
+  // Force flush for each chunk
+  res.flushHeaders();
   
   // Generate a response based on the message
   let responseText = "";
@@ -185,14 +246,78 @@ apiRouter.get("/chat/stream", (req, res) => {
   } else if (message.toLowerCase().includes("weather")) {
     responseText = "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.";
   } else if (message.toLowerCase().includes("help")) {
-    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, character by character.";
+    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, word by word.";
   } else {
     responseText = `Thank you for your message: "${message}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`;
   }
   
-  console.log('Sending streaming response:', responseText);
+  // Split the response into words
+  const words = responseText.split(" ");
+  let wordCount = 0;
   
-  // Stream character by character
+  // Send words with an interval
+  const interval = setInterval(() => {
+    if (wordCount >= words.length) {
+      // End the stream when all words are sent
+      res.write(`data: [DONE]\n\n`);
+      // Try to force flush
+      if (res.flush) res.flush();
+      clearInterval(interval);
+      res.end();
+      return;
+    }
+
+    // Send a word
+    const data = JSON.stringify({ 
+      text: words[wordCount],
+      chunk: wordCount + 1,
+      total: words.length,
+      model: model
+    });
+
+    res.write(`data: ${data}\n\n`);
+    // Try to force flush
+    if (res.flush) res.flush();
+    wordCount++;
+  }, 100); // Send a new word every 100ms
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    clearInterval(interval);
+  });
+});
+
+// Also add a GET endpoint for the same functionality
+apiRouter.get("/chat/stream", (req, res: StreamableResponse) => {
+  // Get message and model from query parameters
+  const message = req.query.message as string;
+  const model = (req.query.model as string) || "streaming-chat";
+  
+  if (!message) {
+    return res.status(400).json({ error: "Message is required" });
+  }
+  
+  // Set headers for streaming
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  
+  // Generate a response based on the message
+  let responseText = "";
+  
+  if (message.toLowerCase().includes("hello")) {
+    responseText = "Hello! I'm a streaming AI assistant. How can I help you today?";
+  } else if (message.toLowerCase().includes("weather")) {
+    responseText = "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.";
+  } else if (message.toLowerCase().includes("help")) {
+    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, word by word.";
+  } else {
+    responseText = `Thank you for your message: "${message}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`;
+  }
+  
+  // Stream character by character with short delays for better streaming visualization
   const chars = responseText.split('');
   let charIndex = 0;
   
@@ -200,28 +325,30 @@ apiRouter.get("/chat/stream", (req, res) => {
   const sendNextChar = () => {
     if (charIndex < chars.length) {
       const char = chars[charIndex];
-      // Determine if this is a natural pause point
       const isWordBreak = char === ' ' || char === '.' || char === ',' || char === '!';
+      
+      let chunk = char;
       
       // Send data
       const data = JSON.stringify({ 
-        text: char,
+        text: chunk,
         chunk: charIndex + 1,
         total: chars.length,
         model: model,
       });
-      
-      // Write in SSE format
+
       res.write(`data: ${data}\n\n`);
+      if (res.flush) res.flush();
       
       charIndex++;
       
-      // Vary timing for more natural reading
-      const delay = isWordBreak ? 100 : 30;
+      // Delay between characters - use longer delay at word breaks for natural reading
+      const delay = isWordBreak ? 100 : 40;
       setTimeout(sendNextChar, delay);
     } else {
       // End of stream
       res.write(`data: [DONE]\n\n`);
+      if (res.flush) res.flush();
       res.end();
     }
   };
@@ -232,7 +359,6 @@ apiRouter.get("/chat/stream", (req, res) => {
   // Handle client disconnect
   req.on('close', () => {
     charIndex = chars.length; // Stop the sequence
-    console.log('Client disconnected from stream');
   });
 });
 
