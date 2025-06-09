@@ -60,7 +60,7 @@ export class ChutesClient {
    */
   async generate(options: GenerateOptions): Promise<string> {
     try {
-      const { prompt, model, temperature = 0.7, max_tokens = 16000, thinking_mode = false, messages, stream = false, presence_penalty = 0.6, frequency_penalty = 0.5 } = options;
+      const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages, stream = false, presence_penalty = 0.6, frequency_penalty = 0.5 } = options;
       
       // Use model or default
       const modelName = model || this.defaultModel;
@@ -124,7 +124,7 @@ export class ChutesClient {
    * Generate a streaming response from the AI model
    */
   async generateStream(options: GenerateOptions): Promise<ReadableStream> {
-    const { prompt, model, temperature = 0.7, max_tokens = 16000, thinking_mode = false, messages, presence_penalty = 0.6, frequency_penalty = 0.5 } = options;
+    const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages, presence_penalty = 0.6, frequency_penalty = 0.5 } = options;
     
     // Use model or default
     const modelName = model || this.defaultModel;
