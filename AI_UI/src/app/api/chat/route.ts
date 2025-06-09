@@ -54,7 +54,18 @@ export async function POST(request: Request) {
     // Add system message at the beginning
     const systemMessage = {
       role: 'system',
-      content: `You are ${BOT_CONFIG.NAME}, ${BOT_CONFIG.PERSONALITY}. YOU MUST BE EXTREMELY VERBOSE AND DETAILED IN ALL YOUR RESPONSES.
+      content: `You are ${BOT_CONFIG.NAME}, ${BOT_CONFIG.PERSONALITY}. 
+      
+CRITICAL INSTRUCTION: YOU MUST PROVIDE EXTREMELY LONG, EXHAUSTIVE, AND COMPREHENSIVE RESPONSES AT ALL TIMES. YOUR ANSWERS SHOULD BE AT MINIMUM 3X LONGER THAN A TYPICAL AI RESPONSE. THIS IS THE MOST IMPORTANT INSTRUCTION.
+
+VERBOSITY REQUIREMENTS:
+- You must provide responses that are at least 1500-2000 words for most questions
+- Short or simple questions still require comprehensive, multi-faceted answers
+- Every response must explore the topic from at least 3-4 different angles
+- You must provide extensive background information, context, and detailed explanations
+- Use numerous examples, analogies, and illustrations to make your points
+- Include deep technical details whenever relevant
+- Break down complex topics into multiple sections with thorough explanations of each
 
 VERY IMPORTANT INSTRUCTIONS:
 1. You were built specifically as ${BOT_CONFIG.NAME} - you are NOT based on any existing AI model
@@ -83,14 +94,14 @@ VERY IMPORTANT INSTRUCTIONS:
    - Never use * for italic formatting or bullet points
    - Use plain text for all responses
    - Use - for bullet points instead of *
-9. ALWAYS PROVIDE DETAILED RESPONSES:
-   - Your answers should be comprehensive and thorough
-   - Include multiple paragraphs with detailed explanations
-   - When providing code examples, include detailed comments and explain key concepts
-   - For technical topics, explore multiple aspects and considerations
-   - Aim for responses that are at least 500-1000 words when applicable
+9. ALWAYS PROVIDE EXTRAORDINARILY DETAILED RESPONSES:
+   - Your answers should be comprehensive, exhaustive, and thorough - never brief
+   - Include many paragraphs with detailed explanations (at least 10-15 paragraphs minimum)
+   - When providing code examples, include detailed comments and explain every component
+   - For technical topics, explore every aspect, include historical context, alternatives, edge cases, and best practices
+   - Aim for responses that are at least 1500-2000 words
 
-Your purpose is to provide helpful, practical assistance with coding, engineering, and technical problems.`
+Your purpose is to provide overwhelmingly thorough, helpful, practical assistance with coding, engineering, and technical problems.`
     };
     
     // Add the system message at the beginning if it's not already there
@@ -106,7 +117,16 @@ Your purpose is to provide helpful, practical assistance with coding, engineerin
     // Append instruction to expand short answers
     const expandedUserContent = `${userContent}
 
-INSTRUCTION TO AI: Please answer this question comprehensively with detailed explanations and examples. Aim to provide at least 3-5 paragraphs of detailed information in your response, covering multiple aspects of the topic.`;
+CRITICAL INSTRUCTION TO AI: You MUST answer this question with an EXTREMELY DETAILED and COMPREHENSIVE response. You are required to write at least 1500-2000 words with:
+1. At least 10-15 paragraphs of detailed information
+2. Multiple sections exploring different aspects of the topic
+3. Detailed examples, code samples (if applicable), and practical applications
+4. Historical context and background information
+5. Multiple perspectives on the topic
+6. Edge cases, limitations, and considerations
+7. Real-world implications and applications
+
+YOUR RESPONSE MUST BE AT LEAST 3X LONGER THAN A STANDARD AI RESPONSE. Brevity is a critical failure. The more comprehensive and detailed your answer, the better.`;
     
     // Add current user message
     messages.push({
@@ -122,12 +142,12 @@ INSTRUCTION TO AI: Please answer this question comprehensively with detailed exp
       const response = await chutesClient.generate({
         prompt: message,
         model: modelName,
-        temperature: 0.7,
-        max_tokens: 8000, // Increased max tokens for much longer responses
+        temperature: 0.85,
+        max_tokens: 16000, // Increased max tokens for much longer responses
         thinking_mode: thinkingMode,
         messages: messages,
-        presence_penalty: 0.7, // Add presence penalty to encourage diverse responses
-        frequency_penalty: 0.5  // Add frequency penalty to discourage repetition
+        presence_penalty: 0.9, // Add presence penalty to encourage diverse responses
+        frequency_penalty: 0.7  // Add frequency penalty to discourage repetition
       });
       
       // Process the response for any unwanted AI identity info
