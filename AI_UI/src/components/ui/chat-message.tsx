@@ -229,7 +229,19 @@ export function ChatMessage({
           return ''; // Remove separator row - we'll handle it with CSS
         }
         
-        const cellsHtml = cells.map(cell => `<td class="py-4 pr-6">${cell.trim()}</td>`).join('');
+        const cellsHtml = cells.map(cell => {
+          // Add spacing between content items where needed
+          const formattedContent = cell.trim()
+            // Add space after numbers followed by text
+            .replace(/(\d+)([A-Za-z])/g, '$1 $2')
+            // Add space between text and numbers
+            .replace(/([A-Za-z])(\d+)/g, '$1 $2')
+            // Ensure commas have spaces after them (but not before)
+            .replace(/,(\S)/g, ', $1');
+          
+          return `<td class="py-4 pr-6">${formattedContent}</td>`;
+        }).join('');
+        
         return `<tr>${cellsHtml}</tr>`;
       })
       // Identify and convert table structures - without using 's' flag
