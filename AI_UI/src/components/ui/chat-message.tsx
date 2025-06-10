@@ -209,38 +209,49 @@ export function ChatMessage({
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       // Match check marks
       .replace(/✓/g, '<span class="text-green-500">✓</span>')
-      // Process table formatting
-      .replace(/\|(.+)\|/g, function(match) {
-        // Don't process tables inside code blocks
+      // --- Table processing ---
+      .replace(/^(\|([^\|]*)\|)+$/gm, function(match) {
+        // Skip code blocks
         if (match.includes('```')) return match;
         
-        // Create proper table HTML
-        const cells = match.split('|').slice(1, -1);
-        if (cells.length === 0) return match;
+        // Get all cells from this row
+        const cells = match.split('|').filter(cell => cell !== '');
         
-        // If this contains --- it's a table header separator
-        if (cells.some(cell => /^[\s-]+$/.test(cell.trim()))) {
-          return ''; // Remove the separator line as HTML tables don't need it
+        // If this is a separator row (contains only dashes and whitespace)
+        if (cells.every(cell => /^[\s\-]+$/.test(cell.trim()))) {
+          return ''; // Remove separator row - we'll handle it with CSS
         }
         
-        const cellsHtml = cells.map(cell => `<td class="px-2 py-1 border border-gray-300 dark:border-gray-700">${cell.trim()}</td>`).join('');
-        return `<tr>${cellsHtml}</tr>`;
+        // Create a new row with cells
+        const rowCells = cells.map(cell => 
+          `<td class="py-3 px-4 whitespace-normal">${cell.trim()}</td>`
+        ).join('');
+        
+        return `<tr>${rowCells}</tr>`;
       })
-      // Wrap tables with proper table tags
-      .replace(/<tr>(.+?)<\/tr>/g, function(match, content) {
-        // Check if this is the first row
-        if (content.includes('<td class="px-2 py-1 border')) {
-          // Check if the next non-whitespace character after this match is another <tr>
-          // If so, this is part of a table, otherwise it's a standalone row
-          if (match.trim().startsWith('<tr>')) {
-            return `<table class="min-w-[50%] my-4 border-collapse border border-gray-300 dark:border-gray-700"><tbody>${match}`;
-          }
-          return match;
-        }
-        return match;
+      // Convert the first table row to a header row
+      .replace(/<tr>(.+?)<\/tr>/m, function(match) {
+        // Skip if already processed or it's in a code block
+        if (match.includes('<th') || match.includes('```')) return match;
+        
+        // Convert all td elements to th elements
+        const headerRow = match.replace(/<td class="([^"]+)">(.+?)<\/td>/g, 
+          '<th class="$1 text-left font-medium border-b border-gray-200 dark:border-gray-700 pb-2">$2</th>'
+        );
+        
+        // Wrap in proper table structure
+        return `<table class="w-full my-4 table-fixed">
+          <thead>
+            ${headerRow}
+          </thead>
+          <tbody>`;
       })
-      // Close table tags where needed
-      .replace(/<\/tr>(\s*?)(?!<tr>)/g, '</tr></tbody></table>');
+      // Close the table when needed
+      .replace(/(<\/tr>)(?![\s\S]*?<tr>)/m, '$1</tbody></table>')
+      // Fix any broken table structures
+      .replace(/<\/tbody><\/table>[\s\n\r]*<tr>/g, '</tbody></table><table class="w-full my-4 table-fixed"><tbody><tr>')
+      // Clean up empty tables
+      .replace(/<table[^>]*>[\s\n\r]*<\/table>/g, '');
   };
 
   // Render the message content with code blocks
