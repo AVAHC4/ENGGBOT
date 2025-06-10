@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { Avatar } from "@/components/ui/avatar";
-import { User, Bot, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Reply, Wrench } from "lucide-react";
+import { User, Bot, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Reply, Wrench, Copy, Check } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
@@ -28,6 +28,7 @@ export function ChatMessage({
   messageData
 }: ChatMessageProps) {
   const { messages, setReplyToMessage, useStreaming } = useChat();
+  const [copied, setCopied] = useState(false);
   
   // Get the message being replied to if replyToId exists
   const replyToMessage = messageData.replyToId 
@@ -40,6 +41,14 @@ export function ChatMessage({
   // Function to handle reply to this message
   const handleReply = () => {
     setReplyToMessage(messageData);
+  };
+  
+  // Function to copy message content to clipboard
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    });
   };
   
   // Function to determine the appropriate icon based on file type
@@ -187,12 +196,51 @@ export function ChatMessage({
   // Process headings in text content
   const processHeadings = (text: string) => {
     // Replace heading markdown with formatted headings
-    // Match ### headings
-    return text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
-              // Match ## headings
-              .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
-              // Match # headings
-              .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+    return text
+      // Match ### headings
+      .replace(/^###\s+(.+)$/gm, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>')
+      // Match ## headings
+      .replace(/^##\s+(.+)$/gm, '<h2 class="text-xl font-bold mt-5 mb-3">$1</h2>')
+      // Match # headings
+      .replace(/^#\s+(.+)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
+      // Match horizontal separators
+      .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-300 dark:border-gray-600" />')
+      // Match bold text
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      // Match check marks
+      .replace(/✓/g, '<span class="text-green-500">✓</span>')
+      // Process table formatting
+      .replace(/\|(.+)\|/g, function(match) {
+        // Don't process tables inside code blocks
+        if (match.includes('```')) return match;
+        
+        // Create proper table HTML
+        const cells = match.split('|').slice(1, -1);
+        if (cells.length === 0) return match;
+        
+        // If this contains --- it's a table header separator
+        if (cells.some(cell => /^[\s-]+$/.test(cell.trim()))) {
+          return ''; // Remove the separator line as HTML tables don't need it
+        }
+        
+        const cellsHtml = cells.map(cell => `<td class="px-2 py-1 border border-gray-300 dark:border-gray-700">${cell.trim()}</td>`).join('');
+        return `<tr>${cellsHtml}</tr>`;
+      })
+      // Wrap tables with proper table tags
+      .replace(/<tr>(.+?)<\/tr>/g, function(match, content) {
+        // Check if this is the first row
+        if (content.includes('<td class="px-2 py-1 border')) {
+          // Check if the next non-whitespace character after this match is another <tr>
+          // If so, this is part of a table, otherwise it's a standalone row
+          if (match.trim().startsWith('<tr>')) {
+            return `<table class="min-w-[50%] my-4 border-collapse border border-gray-300 dark:border-gray-700"><tbody>${match}`;
+          }
+          return match;
+        }
+        return match;
+      })
+      // Close table tags where needed
+      .replace(/<\/tr>(\s*?)(?!<tr>)/g, '</tr></tbody></table>');
   };
 
   // Render the message content with code blocks
@@ -218,18 +266,49 @@ export function ChatMessage({
         const shouldUseStreamingEffect = !skipAnim && !isUser && useStreaming && !isStreaming;
         
         return shouldUseStreamingEffect ? (
-          <div key={index} className="prose dark:prose-invert max-w-none">
+          <div key={index} className="prose dark:prose-invert prose-headings:my-4 prose-p:my-2 prose-li:my-1 prose-hr:my-6 prose-table:border-collapse max-w-none">
             <TextGenerateEffect words={part.content} />
           </div>
         ) : (
           <div 
             key={index} 
-            className="prose dark:prose-invert max-w-none"
+            className="prose dark:prose-invert prose-headings:my-4 prose-p:my-2 prose-li:my-1 prose-hr:my-6 prose-table:border-collapse prose-table:my-4 max-w-none"
             dangerouslySetInnerHTML={{ __html: processedContent }} 
           />
         );
       }
     });
+  };
+
+  // Render buttons for message actions (reply, copy)
+  const renderActionButtons = () => {
+    return (
+      <div className="flex items-center gap-2 ml-1">
+        {timestamp && (
+          <span className="text-[10px] text-muted-foreground">
+            {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleReply} 
+            className="text-muted-foreground h-5 w-5"
+          >
+            <Reply className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleCopy}
+            className="text-muted-foreground h-5 w-5"
+          >
+            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   // If we should not animate, directly show the full message
@@ -276,6 +355,17 @@ export function ChatMessage({
           >
             <Reply className="h-3 w-3" />
           </Button>
+          
+          {/* Copy button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute -left-7 top-7 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5"
+            onClick={handleCopy}
+          >
+            {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          </Button>
+          
           {renderStreamingIndicator()}
         </div>
       </div>
@@ -312,18 +402,7 @@ export function ChatMessage({
             </div>
           </div>
           {renderStreamingIndicator()}
-          <div className="flex items-center gap-2 ml-1">
-            {timestamp && (
-              <span className="text-[10px] text-muted-foreground">
-                {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" onClick={handleReply} className="text-muted-foreground h-5 w-5">
-                <Reply className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
+          {renderActionButtons()}
         </div>
       </div>
     </div>

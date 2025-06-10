@@ -267,31 +267,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
                 
                 if (eventData === "[DONE]") {
-                  // End of stream
+                  // End of stream, no need to parse as JSON
                   continue;
                 }
                 
-                const data = JSON.parse(eventData);
-                
-                // Update the streaming message
-                if (data.text) {
-                  setMessages(prev => {
-                    const updatedMessages = prev.map(m => 
-                      m.id === aiMessageId 
-                        ? { ...m, content: m.content + data.text } 
-                        : m
-                    );
-                    
-                    // Save intermediate state periodically
-                    if (typeof window !== 'undefined') {
-                      saveConversation(conversationId, updatedMessages);
-                    }
-                    
-                    return updatedMessages;
-                  });
+                try {
+                  const data = JSON.parse(eventData);
+                  
+                  // Update the streaming message
+                  if (data.text) {
+                    setMessages(prev => {
+                      const updatedMessages = prev.map(m => 
+                        m.id === aiMessageId 
+                          ? { ...m, content: m.content + data.text } 
+                          : m
+                      );
+                      
+                      // Save intermediate state periodically
+                      if (typeof window !== 'undefined') {
+                        saveConversation(conversationId, updatedMessages);
+                      }
+                      
+                      return updatedMessages;
+                    });
+                  }
+                } catch (parseError) {
+                  console.error("Error parsing JSON data:", parseError);
                 }
               } catch (error) {
-                console.error("Error parsing stream data:", error);
+                console.error("Error processing stream line:", error);
               }
             }
           }

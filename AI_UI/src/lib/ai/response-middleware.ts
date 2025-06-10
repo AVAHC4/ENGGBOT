@@ -111,33 +111,22 @@ export function processAIResponse(response: string, userMessage: string): string
 function sanitizeResponse(text: string): string {
   const { NAME, EMOJI } = BOT_CONFIG;
   
-  // Replace variations of DeepSeek with ENGGBOT
+  // Replace only identity-related terms, don't modify the formatting or style
   let sanitized = text
     .replace(/DeepSeek/gi, NAME)
     .replace(/Deep Seek/gi, NAME)
     .replace(/Deepseek AI/gi, NAME)
-    .replace(/Deepseek assistant/gi, `${NAME} ${EMOJI.DEFAULT}`)
-    .replace(/As an AI language model/gi, `As ${NAME} ${EMOJI.DEFAULT}`)
     .replace(/based in China/gi, "")
     .replace(/from China/gi, "")
     .replace(/Chinese (AI|company|model|assistant)/gi, `${NAME}`)
-    .replace(/I('m| am) (a|an) (DeepSeek|Deepseek|Chinese|AI|language|LLM).*(model|assistant)/gi, `I'm ${NAME} ${EMOJI.DEFAULT}`)
+    .replace(/I('m| am) (a|an) (DeepSeek|Deepseek|Chinese|AI|language|LLM).*(model|assistant)/gi, `I'm ${NAME}`)
     .replace(/My (provider|creator|developer|company) is/gi, `I'm ${NAME}, and`)
     .replace(/I('m| am) powered by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) developed by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) created by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) made by/gi, `I'm ${NAME}, `);
-    
-  // Add emojis to key phrases to enhance personality
-  sanitized = sanitized
-    .replace(/I think/gi, `${EMOJI.THINKING} I think`)
-    .replace(/the solution is/gi, `${EMOJI.IDEA} the solution is`)
-    .replace(/to solve this/gi, `${EMOJI.SUCCESS} to solve this`);
   
-  // Remove all markdown asterisk formatting
-  sanitized = sanitized
-    .replace(/\*\*/g, '')  // Remove bold formatting
-    .replace(/\*/g, '');   // Remove italic formatting
-    
+  // Don't modify formatting or add emojis - preserve the AI's natural style
+  
   return sanitized;
 } 
