@@ -209,49 +209,51 @@ export function ChatMessage({
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       // Match check marks
       .replace(/✓/g, '<span class="text-green-500">✓</span>')
-      // --- Table processing ---
-      .replace(/^(\|([^\|]*)\|)+$/gm, function(match) {
-        // Skip code blocks
+      // Process table formatting - First pass: identify tables and prepare structure
+      .replace(/(\n\|.*\|\n\|[-\s|]+\|\n)/, function(match) {
+        // This regex captures a table header row and the separator row
+        if (match.includes('```')) return match; // Skip code blocks
+        return match; // Don't modify yet - just identify
+      })
+      // Process table formatting - convert lines to proper table format
+      .replace(/^\|(.+)\|$/gm, function(match) {
+        // Don't process tables inside code blocks
         if (match.includes('```')) return match;
         
-        // Get all cells from this row
-        const cells = match.split('|').filter(cell => cell !== '');
+        // Create proper table HTML
+        const cells = match.split('|').slice(1, -1);
+        if (cells.length === 0) return match;
         
-        // If this is a separator row (contains only dashes and whitespace)
-        if (cells.every(cell => /^[\s\-]+$/.test(cell.trim()))) {
+        // If this contains --- it's a table header separator
+        if (cells.every(cell => /^[\s-]+$/.test(cell.trim()))) {
           return ''; // Remove separator row - we'll handle it with CSS
         }
         
-        // Create a new row with cells
-        const rowCells = cells.map(cell => 
-          `<td class="py-3 px-4 whitespace-normal">${cell.trim()}</td>`
-        ).join('');
-        
-        return `<tr>${rowCells}</tr>`;
+        const cellsHtml = cells.map(cell => `<td class="py-4 pr-6">${cell.trim()}</td>`).join('');
+        return `<tr>${cellsHtml}</tr>`;
       })
-      // Convert the first table row to a header row
-      .replace(/<tr>(.+?)<\/tr>/m, function(match) {
-        // Skip if already processed or it's in a code block
-        if (match.includes('<th') || match.includes('```')) return match;
+      // Identify and convert table structures - without using 's' flag
+      .replace(/(<tr>.+?<\/tr>)[\s\n\r]*(<tr>.+?<\/tr>)/g, function(match, headerRow, firstDataRow) {
+        // Convert the header row to use th elements
+        const enhancedHeader = headerRow.replace(/<td/g, '<th').replace(/<\/td>/g, '</th>')
+          .replace(/<th/, '<th class="text-left font-medium pr-6 py-2"');
         
-        // Convert all td elements to th elements
-        const headerRow = match.replace(/<td class="([^"]+)">(.+?)<\/td>/g, 
-          '<th class="$1 text-left font-medium border-b border-gray-200 dark:border-gray-700 pb-2">$2</th>'
-        );
-        
-        // Wrap in proper table structure
-        return `<table class="w-full my-4 table-fixed">
-          <thead>
-            ${headerRow}
+        // Start building the table
+        return `<table class="w-full my-4 border-collapse">
+          <thead class="border-b border-gray-200 dark:border-gray-700">
+            ${enhancedHeader}
           </thead>
-          <tbody>`;
+          <tbody>
+            ${firstDataRow}`;
       })
-      // Close the table when needed
-      .replace(/(<\/tr>)(?![\s\S]*?<tr>)/m, '$1</tbody></table>')
-      // Fix any broken table structures
-      .replace(/<\/tbody><\/table>[\s\n\r]*<tr>/g, '</tbody></table><table class="w-full my-4 table-fixed"><tbody><tr>')
-      // Clean up empty tables
-      .replace(/<table[^>]*>[\s\n\r]*<\/table>/g, '');
+      // Add closing tags for tables and ensure proper nesting
+      .replace(/(<\/tr>[\s\n\r]*)(?![\s\n\r]*<tr>|<\/tbody>)/g, '$1</tbody></table>')
+      // Fix any remaining open tables
+      .replace(/<tbody>[\s\n\r]*<\/tbody><\/table>/g, '')
+      // Clean up any duplicate table tags
+      .replace(/<\/table><\/tbody><\/table>/g, '</table>')
+      // Final clean up
+      .replace(/<table class="w-full my-4 border-collapse">[\s\n\r]*<\/table>/g, '');
   };
 
   // Render the message content with code blocks
