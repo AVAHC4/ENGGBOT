@@ -205,10 +205,6 @@ export function ChatMessage({
       .replace(/^#\s+(.+)$/gm, '<h1 class="text-2xl font-bold mt-6 mb-4">$1</h1>')
       // Match horizontal separators
       .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-300 dark:border-gray-600" />')
-      // Match definition-style patterns (like "1NF" followed by description)
-      .replace(/^([A-Z0-9]{1,5}(?:NF)?)\s*([A-Za-z].*$)/gm, '<div class="flex flex-col gap-2 my-3"><span class="font-bold">$1</span><span>$2</span></div>')
-      // Match key term definitions (Term: Description)
-      .replace(/^(\*\*[^:]+\*\*): (.*$)/gm, '<div class="flex flex-col gap-2 my-3"><span>$1</span><span>$2</span></div>')
       // Match bold text
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       // Match check marks
