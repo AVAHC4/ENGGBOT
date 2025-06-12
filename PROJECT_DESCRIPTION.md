@@ -17,7 +17,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
   - Interactive messaging UI with user/assistant format
   - Support for multiple AI models (DeepSeek-V3, Mistral, etc.)
   - Multimodal input capabilities
-  - Streaming responses for real-time interaction
+  - Non-streaming responses (currently)
   - Thinking mode to display AI reasoning process
   - Voice input via microphone for hands-free interaction
 
@@ -25,19 +25,20 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 - **Express.js Server**
   - TypeScript implementation
   - RESTful API endpoints
-  - User authentication with Passport.js (Google OAuth)
+  - User authentication with Google OAuth
   - Session management for persistent user state
 
 - **Database**
   - PostgreSQL with Supabase integration
   - Drizzle ORM for database operations
   - User profile storage and management
+  - **Note**: Currently experiencing connectivity issues with Supabase
 
 ### AI Integration
 - **AI Client**
   - Python-based AI service using ChutesAIClient
   - Integration with DeepSeek AI models via Chutes AI API
-  - Streaming response capability
+  - Non-streaming response implementation
   - Temperature and token control for response generation
   - Specialized academic knowledge processing
 
@@ -54,7 +55,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 - **Authentication**: Google OAuth login system for secure access
 - **Personalized Experience**: User profiles and chat history
 - **Academic Focus**: AI trained on professors' notes, textbooks, and slides
-- **Real-time Interaction**: Streaming responses for immediate feedback
+- **Real-time Interaction**: Current implementation lacks streaming responses
 - **Modern UX/UI**: Smooth animations and intuitive interface
 - **Responsive Design**: Fully functional on mobile and desktop devices
 - **Multi-model Support**: Access to various AI models with different capabilities
@@ -65,7 +66,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 - **Frontend**: React with TypeScript, Vite, Tailwind CSS, Framer Motion
 - **Backend**: Express.js with TypeScript
 - **Database**: PostgreSQL with Supabase and Drizzle ORM
-- **Authentication**: Passport.js with Google OAuth
+- **Authentication**: Google OAuth
 - **AI Services**: Python client with Chutes AI API integration
 - **Speech Recognition**: NVIDIA Riva speech-to-text API
 - **Deployment**: Vercel/Render for hosting
@@ -78,7 +79,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 
 ## Project Status
 Current version: 1.0.1
-Last updated: July 8, 2024
+Last updated: June 12, 2025
 
 ### Recent Updates
 - Added voice input functionality via microphone button in chat interface
@@ -86,6 +87,10 @@ Last updated: July 8, 2024
 - Created API endpoint for speech-to-text processing
 - Implemented browser-based audio recording and processing
 - Updated UI to include microphone controls with visual feedback
+
+### Current Issues
+- **Streaming Implementation**: The chat interface currently lacks end-to-end streaming responses. While the backend supports streaming via the Chutes AI API, the frontend implementation is non-streaming.
+- **Supabase Connectivity**: The project is experiencing connectivity issues with Supabase, requiring further investigation and resolution.
 
 ---
 *This document will be updated as the project evolves* 
