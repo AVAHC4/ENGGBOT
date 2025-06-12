@@ -25,7 +25,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 - **Express.js Server**
   - TypeScript implementation
   - RESTful API endpoints
-  - User authentication with Google OAut
+  - User authentication with Google OAuth
   - Session management for persistent user state
 
 - **Database**
