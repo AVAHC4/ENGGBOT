@@ -3,94 +3,116 @@
 ## Project Overview
 ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
 
-## Core Components
+## Current Architecture
 
-### Frontend
-- **Landing Page**
-  - Built with React 18, TypeScript, and Vite
-  - Features smooth animations via Framer Motion
-  - Responsive design using Tailwind CSS
-  - Modern UI with custom animations, gradients, and transitions
-  - Compelling hero section introducing the AI study assistant concept
+### Frontend Structure
+- **Main Application**
+  - Built with Next.js 14 and TypeScript
+  - Uses Vite as the build tool
+  - Styling with Tailwind CSS
+  - Animations using Framer Motion
+  - Component-based architecture
+  
+- **Key Components**
+  - `ai-chat.tsx`: Main AI chat interface component
+  - `login.tsx`: Google OAuth login page
+  - `main.tsx`: Application entry point
 
+### API Integration
+- **Authentication**
+  - Google OAuth implementation in `/api/auth/google.ts`
+  - Secure session management
+  - User profile handling
+
+- **AI Services**
+  - Chutes AI integration with DeepSeek models
+  - Multiple model support (DeepSeek-R1, DeepSeek-V3, Mistral)
+  - Thinking mode for detailed responses
+  - API key management
+
+### Current Implementation Details
+
+#### Frontend
 - **Chat Interface**
   - Interactive messaging UI with user/assistant format
-  - Support for multiple AI models (DeepSeek-V3, Mistral, etc.)
-  - Multimodal input capabilities
-  - Non-streaming responses (currently)
+  - Non-streaming responses due to implementation limitations
   - Thinking mode to display AI reasoning process
-  - Voice input via microphone for hands-free interaction
+  - Voice input via microphone integration
+  
+- **User Experience**
+  - Modern, responsive design
+  - Smooth animations and transitions
+  - Mobile-friendly interface
+  - Clear visual feedback for user interactions
 
-### Backend
-- **Express.js Server**
-  - TypeScript implementation
-  - RESTful API endpoints
-  - User authentication with Google OAuth
-  - Session management for persistent user state
-
+#### Backend
+- **API Layer**
+  - Express.js with TypeScript
+  - RESTful endpoints for chat functionality
+  - Authentication middleware
+  
 - **Database**
-  - PostgreSQL with Supabase integration
+  - PostgreSQL with Supabase
   - Drizzle ORM for database operations
-  - User profile storage and management
+  - User profile storage
   - **Note**: Currently experiencing connectivity issues with Supabase
 
-### AI Integration
-- **AI Client**
-  - Python-based AI service using ChutesAIClient
-  - Integration with DeepSeek AI models via Chutes AI API
-  - Non-streaming response implementation
-  - Temperature and token control for response generation
-  - Specialized academic knowledge processing
+### Key Technical Details
 
-- **Speech Recognition**
-  - NVIDIA Riva speech-to-text integration
-  - Support for multiple languages and auto-detection
-  - Translation capabilities for multilingual support
-  - Offline audio file processing and transcription
-  - Automatic dependency management and setup
-  - Browser-based microphone recording integration
-  - Real-time speech-to-text conversion in chat interface
+#### Environment Setup
+- **Required Variables**
+  - CHUTES_API_KEY: For AI service integration
+  - GOOGLE_CLIENT_ID: For Google OAuth
+  - GOOGLE_CLIENT_SECRET: For Google OAuth
+  - NEXT_PUBLIC_SUPABASE_URL: For database connection
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY: For database access
 
-## Key Features
-- **Authentication**: Google OAuth login system for secure access
-- **Personalized Experience**: User profiles and chat history
-- **Academic Focus**: AI trained on professors' notes, textbooks, and slides
-- **Real-time Interaction**: Current implementation lacks streaming responses
-- **Modern UX/UI**: Smooth animations and intuitive interface
-- **Responsive Design**: Fully functional on mobile and desktop devices
-- **Multi-model Support**: Access to various AI models with different capabilities
-- **Voice Input**: Speech-to-text functionality for hands-free interaction
-- **Language Translation**: Support for multilingual speech recognition and translation
+- **Development Commands**
+  ```bash
+  # Install dependencies
+  npm install
+  
+  # Start development server
+  npm run dev
+  ```
 
-## Technical Architecture
-- **Frontend**: React with TypeScript, Vite, Tailwind CSS, Framer Motion
-- **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL with Supabase and Drizzle ORM
-- **Authentication**: Google OAuth
-- **AI Services**: Python client with Chutes AI API integration
-- **Speech Recognition**: NVIDIA Riva speech-to-text API
-- **Deployment**: Vercel/Render for hosting
+### Current Limitations
 
-## Development Setup
-1. Clone the repository
-2. Install dependencies with `npm install`
-3. Configure environment variables including NVIDIA_API_KEY for speech recognition
-4. Start development server with `npm run dev`
+1. **Streaming Implementation**
+   - Backend supports streaming via Chutes AI API
+   - Frontend lacks end-to-end streaming capability
+   - Responses are currently batched and non-interactive
+
+2. **Database Integration**
+   - Supabase connectivity issues
+   - Database operations partially functional
+   - User data persistence affected
+
+3. **Authentication**
+   - Google OAuth working
+   - Session management stable
+   - Profile data handling needs improvement
+
+### Planned Improvements
+
+1. **Streaming Responses**
+   - Implement end-to-end streaming in frontend
+   - Enhance real-time interaction capabilities
+   - Improve response latency
+
+2. **Database Stability**
+   - Resolve Supabase connectivity issues
+   - Implement robust error handling
+   - Add database migration support
+
+3. **User Experience**
+   - Add loading states for better feedback
+   - Implement message history persistence
+   - Enhance mobile responsiveness
 
 ## Project Status
 Current version: 1.0.1
-Last updated: June 12, 2025
-
-### Recent Updates
-- Added voice input functionality via microphone button in chat interface
-- Integrated NVIDIA Riva speech recognition for accurate transcription
-- Created API endpoint for speech-to-text processing
-- Implemented browser-based audio recording and processing
-- Updated UI to include microphone controls with visual feedback
-
-### Current Issues
-- **Streaming Implementation**: The chat interface currently lacks end-to-end streaming responses. While the backend supports streaming via the Chutes AI API, the frontend implementation is non-streaming.
-- **Supabase Connectivity**: The project is experiencing connectivity issues with Supabase, requiring further investigation and resolution.
+Last updated: June 14, 2025
 
 ---
-*This document will be updated as the project evolves* 
+*This document will be updated as the project evolves*
