@@ -67,14 +67,33 @@ export async function initializeAIClient(): Promise<Promise<void>> {
   initializationPromise = new Promise<void>(async (resolve) => {
     try {
       // Make a minimal request to warm up the client and connection
-      await chutesClient.generate({
-        prompt: "System initialization. Respond with a single word: 'Ready'",
-        temperature: 0.1,
-        max_tokens: 10
-      });
+      // Use a shorter timeout for initialization
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 20000); // 20 second timeout for initialization
       
-      isInitialized = true;
-      console.log("✅ Chutes AI client successfully pre-initialized");
+      try {
+        await chutesClient.generate({
+          prompt: "System initialization. Respond with a single word: 'Ready'",
+          temperature: 0.1,
+          max_tokens: 10
+        });
+        
+        clearTimeout(timeoutId);
+        isInitialized = true;
+        console.log("✅ Chutes AI client successfully pre-initialized");
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          console.warn("⚠️ Chutes AI client initialization timed out, but will continue");
+        } else {
+          console.error("❌ Error during Chutes AI client initialization:", error);
+        }
+        // Even if initialization fails, we consider it "done" to avoid repeated attempts
+        isInitialized = true;
+      }
+      
       resolve();
     } catch (error) {
       console.error("❌ Failed to pre-initialize Chutes AI client:", error);

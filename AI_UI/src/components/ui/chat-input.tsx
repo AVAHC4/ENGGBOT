@@ -252,9 +252,11 @@ export function ChatInput({
                   <Lightbulb className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">
+              <TooltipContent side="top" className="max-w-[200px]">
                 <p className="text-xs">
-                  {thinkingMode ? "Thinking mode enabled" : "Enable thinking mode"}
+                  {thinkingMode 
+                    ? "Thinking mode enabled - AI will show detailed reasoning (may take longer to respond)"
+                    : "Enable thinking mode - AI will show detailed reasoning (may take longer to respond)"}
                 </p>
               </TooltipContent>
             </Tooltip>

@@ -252,50 +252,78 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               break;
             }
             
-            // Decode and process the chunk
-            buffer += decoder.decode(value, { stream: true });
+            // Decode the chunk
+            const chunk = decoder.decode(value);
+            buffer += chunk;
             
-            // Split buffer by lines and process each line
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+            // Process complete events in the buffer
+            let processedBuffer = "";
+            const events = buffer.split("\n\n");
             
-            for (const line of lines) {
-              if (line.trim() === '') continue;
-              if (!line.startsWith('data:')) continue;
+            // Keep the last item in the buffer (it might be incomplete)
+            buffer = events.pop() || "";
+            
+            for (const event of events) {
+              if (!event.trim() || !event.startsWith("data: ")) continue;
               
               try {
-                const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+                const dataString = event.substring(6);
                 
-                if (eventData === "[DONE]") {
-                  // End of stream, no need to parse as JSON
+                // Special case for [DONE] marker
+                if (dataString === "[DONE]") {
                   continue;
                 }
                 
-                try {
-                  const data = JSON.parse(eventData);
+                const data = JSON.parse(dataString);
+                
+                // Check for error messages
+                if (data.error) {
+                  // Handle error in the stream
+                  console.error("Stream error:", data.error);
                   
-                  // Update the streaming message
-                  if (data.text) {
-                    setMessages(prev => {
-                      const updatedMessages = prev.map(m => 
-                        m.id === aiMessageId 
-                          ? { ...m, content: m.content + data.text } 
-                          : m
-                      );
-                      
-                      // Save intermediate state periodically
-                      if (typeof window !== 'undefined') {
-                        saveConversation(conversationId, updatedMessages);
-                      }
-                      
-                      return updatedMessages;
-                    });
+                  // Update the AI message with the error
+                  setMessages(prev => prev.map(m => 
+                    m.id === aiMessageId ? { 
+                      ...m, 
+                      content: `**Error:** ${data.error}`, 
+                      isStreaming: false,
+                      metadata: { ...m.metadata, error: true }
+                    } : m
+                  ));
+                  
+                  // Reset states
+                  setIsLoading(false);
+                  setIsGenerating(false);
+                  
+                  // Save conversation with error
+                  if (typeof window !== 'undefined') {
+                    const updatedMessages = messages.map(m => 
+                      m.id === aiMessageId ? { 
+                        ...m, 
+                        content: `**Error:** ${data.error}`, 
+                        isStreaming: false,
+                        metadata: { ...m.metadata, error: true }
+                      } : m
+                    );
+                    saveConversation(conversationId, updatedMessages);
                   }
-                } catch (parseError) {
-                  console.error("Error parsing JSON data:", parseError);
+                  
+                  // Break out of the processing loop
+                  reader.cancel();
+                  break;
                 }
-              } catch (error) {
-                console.error("Error processing stream line:", error);
+                
+                // Handle normal text content
+                if (data.text) {
+                  processedBuffer += data.text;
+                  
+                  // Update the AI message with the accumulated content
+                  setMessages(prev => prev.map(m => 
+                    m.id === aiMessageId ? { ...m, content: m.content + data.text } : m
+                  ));
+                }
+              } catch (e) {
+                console.error("Error parsing event:", e, event);
               }
             }
           }

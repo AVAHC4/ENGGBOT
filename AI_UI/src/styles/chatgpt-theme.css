@@ -71,7 +71,7 @@
   border-top: 1px solid rgba(255,255,255,0.1);
   padding: 1rem;
   position: sticky;
-  bottom: 0;
+  bottom: 1rem;
   background-color: transparent;
   z-index: 10;
 }
@@ -81,7 +81,7 @@
 }
 
 .chatgpt-input-wrapper {
-  max-width: 48rem;
+  max-width: 70rem;
   margin: 0 auto;
 }
 
@@ -112,7 +112,7 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  max-width: 48rem; /* Equivalent to max-w-3xl */
+  max-width: 70rem;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -134,7 +134,7 @@
 }
 
 .assistant-avatar {
-  background-color: #10a37f;
+  background-color: #5436DA;
   color: #FFFFFF;
 }
 
