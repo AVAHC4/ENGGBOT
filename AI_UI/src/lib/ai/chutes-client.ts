@@ -92,39 +92,23 @@ export class ChutesClient {
         "stream": stream
       };
       
-      // Add timeout handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, thinking_mode ? 60000 : 30000); // 60 seconds for thinking mode, 30 seconds otherwise
+      // Make the API call
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(payload)
+      });
       
-      try {
-        // Make the API call
-        const response = await fetch(this.apiUrl, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        }).finally(() => {
-          clearTimeout(timeoutId);
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.choices && result.choices.length > 0) {
-          return result.choices[0].message.content;
-        } else {
-          return "No content returned from the API.";
-        }
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
-          return `Error: Request timed out. ${thinking_mode ? 'Thinking mode requires more processing time. Try again or use regular mode.' : 'Try again later.'}`;
-        }
-        throw error;
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.choices && result.choices.length > 0) {
+        return result.choices[0].message.content;
+      } else {
+        return "No content returned from the API.";
       }
     } catch (error) {
       console.error("Error generating AI response:", error);
@@ -170,37 +154,19 @@ export class ChutesClient {
       "stream": true
     };
     
-    try {
-      // Make the API call with streaming
-      // Increase timeout for thinking mode which requires more processing time
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, thinking_mode ? 60000 : 30000); // 60 seconds for thinking mode, 30 seconds otherwise
-      
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      }).finally(() => {
-        clearTimeout(timeoutId);
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
-      }
-      
-      // Return the raw stream
-      return response.body!;
-    } catch (error: any) {
-      console.error("Error in generateStream:", error);
-      if (error.name === 'AbortError') {
-        throw new Error(`Request timed out. ${thinking_mode ? 'Thinking mode requires more processing time. Try again or use regular mode.' : 'Try again later.'}`);
-      }
-      throw error;
+    // Make the API call with streaming
+    const response = await fetch(this.apiUrl, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
+    
+    // Return the raw stream
+    return response.body!;
   }
   
   /**

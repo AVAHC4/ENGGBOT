@@ -167,24 +167,9 @@ export async function POST(request: Request) {
           'X-Accel-Buffering': 'no'
         }
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error generating streaming response:", error);
-      
-      // Create a user-friendly error message based on the error type
-      let errorMessage = "Error generating streaming response";
-      
-      // Check for timeout errors
-      if (error.name === 'AbortError' || error.message?.includes('timeout') || error.message?.includes('timed out')) {
-        errorMessage = thinkingMode ? 
-          "Request timed out. Thinking mode requires more processing time. Try again or use regular mode." : 
-          "Request timed out. Please try again later.";
-      } else if (error.message) {
-        // Include the actual error message for other types of errors
-        errorMessage = `Error: ${error.message}`;
-      }
-      
-      // Return a properly formatted SSE message with the error
-      return new Response(`data: ${JSON.stringify({ error: errorMessage })}\n\ndata: [DONE]\n\n`, {
+      return new Response(`data: ${JSON.stringify({ error: "Error generating streaming response" })}\n\ndata: [DONE]\n\n`, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',

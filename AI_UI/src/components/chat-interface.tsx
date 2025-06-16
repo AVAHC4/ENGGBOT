@@ -43,7 +43,7 @@ function TypingIndicator() {
 }
 
 // AI thinking animation component
-function ThinkingAnimation({ thinkingMode = false }) {
+function ThinkingAnimation() {
   return (
     <div className="assistant-message">
       <div className="message-wrapper">
@@ -58,11 +58,7 @@ function ThinkingAnimation({ thinkingMode = false }) {
                 <div className="dot"></div>
                 <div className="dot"></div>
               </div>
-              <span>
-                {thinkingMode 
-                  ? "AI is thinking deeply... (this may take longer)" 
-                  : "AI is thinking..."}
-              </span>
+              <span>AI is thinking...</span>
             </div>
           </div>
         </div>
@@ -318,7 +314,7 @@ export function ChatInterface() {
               ))}
               
               {/* Show thinking animation when waiting for AI response */}
-              {shouldShowThinking() && <ThinkingAnimation thinkingMode={thinkingMode} />}
+              {shouldShowThinking() && <ThinkingAnimation />}
             </>
           )}
         </ChatMessageList>
