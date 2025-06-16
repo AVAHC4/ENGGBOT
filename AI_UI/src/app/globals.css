@@ -50,6 +50,47 @@
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
 }
 
+/* Add this new class for conversation list scrollbar */
+.conversation-list {
+  max-height: 280px; /* Height for approximately 5 items */
+  overflow-y: scroll; /* Always show scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #666 transparent;
+  flex-grow: 1;
+}
+
+.conversation-list::-webkit-scrollbar {
+  width: 10px; /* Wider scrollbar */
+  display: block; /* Always visible */
+}
+
+.conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+  background-color: #666;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  min-height: 50px; /* Minimum thumb size */
+}
+
+.conversation-list::-webkit-scrollbar-thumb:hover {
+  background-color: #888;
+}
+
+.dark .conversation-list {
+  scrollbar-color: #888 transparent;
+}
+
+.dark .conversation-list::-webkit-scrollbar-thumb {
+  background-color: #888;
+}
+
+.dark .conversation-list::-webkit-scrollbar-thumb:hover {
+  background-color: #aaa;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
