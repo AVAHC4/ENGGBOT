@@ -165,7 +165,7 @@
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
   border-radius: 0.25rem;
-  background-color: rgba(0,0,0,0.05);
+  background-color: rgba(255,255,255,0.1);
   font-size: 0.75rem;
   max-width: 90%;
 }
@@ -173,13 +173,13 @@
 .user-reply {
   margin-left: auto;
   margin-right: 0.25rem;
-  border-left: 2px solid rgba(0,0,0,0.2);
+  border-left: 2px solid rgba(255,255,255,0.3);
 }
 
 .assistant-reply {
   margin-right: auto;
   margin-left: 0.25rem;
-  border-left: 2px solid rgba(0,0,0,0.2);
+  border-left: 2px solid rgba(255,255,255,0.3);
 }
 
 .dark .reply-quote {
@@ -290,14 +290,14 @@
 /* --- Inline Code Styling --- */
 .inline-code {
   font-family: monospace;
-  background-color: #f0f0f0;
+  background-color: #1E1E1E;
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-size: 85%;
 }
 
 .dark .inline-code {
-  background-color: #343541;
+  background-color: #1E1E1E;
 }
 
 /* --- Attachments Styling --- */
@@ -312,7 +312,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: rgba(0,0,0,0.05);
+  background-color: rgba(255,255,255,0.1);
   border-radius: 0.25rem;
   padding: 0.5rem;
   font-size: 0.75rem;
@@ -385,7 +385,7 @@
 .action-button {
   background: none;
   border: none;
-  color: #6B7280;
+  color: #9CA3AF;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -396,11 +396,11 @@
 }
 
 .action-button:hover {
-  background-color: #F3F4F6;
+  background-color: rgba(255,255,255,0.1);
 }
 
 .dark .action-button:hover {
-  background-color: #4B5563;
+  background-color: rgba(255,255,255,0.1);
 }
 
 .action-icon {
@@ -416,7 +416,7 @@
   gap: 6px;
   margin-top: 8px;
   font-size: 12px;
-  color: #6B7280;
+  color: #9CA3AF;
 }
 
 .typing-dots {
@@ -455,17 +455,17 @@
   bottom: 5rem;
   left: 50%;
   transform: translateX(-50%);
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(30, 30, 30, 0.9);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
   padding: 0.5rem 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   z-index: 50;
 }
 
 .dark .initializing-indicator {
-  background-color: rgba(52, 53, 65, 0.9);
+  background-color: rgba(30, 30, 30, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
