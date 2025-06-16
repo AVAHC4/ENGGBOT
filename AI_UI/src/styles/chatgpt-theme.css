@@ -222,6 +222,83 @@
   font-weight: 600;
 }
 
+/* --- ChatGPT Table Styling --- */
+.message-content table,
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse; /* Essential for clean borders */
+  margin: 1.5em 0;
+  font-size: 0.9em; /* Tables use a slightly smaller font */
+  border: 1px solid #e5e5e5; /* Outer border */
+}
+
+/* --- Table Header Styling --- */
+.message-content thead,
+.markdown-content thead {
+  background-color: #f7f7f7; /* Light gray header background */
+}
+
+.message-content th,
+.markdown-content th {
+  font-weight: 600; /* Bold header text */
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e5e5e5; /* Heavier border below header */
+}
+
+/* --- Table Cell & Body Styling --- */
+.message-content td,
+.markdown-content td {
+  padding: 10px 12px;
+  border: 1px solid #e5e5e5; /* Light gray borders for all cells */
+  text-align: left;
+}
+
+/* Zebra-striping for table rows for readability */
+.message-content tbody tr:nth-of-type(even),
+.markdown-content tbody tr:nth-of-type(even) {
+  background-color: #f7f7f7; /* Light gray for even rows */
+}
+
+/* Optional: Add a hover effect for better interactivity */
+.message-content tbody tr:hover,
+.markdown-content tbody tr:hover {
+  background-color: #efefef; /* Slightly darker gray on hover */
+}
+
+/* Dark mode table styling */
+.dark .message-content table,
+.dark .markdown-content table {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e5e5e5;
+}
+
+.dark .message-content thead,
+.dark .markdown-content thead {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .message-content th,
+.dark .markdown-content th {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.dark .message-content td,
+.dark .markdown-content td {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .message-content tbody tr:nth-of-type(even),
+.dark .markdown-content tbody tr:nth-of-type(even) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dark .message-content tbody tr:hover,
+.dark .markdown-content tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
 /* --- List Styling --- */
 .markdown-content ul,
 .markdown-content ol {

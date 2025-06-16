@@ -258,7 +258,26 @@ export function ChatMessage({
                   }
                   
                   return null; // Non-inline code blocks are handled separately
-                }
+                },
+                // Add explicit table components to ensure proper rendering
+                table: ({ node, ...props }) => (
+                  <table {...props} />
+                ),
+                thead: ({ node, ...props }) => (
+                  <thead {...props} />
+                ),
+                tbody: ({ node, ...props }) => (
+                  <tbody {...props} />
+                ),
+                tr: ({ node, ...props }) => (
+                  <tr {...props} />
+                ),
+                th: ({ node, ...props }) => (
+                  <th {...props} />
+                ),
+                td: ({ node, ...props }) => (
+                  <td {...props} />
+                )
               }}
             >
               {part.content}

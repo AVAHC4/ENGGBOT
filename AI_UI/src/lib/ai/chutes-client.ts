@@ -92,23 +92,34 @@ export class ChutesClient {
         "stream": stream
       };
       
-      // Make the API call
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(payload)
-      });
+      // Make the API call with increased timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
       
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.choices && result.choices.length > 0) {
-        return result.choices[0].message.content;
-      } else {
-        return "No content returned from the API.";
+      try {
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: this.headers,
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId); // Clear timeout on successful response
+        
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.choices && result.choices.length > 0) {
+          return result.choices[0].message.content;
+        } else {
+          return "No content returned from the API.";
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
       }
     } catch (error) {
       console.error("Error generating AI response:", error);
@@ -154,19 +165,30 @@ export class ChutesClient {
       "stream": true
     };
     
-    // Make the API call with streaming
-    const response = await fetch(this.apiUrl, {
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify(payload)
-    });
+    // Make the API call with streaming - with increased timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
     
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId); // Clear timeout on successful response
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+      
+      // Return the raw stream
+      return response.body!;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-    
-    // Return the raw stream
-    return response.body!;
   }
   
   /**
