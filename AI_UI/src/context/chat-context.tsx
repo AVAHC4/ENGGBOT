@@ -267,14 +267,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               if (!event.trim() || !event.startsWith("data: ")) continue;
               
               try {
-                const dataString = event.substring(6);
-                
-                // Special case for [DONE] marker
-                if (dataString === "[DONE]") {
-                  continue;
-                }
-                
-                const data = JSON.parse(dataString);
+                const data = JSON.parse(event.substring(6));
                 
                 // Check for error messages
                 if (data.error) {
