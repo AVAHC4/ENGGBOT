@@ -7,6 +7,8 @@ import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
 import { BOT_CONFIG } from "@/lib/ai/response-middleware";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export interface ChatMessageProps {
   message: string;
@@ -196,11 +198,11 @@ export function ChatMessage({
         const processedContent = processHeadings(part.content);
         
         return skipAnim ? (
-          <div 
-            key={index} 
-            className="text-sm leading-relaxed whitespace-pre-wrap break-words markdown-content"
-            dangerouslySetInnerHTML={{ __html: processedContent }}
-          />
+          <div key={index} className="text-sm leading-relaxed whitespace-pre-wrap break-words markdown-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {part.content}
+            </ReactMarkdown>
+          </div>
         ) : (
           <TextGenerateEffect 
             key={index}

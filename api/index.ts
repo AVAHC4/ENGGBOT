@@ -242,13 +242,13 @@ apiRouter.post("/chat/stream", (req, res: StreamableResponse) => {
   let responseText = "";
   
   if (message.toLowerCase().includes("hello")) {
-    responseText = "Hello! I'm a streaming AI assistant. How can I help you today?";
+    responseText = "## Hello there!\n\nI'm a streaming AI assistant with **Markdown** formatting. How can I help you today?";
   } else if (message.toLowerCase().includes("weather")) {
-    responseText = "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.";
+    responseText = "# Weather Information\n\nI don't have access to real-time weather data, but I can tell you how to check the forecast for your location:\n\n1. Visit a weather website like **Weather.com**\n2. Enter your *location* in the search bar\n3. View the current conditions and forecast";
   } else if (message.toLowerCase().includes("help")) {
-    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, word by word.";
+    responseText = "# How I Can Help\n\nI'm here to assist you with various tasks. Here are some things I can do:\n\n- Answer questions\n- Provide information\n- Format text using **Markdown**\n- Generate code examples\n\n```javascript\n// Example code\nfunction sayHello() {\n  console.log('Hello, world!');\n}\n```";
   } else {
-    responseText = `Thank you for your message: "${message}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`;
+    responseText = `# Thank You for Your Message\n\nYou said: "${message}"\n\nThis is a simulated streaming response with **Markdown** formatting. In a real implementation, this would connect to an actual AI service.\n\n## Example Features\n\n- **Bold text** for emphasis\n- *Italics* for highlighting\n- \`Code snippets\` for technical content\n\n> Important information can be highlighted like this.`;
   }
   
   // Split the response into words
@@ -308,13 +308,13 @@ apiRouter.get("/chat/stream", (req, res: StreamableResponse) => {
   let responseText = "";
   
   if (message.toLowerCase().includes("hello")) {
-    responseText = "Hello! I'm a streaming AI assistant. How can I help you today?";
+    responseText = "## Hello there!\n\nI'm a streaming AI assistant with **Markdown** formatting. How can I help you today?";
   } else if (message.toLowerCase().includes("weather")) {
-    responseText = "I don't have access to real-time weather data, but I can tell you how to check the forecast for your location.";
+    responseText = "# Weather Information\n\nI don't have access to real-time weather data, but I can tell you how to check the forecast for your location:\n\n1. Visit a weather website like **Weather.com**\n2. Enter your *location* in the search bar\n3. View the current conditions and forecast";
   } else if (message.toLowerCase().includes("help")) {
-    responseText = "I'm here to help! You can ask me questions, and I'll respond in a streaming fashion, word by word.";
+    responseText = "# How I Can Help\n\nI'm here to assist you with various tasks. Here are some things I can do:\n\n- Answer questions\n- Provide information\n- Format text using **Markdown**\n- Generate code examples\n\n```javascript\n// Example code\nfunction sayHello() {\n  console.log('Hello, world!');\n}\n```";
   } else {
-    responseText = `Thank you for your message: "${message}". This is a simulated streaming response from a pretend AI model. In a real implementation, this would connect to an actual AI service.`;
+    responseText = `# Thank You for Your Message\n\nYou said: "${message}"\n\nThis is a simulated streaming response with **Markdown** formatting. In a real implementation, this would connect to an actual AI service.\n\n## Example Features\n\n- **Bold text** for emphasis\n- *Italics* for highlighting\n- \`Code snippets\` for technical content\n\n> Important information can be highlighted like this.`;
   }
   
   // Stream character by character with short delays for better streaming visualization

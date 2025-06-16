@@ -4,6 +4,8 @@ import React from "react"
 import { Bot, User } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 // Mock implementations for missing modules
 // Utility function to replace missing cn
@@ -163,7 +165,26 @@ export default function AiChat() {
     setTimeout(() => {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: `This is a sample response from ${model} model. In a real implementation, this would be replaced with an actual API call to the selected model.`,
+        content: `# Response from ${model} model
+
+**Thank you** for your message! Here's a sample response with *Markdown* formatting:
+
+## Key Features
+- **Bold text** for emphasis
+- *Italics* for highlighting terms
+- \`inline code\` for code snippets
+
+### Code Example
+\`\`\`javascript
+// This is a code block
+function greet(name) {
+  return \`Hello, ${name}!\`;
+}
+\`\`\`
+
+> This is a blockquote for important notes
+
+In a real implementation, this would be replaced with an actual API call to the selected model.`,
         role: "assistant",
         model,
         timestamp: new Date()
@@ -248,7 +269,11 @@ export default function AiChat() {
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-300">{message.content}</p>
+                  <div className="text-sm text-zinc-300 prose dark:prose-invert prose-sm max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             ))}

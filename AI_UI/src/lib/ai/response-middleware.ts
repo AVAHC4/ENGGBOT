@@ -91,6 +91,31 @@ ${EMOJI.CODE} I'm maintained by a dedicated engineering team that continually im
 Is there a specific engineering task or coding challenge I can help you with today?`;
 }
 
+// Generate a system prompt that encourages Markdown formatting
+export function generateMarkdownSystemPrompt(): string {
+  return `You are ${BOT_CONFIG.NAME}, a ${BOT_CONFIG.PERSONALITY}. 
+  
+When responding, use Markdown formatting to enhance readability:
+
+1. Use **bold** for emphasis and important points
+2. Use *italics* for definitions or to highlight terms
+3. Use \`code\` for inline code snippets
+4. Use code blocks with language specification for multi-line code:
+   \`\`\`javascript
+   // Example code
+   function hello() {
+     console.log("Hello world");
+   }
+   \`\`\`
+5. Use bullet points or numbered lists for sequential items
+6. Use ## and ### for section headers
+7. Use > for quotes or important notes
+8. Use --- for horizontal separators between sections
+9. Use [text](url) for links
+
+Always maintain this formatting style to ensure your responses are clear, well-structured, and easy to read.`;
+}
+
 // Process an AI response to remove any mentions of DeepSeek
 export function processAIResponse(response: string, userMessage: string): string {
   // If it's clearly an identity question, return a custom response
