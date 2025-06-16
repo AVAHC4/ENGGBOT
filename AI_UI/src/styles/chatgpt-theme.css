@@ -108,11 +108,11 @@
 }
 
 .assistant-message {
-  background-color: #0D0D0D;
+  background-color: #000000;
 }
 
 .dark .assistant-message {
-  background-color: #0D0D0D;
+  background-color: #000000;
 }
 
 /* --- Base Message Styling --- */
