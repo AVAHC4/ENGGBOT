@@ -380,13 +380,22 @@ h3, .heading-3 {
   margin: 1rem 0 0.5rem;
 }
 
-/* Force scrolling to work properly */
-html, body, #__next, main {
+/* Force scrolling to work properly - only for compiler page */
+.compiler-page ~ html, 
+.compiler-page ~ body, 
+.compiler-page ~ #__next, 
+.compiler-page ~ main {
   height: 100%;
   overflow: auto !important;
 }
 
-.app-layout {
+/* Restore original behavior for chat section */
+body:not(.compiler-page) {
+  overflow: hidden;
+}
+
+/* Target app layout only when inside compiler page */
+.compiler-page .app-layout {
   height: 100%;
   overflow: auto !important;
 }

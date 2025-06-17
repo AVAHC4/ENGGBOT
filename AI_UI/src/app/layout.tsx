@@ -9,6 +9,8 @@ import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import { usePathname } from 'next/navigation';
+import { ClientMainWrapper } from "@/components/layout/client-main-wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,7 +46,7 @@ export default function RootLayout({
             <SidebarProvider>
               <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
                 <AppSidebar className="hidden lg:block border-none" />
-                <main className="transition-all duration-300 w-full border-none overflow-auto">{children}</main>
+                <ClientMainWrapper>{children}</ClientMainWrapper>
               </div>
               <ProfileVisibilityFixer />
             </SidebarProvider>
@@ -53,5 +55,19 @@ export default function RootLayout({
         <Toaster />
       </body>
     </html>
+  );
+}
+
+// Client component to conditionally add overflow
+'use client';
+
+function ClientMainWrapper({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isCompilerPage = pathname?.includes('/compiler');
+  
+  return (
+    <main className={`transition-all duration-300 w-full border-none ${isCompilerPage ? 'overflow-auto' : ''}`}>
+      {children}
+    </main>
   );
 }
