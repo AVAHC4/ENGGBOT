@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  max-height: 100vh;
   font-family: "Sohne", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Ubuntu", "Cantarell", "Noto Sans", "sans-serif", "Helvetica Neue", "Arial", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   overflow: hidden;
 }
@@ -81,14 +82,14 @@
 }
 
 .chatgpt-input-wrapper {
-  max-width: 70rem;
+  max-width: 90rem;
   margin: 0 auto;
 }
 
 /* --- Message Container Styling --- */
 .message-container {
   width: 100%;
-  padding: 1rem 0;
+  padding: 0.75rem 0;
 }
 
 .user-message {
@@ -112,7 +113,7 @@
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  max-width: 70rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -312,13 +313,15 @@
 
 /* --- Code Block Styling --- */
 .code-block-wrapper {
-  margin: 1em 0;
+  margin: 0.75em 0;
+  width: 100%;
 }
 
 .code-block {
   background-color: #000000;
   border-radius: 0.5rem;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .code-header {

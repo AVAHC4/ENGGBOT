@@ -72,7 +72,7 @@ export default function Home() {
           <ChatPresenceIndicator members={teamMembers} />
         </div>
         
-        <div className="flex-1 p-4 md:p-6 lg:p-8">
+        <div className="flex-1 p-2 md:p-4 lg:p-6">
           <ChatInterface />
         </div>
       </main>
