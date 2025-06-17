@@ -335,6 +335,38 @@
   font-family: monospace;
 }
 
+/* New styles for code actions container */
+.code-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* 8px gap between buttons */
+}
+
+/* Updated button styling for code actions */
+.code-action-button {
+  background: none;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Gap between icon and text */
+  padding: 4px 8px;
+  border-radius: 5px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.code-action-button:hover {
+  background-color: #4a4b52; /* Hover effect */
+  color: #FFFFFF;
+}
+
+/* Hide the text on the copy button */
+.code-action-button[aria-label="Copy code"] span {
+  display: none;
+}
+
+/* Existing styles for copy button - can be removed if not used elsewhere */
 .copy-code-button {
   background: none;
   border: none;

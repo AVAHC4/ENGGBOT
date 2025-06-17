@@ -334,17 +334,7 @@ export function ConversationSidebar() {
       </div>
       
       {/* Conversation list */}
-      <div 
-        className="px-2" 
-        style={{
-          maxHeight: '300px',
-          overflowY: 'scroll',
-          flex: '1',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '4px',
-          marginBottom: '8px'
-        }}
-      >
+      <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 py-2">
           {filteredConversations.length > 0 ? (
             filteredConversations.map((conversation) => (
@@ -370,7 +360,7 @@ export function ConversationSidebar() {
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
       
       {/* Footer */}
       <div className="p-4 border-t border-border dark:border-gray-700">

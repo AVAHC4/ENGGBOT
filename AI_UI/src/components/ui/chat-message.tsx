@@ -63,6 +63,14 @@ export function ChatMessage({
     });
   };
   
+  // Function to open code in compiler
+  const handleOpenInCompiler = (code: string, language: string) => {
+    // Replace '/compiler' with the actual path to your compiler page
+    // Include the language parameter in the URL
+    const compilerUrl = `/compiler?code=${encodeURIComponent(code)}&language=${encodeURIComponent(language)}`;
+    window.open(compilerUrl, '_blank');
+  };
+  
   // Function to determine the appropriate icon based on file type
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) return <Image className="h-4 w-4" />;
@@ -214,13 +222,27 @@ export function ChatMessage({
             <div className="code-block">
               <div className="code-header">
                 <span className="code-language">{part.language}</span>
-                <button 
-                  onClick={() => handleCopyCode(part.content)}
-                  className="copy-code-button"
-                >
-                  <ClipboardCopy size={14} />
-                  <span>Copy code</span>
-                </button>
+                <div className="code-actions">
+                  <button 
+                    onClick={() => handleOpenInCompiler(part.content, part.language || 'text')}
+                    className="code-action-button"
+                    aria-label="Open in Compiler"
+                  >
+                    <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
+                      <path d="M8.5,8.64L13.5,12L8.5,15.36V8.64M6.5,5V19L17.5,12"/>
+                    </svg>
+                    <span>Open in Compiler</span>
+                  </button>
+                  <button 
+                    onClick={() => handleCopyCode(part.content)}
+                    className="code-action-button"
+                    aria-label="Copy code"
+                  >
+                    <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
+                      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
               <SyntaxHighlighter
                 language={part.language}
