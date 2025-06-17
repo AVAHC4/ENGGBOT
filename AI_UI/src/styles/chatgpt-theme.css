@@ -662,5 +662,5 @@ body.sidebar-collapsed .chatgpt-container {
   padding-right: 1rem;
   position: relative;
   /* Shift left to account for collapsed sidebar and appear more centered on screen */
-  left: -40px;
+  left: -60px;
 } 
