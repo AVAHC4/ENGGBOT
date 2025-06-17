@@ -42,9 +42,9 @@ export default function RootLayout({
         <ThemeProvider>
           <ChatProvider>
             <SidebarProvider>
-              <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container overflow-hidden border-none">
+              <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
                 <AppSidebar className="hidden lg:block border-none" />
-                <main className="transition-all duration-300 w-full border-none">{children}</main>
+                <main className="transition-all duration-300 w-full border-none overflow-auto">{children}</main>
               </div>
               <ProfileVisibilityFixer />
             </SidebarProvider>
