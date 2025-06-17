@@ -15,11 +15,10 @@
   justify-content: center;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .dark .chatgpt-header {
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  /* Border removed */
 }
 
 .header-actions {
@@ -69,7 +68,6 @@
 }
 
 .chatgpt-input-container {
-  border-top: 1px solid rgba(255,255,255,0.1);
   padding: 1rem;
   position: sticky;
   bottom: 1rem;
@@ -78,7 +76,7 @@
 }
 
 .dark .chatgpt-input-container {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  /* Border removed */
 }
 
 .chatgpt-input-wrapper {
@@ -204,7 +202,6 @@
 
 /* --- Typography Hierarchy --- */
 .markdown-content h1,
-.markdown-content h2,
 .markdown-content h3 {
   font-weight: 600;
   margin-top: 1.5em;
@@ -212,8 +209,22 @@
 }
 
 .markdown-content h1 { font-size: 1.75em; }
-.markdown-content h2 { font-size: 1.5em; }
+.markdown-content h2,
+.message-content h2 { 
+  font-size: 1.5em; 
+  font-weight: 600;
+  margin-top: 2em; 
+  margin-bottom: 1em; 
+  padding-bottom: 0.5em; 
+  border-bottom: 1px solid #e5e5e5; 
+}
 .markdown-content h3 { font-size: 1.25em; }
+
+/* Dark mode styling for h2 separator */
+.dark .markdown-content h2,
+.dark .message-content h2 {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
 
 .markdown-content p {
   margin-bottom: 1em;
