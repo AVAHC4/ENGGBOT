@@ -129,7 +129,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    overflow: auto;
+    overflow: hidden;
   }
   
   /* Add cursor pointer to all interactive elements */
@@ -380,27 +380,27 @@ h3, .heading-3 {
   margin: 1rem 0 0.5rem;
 }
 
-/* Force scrolling to work properly - only for compiler page */
-.compiler-page ~ html, 
-.compiler-page ~ body, 
-.compiler-page ~ #__next, 
-.compiler-page ~ main {
+/* Force scrolling to work properly */
+html, body, #__next, main {
   height: 100%;
-  overflow: auto !important;
 }
 
-/* Restore original behavior for chat section */
-body:not(.compiler-page) {
+.app-layout {
+  height: 100%;
   overflow: hidden;
 }
 
-/* Target app layout only when inside compiler page */
-.compiler-page .app-layout {
-  height: 100%;
+/* Only compiler layout gets scrolling */
+.app-layout:has(.compiler-page) {
   overflow: auto !important;
 }
 
-/* Ensure compiler page has proper scrolling */
+/* Chat page should not scroll */
+.chat-page {
+  overflow: hidden !important;
+}
+
+/* Compiler page should scroll */
 .compiler-page {
   height: auto;
   min-height: 100vh;

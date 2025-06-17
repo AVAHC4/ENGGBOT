@@ -66,7 +66,7 @@ export default function Home() {
   // Show chat interface if authenticated
   if (isAuthenticated) {
     return (
-      <main className="flex flex-col min-h-screen">
+      <main className="flex flex-col min-h-screen chat-page overflow-hidden">
         {/* Presence indicator moved to the chat interface */}
         <div className="absolute top-4 right-4 z-10">
           <ChatPresenceIndicator members={teamMembers} />

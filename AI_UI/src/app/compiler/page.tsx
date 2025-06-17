@@ -730,7 +730,7 @@ export default function CompilerPage() {
   };
 
   return (
-    <div className="container max-w-6xl py-8 compiler-page">
+    <div className="container max-w-6xl py-8 compiler-page overflow-auto" style={{ height: '100vh' }}>
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Code Compiler</h1>
         <p className="text-muted-foreground">Write, compile and run code in multiple languages</p>
