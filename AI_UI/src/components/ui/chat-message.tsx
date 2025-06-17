@@ -34,6 +34,7 @@ export function ChatMessage({
 }: ChatMessageProps) {
   const { messages, setReplyToMessage, useStreaming } = useChat();
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState<string | null>(null);
   
   // Get the message being replied to if replyToId exists
   const replyToMessage = messageData.replyToId 
@@ -57,9 +58,10 @@ export function ChatMessage({
   };
   
   // Function to copy code block content
-  const handleCopyCode = (code: string) => {
+  const handleCopyCode = (code: string, blockId: number) => {
     navigator.clipboard.writeText(code).then(() => {
-      // You could add a visual indicator here if needed
+      setCodeCopied(blockId.toString());
+      setTimeout(() => setCodeCopied(null), 2000); // Reset after 2 seconds
     });
   };
   
@@ -217,6 +219,7 @@ export function ChatMessage({
     
     return parts.map((part, index) => {
       if (part.type === 'code') {
+        const isThisBlockCopied = codeCopied === index.toString();
         return (
           <div key={index} className="code-block-wrapper">
             <div className="code-block">
@@ -234,13 +237,22 @@ export function ChatMessage({
                     <span>Open in Compiler</span>
                   </button>
                   <button 
-                    onClick={() => handleCopyCode(part.content)}
+                    onClick={() => handleCopyCode(part.content, index)}
                     className="code-action-button"
                     aria-label="Copy code"
                   >
-                    <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
-                      <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path>
-                    </svg>
+                    {isThisBlockCopied ? (
+                      <div className="copied-indicator">
+                        <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+                        </svg>
+                        <span>Copied</span>
+                      </div>
+                    ) : (
+                      <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path>
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>

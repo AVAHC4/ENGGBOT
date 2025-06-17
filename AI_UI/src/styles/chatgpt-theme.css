@@ -366,6 +366,26 @@
   display: none;
 }
 
+/* Copied indicator styling */
+.copied-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.copied-indicator svg {
+  color: #10b981; /* Green color for check mark */
+}
+
+.copied-indicator span {
+  display: inline !important;
+}
+
 /* Existing styles for copy button - can be removed if not used elsewhere */
 .copy-code-button {
   background: none;
