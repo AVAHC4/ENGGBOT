@@ -1,0 +1,33 @@
+{
+  "name": "rest-express",
+  "version": "1.0.0",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon --exec node --loader ts-node/esm index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^22.13.10",
+    "@types/passport": "^1.0.16",
+    "@types/passport-google-oauth20": "^2.0.15",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/express-session": "^1.17.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.8",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.18.3",
+    "express-session": "^1.18.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
+  }
+}
