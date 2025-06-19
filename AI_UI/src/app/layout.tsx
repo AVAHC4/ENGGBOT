@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { SidebarProvider } from "@/components/blocks/sidebar";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ChatProvider } from "@/context/chat-context";
+import { AuthProvider } from "@/context/auth-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
@@ -40,15 +41,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <ChatProvider>
-            <SidebarProvider>
-              <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
-                <AppSidebar className="hidden lg:block border-none" />
-                <main className="transition-all duration-300 w-full border-none">{children}</main>
-              </div>
-              <ProfileVisibilityFixer />
-            </SidebarProvider>
-          </ChatProvider>
+          <AuthProvider>
+            <ChatProvider>
+              <SidebarProvider>
+                <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
+                  <AppSidebar className="hidden lg:block border-none" />
+                  <main className="transition-all duration-300 w-full border-none">{children}</main>
+                </div>
+                <ProfileVisibilityFixer />
+              </SidebarProvider>
+            </ChatProvider>
+          </AuthProvider>
         </ThemeProvider>
         <Toaster />
       </body>

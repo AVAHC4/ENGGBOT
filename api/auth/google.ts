@@ -33,6 +33,7 @@ declare module 'express-session' {
   interface SessionData {
     oauthState?: string;
     authenticated?: boolean;
+    passport?: any; // Add passport session data type
   }
 }
 
@@ -44,11 +45,15 @@ passport.use(
       clientSecret: CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
       scope: ["profile", "email"],
-      proxy: true
+      proxy: true,
+      passReqToCallback: true // Pass request object to the callback
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         console.log("Google auth callback received profile:", profile);
+        
+        // Log session ID for debugging
+        console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
         
         // Check if user exists in our database
         const { data: existingUser, error: findError } = await supabase
@@ -122,7 +127,7 @@ passport.use(
 
 // Serialize user for the session
 passport.serializeUser((user: any, done) => {
-  console.log("Serializing user:", user);
+  console.log("Serializing user:", user.id);
   // Use the database ID, not the Google ID
   done(null, user.id);
 });
@@ -130,6 +135,7 @@ passport.serializeUser((user: any, done) => {
 // Deserialize user from the session
 passport.deserializeUser(async (id: string, done) => {
   try {
+    console.log(`Deserializing user with ID: ${id}`);
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -137,11 +143,19 @@ passport.deserializeUser(async (id: string, done) => {
       .single();
 
     if (error) {
+      console.error("Error deserializing user:", error);
       throw error;
     }
 
+    if (!user) {
+      console.error("No user found with ID:", id);
+      return done(null, false);
+    }
+
+    console.log("Successfully deserialized user:", user.id);
     done(null, user);
   } catch (error) {
+    console.error("Deserialization error:", error);
     done(error);
   }
 });
@@ -151,18 +165,37 @@ export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
 
   // Google auth route
-  app.get("/api/auth/google", (req: Request, res: Response, next: any) => {
+  app.get("/api/auth/google", (req: Request, res: Response, next: NextFunction) => {
     console.log("Google auth route hit - redirecting to Google");
+    
+    // Ensure session is created and saved before proceeding
+    if (!req.session.id) {
+      console.log("No session ID found - initializing session");
+    }
     
     // Generate a random state parameter for security
     const state = Math.random().toString(36).substring(2, 15);
     req.session.oauthState = state;
     
-    passport.authenticate("google", { 
-      scope: ["profile", "email"],
-      prompt: "select_account",
-      state: state
-    })(req, res, next);
+    console.log("Session before save:", req.session.id);
+    
+    // Force session save before redirecting
+    req.session.save((err) => {
+      if (err) {
+        console.error("Failed to save session:", err);
+        return res.status(500).send("Session error before authentication");
+      }
+      
+      console.log("Session saved with state:", state);
+      console.log("Session ID:", req.session.id);
+      
+      // Save session first, then authenticate
+      passport.authenticate("google", { 
+        scope: ["profile", "email"],
+        prompt: "select_account",
+        state: state
+      })(req, res, next);
+    });
   });
 
   // Google callback route
@@ -171,10 +204,40 @@ export const initGoogleAuth = (app: any) => {
     (req: Request, res: Response, next: NextFunction) => {
       console.log("Google callback route hit with query params:", req.query);
       
-      // Verify state parameter to prevent CSRF
-      if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
-        console.error("OAuth state mismatch - possible CSRF attack");
-        return res.redirect('/login?error=invalid_state');
+      // Check if session exists
+      if (!req.session) {
+        console.error("No session found in callback");
+        return res.status(500).send(`
+          <html>
+            <head><title>Session Error</title></head>
+            <body>
+              <h1>Session Error</h1>
+              <p>No session was found. This could be due to cookie issues.</p>
+              <p>Please <a href="/api/auth/google">try again</a> or try clearing your cookies.</p>
+              <p>If this error persists, try using an incognito/private window.</p>
+            </body>
+          </html>
+        `);
+      }
+      
+      console.log("Session cookie received in callback, ID:", req.session.id);
+      
+      // Check if oauthState exists in session
+      if (!req.session.oauthState) {
+        console.error("No oauthState found in session");
+        console.log("Session keys available:", Object.keys(req.session));
+        console.log("Proceeding without state verification - first login");
+        // Don't fail, continue with the flow
+      } else {
+        console.log("OAuth state in session:", req.session.oauthState);
+        console.log("OAuth state in query:", req.query.state);
+        
+        if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
+          console.error("OAuth state mismatch - possible CSRF attack");
+          console.error("Expected:", req.session.oauthState);
+          console.error("Received:", req.query.state);
+          return res.redirect('/login?error=invalid_state');
+        }
       }
       
       if (req.query.error) {
@@ -192,7 +255,20 @@ export const initGoogleAuth = (app: any) => {
       console.log("Session state:", req.session.oauthState);
       console.log("Query state:", req.query.state);
       
-      next();
+      // Ensure passport session is initialized
+      if (!req.session.passport) {
+        console.log("Initializing passport session object");
+        req.session.passport = { user: null };
+      }
+      
+      // Save session before continuing to authentication
+      req.session.save((err) => {
+        if (err) {
+          console.error("Failed to save session before authentication:", err);
+          return res.status(500).send("Session error before token exchange");
+        }
+        next();
+      });
     },
     (req: Request, res: Response, next: NextFunction) => {
       // Custom token exchange with explicit error handling
@@ -207,14 +283,14 @@ export const initGoogleAuth = (app: any) => {
             console.error("- Invalid client ID/secret");
             console.error("- Authorization code already used");
             console.error("- Session/cookie issues");
-            console.error("Error details:", err.message);
+            console.error("Error details:", err.message || "No error message");
             
             return res.send(`
               <html>
                 <head><title>Authentication Error</title></head>
                 <body>
                   <h1>Authentication Error</h1>
-                  <p>Token exchange failed: ${err.message}</p>
+                  <p>Token exchange failed: ${err.message || "Unknown error"}</p>
                   <p>Please <a href="/api/auth/google">try again</a> or contact support.</p>
                   <p>Debug info:</p>
                   <pre>
@@ -234,7 +310,7 @@ export const initGoogleAuth = (app: any) => {
         }
         
         // Log successful authentication
-        console.log("Authentication successful, user object received");
+        console.log("Authentication successful, user object received:", user.id);
         
         // Log in the user to the session
         req.login(user, (loginErr) => {
@@ -243,8 +319,16 @@ export const initGoogleAuth = (app: any) => {
             return res.redirect('/login?error=session_error');
           }
           
-          // Continue to the success handler
-          next();
+          // Save session after login
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error("Failed to save session after login:", saveErr);
+              return res.status(500).send("Session error after login");
+            }
+            
+            console.log("User logged in and session saved");
+            next();
+          });
         });
       })(req, res, next);
     },
@@ -271,7 +355,15 @@ export const initGoogleAuth = (app: any) => {
       // Set session flag and additional auth cookies
       if (req.session) {
         req.session.authenticated = true;
-        console.log("Session authenticated flag set");
+        
+        // Save the session one last time
+        req.session.save((err) => {
+          if (err) {
+            console.error("Failed to save final session state:", err);
+          } else {
+            console.log("Session authenticated flag set and saved");
+          }
+        });
       }
       
       // Prepare user data for redirect
@@ -340,6 +432,9 @@ export const initGoogleAuth = (app: any) => {
   // Test route to check authentication
   app.get("/api/auth/status", (req: Request, res: Response) => {
     console.log("Auth status route hit");
+    console.log("Session ID:", req.session.id);
+    console.log("isAuthenticated:", req.isAuthenticated());
+    
     if (req.isAuthenticated()) {
       res.json({ authenticated: true, user: req.user });
     } else {

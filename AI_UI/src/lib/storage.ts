@@ -14,11 +14,17 @@ export function getUserPrefix(): string {
   }
   
   try {
-    // Get user email as the identifier, since it's unique per Google account
+    // First check for user data from authenticated session
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
     if (userData && userData.email) {
-      // Return a hash of the email to use as prefix, safely encode non-ASCII characters
+      // Create a consistent identifier from the email
       return btoa(encodeURIComponent(userData.email)).replace(/[^a-z0-9]/gi, '_');
+    }
+    
+    // Try to get user from the user object directly
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user && user.email) {
+      return btoa(encodeURIComponent(user.email)).replace(/[^a-z0-9]/gi, '_');
     }
     
     // Fallback to the email stored directly
@@ -27,11 +33,39 @@ export function getUserPrefix(): string {
       return btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_');
     }
     
-    // If no user data available, use a default namespace
-    return 'default';
+    // If we have a Google ID, use that
+    if (userData && userData.google_id) {
+      return `google_${userData.google_id}`;
+    }
+    
+    // If we have a user ID, use that
+    if (userData && userData.id) {
+      return `user_${userData.id}`;
+    }
+    
+    // Last resort: check for a persistent user ID
+    const persistentId = localStorage.getItem('persistent_user_id');
+    if (persistentId) {
+      return persistentId;
+    }
+    
+    // If no user data available, create a persistent ID and store it
+    const newId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem('persistent_user_id', newId);
+    return newId;
   } catch (error) {
     console.error('Error getting user prefix:', error);
-    return 'default';
+    
+    // On error, try to use a persistent ID if available
+    const persistentId = localStorage.getItem('persistent_user_id');
+    if (persistentId) {
+      return persistentId;
+    }
+    
+    // Last resort: create a new persistent ID
+    const newId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    localStorage.setItem('persistent_user_id', newId);
+    return newId;
   }
 }
 

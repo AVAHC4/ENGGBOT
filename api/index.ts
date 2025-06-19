@@ -82,17 +82,32 @@ console.log("Environment:", isProduction ? "production" : "development");
 
 // Middleware
 app.use(cors({
-  origin: [process.env.CLIENT_URL || "http://localhost:3000", "https://enggbot.vercel.app"],
+  origin: [process.env.CLIENT_URL || "http://localhost:3000", "https://enggbot.vercel.app", "http://localhost:3001"],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 app.use(express.json());
+
+// Add a pre-session middleware to ensure cookies are working
+app.use((req, res, next) => {
+  // Set a test cookie to verify cookie functionality
+  res.cookie('session_test', 'true', {
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+  });
+  next();
+});
+
+// Session configuration with improved settings
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-secret-key",
-    resave: false,
-    saveUninitialized: false,
+    resave: true,           // Changed to true to ensure session is saved even if not changed
+    saveUninitialized: true, // Ensure session is always created
+    rolling: true,          // Resets the cookie expiration on each response
     cookie: {
       // Only use secure cookies in production
       secure: isProduction,
@@ -101,8 +116,23 @@ app.use(
       // Use lax for local development to ensure cookies are sent
       sameSite: isProduction ? 'none' : 'lax'
     },
+    name: 'enggbot.sid',    // Custom name to avoid conflicts with other apps
   })
 );
+
+// Add session debugging middleware
+app.use((req, res, next) => {
+  // Check if session exists and has an ID
+  if (req.session) {
+    console.log(`Session ID: ${req.session.id?.substring(0, 8)}... (Session exists)`);
+    // Ensure session is saved on every request
+    req.session.touch();
+  } else {
+    console.log("No session found");
+  }
+  next();
+});
+
 app.use(passport.initialize());
 app.use(passport.session());
 

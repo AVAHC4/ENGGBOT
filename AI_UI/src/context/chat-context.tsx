@@ -76,11 +76,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (isMounted) {
       // Get user-specific prefix
       const userPrefix = getUserPrefix();
+      console.log("Current user prefix:", userPrefix);
       
       // Get the stored conversation ID or generate a new one
       const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
       if (storedId) {
+        console.log("Loaded active conversation:", storedId);
         setConversationId(storedId);
+      } else {
+        const newId = crypto.randomUUID();
+        console.log("Created new conversation:", newId);
+        setConversationId(newId);
+        localStorage.setItem(`${userPrefix}-activeConversation`, newId);
       }
     }
   }, [isMounted]);
@@ -88,15 +95,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Load conversation on startup or when switching conversations
   useEffect(() => {
     if (isMounted) {
+      const userPrefix = getUserPrefix();
+      console.log(`Loading conversation ${conversationId} for user ${userPrefix}`);
+      
       const savedMessages = loadConversation(conversationId);
       if (savedMessages?.length) {
+        console.log(`Loaded ${savedMessages.length} messages for conversation ${conversationId}`);
         setMessages(savedMessages);
       } else {
+        console.log(`No saved messages found for conversation ${conversationId}, starting fresh`);
         setMessages([]);
       }
-      
-      // Get user-specific prefix
-      const userPrefix = getUserPrefix();
       
       // Save active conversation ID with user-specific key
       localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
@@ -106,6 +115,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Save messages when they change
   useEffect(() => {
     if (isMounted && messages.length > 0) {
+      console.log(`Saving ${messages.length} messages for conversation ${conversationId}`);
       saveConversation(conversationId, messages);
     }
   }, [messages, conversationId, isMounted]);
@@ -443,56 +453,77 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return new Date().toISOString();
   };
 
-  // Switch to an existing conversation
+  // Switch to a different conversation
   const switchConversation = useCallback((id: string) => {
-    // Stop any ongoing generation
-    if (isGenerating || isLoading) {
-      stopGeneration();
-    }
+    if (id === conversationId) return; // Already on this conversation
     
+    console.log(`Switching from conversation ${conversationId} to ${id}`);
     setConversationId(id);
-  }, [isGenerating, isLoading, stopGeneration]);
-  
+    
+    // Save the active conversation ID with user-specific prefix
+    const userPrefix = getUserPrefix();
+    localStorage.setItem(`${userPrefix}-activeConversation`, id);
+  }, [conversationId]);
+
   // Start a new conversation
   const startNewConversation = useCallback(() => {
-    // Stop any ongoing generation
-    if (isGenerating || isLoading) {
-      stopGeneration();
+    const newId = crypto.randomUUID();
+    console.log(`Starting new conversation with ID ${newId}`);
+    
+    // Save the current conversation if it has messages
+    if (messages.length > 0) {
+      saveConversation(conversationId, messages);
     }
     
-    const newId = crypto.randomUUID();
+    // Switch to the new conversation
     setConversationId(newId);
     setMessages([]);
     
-    if (isMounted) {
-      const userPrefix = getUserPrefix();
-      localStorage.setItem(`${userPrefix}-activeConversation`, newId);
-      saveConversation(newId, []);
-    }
-  }, [isGenerating, isLoading, stopGeneration, isMounted]);
-  
+    // Save the active conversation ID with user-specific prefix
+    const userPrefix = getUserPrefix();
+    localStorage.setItem(`${userPrefix}-activeConversation`, newId);
+    
+    return newId;
+  }, [conversationId, messages]);
+
   // Delete the current conversation
   const deleteCurrentConversation = useCallback(() => {
-    if (isMounted) {
-      // Get conversation list before deletion
-      const conversations = getConversationList();
+    console.log(`Deleting conversation ${conversationId}`);
+    
+    // Delete the conversation data
+    const remainingConversations = deleteConversation(conversationId);
+    
+    // If there are other conversations, switch to the most recent one
+    // Otherwise create a new conversation
+    if (remainingConversations.length > 0) {
+      // Get the most recent conversation
+      const nextConversation = remainingConversations[0];
+      console.log(`Switching to next conversation ${nextConversation}`);
+      setConversationId(nextConversation);
       
-      // Delete current conversation
-      deleteConversation(conversationId);
-      
-      // If there are other conversations, switch to the most recent one
-      // Otherwise, create a new conversation
-      const remainingConversations = conversations.filter((id: string) => id !== conversationId);
-      
-      if (remainingConversations.length > 0) {
-        // Switch to the first conversation in the list
-        switchConversation(remainingConversations[0]);
+      // Load the conversation
+      const savedMessages = loadConversation(nextConversation);
+      if (savedMessages) {
+        setMessages(savedMessages);
       } else {
-        // Create a new conversation if no others exist
-        startNewConversation();
+        setMessages([]);
       }
+      
+      // Update the active conversation
+      const userPrefix = getUserPrefix();
+      localStorage.setItem(`${userPrefix}-activeConversation`, nextConversation);
+    } else {
+      // Create a new conversation
+      const newId = crypto.randomUUID();
+      console.log(`No conversations left, creating new one with ID ${newId}`);
+      setConversationId(newId);
+      setMessages([]);
+      
+      // Save the new active conversation
+      const userPrefix = getUserPrefix();
+      localStorage.setItem(`${userPrefix}-activeConversation`, newId);
     }
-  }, [conversationId, startNewConversation, switchConversation, isMounted]);
+  }, [conversationId]);
 
   const toggleThinkingMode = useCallback(() => {
     setThinkingMode(prev => !prev);
