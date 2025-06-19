@@ -30,45 +30,24 @@ export function checkExternalAuth(): boolean {
       const decodedUserData = JSON.parse(decodeURIComponent(userDataParam));
       console.log("Received user data from redirect:", decodedUserData);
       
-      // Generate a consistent user ID based on email or ID
-      const userId = decodedUserData.email 
-        ? btoa(encodeURIComponent(decodedUserData.email)).replace(/[^a-z0-9]/gi, '_')
-        : (decodedUserData.id ? `user_${decodedUserData.id}` : null);
-      
-      // If we have a userId, store it as the persistent ID
-      if (userId) {
-        localStorage.setItem('persistent_user_id', userId);
-        console.log("Set persistent user ID:", userId);
-      }
-      
       // Store the user data in localStorage
       localStorage.setItem('user_data', JSON.stringify(decodedUserData));
-      localStorage.setItem('user', JSON.stringify(decodedUserData));
       
       // Also store individual fields
       if (decodedUserData.name) localStorage.setItem('user_name', decodedUserData.name);
       if (decodedUserData.email) localStorage.setItem('user_email', decodedUserData.email);
       if (decodedUserData.avatar) localStorage.setItem('user_avatar', decodedUserData.avatar);
-      if (decodedUserData.id) localStorage.setItem('user_id', decodedUserData.id);
-      if (decodedUserData.google_id) localStorage.setItem('google_id', decodedUserData.google_id);
     } catch (e) {
       console.error("Failed to parse user data from URL:", e);
     }
   }
   
-  // Process individual URL parameters if available
+  if (userName) localStorage.setItem('user_name', userName);
+  if (userEmail) localStorage.setItem('user_email', userEmail);
+  if (userAvatar) localStorage.setItem('user_avatar', userAvatar);
+  
+  // Create a user_data object if we have the necessary components
   if (userName || userEmail || userAvatar) {
-    // Generate a consistent user ID if we have an email
-    if (userEmail) {
-      const userId = btoa(encodeURIComponent(userEmail)).replace(/[^a-z0-9]/gi, '_');
-      localStorage.setItem('persistent_user_id', userId);
-    }
-    
-    if (userName) localStorage.setItem('user_name', userName);
-    if (userEmail) localStorage.setItem('user_email', userEmail);
-    if (userAvatar) localStorage.setItem('user_avatar', userAvatar);
-    
-    // Create a user_data object with the available components
     const userData = {
       name: userName || localStorage.getItem('user_name') || 'User',
       email: userEmail || localStorage.getItem('user_email') || 'user@example.com',
@@ -76,27 +55,12 @@ export function checkExternalAuth(): boolean {
     };
     
     localStorage.setItem('user_data', JSON.stringify(userData));
-    localStorage.setItem('user', JSON.stringify(userData));
   }
   
   // If auth is found, store it in our own format
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
     // Store auth in local format
     localStorage.setItem('ai_ui_authenticated', 'true');
-    
-    // Ensure we have a persistent user ID even if no user data was provided
-    if (!localStorage.getItem('persistent_user_id')) {
-      // Try to generate from existing data
-      const existingEmail = localStorage.getItem('user_email');
-      if (existingEmail) {
-        const userId = btoa(encodeURIComponent(existingEmail)).replace(/[^a-z0-9]/gi, '_');
-        localStorage.setItem('persistent_user_id', userId);
-      } else {
-        // Create a new persistent ID as last resort
-        const newId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        localStorage.setItem('persistent_user_id', newId);
-      }
-    }
     
     // Clean up external auth markers
     if (hasAuthCookie) {
@@ -142,9 +106,6 @@ export function logout(): void {
     return;
   }
   
-  // Save the persistent user ID before clearing everything
-  const persistentUserId = localStorage.getItem('persistent_user_id');
-  
   // Clear all auth-related localStorage items
   localStorage.removeItem('ai_ui_authenticated');
   localStorage.removeItem('authenticated');
@@ -182,11 +143,6 @@ export function logout(): void {
     }
   } catch (e) {
     console.error('Error clearing localStorage:', e);
-  }
-  
-  // Restore the persistent user ID for future logins
-  if (persistentUserId) {
-    localStorage.setItem('persistent_user_id', persistentUserId);
   }
   
   // Clear session storage
