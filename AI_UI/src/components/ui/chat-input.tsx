@@ -265,8 +265,8 @@ export function ChatInput({
         
         {/* Main input area */}
         <div className={cn(
-          "flex flex-col bg-background dark:bg-gray-800/30 relative w-full",
-          isExpanded ? "rounded-lg px-4 py-3" : "rounded-full px-1 py-1"
+          "flex flex-col bg-background dark:bg-gray-800/30 relative w-full mb-14",
+          isExpanded ? "rounded-lg px-4 py-3" : "rounded-full px-3 py-2"
         )}>
           <textarea
             ref={textareaRef}
@@ -278,7 +278,7 @@ export function ChatInput({
               "disabled:cursor-not-allowed disabled:opacity-50",
               "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
               "dark:placeholder:text-gray-500",
-              isExpanded ? "rounded-md pb-3 max-h-[400px] min-h-[180px]" : "rounded-full pr-[120px] max-h-[60px] min-h-[40px]"
+              isExpanded ? "rounded-md pb-3 max-h-[400px] min-h-[180px]" : "rounded-full max-h-[60px] min-h-[40px]"
             )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -325,6 +325,22 @@ export function ChatInput({
                       <Globe className="h-5 w-5" />
                     </Button>
                   )}
+
+                  {onToggleThinking && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                        thinkingMode && "text-blue-500 dark:text-blue-400"
+                      )}
+                      onClick={onToggleThinking}
+                      disabled={awaitingResponse}
+                    >
+                      <Lightbulb className="h-5 w-5" />
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-3 mr-1">
@@ -368,68 +384,88 @@ export function ChatInput({
               </div>
             </div>
           ) : (
-            // Inline controls when compact
-            <div className="flex items-center gap-2 absolute right-4 bottom-[50%] translate-y-[50%]">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9 shrink-0 rounded-full" 
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || awaitingResponse}
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
-              
-              {onToggleWebSearch && (
+            // Controls at bottom for compact mode
+            <div className="flex items-center justify-between w-full absolute left-0 -bottom-12 px-3">
+              <div className="flex items-center gap-2">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                    webSearchMode && "text-green-500 dark:text-green-400"
-                  )}
-                  onClick={onToggleWebSearch}
-                  disabled={awaitingResponse}
+                  className="h-9 w-9 shrink-0 rounded-full" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled || awaitingResponse}
                 >
-                  <Globe className="h-5 w-5" />
+                  <Plus className="h-5 w-5" />
                 </Button>
-              )}
+                
+                {onToggleWebSearch && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={cn(
+                      "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                      webSearchMode && "text-green-500 dark:text-green-400"
+                    )}
+                    onClick={onToggleWebSearch}
+                    disabled={awaitingResponse}
+                  >
+                    <Globe className="h-5 w-5" />
+                  </Button>
+                )}
+                
+                {onToggleThinking && (
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className={cn(
+                      "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                      thinkingMode && "text-blue-500 dark:text-blue-400"
+                    )}
+                    onClick={onToggleThinking}
+                    disabled={awaitingResponse}
+                  >
+                    <Lightbulb className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
               
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-9 w-9 shrink-0 rounded-full" 
-                onClick={() => setIsVoiceModalOpen(true)}
-                disabled={disabled || awaitingResponse}
-              >
-                <Mic className="h-5 w-5" />
-              </Button>
-              
-              {awaitingResponse ? (
+              <div className="flex items-center gap-2">
                 <Button 
-                  onClick={handleStopGeneration} 
+                  variant="ghost" 
                   size="icon" 
-                  variant="ghost"
-                  className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+                  className="h-9 w-9 shrink-0 rounded-full" 
+                  onClick={() => setIsVoiceModalOpen(true)}
+                  disabled={disabled || awaitingResponse}
                 >
-                  <Square className="h-4 w-4" />
+                  <Mic className="h-5 w-5" />
                 </Button>
-              ) : (
-                <Button 
-                  variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
-                  size="icon" 
-                  className={cn(
-                    "h-9 w-9 shrink-0 rounded-full",
-                    message.trim() || attachments.length > 0 
-                      ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                      : "text-muted-foreground"
-                  )}
-                  onClick={handleSend}
-                  disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
-              )}
+                
+                {awaitingResponse ? (
+                  <Button 
+                    onClick={handleStopGeneration} 
+                    size="icon" 
+                    variant="ghost"
+                    className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+                  >
+                    <Square className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button 
+                    variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
+                    size="icon" 
+                    className={cn(
+                      "h-9 w-9 shrink-0 rounded-full",
+                      message.trim() || attachments.length > 0 
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                        : "text-muted-foreground"
+                    )}
+                    onClick={handleSend}
+                    disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
