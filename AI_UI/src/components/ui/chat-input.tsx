@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, ZapIcon } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, ZapIcon, Plus } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +39,7 @@ export function ChatInput({
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [awaitingResponse, setAwaitingResponse] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +65,8 @@ export function ChatInput({
       setAttachments([]);
       // Clear reply state after sending
       setReplyToMessage(null);
+      // Reset expanded state
+      setIsExpanded(false);
     }
   };
 
@@ -122,18 +125,109 @@ export function ChatInput({
     return text.substring(0, maxLength) + '...';
   };
 
-  // Auto resize textarea
+  // Auto resize textarea and check if expanded
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+    const newHeight = textarea.scrollHeight;
+    textarea.style.height = `${Math.min(newHeight, 150)}px`;
+    
+    // Set expanded state based on content height
+    setIsExpanded(newHeight > 50);
   }, [message]);
+
+  // Render control buttons
+  const renderControlButtons = () => (
+    <>
+      {/* File attachment button */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-9 w-9 shrink-0 rounded-full" 
+        onClick={() => fileInputRef.current?.click()}
+        disabled={disabled || awaitingResponse}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileChange}
+          disabled={disabled || awaitingResponse}
+        />
+        <Plus className="h-5 w-5" />
+      </Button>
+      
+      {/* Web search mode toggle button */}
+      {onToggleWebSearch && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                webSearchMode && "text-green-500 dark:text-green-400"
+              )}
+              onClick={onToggleWebSearch}
+              disabled={awaitingResponse}
+            >
+              <Lightbulb className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            <p className="text-xs">
+              {webSearchMode ? "Web search enabled" : "Enable web search"}
+            </p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+      
+      {/* Voice input button */}
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-9 w-9 shrink-0 rounded-full" 
+        onClick={() => setIsVoiceModalOpen(true)}
+        disabled={disabled || awaitingResponse}
+      >
+        <Mic className="h-5 w-5" />
+      </Button>
+
+      {/* Send or Stop button */}
+      {awaitingResponse ? (
+        <Button 
+          onClick={handleStopGeneration} 
+          size="icon" 
+          variant="ghost"
+          className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+        >
+          <Square className="h-4 w-4" />
+        </Button>
+      ) : (
+        <Button 
+          variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
+          size="icon" 
+          className={cn(
+            "h-9 w-9 shrink-0 rounded-full",
+            message.trim() || attachments.length > 0 
+              ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+              : "text-muted-foreground"
+          )}
+          onClick={handleSend}
+          disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+        >
+          <Send className="h-5 w-5" />
+        </Button>
+      )}
+    </>
+  );
 
   return (
     <>
-      <div className="flex flex-col w-full max-w-3xl mx-auto px-2 py-1">
+      <div className="flex flex-col w-full max-w-3xl mx-auto px-2 pb-1">
         {/* Reply indicator */}
         {replyToMessage && (
           <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-full bg-muted/50 dark:bg-gray-800/50">
@@ -178,123 +272,22 @@ export function ChatInput({
           </div>
         )}
         
-        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1 py-1">
-          {/* File attachment button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9 shrink-0 rounded-full" 
-            onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || awaitingResponse}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={disabled || awaitingResponse}
-            />
-            <Paperclip className="h-5 w-5" />
-          </Button>
-          
-          {/* Voice input button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9 shrink-0 rounded-full" 
-            onClick={() => setIsVoiceModalOpen(true)}
-            disabled={disabled || awaitingResponse}
-          >
-            <Mic className="h-5 w-5" />
-          </Button>
-          
-          {/* Web search mode toggle button */}
-          {onToggleWebSearch && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                    webSearchMode && "text-green-500 dark:text-green-400"
-                  )}
-                  onClick={onToggleWebSearch}
-                  disabled={awaitingResponse}
-                >
-                  <Globe className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">
-                  {webSearchMode ? "Web search enabled" : "Enable web search"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          
-          {/* Thinking mode toggle button */}
-          {onToggleThinking && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                    thinkingMode && "text-blue-500 dark:text-blue-400"
-                  )}
-                  onClick={onToggleThinking}
-                  disabled={awaitingResponse}
-                >
-                  <Lightbulb className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">
-                  {thinkingMode ? "Thinking mode enabled" : "Enable thinking mode"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* Streaming toggle button */}
-          {toggleStreaming && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                    contextUseStreaming && "text-primary hover:text-primary"
-                  )}
-                  onClick={toggleStreaming}
-                  title={contextUseStreaming ? "Streaming Mode On" : "Streaming Mode Off"}
-                >
-                  <ZapIcon className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p className="text-xs">
-                  {contextUseStreaming ? "Streaming Mode On" : "Streaming Mode Off"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
+        {/* Main input area */}
+        <div className={cn(
+          "flex flex-col bg-background dark:bg-gray-800/30 rounded-lg relative",
+          isExpanded ? "px-3 py-2" : "px-1 py-1 rounded-full"
+        )}>
           <textarea
             ref={textareaRef}
             placeholder={replyToMessage ? "Type your reply..." : placeholder}
             className={cn(
-              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-3 py-2 text-sm",
+              "flex-1 resize-none max-h-[150px] min-h-[40px] border-0 bg-transparent px-3 py-2 text-sm",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
-              "dark:placeholder:text-gray-500"
+              "dark:placeholder:text-gray-500",
+              isExpanded ? "rounded-md" : "rounded-full"
             )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -303,31 +296,17 @@ export function ChatInput({
             rows={1}
           />
           
-          {/* Conditionally render either Send or Stop button */}
-          {awaitingResponse ? (
-            <Button 
-              onClick={handleStopGeneration} 
-              size="icon" 
-              variant="ghost"
-              className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
-            >
-              <Square className="h-4 w-4" />
-            </Button>
+          {/* Control buttons - either inline or in separate bar */}
+          {isExpanded ? (
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border dark:border-gray-700">
+              <div className="flex items-center gap-1">
+                {renderControlButtons()}
+              </div>
+            </div>
           ) : (
-            <Button 
-              variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
-              size="icon" 
-              className={cn(
-                "h-9 w-9 shrink-0 rounded-full",
-                message.trim() || attachments.length > 0 
-                  ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                  : "text-muted-foreground"
-              )}
-              onClick={handleSend}
-              disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
-            >
-              <Send className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-1 absolute right-4 bottom-3">
+              {renderControlButtons()}
+            </div>
           )}
         </div>
       </div>
