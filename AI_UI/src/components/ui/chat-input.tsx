@@ -127,8 +127,20 @@ export function ChatInput({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    // Save the scrollHeight before resetting the height
+    const scrollHeight = textarea.scrollHeight;
+    
     textarea.style.height = "auto";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`;
+    
+    // Set a minimum height for empty or nearly empty content (single line)
+    const minHeight = 24; // approximate height of a single line of text
+    
+    // If there's content that would make it taller than minimum, use scrollHeight
+    if (message.trim() && scrollHeight > minHeight) {
+      textarea.style.height = `${Math.min(scrollHeight, 300)}px`;
+    } else {
+      textarea.style.height = `${minHeight}px`;
+    }
   }, [message]);
 
   return (
@@ -178,12 +190,12 @@ export function ChatInput({
           </div>
         )}
         
-        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-2 py-2 overflow-hidden">
+        <div className="flex items-start gap-2 bg-background dark:bg-gray-800/30 rounded-lg px-3 py-3 overflow-hidden">
           {/* File attachment button */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-10 w-10 shrink-0 rounded-full" 
+            className="h-9 w-9 shrink-0 rounded-full mt-0.5" 
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || awaitingResponse}
           >
@@ -202,7 +214,7 @@ export function ChatInput({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-10 w-10 shrink-0 rounded-full" 
+            className="h-9 w-9 shrink-0 rounded-full mt-0.5" 
             onClick={() => setIsVoiceModalOpen(true)}
             disabled={disabled || awaitingResponse}
           >
@@ -217,7 +229,7 @@ export function ChatInput({
                   variant="ghost" 
                   size="icon" 
                   className={cn(
-                    "h-10 w-10 rounded-full dark:hover:bg-gray-800",
+                    "h-9 w-9 rounded-full mt-0.5 dark:hover:bg-gray-800",
                     webSearchMode && "text-green-500 dark:text-green-400"
                   )}
                   onClick={onToggleWebSearch}
@@ -243,7 +255,7 @@ export function ChatInput({
                   variant="ghost" 
                   size="icon" 
                   className={cn(
-                    "h-10 w-10 rounded-full dark:hover:bg-gray-800",
+                    "h-9 w-9 rounded-full mt-0.5 dark:hover:bg-gray-800",
                     thinkingMode && "text-blue-500 dark:text-blue-400"
                   )}
                   onClick={onToggleThinking}
@@ -268,7 +280,7 @@ export function ChatInput({
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "h-10 w-10 rounded-full dark:hover:bg-gray-800",
+                    "h-9 w-9 rounded-full mt-0.5 dark:hover:bg-gray-800",
                     contextUseStreaming && "text-primary hover:text-primary"
                   )}
                   onClick={toggleStreaming}
@@ -290,7 +302,7 @@ export function ChatInput({
               ref={textareaRef}
               placeholder={replyToMessage ? "Type your reply..." : placeholder}
               className={cn(
-                "w-full resize-none max-h-[150px] min-h-[45px] rounded-full border-0 bg-transparent px-4 py-3 text-sm",
+                "w-full resize-none max-h-[300px] min-h-0 border-0 bg-transparent px-0 py-0 text-base",
                 "ring-offset-background placeholder:text-muted-foreground",
                 "focus-visible:outline-none focus-visible:ring-0",
                 "disabled:cursor-not-allowed disabled:opacity-50",
@@ -312,7 +324,7 @@ export function ChatInput({
               onClick={handleStopGeneration} 
               size="icon" 
               variant="ghost"
-              className="rounded-full h-10 w-10 dark:hover:bg-gray-800/30"
+              className="rounded-full h-9 w-9 mt-0.5 dark:hover:bg-gray-800/30"
             >
               <Square className="h-4 w-4" />
             </Button>
@@ -321,7 +333,7 @@ export function ChatInput({
               variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
               size="icon" 
               className={cn(
-                "h-10 w-10 shrink-0 rounded-full",
+                "h-9 w-9 shrink-0 rounded-full mt-0.5",
                 message.trim() || attachments.length > 0 
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                   : "text-muted-foreground"
