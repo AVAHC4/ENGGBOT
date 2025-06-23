@@ -178,7 +178,7 @@ export function ChatInput({
           </div>
         )}
         
-        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1 py-1 overflow-hidden">
+        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1 py-1">
           {/* File attachment button */}
           <Button 
             variant="ghost" 
@@ -285,26 +285,23 @@ export function ChatInput({
             </Tooltip>
           )}
 
-          <div className="flex-1 overflow-hidden">
-            <textarea
-              ref={textareaRef}
-              placeholder={replyToMessage ? "Type your reply..." : placeholder}
-              className={cn(
-                "w-full resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-3 py-2 text-sm",
-                "ring-offset-background placeholder:text-muted-foreground",
-                "focus-visible:outline-none focus-visible:ring-0",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-                "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
-                "dark:placeholder:text-gray-500",
-                "overflow-y-auto overflow-x-hidden"
-              )}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={disabled || awaitingResponse}
-              rows={1}
-            />
-          </div>
+          <textarea
+            ref={textareaRef}
+            placeholder={replyToMessage ? "Type your reply..." : placeholder}
+            className={cn(
+              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-3 py-2 text-sm",
+              "ring-offset-background placeholder:text-muted-foreground",
+              "focus-visible:outline-none focus-visible:ring-0",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
+              "dark:placeholder:text-gray-500"
+            )}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={disabled || awaitingResponse}
+            rows={1}
+          />
           
           {/* Conditionally render either Send or Stop button */}
           {awaitingResponse ? (
