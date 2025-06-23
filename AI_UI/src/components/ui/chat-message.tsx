@@ -293,6 +293,14 @@ export function ChatMessage({
                   
                   return null; // Non-inline code blocks are handled separately
                 },
+                a: ({ node, ...props }) => (
+                  <a 
+                    {...props} 
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                ),
                 // Add explicit table components to ensure proper rendering
                 table: ({ node, ...props }) => (
                   <table {...props} />

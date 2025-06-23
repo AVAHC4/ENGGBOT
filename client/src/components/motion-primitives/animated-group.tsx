@@ -108,8 +108,9 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
   const containerVariants = variants?.container || selectedVariants.container
   const itemVariants = variants?.item || selectedVariants.item
 
-  const MotionComponent = motion[as]
-  const MotionChild = motion[asChild]
+  // Create motion components using motion() function
+  const MotionComponent = motion(as);
+  const MotionChild = motion(asChild);
 
   return (
     <MotionComponent initial="hidden" animate="visible" variants={containerVariants} className={className}>

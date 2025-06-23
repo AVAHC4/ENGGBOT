@@ -203,7 +203,8 @@ export function TextEffect({
   style,
 }: TextEffectProps) {
   const segments = splitText(children, per)
-  const MotionTag = motion[as]
+  
+  const MotionTag = motion(as)
 
   const baseVariants = preset
     ? presetVariants[preset]

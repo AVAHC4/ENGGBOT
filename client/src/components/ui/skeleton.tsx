@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
+import { motion, type HTMLMotionProps } from "framer-motion"
 import React from "react"
 
 function Skeleton({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: Omit<HTMLMotionProps<"div">, "animate" | "transition">) {
   return (
     <motion.div
       className={cn(
