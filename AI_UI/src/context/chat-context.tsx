@@ -133,7 +133,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Reset states
     setIsLoading(false);
     setIsGenerating(false);
-  }, []);
+    
+    // Remove any streaming messages
+    setMessages(prev => {
+      return prev.filter(msg => !msg.isStreaming);
+    });
+    
+    // Save the conversation without streaming messages
+    if (typeof window !== 'undefined' && isMounted) {
+      const cleanedMessages = messages.filter(msg => !msg.isStreaming);
+      saveConversation(conversationId, cleanedMessages);
+    }
+  }, [conversationId, isMounted, messages]);
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
     try {

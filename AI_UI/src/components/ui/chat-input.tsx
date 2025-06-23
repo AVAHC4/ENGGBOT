@@ -218,7 +218,7 @@ export function ChatInput({
 
   return (
     <>
-      <div className="flex flex-col w-full max-w-3xl mx-auto px-2 pb-1">
+      <div className="flex flex-col w-full max-w-3xl mx-auto px-2 pb-1 mt-10 mb-10">
         {/* Reply indicator */}
         {replyToMessage && (
           <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-full bg-muted/50 dark:bg-gray-800/50">
@@ -265,7 +265,7 @@ export function ChatInput({
         
         {/* Main input area */}
         <div className={cn(
-          "flex flex-col bg-background dark:bg-gray-800/30 relative w-full mb-14",
+          "flex flex-col bg-background dark:bg-gray-800/30 relative w-full mb-20",
           isExpanded ? "rounded-lg px-4 py-3" : "rounded-full px-3 py-2"
         )}>
           <textarea
