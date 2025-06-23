@@ -132,13 +132,13 @@ export function ChatInput({
 
     textarea.style.height = "auto";
     const newHeight = textarea.scrollHeight;
-    textarea.style.height = `${Math.min(newHeight, 150)}px`;
+    textarea.style.height = `${Math.min(newHeight, 200)}px`;
     
     // Set expanded state based on content height or content length
-    setIsExpanded(newHeight > 50 || message.length > 60);
+    setIsExpanded(newHeight > 45 || message.length > 40);
   }, [message]);
 
-  // Render control buttons
+  // Render control buttons for compact mode
   const renderControlButtons = () => (
     <>
       {/* File attachment button */}
@@ -172,7 +172,7 @@ export function ChatInput({
           onClick={onToggleWebSearch}
           disabled={awaitingResponse}
         >
-          <Lightbulb className="h-5 w-5" />
+          <Globe className="h-5 w-5" />
         </Button>
       )}
       
@@ -266,19 +266,19 @@ export function ChatInput({
         {/* Main input area */}
         <div className={cn(
           "flex flex-col bg-background dark:bg-gray-800/30 relative w-full",
-          isExpanded ? "rounded-lg px-3 py-2" : "rounded-full px-1 py-1"
+          isExpanded ? "rounded-lg px-4 py-3" : "rounded-full px-1 py-1"
         )}>
           <textarea
             ref={textareaRef}
             placeholder={replyToMessage ? "Type your reply..." : placeholder}
             className={cn(
-              "flex-1 resize-none max-h-[150px] min-h-[40px] border-0 bg-transparent px-3 py-2 text-sm w-full",
+              "flex-1 resize-none max-h-[240px] min-h-[40px] border-0 bg-transparent px-3 py-2 text-sm w-full",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
               "dark:placeholder:text-gray-500",
-              isExpanded ? "rounded-md pb-2" : "rounded-full pr-[120px]"
+              isExpanded ? "rounded-md pb-3" : "rounded-full pr-[120px]"
             )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -289,9 +289,9 @@ export function ChatInput({
           
           {/* Control buttons - always at the bottom in expanded mode */}
           {isExpanded ? (
-            <div className="flex items-center justify-between pt-2 mt-1 border-t border-border dark:border-gray-700">
-              <div className="flex items-center justify-between w-full px-1">
-                <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between pt-3 mt-1 border-t border-border dark:border-gray-700">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
                   {/* Left side buttons */}
                   <Button 
                     variant="ghost" 
@@ -322,12 +322,12 @@ export function ChatInput({
                       onClick={onToggleWebSearch}
                       disabled={awaitingResponse}
                     >
-                      <Lightbulb className="h-5 w-5" />
+                      <Globe className="h-5 w-5" />
                     </Button>
                   )}
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 mr-1">
                   {/* Right side buttons */}
                   <Button 
                     variant="ghost" 
@@ -368,7 +368,7 @@ export function ChatInput({
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-1 absolute right-4 bottom-[50%] translate-y-[50%]">
+            <div className="flex items-center gap-2 absolute right-4 bottom-[50%] translate-y-[50%]">
               {renderControlButtons()}
             </div>
           )}
