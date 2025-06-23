@@ -134,8 +134,8 @@ export function ChatInput({
     const newHeight = textarea.scrollHeight;
     textarea.style.height = `${Math.min(newHeight, 150)}px`;
     
-    // Set expanded state based on content height
-    setIsExpanded(newHeight > 50);
+    // Set expanded state based on content height or content length
+    setIsExpanded(newHeight > 50 || message.length > 60);
   }, [message]);
 
   // Render control buttons
@@ -162,27 +162,18 @@ export function ChatInput({
       
       {/* Web search mode toggle button */}
       {onToggleWebSearch && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn(
-                "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                webSearchMode && "text-green-500 dark:text-green-400"
-              )}
-              onClick={onToggleWebSearch}
-              disabled={awaitingResponse}
-            >
-              <Lightbulb className="h-5 w-5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p className="text-xs">
-              {webSearchMode ? "Web search enabled" : "Enable web search"}
-            </p>
-          </TooltipContent>
-        </Tooltip>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={cn(
+            "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+            webSearchMode && "text-green-500 dark:text-green-400"
+          )}
+          onClick={onToggleWebSearch}
+          disabled={awaitingResponse}
+        >
+          <Lightbulb className="h-5 w-5" />
+        </Button>
       )}
       
       {/* Voice input button */}
@@ -274,20 +265,20 @@ export function ChatInput({
         
         {/* Main input area */}
         <div className={cn(
-          "flex flex-col bg-background dark:bg-gray-800/30 rounded-lg relative",
-          isExpanded ? "px-3 py-2" : "px-1 py-1 rounded-full"
+          "flex flex-col bg-background dark:bg-gray-800/30 relative w-full",
+          isExpanded ? "rounded-lg px-3 py-2" : "rounded-full px-1 py-1"
         )}>
           <textarea
             ref={textareaRef}
             placeholder={replyToMessage ? "Type your reply..." : placeholder}
             className={cn(
-              "flex-1 resize-none max-h-[150px] min-h-[40px] border-0 bg-transparent px-3 py-2 text-sm",
+              "flex-1 resize-none max-h-[150px] min-h-[40px] border-0 bg-transparent px-3 py-2 text-sm w-full",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
               "dark:placeholder:text-gray-500",
-              isExpanded ? "rounded-md" : "rounded-full"
+              isExpanded ? "rounded-md pb-2" : "rounded-full pr-[120px]"
             )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -296,15 +287,88 @@ export function ChatInput({
             rows={1}
           />
           
-          {/* Control buttons - either inline or in separate bar */}
+          {/* Control buttons - always at the bottom in expanded mode */}
           {isExpanded ? (
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border dark:border-gray-700">
-              <div className="flex items-center gap-1">
-                {renderControlButtons()}
+            <div className="flex items-center justify-between pt-2 mt-1 border-t border-border dark:border-gray-700">
+              <div className="flex items-center justify-between w-full px-1">
+                <div className="flex items-center gap-2">
+                  {/* Left side buttons */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 shrink-0 rounded-full" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled || awaitingResponse}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                      disabled={disabled || awaitingResponse}
+                    />
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                  
+                  {onToggleWebSearch && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                        webSearchMode && "text-green-500 dark:text-green-400"
+                      )}
+                      onClick={onToggleWebSearch}
+                      disabled={awaitingResponse}
+                    >
+                      <Lightbulb className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* Right side buttons */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 shrink-0 rounded-full" 
+                    onClick={() => setIsVoiceModalOpen(true)}
+                    disabled={disabled || awaitingResponse}
+                  >
+                    <Mic className="h-5 w-5" />
+                  </Button>
+                  
+                  {awaitingResponse ? (
+                    <Button 
+                      onClick={handleStopGeneration} 
+                      size="icon" 
+                      variant="ghost"
+                      className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
+                      size="icon" 
+                      className={cn(
+                        "h-9 w-9 shrink-0 rounded-full",
+                        message.trim() || attachments.length > 0 
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                          : "text-muted-foreground"
+                      )}
+                      onClick={handleSend}
+                      disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+                    >
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-1 absolute right-4 bottom-3">
+            <div className="flex items-center gap-1 absolute right-4 bottom-[50%] translate-y-[50%]">
               {renderControlButtons()}
             </div>
           )}
