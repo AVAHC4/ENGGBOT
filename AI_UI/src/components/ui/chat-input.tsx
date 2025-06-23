@@ -135,7 +135,7 @@ export function ChatInput({
     textarea.style.height = `${Math.min(newHeight, 400)}px`;
     
     // Set expanded state based on content height or content length
-    setIsExpanded(true); // Always show expanded mode
+    setIsExpanded(newHeight > 60 || message.length > 60);
   }, [message]);
 
   // Render control buttons for compact mode
@@ -266,106 +266,172 @@ export function ChatInput({
         {/* Main input area */}
         <div className={cn(
           "flex flex-col bg-background dark:bg-gray-800/30 relative w-full",
-          "rounded-lg px-4 py-3"
+          isExpanded ? "rounded-lg px-4 py-3" : "rounded-full px-1 py-1"
         )}>
           <textarea
             ref={textareaRef}
             placeholder={replyToMessage ? "Type your reply..." : placeholder}
             className={cn(
-              "flex-1 resize-none max-h-[400px] min-h-[180px] border-0 bg-transparent px-3 py-2 text-sm w-full",
+              "flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm w-full",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "dark:bg-transparent dark:border-0 dark:focus-visible:ring-0",
               "dark:placeholder:text-gray-500",
-              "rounded-md pb-3"
+              isExpanded ? "rounded-md pb-3 max-h-[400px] min-h-[180px]" : "rounded-full pr-[120px] max-h-[60px] min-h-[40px]"
             )}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={disabled || awaitingResponse}
-            rows={8}
+            rows={isExpanded ? 8 : 1}
           />
           
-          {/* Control buttons - always at the bottom */}
-          <div className="flex items-center justify-between pt-3 mt-1 border-t border-border dark:border-gray-700">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                {/* Left side buttons */}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-9 w-9 shrink-0 rounded-full" 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={disabled || awaitingResponse}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileChange}
-                    disabled={disabled || awaitingResponse}
-                  />
-                  <Plus className="h-5 w-5" />
-                </Button>
-                
-                {onToggleWebSearch && (
+          {isExpanded ? (
+            // Control buttons at bottom when expanded
+            <div className="flex items-center justify-between pt-3 mt-1 border-t border-border dark:border-gray-700">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-3">
+                  {/* Left side buttons */}
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={cn(
-                      "h-9 w-9 rounded-full dark:hover:bg-gray-800",
-                      webSearchMode && "text-green-500 dark:text-green-400"
-                    )}
-                    onClick={onToggleWebSearch}
-                    disabled={awaitingResponse}
+                    className="h-9 w-9 shrink-0 rounded-full" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={disabled || awaitingResponse}
                   >
-                    <Globe className="h-5 w-5" />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileChange}
+                      disabled={disabled || awaitingResponse}
+                    />
+                    <Plus className="h-5 w-5" />
                   </Button>
-                )}
+                  
+                  {onToggleWebSearch && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                        webSearchMode && "text-green-500 dark:text-green-400"
+                      )}
+                      onClick={onToggleWebSearch}
+                      disabled={awaitingResponse}
+                    >
+                      <Globe className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3 mr-1">
+                  {/* Right side buttons */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 shrink-0 rounded-full" 
+                    onClick={() => setIsVoiceModalOpen(true)}
+                    disabled={disabled || awaitingResponse}
+                  >
+                    <Mic className="h-5 w-5" />
+                  </Button>
+                  
+                  {awaitingResponse ? (
+                    <Button 
+                      onClick={handleStopGeneration} 
+                      size="icon" 
+                      variant="ghost"
+                      className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
+                      size="icon" 
+                      className={cn(
+                        "h-9 w-9 shrink-0 rounded-full",
+                        message.trim() || attachments.length > 0 
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                          : "text-muted-foreground"
+                      )}
+                      onClick={handleSend}
+                      disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+                    >
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  )}
+                </div>
               </div>
+            </div>
+          ) : (
+            // Inline controls when compact
+            <div className="flex items-center gap-2 absolute right-4 bottom-[50%] translate-y-[50%]">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 shrink-0 rounded-full" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || awaitingResponse}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
               
-              <div className="flex items-center gap-3 mr-1">
-                {/* Right side buttons */}
+              {onToggleWebSearch && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 shrink-0 rounded-full" 
-                  onClick={() => setIsVoiceModalOpen(true)}
-                  disabled={disabled || awaitingResponse}
+                  className={cn(
+                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                    webSearchMode && "text-green-500 dark:text-green-400"
+                  )}
+                  onClick={onToggleWebSearch}
+                  disabled={awaitingResponse}
                 >
-                  <Mic className="h-5 w-5" />
+                  <Globe className="h-5 w-5" />
                 </Button>
-                
-                {awaitingResponse ? (
-                  <Button 
-                    onClick={handleStopGeneration} 
-                    size="icon" 
-                    variant="ghost"
-                    className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button 
-                    variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
-                    size="icon" 
-                    className={cn(
-                      "h-9 w-9 shrink-0 rounded-full",
-                      message.trim() || attachments.length > 0 
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                        : "text-muted-foreground"
-                    )}
-                    onClick={handleSend}
-                    disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
-                  >
-                    <Send className="h-5 w-5" />
-                  </Button>
-                )}
-              </div>
+              )}
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9 shrink-0 rounded-full" 
+                onClick={() => setIsVoiceModalOpen(true)}
+                disabled={disabled || awaitingResponse}
+              >
+                <Mic className="h-5 w-5" />
+              </Button>
+              
+              {awaitingResponse ? (
+                <Button 
+                  onClick={handleStopGeneration} 
+                  size="icon" 
+                  variant="ghost"
+                  className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button 
+                  variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
+                  size="icon" 
+                  className={cn(
+                    "h-9 w-9 shrink-0 rounded-full",
+                    message.trim() || attachments.length > 0 
+                      ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                      : "text-muted-foreground"
+                  )}
+                  onClick={handleSend}
+                  disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
