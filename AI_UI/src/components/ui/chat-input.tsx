@@ -23,7 +23,7 @@ interface ChatInputProps {
 
 export function ChatInput({
   onSend,
-  placeholder = "Type a messag...",
+  placeholder = "Type a message...",
   disabled = false,
   thinkingMode = false,
   onToggleThinking,
