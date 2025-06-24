@@ -15,7 +15,7 @@ export function ChatMessageList({
   smooth = false,
   ...props
 }: ChatMessageListProps) {
-  const containerRef = useRef<HTMLDiElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom on new messages
