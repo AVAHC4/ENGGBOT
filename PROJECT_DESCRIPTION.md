@@ -1,90 +1,78 @@
 # ENGGBOT - AI Study Assistant Platform
 
 ## Project Overview
-ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
+ENGGBOT is an AI Study Assistant Platform featuring an animated landing page connected to an advanced AI chatbot. The platform uses React 18, Express.js, PostgreSQL/Supabase, and integrates AI services including DeepSeek and NVIDIA Riva for speech recognition. It provides academically accurate responses to student queries using course materials.
 
-## Current Architecture
+## Technical Architecture
 
-### Frontend Structure
-- **Main Application**
-  - Built with Next.js 14 and TypeScript
-  - Uses Vite as the build tool
-  - Styling with Tailwind CSS
-  - Animations using Framer Motion
-  - Component-based architecture
-  
-- **Key Components**
-  - `ai-chat.tsx`: Main AI chat interface component
-  - `login.tsx`: Google OAuth login page
-  - `main.tsx`: Application entry point
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **UI Components**:
+  - Interactive chat interface
+  - Voice input support
+  - Animated landing page
 
-### API Integration
-- **Authentication**
-  - Google OAuth implementation in `/api/auth/google.ts`
-  - Secure session management
-  - User profile handling
+### Backend
+- **Framework**: Express.js with TypeScript
+- **Database**: PostgreSQL with Supabase
+- **ORM**: Drizzle ORM
+- **API Routes**: RESTful endpoints for chat and authentication
 
-- **AI Services**
-  - Chutes AI integration with DeepSeek models
-  - Multiple model support (DeepSeek-R1, DeepSeek-V3, Mistral)
+### AI Integration
+- **Primary AI Service**: Chutes AI
+- **Supported Models**:
+  - DeepSeek-R1 (default)
+  - DeepSeek-V3
+  - DeepSeek-Lite
+  - Mistral
+- **Features**:
   - Thinking mode for detailed responses
-  - API key management
+  - Streamed responses (backend implemented)
+  - Model switching capability
 
-### Current Implementation Details
+### Authentication
+- Google OAuth integration
+- Session-based authentication
+- Profile management
 
-#### Frontend
-- **Chat Interface**
-  - Interactive messaging UI with user/assistant format
-  - Non-streaming responses due to implementation limitations
-  - Thinking mode to display AI reasoning process
-  - Voice input via microphone integration
-  
-- **User Experience**
-  - Modern, responsive design
-  - Smooth animations and transitions
-  - Mobile-friendly interface
-  - Clear visual feedback for user interactions
+## Implementation Details
 
-#### Backend
-- **API Layer**
-  - Express.js with TypeScript
-  - RESTful endpoints for chat functionality
-  - Authentication middleware
-  
-- **Database**
-  - PostgreSQL with Supabase
-  - Drizzle ORM for database operations
-  - User profile storage
-  - **Note**: Currently experiencing connectivity issues with Supabase
+### Current State
+- **AI Integration**:
+  - Web App API Key: `***REMOVED***`
+  - CLI API Key: `***REMOVED***`
 
-### Key Technical Details
+- **Streaming**:
+  - Backend supports streaming via Chutes AI API
+  - Frontend currently receives responses as single JSON objects
+  - Streaming needs to be implemented end-to-end
 
-#### Environment Setup
-- **Required Variables**
-  - CHUTES_API_KEY: For AI service integration
-  - GOOGLE_CLIENT_ID: For Google OAuth
-  - GOOGLE_CLIENT_SECRET: For Google OAuth
-  - NEXT_PUBLIC_SUPABASE_URL: For database connection
-  - NEXT_PUBLIC_SUPABASE_ANON_KEY: For database access
+- **Database**:
+  - PostgreSQL with Supabase integration
+  - Currently experiencing connectivity issues
+  - User data persistence affected
 
-- **Development Commands**
-  ```bash
-  # Install dependencies
-  npm install
-  
-  # Start development server
-  npm run dev
-  ```
+### Development Setup
+```bash
+# Install dependencies
+npm install
 
-### Current Limitations
+# Start development servers
+npm run dev
+```
+
+## Current Limitations
 
 1. **Streaming Implementation**
-   - Backend supports streaming via Chutes AI API
-   - Frontend lacks end-to-end streaming capability
-   - Responses are currently batched and non-interactive
+   - Backend supports streaming but frontend lacks implementation
+   - Responses are batched instead of streamed
+   - Real-time interaction capabilities incomplete
 
 2. **Database Integration**
-   - Supabase connectivity issues
+   - Supabase connectivity issues need resolution
    - Database operations partially functional
    - User data persistence affected
 
@@ -93,9 +81,9 @@ ENGGBOT is a modern web application featuring an animated landing page connected
    - Session management stable
    - Profile data handling needs improvement
 
-### Planned Improvements
+## Planned Improvements
 
-1. **Streaming Responses**
+1. **Streaming Implementation**
    - Implement end-to-end streaming in frontend
    - Enhance real-time interaction capabilities
    - Improve response latency
@@ -112,7 +100,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 
 ## Project Status
 Current version: 1.0.1
-Last updated: June 14, 2025
+Last updated: June 27, 2025
 
 ---
 *This document will be updated as the project evolves*
