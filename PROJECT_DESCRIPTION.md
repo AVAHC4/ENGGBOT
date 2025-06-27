@@ -1,78 +1,125 @@
 # ENGGBOT - AI Study Assistant Platform
 
 ## Project Overview
-ENGGBOT is an AI Study Assistant Platform featuring an animated landing page connected to an advanced AI chatbot. The platform uses React 18, Express.js, PostgreSQL/Supabase, and integrates AI services including DeepSeek and NVIDIA Riva for speech recognition. It provides academically accurate responses to student queries using course materials.
+ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
 
-## Technical Architecture
+## Architecture Overview
 
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **UI Components**:
-  - Interactive chat interface
-  - Voice input support
-  - Animated landing page
+### Frontend (React)
+- **Framework & Tools**
+  - React 18 with TypeScript
+  - Vite build tool
+  - Tailwind CSS for styling
+  - Framer Motion for animations
+  - Component-based architecture
 
-### Backend
-- **Framework**: Express.js with TypeScript
-- **Database**: PostgreSQL with Supabase
-- **ORM**: Drizzle ORM
-- **API Routes**: RESTful endpoints for chat and authentication
+### Backend (Express.js)
+- **Server**
+  - Express.js RESTful API
+  - PostgreSQL database with Supabase
+  - Authentication via Google OAuth
+  - AI integration endpoints
 
 ### AI Integration
-- **Primary AI Service**: Chutes AI
-- **Supported Models**:
-  - DeepSeek-R1 (default)
-  - DeepSeek-V3
-  - DeepSeek-Lite
-  - Mistral
-- **Features**:
+- **AI Services**
+  - Chutes AI integration with multiple models:
+    - DeepSeek-R1 (primary model)
+    - DeepSeek-V3
+    - Mistral
+    - DeepSeek-Lite
+  - Custom AI client implementation with streaming support
   - Thinking mode for detailed responses
-  - Streamed responses (backend implemented)
-  - Model switching capability
+  - Two separate API key implementations:
+    - TypeScript client key: `***REMOVED***`
+    - Python CLI key: `***REMOVED***`
 
-### Authentication
-- Google OAuth integration
-- Session-based authentication
-- Profile management
+### Current Implementation Status
 
-## Implementation Details
+#### Frontend Features
+- **Chat Interface**
+  - Interactive messaging UI with user/assistant format
+  - Multimodal input support (text and voice)
+  - Streaming response capability (currently not fully implemented)
+  - Thinking mode to display AI reasoning process
+  - Modern, animated landing page
 
-### Current State
-- **AI Integration**:
-  - Web App API Key: `***REMOVED***`
-  - CLI API Key: `***REMOVED***`
+#### Backend Features
+- **API Endpoints**
+  - Chat API with DeepSeek integration
+  - Authentication endpoints
+  - User session management
+  - Course material handling
 
-- **Streaming**:
-  - Backend supports streaming via Chutes AI API
-  - Frontend currently receives responses as single JSON objects
-  - Streaming needs to be implemented end-to-end
-
-- **Database**:
-  - PostgreSQL with Supabase integration
-  - Currently experiencing connectivity issues
-  - User data persistence affected
+#### Known Issues
+- **Supabase Connectivity**: Current issues with Supabase database connection
+- **Streaming Implementation**: Frontend receives responses as single JSON objects instead of streaming chunks
+- **Authentication**: Need to resolve Supabase authentication integration
 
 ### Development Setup
-```bash
-# Install dependencies
-npm install
+- **Prerequisites**
+  - Node.js and npm
+  - PostgreSQL/Supabase
+  - Google OAuth credentials
+  - Chutes AI API key
 
-# Start development servers
-npm run dev
-```
+- **Running the Application**
+  ```bash
+  # Install dependencies
+  npm install
+  
+  # Start development servers
+  npm run dev
+  ```
 
-## Current Limitations
+The application consists of both a web interface and a Python CLI tool for interacting with the AI models. The web interface provides a modern, animated user experience while the CLI offers a more technical interface for testing and development purposes.
+  - Voice input via microphone integration
+  
+- **User Experience**
+  - Modern, responsive design
+  - Smooth animations and transitions
+  - Mobile-friendly interface
+  - Clear visual feedback for user interactions
+
+#### Backend
+- **API Layer**
+  - Express.js with TypeScript
+  - RESTful endpoints for chat functionality
+  - Authentication middleware
+  
+- **Database**
+  - PostgreSQL with Supabase
+  - Drizzle ORM for database operations
+  - User profile storage
+  - **Note**: Currently experiencing connectivity issues with Supabase
+
+### Key Technical Details
+
+#### Environment Setup
+- **Required Variables**
+  - CHUTES_API_KEY: For AI service integration
+  - GOOGLE_CLIENT_ID: For Google OAuth
+  - GOOGLE_CLIENT_SECRET: For Google OAuth
+  - NEXT_PUBLIC_SUPABASE_URL: For database connection
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY: For database access
+
+- **Development Commands**
+  ```bash
+  # Install dependencies
+  npm install
+  
+  # Start development server
+  npm run dev
+  ```
+
+### Current Limitations
 
 1. **Streaming Implementation**
-   - Backend supports streaming but frontend lacks implementation
-   - Responses are batched instead of streamed
-   - Real-time interaction capabilities incomplete
+   - Backend supports streaming via Chutes AI API
+   - Frontend lacks end-to-end streaming capability
+   - Responses are currently batched and non-interactive
 
 2. **Database Integration**
-   - Supabase connectivity issues need resolution
+   - Supabase connectivity issues
    - Database operations partially functional
    - User data persistence affected
 
@@ -81,9 +128,9 @@ npm run dev
    - Session management stable
    - Profile data handling needs improvement
 
-## Planned Improvements
+### Planned Improvements
 
-1. **Streaming Implementation**
+1. **Streaming Responses**
    - Implement end-to-end streaming in frontend
    - Enhance real-time interaction capabilities
    - Improve response latency
@@ -100,7 +147,7 @@ npm run dev
 
 ## Project Status
 Current version: 1.0.1
-Last updated: June 27, 2025
+Last updated: June 14, 2025
 
 ---
 *This document will be updated as the project evolves*
