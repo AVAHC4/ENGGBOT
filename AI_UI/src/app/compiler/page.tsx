@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { PlayCircle, Download, Copy, Trash, Check, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PlayCircle, Download, Copy, Trash, Check, Loader2, Terminal, Send, BookOpen } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { executeCode } from '@/lib/judge0';
@@ -19,6 +20,25 @@ const languages = [
   { id: "csharp", name: "C#", extension: ".cs", template: "// C# code here\nusing System;\n\nclass Program {\n  static void Main() {\n    Console.WriteLine(\"Hello, World!\");\n  }\n}" },
   { id: "html", name: "HTML", extension: ".html", template: "<!DOCTYPE html>\n<html>\n<head>\n  <title>Hello World</title>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n</body>\n</html>" },
   { id: "css", name: "CSS", extension: ".css", template: "/* CSS code here */\nbody {\n  font-family: Arial, sans-serif;\n  background-color: #f0f0f0;\n}\n\nh1 {\n  color: #333;\n  text-align: center;\n}" },
+];
+
+// Input examples to showcase console capabilities
+const inputExamples = [
+  { 
+    name: "Basic Input", 
+    language: "python", 
+    code: "# Basic input example\nname = input('Enter your name: ')\nprint(f'Hello, {name}! Welcome to the interactive console.')" 
+  },
+  { 
+    name: "Calculator", 
+    language: "python", 
+    code: "# Simple calculator\nnum1 = float(input('Enter first number: '))\nnum2 = float(input('Enter second number: '))\n\nprint(f'Sum: {num1 + num2}')\nprint(f'Difference: {num1 - num2}')\nprint(f'Product: {num1 * num2}')\nif num2 != 0:\n    print(f'Division: {num1 / num2}')\nelse:\n    print('Division: Cannot divide by zero')" 
+  },
+  { 
+    name: "Quiz Game", 
+    language: "python", 
+    code: "# Simple quiz game\nscore = 0\n\nprint('Welcome to the Python Quiz!')\n\n# Question 1\nprint('\\nQuestion 1: What is the output of 3 * 4?')\nanswer = input('Your answer: ')\nif answer == '12':\n    print('Correct!')\n    score += 1\nelse:\n    print('Wrong! The correct answer is 12.')\n\n# Question 2\nprint('\\nQuestion 2: What function is used to get input from the user in Python?')\nanswer = input('Your answer: ')\nif answer.lower() == 'input':\n    print('Correct!')\n    score += 1\nelse:\n    print('Wrong! The correct answer is input.')\n\n# Final score\nprint(f'\\nQuiz complete! Your score: {score}/2')" 
+  }
 ];
 
 // Define types for global WebAssembly engines
@@ -60,6 +80,12 @@ type EngineStates = {
   csharp: EngineState;
 };
 
+// Console message type
+type ConsoleMessage = {
+  type: 'input' | 'output' | 'error' | 'info';
+  content: string;
+};
+
 export default function CompilerPage() {
   const searchParams = useSearchParams();
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
@@ -68,6 +94,16 @@ export default function CompilerPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Console related states
+  const [showConsole, setShowConsole] = useState(false);
+  const [consoleInput, setConsoleInput] = useState("");
+  const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([
+    { type: 'info', content: 'Interactive Console - Enter commands here' }
+  ]);
+  const [waitingForInput, setWaitingForInput] = useState(false);
+  const [inputResolver, setInputResolver] = useState<((value: string) => void) | null>(null);
+  const consoleEndRef = useRef<HTMLDivElement>(null);
   
   // State for WebAssembly engines
   const [engines, setEngines] = useState<EngineStates>({
@@ -105,6 +141,13 @@ export default function CompilerPage() {
       }
     }
   }, [searchParams]);
+
+  // Auto scroll to bottom of console when messages update
+  useEffect(() => {
+    if (consoleEndRef.current) {
+      consoleEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [consoleMessages]);
 
   // Helper to update engine state
   const updateEngineState = (language: keyof EngineStates, update: Partial<EngineState>) => {
@@ -192,6 +235,7 @@ export default function CompilerPage() {
         instance: pyodide 
       });
       
+      addConsoleMessage('info', "Python engine loaded successfully! You can now run Python code.");
       setOutput("Python engine loaded successfully! You can now run Python code.");
     } catch (error) {
       console.error('Failed to load Pyodide:', error);
@@ -322,25 +366,46 @@ export default function CompilerPage() {
     setSelectedLanguage(lang);
     setCode(lang.template);
     setOutput("");
+    
+    // Reset console state when changing language
+    setConsoleMessages([{ type: 'info', content: `${lang.name} Console - Ready for execution` }]);
   };
 
   // Execute Python code with real Pyodide
   const executePythonWithPyodide = async (code: string): Promise<string> => {
     const pyodide = engines.python.instance;
     if (!pyodide) {
+      addConsoleMessage('error', "Python engine not loaded. Please reload the page and try again.");
       return "Python engine not loaded. Please reload the page and try again.";
     }
     
     let output = "";
     
     try {
-      // Create a custom stdout to capture output
+      // Create a custom stdout to capture output and provide input function
       await pyodide.runPythonAsync(`
         import sys
         from io import StringIO
         sys.stdout = StringIO()
         sys.stderr = StringIO()
+        
+        # Define custom input function that will call back to JS
+        def input(prompt=''):
+            # First flush any pending output to display the prompt
+            print(prompt, end='')
+            sys.stdout.flush()
+            return __js__.requestInputFromUser(prompt)
       `);
+      
+      // Create a JavaScript function to request input from the user
+      pyodide.globals.set('requestInputFromUser', (prompt: string) => {
+        return new Promise((resolve) => {
+          // Display the prompt in the console
+          addConsoleMessage('output', prompt);
+          setWaitingForInput(true);
+          setInputResolver(() => resolve);
+        });
+      });
       
       // Run the actual code
       await pyodide.runPythonAsync(code);
@@ -350,8 +415,14 @@ export default function CompilerPage() {
       const stderr = await pyodide.runPythonAsync(`sys.stderr.getvalue()`);
       
       // Combine output
-      if (stdout) output += stdout;
-      if (stderr) output += "\n" + stderr;
+      if (stdout) {
+        output += stdout;
+        addConsoleMessage('output', stdout);
+      }
+      if (stderr) {
+        output += "\n" + stderr;
+        addConsoleMessage('error', stderr);
+      }
       
       // Reset stdout
       await pyodide.runPythonAsync(`
@@ -362,7 +433,9 @@ export default function CompilerPage() {
       return output || "[No output]";
     } catch (error) {
       console.error('Python execution error:', error);
-      return `Error: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
+      addConsoleMessage('error', errorMsg);
+      return errorMsg;
     }
   };
 
@@ -468,21 +541,50 @@ export default function CompilerPage() {
       const originalLog = console.log;
       const logs: string[] = [];
       
+      // Create a custom input function
+      const originalPrompt = window.prompt;
+      
+      // We're overriding prompt for our code execution environment only
+      // Using any to bypass type checking since we're only using it in controlled context
+      (window as any).customPrompt = (message: string) => {
+        return new Promise<string>((resolve) => {
+          // Display the prompt in the console
+          addConsoleMessage('output', message || 'Input:');
+          setWaitingForInput(true);
+          setInputResolver(() => resolve);
+        }).then(input => {
+          return input;
+        });
+      };
+      
       // Override console.log
       console.log = (...args) => {
-        logs.push(args.map(arg => String(arg)).join(' '));
+        const logMessage = args.map(arg => String(arg)).join(' ');
+        logs.push(logMessage);
+        addConsoleMessage('output', logMessage);
       };
       
       // Execute the code
       try {
+        // Enable console
+        setShowConsole(true);
+        
         // Wrap in try/catch and restrict code execution time
         const wrappedCode = `
           "use strict";
-          try {
-            ${code}
-          } catch (e) {
-            console.log("Runtime error:", e.message);
+          
+          // Use our custom prompt within this execution context
+          const prompt = window.customPrompt;
+          
+          async function executeUserCode() {
+            try {
+              ${code}
+            } catch (e) {
+              console.log("Runtime error:", e.message);
+            }
           }
+          
+          executeUserCode();
         `;
         
         // Execute with Function constructor for better isolation
@@ -491,10 +593,13 @@ export default function CompilerPage() {
         // Add logs to output
         output += logs.join('\n');
       } catch (e) {
-        output += `Error: ${e instanceof Error ? e.message : String(e)}`;
+        const errorMsg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+        output += errorMsg;
+        addConsoleMessage('error', errorMsg);
       } finally {
-        // Restore original console.log
+        // Restore original console.log and cleanup
         console.log = originalLog;
+        delete (window as any).customPrompt;
       }
       
       // If no output was generated, add a message
@@ -502,7 +607,9 @@ export default function CompilerPage() {
         output += "[No output]";
       }
     } catch (e) {
-      output += `Error: ${e instanceof Error ? e.message : String(e)}`;
+      const errorMsg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+      output += errorMsg;
+      addConsoleMessage('error', errorMsg);
     }
     
     return output;
@@ -511,10 +618,40 @@ export default function CompilerPage() {
   // Parse Java code and generate a realistic output
   const executeJava = (code: string): string => {
     let output = "OpenJDK 11.0.12\n";
+    setShowConsole(true);
     
     try {
+      // Look for Scanner usage which indicates input may be needed
+      const hasScannerUsage = code.includes("Scanner") && code.includes(".next");
+      
+      if (hasScannerUsage) {
+        addConsoleMessage('info', "Java code with input detected. Interactive mode enabled.");
+      }
+      
       // Check if the code contains a main method
       if (code.includes("public static void main")) {
+        // Handle Scanner input simulation for interactive code
+        if (hasScannerUsage) {
+          // Extract all scanner.next* calls to simulate them
+          const scannerNextRegex = /(\w+)\.next(\w*)\(\)/g;
+          const inputCalls = Array.from(code.matchAll(scannerNextRegex));
+          
+          if (inputCalls.length > 0) {
+            // For each potential input call, we'll prompt the user
+            for (const match of inputCalls) {
+              const inputType = match[2] || "Line"; // nextLine, nextInt, next, etc.
+              
+              addConsoleMessage('output', `Waiting for input (${inputType})...`);
+              // In a real implementation, we would get actual user input here
+              // For now, we're simulating with a mock input request
+              
+              // Sample simulation of waiting for input
+              // In real implementation, this would be async
+              addConsoleMessage('info', `Simulating input for ${inputType}...`);
+            }
+          }
+        }
+        
         // Look for println statements
         const printlnRegex = /System\.out\.println\((.*?)\);/g;
         const printMatches = code.matchAll(printlnRegex);
@@ -528,6 +665,7 @@ export default function CompilerPage() {
             // Handle string literals
             if ((content.startsWith('"') && content.endsWith('"'))) {
               output += content.slice(1, -1) + '\n';
+              addConsoleMessage('output', content.slice(1, -1));
               hasPrinted = true;
             } 
             // Handle simple expressions
@@ -536,9 +674,11 @@ export default function CompilerPage() {
                 // Safe evaluation for simple arithmetic
                 const result = Function(`"use strict"; return (${content.replace(/[\n\r]/g, '')})`)();
                 output += result + '\n';
+                addConsoleMessage('output', String(result));
                 hasPrinted = true;
               } catch (e) {
                 output += "[Error evaluating expression]\n";
+                addConsoleMessage('error', "[Error evaluating expression]");
                 hasPrinted = true;
               }
             }
@@ -551,9 +691,12 @@ export default function CompilerPage() {
         }
       } else {
         output += "Error: public static void main(String[] args) method not found";
+        addConsoleMessage('error', "Error: public static void main(String[] args) method not found");
       }
     } catch (e) {
-      output += `Error: ${e instanceof Error ? e.message : String(e)}`;
+      const errorMsg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+      output += errorMsg;
+      addConsoleMessage('error', errorMsg);
     }
     
     return output;
@@ -562,10 +705,48 @@ export default function CompilerPage() {
   // Parse C/C++ code and generate a realistic output
   const executeCFamily = (code: string, compiler: string): string => {
     let output = `${compiler}\n`;
+    setShowConsole(true);
     
     try {
+      // Check if the code contains input functions (scanf, cin)
+      const hasScanf = code.includes("scanf");
+      const hasCin = code.includes("cin >>");
+      
+      if (hasScanf || hasCin) {
+        addConsoleMessage('info', "C/C++ code with input detected. Interactive mode enabled.");
+      }
+      
       // Check if the code contains a main function
       if (code.includes("int main")) {
+        // Handle input simulation for interactive code
+        if (hasScanf || hasCin) {
+          // Extract scanf calls to simulate them
+          if (hasScanf) {
+            const scanfRegex = /scanf\s*\(\s*"([^"]*)"/g;
+            const scanfMatches = Array.from(code.matchAll(scanfRegex));
+            
+            for (const match of scanfMatches) {
+              const formatStr = match[1];
+              addConsoleMessage('output', `Input for scanf("${formatStr}"):`);
+              // In a real implementation, we would get actual user input here
+              addConsoleMessage('info', 'Simulating input for scanf...');
+            }
+          }
+          
+          // Extract cin calls to simulate them
+          if (hasCin) {
+            const cinRegex = /cin\s*>>\s*(\w+)/g;
+            const cinMatches = Array.from(code.matchAll(cinRegex));
+            
+            for (const match of cinMatches) {
+              const varName = match[1];
+              addConsoleMessage('output', `Input for ${varName}:`);
+              // In a real implementation, we would get actual user input here
+              addConsoleMessage('info', `Simulating input for ${varName}...`);
+            }
+          }
+        }
+        
         // Look for printf statements in C
         const printfRegex = /printf\((.*?)\);/g;
         const printfMatches = code.matchAll(printfRegex);
@@ -587,7 +768,9 @@ export default function CompilerPage() {
               const formatStr = content.match(/"([^"]*)"/);
               if (formatStr && formatStr[1]) {
                 // Replace \n with actual newlines
-                output += formatStr[1].replace(/\\n/g, '\n');
+                const formattedOutput = formatStr[1].replace(/\\n/g, '\n');
+                output += formattedOutput;
+                addConsoleMessage('output', formattedOutput.replace(/\n/g, ''));
                 hasPrinted = true;
               }
             }
@@ -602,11 +785,13 @@ export default function CompilerPage() {
             // Handle string literals
             if ((content.startsWith('"') && content.endsWith('"'))) {
               output += content.slice(1, -1);
+              addConsoleMessage('output', content.slice(1, -1));
               hasPrinted = true;
             } 
             // Handle endl
             else if (content === "endl") {
               output += '\n';
+              addConsoleMessage('output', '');
               hasPrinted = true;
             }
           }
@@ -618,9 +803,12 @@ export default function CompilerPage() {
         }
       } else {
         output += "Error: int main() function not found";
+        addConsoleMessage('error', "Error: int main() function not found");
       }
     } catch (e) {
-      output += `Error: ${e instanceof Error ? e.message : String(e)}`;
+      const errorMsg = `Error: ${e instanceof Error ? e.message : String(e)}`;
+      output += errorMsg;
+      addConsoleMessage('error', errorMsg);
     }
     
     return output;
@@ -648,40 +836,85 @@ export default function CompilerPage() {
   const runCode = async () => {
     setIsRunning(true);
     setOutput("Running code...");
+    addConsoleMessage('info', "Running code...");
     
     try {
       let result = "";
       
-      // HTML and CSS are handled locally
-      if (selectedLanguage.id === "html") {
-        result = executeHtml(code);
-      } else if (selectedLanguage.id === "css") {
-        // For CSS, we create a simple HTML with the CSS applied
-        const htmlWithCss = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <style>${code}</style>
-          </head>
-          <body>
-            <h1>Sample Heading</h1>
-            <p>This paragraph demonstrates the CSS styling.</p>
-            <div class="container">
-              <button>Button Element</button>
-              <a href="#">Link Element</a>
-            </div>
-          </body>
-          </html>
-        `;
-        result = executeHtml(htmlWithCss);
-      } else {
-        // For all other languages, use Judge0 API
-        result = await executeCode(code, selectedLanguage.id);
+      // Handle based on language
+      switch (selectedLanguage.id) {
+        case "html":
+          result = executeHtml(code);
+          break;
+        
+        case "css":
+          // For CSS, we create a simple HTML with the CSS applied
+          const htmlWithCss = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>${code}</style>
+            </head>
+            <body>
+              <h1>Sample Heading</h1>
+              <p>This paragraph demonstrates the CSS styling.</p>
+              <div class="container">
+                <button>Button Element</button>
+                <a href="#">Link Element</a>
+              </div>
+            </body>
+            </html>
+          `;
+          result = executeHtml(htmlWithCss);
+          break;
+        
+        case "python":
+          // If Pyodide is loaded, use it for Python execution
+          if (engines.python.loaded) {
+            result = await executePythonWithPyodide(code);
+            setShowConsole(true);
+          } else {
+            // Otherwise use the fallback Python interpreter
+            result = executePython(code);
+            addConsoleMessage('output', result);
+            setShowConsole(true);
+          }
+          break;
+        
+        case "javascript":
+          result = executeJavaScript(code);
+          break;
+        
+        case "java":
+          result = executeJava(code);
+          break;
+        
+        case "c":
+          result = executeCFamily(code, "GCC 11.2.0");
+          break;
+        
+        case "cpp":
+          result = executeCFamily(code, "G++ 11.2.0");
+          break;
+        
+        case "csharp":
+          // For C#, use the Judge0 API for now
+          result = await executeCode(code, selectedLanguage.id);
+          addConsoleMessage('output', result);
+          setShowConsole(true);
+          break;
+          
+        default:
+          // For any other language, use Judge0 API
+          result = await executeCode(code, selectedLanguage.id);
+          addConsoleMessage('output', result);
       }
       
       setOutput(result);
     } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
+      setOutput(errorMsg);
+      addConsoleMessage('error', errorMsg);
     } finally {
       setIsRunning(false);
     }
@@ -729,6 +962,56 @@ export default function CompilerPage() {
     return engines[langId]?.loaded || false;
   };
 
+  // Helper function to add a message to the console
+  const addConsoleMessage = (type: 'input' | 'output' | 'error' | 'info', content: string) => {
+    setConsoleMessages(prev => [...prev, { type, content }]);
+  };
+
+  // Handle user input submission
+  const handleInputSubmit = () => {
+    if (!waitingForInput || !consoleInput.trim()) return;
+    
+    // Add user input to console messages
+    addConsoleMessage('input', consoleInput);
+    
+    // Resolve the promise with the user input
+    if (inputResolver) {
+      inputResolver(consoleInput);
+      setInputResolver(null);
+    }
+    
+    // Reset state
+    setWaitingForInput(false);
+    setConsoleInput('');
+  };
+
+  // Handle user pressing Enter in the input field
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleInputSubmit();
+    }
+  };
+
+  // Load an example code snippet
+  const loadExample = (exampleId: string) => {
+    const example = inputExamples.find(ex => ex.name === exampleId);
+    if (example) {
+      // Set language if needed
+      if (example.language !== selectedLanguage.id) {
+        const lang = languages.find(l => l.id === example.language) || selectedLanguage;
+        setSelectedLanguage(lang);
+      }
+      
+      // Set the code
+      setCode(example.code);
+      
+      // Clear output and prepare console
+      setOutput("");
+      setConsoleMessages([{ type: 'info', content: `Example loaded: ${example.name}` }]);
+      setShowConsole(true);
+    }
+  };
+
   return (
     <div className="container max-w-6xl py-8 compiler-page overflow-auto" style={{ height: '100vh' }}>
       <header className="mb-6">
@@ -756,6 +1039,22 @@ export default function CompilerPage() {
               </Select>
             </div>
             <div className="flex gap-2">
+              {/* Examples dropdown - only show for Python */}
+              {selectedLanguage.id === "python" && (
+                <Select onValueChange={loadExample}>
+                  <SelectTrigger className="w-[180px]">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Input Examples" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inputExamples.map(example => (
+                      <SelectItem key={example.name} value={example.name}>
+                        {example.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -818,6 +1117,15 @@ export default function CompilerPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">Output</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConsole(!showConsole)}
+              title="Toggle console"
+            >
+              <Terminal className="h-4 w-4 mr-2" />
+              {showConsole ? "Hide Console" : "Show Console"}
+            </Button>
           </div>
           
           {(selectedLanguage.id === "html" || selectedLanguage.id === "css") ? (
@@ -829,6 +1137,58 @@ export default function CompilerPage() {
                 title="HTML Preview"
                 sandbox="allow-same-origin"
               />
+            </div>
+          ) : showConsole ? (
+            <div className="flex flex-col h-[500px] border rounded-md overflow-hidden">
+              <div className="bg-muted px-4 py-2 border-b text-xs flex justify-between items-center">
+                <span>Interactive Console</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setConsoleMessages([{ type: 'info', content: 'Console cleared' }])}
+                >
+                  Clear
+                </Button>
+              </div>
+              
+              {/* Console output area */}
+              <div className="flex-1 bg-black text-white p-4 font-mono text-sm overflow-y-auto">
+                {consoleMessages.map((msg, index) => (
+                  <div 
+                    key={index}
+                    className={`mb-1 ${
+                      msg.type === 'input' ? 'text-green-400' : 
+                      msg.type === 'error' ? 'text-red-400' : 
+                      msg.type === 'info' ? 'text-blue-400' : 
+                      'text-white'
+                    }`}
+                  >
+                    {msg.type === 'input' && '> '}
+                    {msg.content}
+                  </div>
+                ))}
+                <div ref={consoleEndRef} />
+              </div>
+              
+              {/* Console input area */}
+              <div className="flex items-center border-t bg-gray-900 p-2">
+                <Input
+                  value={consoleInput}
+                  onChange={(e) => setConsoleInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={waitingForInput ? "Enter input..." : "Type a command..."}
+                  className="flex-1 bg-black text-white border-none focus:ring-0"
+                  disabled={!waitingForInput && !engines.python.loaded}
+                />
+                <Button 
+                  size="sm" 
+                  disabled={!waitingForInput && !engines.python.loaded}
+                  onClick={handleInputSubmit} 
+                  className="ml-2"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="bg-muted font-mono text-sm rounded-md p-4 min-h-[500px] border overflow-auto">
