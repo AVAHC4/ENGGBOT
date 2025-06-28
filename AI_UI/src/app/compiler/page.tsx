@@ -38,6 +38,21 @@ const inputExamples = [
     name: "Quiz Game", 
     language: "python", 
     code: "# Simple quiz game\nscore = 0\n\nprint('Welcome to the Python Quiz!')\n\n# Question 1\nprint('\\nQuestion 1: What is the output of 3 * 4?')\nanswer = input('Your answer: ')\nif answer == '12':\n    print('Correct!')\n    score += 1\nelse:\n    print('Wrong! The correct answer is 12.')\n\n# Question 2\nprint('\\nQuestion 2: What function is used to get input from the user in Python?')\nanswer = input('Your answer: ')\nif answer.lower() == 'input':\n    print('Correct!')\n    score += 1\nelse:\n    print('Wrong! The correct answer is input.')\n\n# Final score\nprint(f'\\nQuiz complete! Your score: {score}/2')" 
+  },
+  {
+    name: "Java Input",
+    language: "java",
+    code: "// Java input example\nimport java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    \n    System.out.println(\"Enter your name:\");\n    String name = scanner.nextLine();\n    \n    System.out.println(\"Enter your age:\");\n    int age = scanner.nextInt();\n    \n    System.out.println(\"Hello, \" + name + \"! You are \" + age + \" years old.\");\n    \n    if (age < 18) {\n      System.out.println(\"You are a minor.\");\n    } else {\n      System.out.println(\"You are an adult.\");\n    }\n  }\n}"
+  },
+  {
+    name: "C Input",
+    language: "c",
+    code: "// C input example\n#include <stdio.h>\n\nint main() {\n  char name[50];\n  int age;\n  \n  printf(\"Enter your name: \");\n  scanf(\"%s\", name);\n  \n  printf(\"Enter your age: \");\n  scanf(\"%d\", &age);\n  \n  printf(\"Hello, %s! You are %d years old.\\n\", name, age);\n  \n  if (age < 18) {\n    printf(\"You are a minor.\\n\");\n  } else {\n    printf(\"You are an adult.\\n\");\n  }\n  \n  return 0;\n}"
+  },
+  {
+    name: "C++ Input",
+    language: "cpp",
+    code: "// C++ input example\n#include <iostream>\n#include <string>\nusing namespace std;\n\nint main() {\n  string name;\n  int age;\n  \n  cout << \"Enter your name: \";\n  cin >> name;\n  \n  cout << \"Enter your age: \";\n  cin >> age;\n  \n  cout << \"Hello, \" << name << \"! You are \" << age << \" years old.\" << endl;\n  \n  if (age < 18) {\n    cout << \"You are a minor.\" << endl;\n  } else {\n    cout << \"You are an adult.\" << endl;\n  }\n  \n  return 0;\n}"
   }
 ];
 
@@ -637,18 +652,16 @@ export default function CompilerPage() {
           const inputCalls = Array.from(code.matchAll(scannerNextRegex));
           
           if (inputCalls.length > 0) {
-            // For each potential input call, we'll prompt the user
-            for (const match of inputCalls) {
-              const inputType = match[2] || "Line"; // nextLine, nextInt, next, etc.
-              
-              addConsoleMessage('output', `Waiting for input (${inputType})...`);
-              // In a real implementation, we would get actual user input here
-              // For now, we're simulating with a mock input request
-              
-              // Sample simulation of waiting for input
-              // In real implementation, this would be async
-              addConsoleMessage('info', `Simulating input for ${inputType}...`);
-            }
+            // Process the code and handle inputs asynchronously
+            processJavaWithInput(code, inputCalls).then(result => {
+              setOutput(prev => prev + result);
+            }).catch(error => {
+              const errorMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
+              addConsoleMessage('error', errorMsg);
+            });
+            
+            // Return initial message while async processing happens
+            return output + "Running Java code with input...\nCheck console for interaction.";
           }
         }
         
@@ -702,6 +715,118 @@ export default function CompilerPage() {
     return output;
   };
 
+  // Process Java code with input handling
+  const processJavaWithInput = async (code: string, inputCalls: RegExpMatchArray[]): Promise<string> => {
+    let output = "";
+    let variables: Record<string, any> = {};
+    
+    // Extract print statements to process
+    const printlnRegex = /System\.out\.println\((.*?)\);/g;
+    const printMatches = Array.from(code.matchAll(printlnRegex));
+    
+    // Process the code line by line (simplified simulation)
+    const lines = code.split('\n');
+    
+    // Track which input call we're currently processing
+    let currentInputIndex = 0;
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip comments, empty lines, and class/method declarations
+      if (trimmedLine.startsWith('//') || !trimmedLine || 
+          trimmedLine.startsWith('public class') || 
+          trimmedLine.startsWith('public static void main')) {
+        continue;
+      }
+      
+      // Check for print statements
+      if (trimmedLine.includes("System.out.println")) {
+        const match = trimmedLine.match(/System\.out\.println\((.*?)\);/);
+        if (match && match[1]) {
+          const content = match[1].trim();
+          
+          // Handle string literals
+          if ((content.startsWith('"') && content.endsWith('"'))) {
+            const text = content.slice(1, -1);
+            output += text + '\n';
+            addConsoleMessage('output', text);
+          } 
+          // Handle variables
+          else if (variables[content]) {
+            output += variables[content] + '\n';
+            addConsoleMessage('output', String(variables[content]));
+          }
+          // Handle simple expressions
+          else if (/^\d+(\s*[\+\-\*\/]\s*\d+)*$/.test(content)) {
+            try {
+              const result = Function(`"use strict"; return (${content.replace(/[\n\r]/g, '')})`)();
+              output += result + '\n';
+              addConsoleMessage('output', String(result));
+            } catch (e) {
+              output += "[Error evaluating expression]\n";
+              addConsoleMessage('error', "[Error evaluating expression]");
+            }
+          }
+        }
+      }
+      
+      // Handle variable assignments
+      else if (trimmedLine.includes("=") && !trimmedLine.includes("==")) {
+        // Very simplified variable assignment handling
+        const parts = trimmedLine.split('=').map(p => p.trim());
+        if (parts.length === 2) {
+          const varName = parts[0].split(' ').pop() || '';
+          const value = parts[1].replace(';', '').trim();
+          
+          // Store the value in our variables map
+          if (value.startsWith('"') && value.endsWith('"')) {
+            variables[varName] = value.slice(1, -1);
+          } else if (!isNaN(Number(value))) {
+            variables[varName] = Number(value);
+          } else {
+            variables[varName] = value;
+          }
+        }
+      }
+      
+      // Handle Scanner input
+      else if (trimmedLine.includes(".next")) {
+        const match = inputCalls[currentInputIndex];
+        if (match) {
+          const inputType = match[2] || "Line"; // nextLine, nextInt, next, etc.
+          const varName = trimmedLine.split('=')[0].trim();
+          
+          // Prompt for input
+          addConsoleMessage('output', `Waiting for input (${inputType})...`);
+          
+          // Get actual user input
+          const userInput = await new Promise<string>((resolve) => {
+            setWaitingForInput(true);
+            setInputResolver(() => resolve);
+          });
+          
+          // Process the input based on type
+          let processedInput = userInput;
+          if (inputType.toLowerCase() === 'int') {
+            processedInput = parseInt(userInput, 10).toString();
+            variables[varName] = parseInt(userInput, 10);
+          } else if (inputType.toLowerCase() === 'double' || inputType.toLowerCase() === 'float') {
+            processedInput = parseFloat(userInput).toString();
+            variables[varName] = parseFloat(userInput);
+          } else {
+            variables[varName] = userInput;
+          }
+          
+          // Move to next input
+          currentInputIndex++;
+        }
+      }
+    }
+    
+    return output || "[Program executed with no output]";
+  };
+
   // Parse C/C++ code and generate a realistic output
   const executeCFamily = (code: string, compiler: string): string => {
     let output = `${compiler}\n`;
@@ -718,32 +843,34 @@ export default function CompilerPage() {
       
       // Check if the code contains a main function
       if (code.includes("int main")) {
-        // Handle input simulation for interactive code
+        // Handle input for interactive code
         if (hasScanf || hasCin) {
-          // Extract scanf calls to simulate them
+          // Extract all input calls
+          let inputCalls: RegExpMatchArray[] = [];
+          
           if (hasScanf) {
             const scanfRegex = /scanf\s*\(\s*"([^"]*)"/g;
             const scanfMatches = Array.from(code.matchAll(scanfRegex));
-            
-            for (const match of scanfMatches) {
-              const formatStr = match[1];
-              addConsoleMessage('output', `Input for scanf("${formatStr}"):`);
-              // In a real implementation, we would get actual user input here
-              addConsoleMessage('info', 'Simulating input for scanf...');
-            }
+            inputCalls = [...inputCalls, ...scanfMatches];
           }
           
-          // Extract cin calls to simulate them
           if (hasCin) {
             const cinRegex = /cin\s*>>\s*(\w+)/g;
             const cinMatches = Array.from(code.matchAll(cinRegex));
+            inputCalls = [...inputCalls, ...cinMatches];
+          }
+          
+          if (inputCalls.length > 0) {
+            // Process the code and handle inputs asynchronously
+            processCFamilyWithInput(code, inputCalls, compiler === "G++ 11.2.0").then(result => {
+              setOutput(prev => prev + result);
+            }).catch(error => {
+              const errorMsg = `Error: ${error instanceof Error ? error.message : String(error)}`;
+              addConsoleMessage('error', errorMsg);
+            });
             
-            for (const match of cinMatches) {
-              const varName = match[1];
-              addConsoleMessage('output', `Input for ${varName}:`);
-              // In a real implementation, we would get actual user input here
-              addConsoleMessage('info', `Simulating input for ${varName}...`);
-            }
+            // Return initial message while async processing happens
+            return output + "Running C/C++ code with input...\nCheck console for interaction.";
           }
         }
         
@@ -812,6 +939,165 @@ export default function CompilerPage() {
     }
     
     return output;
+  };
+
+  // Process C/C++ code with input handling
+  const processCFamilyWithInput = async (code: string, inputCalls: RegExpMatchArray[], isCpp: boolean): Promise<string> => {
+    let output = "";
+    let variables: Record<string, any> = {};
+    
+    // Process the code line by line (simplified simulation)
+    const lines = code.split('\n');
+    
+    // Track which input call we're currently processing
+    let currentInputIndex = 0;
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip comments, empty lines, and function declarations
+      if (trimmedLine.startsWith('//') || !trimmedLine || 
+          trimmedLine.startsWith('int main') || 
+          trimmedLine.startsWith('#include')) {
+        continue;
+      }
+      
+      // Check for printf statements (C)
+      if (trimmedLine.includes("printf")) {
+        const match = trimmedLine.match(/printf\((.*?)\);/);
+        if (match && match[1]) {
+          const content = match[1].trim();
+          
+          // Handle string literals
+          if (content.startsWith('"')) {
+            const formatStr = content.match(/"([^"]*)"/);
+            if (formatStr && formatStr[1]) {
+              const text = formatStr[1].replace(/\\n/g, '\n');
+              output += text;
+              addConsoleMessage('output', text.replace(/\n/g, ''));
+            }
+          }
+        }
+      }
+      
+      // Check for cout statements (C++)
+      else if (trimmedLine.includes("cout")) {
+        const coutParts = trimmedLine.split('<<');
+        
+        for (let i = 1; i < coutParts.length; i++) {
+          const part = coutParts[i].trim().replace(/;$/, '');
+          
+          if (part.startsWith('"') && part.endsWith('"')) {
+            const text = part.slice(1, -1);
+            output += text;
+            addConsoleMessage('output', text);
+          } else if (part === "endl") {
+            output += '\n';
+            addConsoleMessage('output', '');
+          } else if (variables[part]) {
+            output += variables[part];
+            addConsoleMessage('output', String(variables[part]));
+          }
+        }
+      }
+      
+      // Handle variable assignments
+      else if (trimmedLine.includes("=") && !trimmedLine.includes("==")) {
+        // Very simplified variable assignment handling
+        const parts = trimmedLine.split('=').map(p => p.trim());
+        if (parts.length === 2) {
+          const varName = parts[0].split(' ').pop() || '';
+          const value = parts[1].replace(';', '').trim();
+          
+          // Store the value in our variables map
+          if (value.startsWith('"') && value.endsWith('"')) {
+            variables[varName] = value.slice(1, -1);
+          } else if (!isNaN(Number(value))) {
+            variables[varName] = Number(value);
+          } else {
+            variables[varName] = value;
+          }
+        }
+      }
+      
+      // Handle scanf input (C)
+      else if (trimmedLine.includes("scanf")) {
+        const match = trimmedLine.match(/scanf\s*\(\s*"([^"]*)"/);
+        if (match && match[1]) {
+          const formatStr = match[1];
+          const varName = trimmedLine.match(/&(\w+)\)/)?.[1];
+          
+          if (varName) {
+            // Determine input type from format string
+            let inputType = "string";
+            if (formatStr.includes("%d")) inputType = "int";
+            else if (formatStr.includes("%f")) inputType = "float";
+            
+            // Prompt for input
+            addConsoleMessage('output', `Input for scanf("${formatStr}"):`);
+            
+            // Get actual user input
+            const userInput = await new Promise<string>((resolve) => {
+              setWaitingForInput(true);
+              setInputResolver(() => resolve);
+            });
+            
+            // Process the input based on type
+            if (inputType === "int") {
+              variables[varName] = parseInt(userInput, 10);
+            } else if (inputType === "float") {
+              variables[varName] = parseFloat(userInput);
+            } else {
+              variables[varName] = userInput;
+            }
+            
+            // Move to next input
+            currentInputIndex++;
+          }
+        }
+      }
+      
+      // Handle cin input (C++)
+      else if (trimmedLine.includes("cin >>")) {
+        const match = trimmedLine.match(/cin\s*>>\s*(\w+)/);
+        if (match && match[1]) {
+          const varName = match[1];
+          
+          // Prompt for input
+          addConsoleMessage('output', `Input for ${varName}:`);
+          
+          // Get actual user input
+          const userInput = await new Promise<string>((resolve) => {
+            setWaitingForInput(true);
+            setInputResolver(() => resolve);
+          });
+          
+          // Try to determine variable type from declarations (simplified)
+          let varType = "string";
+          for (const line of lines) {
+            if (line.includes(varName) && line.includes(";") && !line.includes("cin") && !line.includes("cout")) {
+              if (line.includes("int")) varType = "int";
+              else if (line.includes("float") || line.includes("double")) varType = "float";
+              break;
+            }
+          }
+          
+          // Process the input based on type
+          if (varType === "int") {
+            variables[varName] = parseInt(userInput, 10);
+          } else if (varType === "float") {
+            variables[varName] = parseFloat(userInput);
+          } else {
+            variables[varName] = userInput;
+          }
+          
+          // Move to next input
+          currentInputIndex++;
+        }
+      }
+    }
+    
+    return output || "[Program executed with no output]";
   };
 
   // Render HTML output
@@ -1039,19 +1325,22 @@ export default function CompilerPage() {
               </Select>
             </div>
             <div className="flex gap-2">
-              {/* Examples dropdown - only show for Python */}
-              {selectedLanguage.id === "python" && (
+              {/* Examples dropdown - show for languages with examples */}
+              {inputExamples.some(ex => ex.language === selectedLanguage.id) && (
                 <Select onValueChange={loadExample}>
                   <SelectTrigger className="w-[180px]">
                     <BookOpen className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Input Examples" />
                   </SelectTrigger>
                   <SelectContent>
-                    {inputExamples.map(example => (
-                      <SelectItem key={example.name} value={example.name}>
-                        {example.name}
-                      </SelectItem>
-                    ))}
+                    {inputExamples
+                      .filter(example => example.language === selectedLanguage.id)
+                      .map(example => (
+                        <SelectItem key={example.name} value={example.name}>
+                          {example.name}
+                        </SelectItem>
+                      ))
+                    }
                   </SelectContent>
                 </Select>
               )}
@@ -1178,11 +1467,11 @@ export default function CompilerPage() {
                   onKeyPress={handleKeyPress}
                   placeholder={waitingForInput ? "Enter input..." : "Type a command..."}
                   className="flex-1 bg-black text-white border-none focus:ring-0"
-                  disabled={!waitingForInput && !engines.python.loaded}
+                  disabled={!waitingForInput && !['python', 'javascript', 'java', 'c', 'cpp'].includes(selectedLanguage.id)}
                 />
                 <Button 
                   size="sm" 
-                  disabled={!waitingForInput && !engines.python.loaded}
+                  disabled={!waitingForInput && !['python', 'javascript', 'java', 'c', 'cpp'].includes(selectedLanguage.id)}
                   onClick={handleInputSubmit} 
                   className="ml-2"
                 >
