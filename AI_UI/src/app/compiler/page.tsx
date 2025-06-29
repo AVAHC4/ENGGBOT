@@ -11,6 +11,30 @@ import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { executeCode } from '@/lib/judge0';
 
+// Add CSS for blinking cursor
+const cursorStyles = `
+  @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  
+  .terminal-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 15px;
+    background-color: #00ff00;
+    margin-left: 2px;
+    animation: blink 1s infinite;
+    vertical-align: middle;
+  }
+  
+  .terminal-input-wrapper {
+    display: flex;
+    align-items: center;
+  }
+`;
+
 const languages = [
   { id: "python", name: "Python", extension: ".py", template: "# Python code here\nprint('Hello, World!')" },
   { id: "javascript", name: "JavaScript", extension: ".js", template: "// JavaScript code here\nconsole.log('Hello, World!');" },
@@ -97,7 +121,7 @@ type EngineStates = {
 
 // Console message type
 type ConsoleMessage = {
-  type: 'input' | 'output' | 'error' | 'info';
+  type: 'input' | 'output' | 'error' | 'info' | 'system';
   content: string;
 };
 
@@ -1159,28 +1183,34 @@ export default function CompilerPage() {
           if (engines.python.loaded) {
             result = await executePythonWithPyodide(code);
             setShowConsole(true);
+            addProgramExitMessage();
           } else {
             // Otherwise use the fallback Python interpreter
             result = executePython(code);
             addConsoleMessage('output', result);
             setShowConsole(true);
+            addProgramExitMessage();
           }
           break;
         
         case "javascript":
           result = executeJavaScript(code);
+          addProgramExitMessage();
           break;
         
         case "java":
           result = executeJava(code);
+          addProgramExitMessage();
           break;
         
         case "c":
           result = executeCFamily(code, "GCC 11.2.0");
+          addProgramExitMessage();
           break;
         
         case "cpp":
           result = executeCFamily(code, "G++ 11.2.0");
+          addProgramExitMessage();
           break;
         
         case "csharp":
@@ -1188,12 +1218,14 @@ export default function CompilerPage() {
           result = await executeCode(code, selectedLanguage.id);
           addConsoleMessage('output', result);
           setShowConsole(true);
+          addProgramExitMessage();
           break;
           
         default:
           // For any other language, use Judge0 API
           result = await executeCode(code, selectedLanguage.id);
           addConsoleMessage('output', result);
+          addProgramExitMessage();
       }
       
       setOutput(result);
@@ -1249,13 +1281,19 @@ export default function CompilerPage() {
   };
 
   // Helper function to add a message to the console
-  const addConsoleMessage = (type: 'input' | 'output' | 'error' | 'info', content: string) => {
+  const addConsoleMessage = (type: 'input' | 'output' | 'error' | 'info' | 'system', content: string) => {
     setConsoleMessages(prev => [...prev, { type, content }]);
+  };
+
+  // Add program exit message
+  const addProgramExitMessage = () => {
+    addConsoleMessage('system', '...Program finished with exit code 0');
+    addConsoleMessage('system', 'Press ENTER to exit console.');
   };
 
   // Handle user input submission
   const handleInputSubmit = () => {
-    if (!waitingForInput || !consoleInput.trim()) return;
+    if (!waitingForInput && consoleInput.trim() === '') return;
     
     // Add user input to console messages
     addConsoleMessage('input', consoleInput);
@@ -1264,11 +1302,18 @@ export default function CompilerPage() {
     if (inputResolver) {
       inputResolver(consoleInput);
       setInputResolver(null);
+      
+      // Reset state
+      setWaitingForInput(false);
+      setConsoleInput('');
+    } else if (consoleInput.trim() === '') {
+      // If user presses enter after program is done, clear console
+      setConsoleMessages([{ type: 'info', content: 'Console cleared' }]);
+      setConsoleInput('');
+    } else {
+      // Just echo the command if not waiting for input
+      setConsoleInput('');
     }
-    
-    // Reset state
-    setWaitingForInput(false);
-    setConsoleInput('');
   };
 
   // Handle user pressing Enter in the input field
@@ -1297,6 +1342,19 @@ export default function CompilerPage() {
       setShowConsole(true);
     }
   };
+
+  // Add a head element with the cursor styles
+  useEffect(() => {
+    // Add the cursor styles to the document head
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = cursorStyles;
+    document.head.appendChild(styleElement);
+    
+    // Clean up the style element when the component unmounts
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   return (
     <div className="container max-w-6xl py-8 compiler-page overflow-auto" style={{ height: '100vh' }}>
@@ -1429,27 +1487,29 @@ export default function CompilerPage() {
             </div>
           ) : showConsole ? (
             <div className="flex flex-col h-[500px] border rounded-md overflow-hidden">
-              <div className="bg-muted px-4 py-2 border-b text-xs flex justify-between items-center">
-                <span>Interactive Console</span>
+              <div className="bg-[#1e1e1e] px-4 py-2 border-b text-xs flex justify-between items-center text-white">
+                <span>Terminal</span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setConsoleMessages([{ type: 'info', content: 'Console cleared' }])}
+                  className="text-white hover:text-white hover:bg-[#333]"
                 >
                   Clear
                 </Button>
               </div>
               
               {/* Console output area */}
-              <div className="flex-1 bg-black text-white p-4 font-mono text-sm overflow-y-auto">
+              <div className="flex-1 bg-black text-[#00ff00] p-4 font-mono text-sm overflow-y-auto">
                 {consoleMessages.map((msg, index) => (
                   <div 
                     key={index}
                     className={`mb-1 ${
-                      msg.type === 'input' ? 'text-green-400' : 
+                      msg.type === 'input' ? 'text-[#00ff00]' : 
                       msg.type === 'error' ? 'text-red-400' : 
                       msg.type === 'info' ? 'text-blue-400' : 
-                      'text-white'
+                      msg.type === 'system' ? 'text-[#00ff00]' :
+                      'text-[#00ff00]'
                     }`}
                   >
                     {msg.type === 'input' && '> '}
@@ -1457,23 +1517,33 @@ export default function CompilerPage() {
                   </div>
                 ))}
                 <div ref={consoleEndRef} />
+                
+                {/* Show blinking cursor at the end of console if waiting for input */}
+                {waitingForInput && (
+                  <div className="terminal-input-wrapper">
+                    <span>{"> " + consoleInput}</span>
+                    <div className="terminal-cursor"></div>
+                  </div>
+                )}
               </div>
               
               {/* Console input area */}
-              <div className="flex items-center border-t bg-gray-900 p-2">
-                <Input
-                  value={consoleInput}
-                  onChange={(e) => setConsoleInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder={waitingForInput ? "Enter input..." : "Type a command..."}
-                  className="flex-1 bg-black text-white border-none focus:ring-0"
-                  disabled={!waitingForInput && !['python', 'javascript', 'java', 'c', 'cpp'].includes(selectedLanguage.id)}
-                />
+              <div className="flex items-center border-t bg-black p-2">
+                <div className="relative flex-1">
+                  <Input
+                    value={consoleInput}
+                    onChange={(e) => setConsoleInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={waitingForInput ? "Enter input..." : "Press ENTER to clear console"}
+                    className="flex-1 bg-black text-[#00ff00] border-none focus:ring-0 placeholder-gray-500"
+                    disabled={!waitingForInput && !['python', 'javascript', 'java', 'c', 'cpp'].includes(selectedLanguage.id)}
+                  />
+                </div>
                 <Button 
                   size="sm" 
                   disabled={!waitingForInput && !['python', 'javascript', 'java', 'c', 'cpp'].includes(selectedLanguage.id)}
                   onClick={handleInputSubmit} 
-                  className="ml-2"
+                  className="ml-2 bg-[#333] hover:bg-[#444] text-[#00ff00]"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
