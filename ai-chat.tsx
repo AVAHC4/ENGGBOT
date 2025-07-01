@@ -1,11 +1,12 @@
 "use client"
 
 import React from "react"
-import { Bot, User } from "lucide-react"
+import { Bot, User, FileText } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { MultimodalInput } from "./multimodal-input"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import DocumentGenerator from './client/components/DocumentGenerator'
 
 // Mock implementations for missing modules
 // Utility function to replace missing cn
@@ -34,6 +35,11 @@ export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const [showDocumentGenerator, setShowDocumentGenerator] = useState(false)
+  const [documentContent, setDocumentContent] = useState<string>('')
+  const [input, setInput] = useState<string>('')
+  const [selectedModel, setSelectedModel] = useState<string>('default')
+  const [thinkingMode, setThinkingMode] = useState<boolean>(false)
 
   // Clean up event source on component unmount
   useEffect(() => {
@@ -141,33 +147,35 @@ export default function AiChat() {
     }
   }
 
-  // Function to handle new message submission
-  const handleSubmit = (content: string, model: string) => {
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      role: "user",
-      model,
-      timestamp: new Date()
-    }
-    
-    setMessages(prev => [...prev, userMessage])
-    setIsLoading(true)
-    
-    // Check if the user wants to use streaming response
-    if (content.toLowerCase().includes("stream") || model === "streaming") {
-      handleStreamResponse(content, model)
-      return
-    }
-    
-    // Simulate AI response after a delay (non-streaming)
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `# Response from ${model} model
+  // Function to handle document generation request
+  const handleDocumentGeneration = (content: string) => {
+    setDocumentContent(content)
+    setShowDocumentGenerator(true)
+  }
 
-**Thank you** for your message! Here's a sample response with *Markdown* formatting:
+  // Function to detect document generation intent in user message
+  const detectDocumentIntent = (message: string): boolean => {
+    const documentKeywords = [
+      'create a document', 'generate a document', 'make a document',
+      'create a pdf', 'generate a pdf', 'make a pdf',
+      'create a word document', 'generate a word document',
+      'create a report', 'generate a report',
+      'create a resume', 'generate a resume',
+      'create a letter', 'generate a letter'
+    ]
+
+    const lowercaseMessage = message.toLowerCase()
+    return documentKeywords.some(keyword => lowercaseMessage.includes(keyword))
+  }
+
+  // Mock AI response function
+  const getAIResponse = async (message: string, thinking: boolean, model: string): Promise<string> => {
+    // In a real implementation, this would call your backend API
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(`# Response to: "${message}"
+        
+Thank you for your message! Here's a sample response with Markdown formatting:
 
 ## Key Features
 - **Bold text** for emphasis
@@ -184,24 +192,77 @@ function greet(name) {
 
 > This is a blockquote for important notes
 
-In a real implementation, this would be replaced with an actual API call to the selected model.`,
+In a real implementation, this would be replaced with an actual API call to the selected model.`)
+      }, 1500)
+    })
+  }
+
+  // Function to handle new message submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!input.trim()) return
+    
+    // Check if the user is requesting document generation
+    const isDocumentRequest = detectDocumentIntent(input)
+    
+    // Add user message to chat
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: input,
+      role: "user",
+      model: "user",
+      timestamp: new Date()
+    }
+    
+    setMessages(prev => [...prev, userMessage])
+    setIsLoading(true)
+    
+    // Check if the user wants to use streaming response
+    if (input.toLowerCase().includes("stream") || "streaming" === "streaming") {
+      handleStreamResponse(input, "streaming")
+      return
+    }
+    
+    try {
+      // Get AI response
+      const response = await getAIResponse(input, thinkingMode, selectedModel)
+      
+      // Add AI response to chat
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response,
         role: "assistant",
-        model,
+        model: "user",
         timestamp: new Date()
       }
       
-      setMessages(prev => [...prev, aiMessage])
+      setMessages(prev => [...prev, userMessage, aiMessage])
+      
+      // If this was a document request, offer to generate a document
+      if (isDocumentRequest) {
+        // Wait a moment to ensure the message is displayed
+        setTimeout(() => {
+          handleDocumentGeneration(response)
+        }, 500)
+      }
+    } catch (error) {
+      console.error("Error getting AI response:", error)
+      // Handle error (add error message to chat)
+      setMessages(prev => [
+        ...prev,
+        userMessage,
+        {
+          id: (Date.now() + 2).toString(),
+          content: "Sorry, I encountered an error. Please try again.",
+          role: "assistant",
+          model: "user",
+          timestamp: new Date()
+        }
+      ])
+    } finally {
       setIsLoading(false)
-    }, 1500)
-    
-    // In a real implementation, you would call your AI backend here
-    // const response = await fetch('/api/chat', { 
-    //   method: 'POST',
-    //   body: JSON.stringify({ message: content, model })
-    // })
-    // const data = await response.json()
-    // setMessages(prev => [...prev, { ...data.message }])
-    // setIsLoading(false)
+    }
   }
 
   return (
@@ -305,10 +366,24 @@ In a real implementation, this would be replaced with an actual API call to the 
           className="w-full max-w-3xl px-4 md:px-0 mt-auto"
         >
           <div className="relative backdrop-blur-xl rounded-xl">
-            <MultimodalInput onSubmit={handleSubmit} isLoading={isLoading} />
+            <MultimodalInput 
+              onSubmit={(content) => {
+                setInput(content)
+                handleSubmit(new Event('submit') as any)
+              }} 
+              isLoading={isLoading} 
+            />
           </div>
         </motion.div>
       </div>
+
+      {/* Document Generator Modal */}
+      {showDocumentGenerator && (
+        <DocumentGenerator
+          aiOutput={documentContent}
+          onClose={() => setShowDocumentGenerator(false)}
+        />
+      )}
     </div>
   )
 }
