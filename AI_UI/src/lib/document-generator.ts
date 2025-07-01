@@ -1,4 +1,5 @@
-import jsPDF from 'jspdf';
+// Simplified document generator without external dependencies
+// Using plain text files for both Word and PDF formats due to module loading issues
 
 export interface DocumentOptions {
   title?: string;
@@ -9,8 +10,7 @@ export interface DocumentOptions {
 }
 
 /**
- * Generate and download a Word document
- * Currently using a text file as fallback due to docx module loading issues
+ * Generate and download a Word document (as text file)
  */
 export async function generateWordDocument(options: DocumentOptions): Promise<void> {
   const { title = 'Document', content } = options;
@@ -32,46 +32,23 @@ export async function generateWordDocument(options: DocumentOptions): Promise<vo
 }
 
 /**
- * Generate and download a PDF document
+ * Generate and download a PDF document (as text file for now)
  */
 export function generatePdfDocument(options: DocumentOptions): void {
-  const { title = 'Document', author = 'AI Compiler', content } = options;
+  const { title = 'Document', content } = options;
   
-  // Create PDF using jsPDF
-  const doc = new jsPDF();
+  // Create a text blob for PDF fallback
+  const blob = new Blob([`${title}\n\n${content}`], { type: 'text/plain' });
   
-  // Add title
-  doc.setFontSize(18);
-  doc.text(title, 105, 20, { align: 'center' });
-  
-  // Add content
-  doc.setFontSize(12);
-  
-  // Split content into lines and add them to the PDF
-  const lines = content.split('\n');
-  let y = 40;
-  
-  for (let i = 0; i < lines.length; i++) {
-    // Check if we need a new page
-    if (y > 280) {
-      doc.addPage();
-      y = 20;
-    }
-    
-    // Format code with monospace font if needed
-    if (options.codeLanguage) {
-      doc.setFont('courier');
-    } else {
-      doc.setFont('helvetica');
-    }
-    
-    // Add the line
-    doc.text(lines[i], 20, y);
-    y += 7;
-  }
-  
-  // Save PDF
-  doc.save(`${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+  // Generate download
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_pdf.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 /**
