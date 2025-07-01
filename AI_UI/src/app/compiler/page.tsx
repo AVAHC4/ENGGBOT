@@ -33,6 +33,33 @@ const cursorStyles = `
     display: flex;
     align-items: center;
   }
+  
+  .terminal-output {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+  
+  .console-container {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .code-block {
+    max-width: 100%;
+    overflow-x: auto;
+    background-color: #1e1e1e;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 4px 0;
+  }
+  
+  .chat-safe-output {
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 `;
 
 const languages = [
@@ -1146,6 +1173,7 @@ export default function CompilerPage() {
   const runCode = async () => {
     setIsRunning(true);
     setOutput("Running code...");
+    setConsoleMessages([{ type: 'info', content: 'Console cleared' }]);
     addConsoleMessage('info', "Running code...");
     
     try {
@@ -1282,7 +1310,48 @@ export default function CompilerPage() {
 
   // Helper function to add a message to the console
   const addConsoleMessage = (type: 'input' | 'output' | 'error' | 'info' | 'system', content: string) => {
-    setConsoleMessages(prev => [...prev, { type, content }]);
+    // Check if content might contain code
+    const hasCodeBlock = content.includes('{') || 
+                         content.includes('}') || 
+                         content.includes('(') || 
+                         content.includes(')') || 
+                         content.includes('=') ||
+                         content.includes('function') ||
+                         content.includes('class') ||
+                         content.includes('def ') ||
+                         content.includes('import ') ||
+                         content.includes('return ');
+    
+    // Process content to ensure it doesn't break layout
+    let formattedContent = content;
+    
+    if (hasCodeBlock) {
+      // For code blocks, we'll ensure they're properly formatted
+      formattedContent = content
+        .split('\n')
+        .map(line => {
+          // If line is too long, add soft breaks
+          if (line.length > 80) {
+            // Insert zero-width spaces every 80 characters to allow breaking
+            return line.replace(/(.{80})/g, '$1\u200B');
+          }
+          return line;
+        })
+        .join('\n');
+    } else {
+      // For regular text, we can be more aggressive with line breaking
+      formattedContent = content
+        .split('\n')
+        .map(line => {
+          if (line.length > 100) {
+            return line.replace(/(.{100})/g, '$1\u200B');
+          }
+          return line;
+        })
+        .join('\n');
+    }
+      
+    setConsoleMessages(prev => [...prev, { type, content: formattedContent }]);
   };
 
   // Add program exit message
@@ -1355,6 +1424,71 @@ export default function CompilerPage() {
       document.head.removeChild(styleElement);
     };
   }, []);
+
+  // Format code output for display in chat context
+  const formatCodeOutput = (output: string): JSX.Element => {
+    // Detect if output contains code blocks (lines with indentation or special characters)
+    const lines = output.split('\n');
+    const formattedLines: JSX.Element[] = [];
+    
+    let inCodeBlock = false;
+    let currentCodeBlock: string[] = [];
+    
+    lines.forEach((line, index) => {
+      // Check if line looks like code
+      const isCodeLine = 
+        // Indentation or common code characters
+        line.startsWith('  ') || 
+        line.startsWith('\t') || 
+        line.match(/^[{}\[\]<>]/) ||
+        
+        // Common programming patterns
+        line.match(/^[a-zA-Z0-9_]+\(/) ||
+        line.includes(' = ') ||
+        line.includes('=>') ||
+        line.includes('->') ||
+        line.includes(';') ||
+        
+        // Keywords
+        /\b(function|class|def|if|else|for|while|return|import|from|var|let|const)\b/.test(line) ||
+        
+        // Table-like structures
+        (line.includes('|') && line.includes('-'));
+      
+      if (isCodeLine && !inCodeBlock) {
+        // Start a new code block
+        inCodeBlock = true;
+        currentCodeBlock = [line];
+      } else if (isCodeLine && inCodeBlock) {
+        // Continue the code block
+        currentCodeBlock.push(line);
+      } else if (!isCodeLine && inCodeBlock) {
+        // End the code block and add it
+        formattedLines.push(
+          <div key={`code-${index}`} className="code-block">
+            {currentCodeBlock.join('\n')}
+          </div>
+        );
+        inCodeBlock = false;
+        currentCodeBlock = [];
+        formattedLines.push(<div key={`text-${index}`} className="chat-safe-output">{line}</div>);
+      } else {
+        // Regular text line
+        formattedLines.push(<div key={`text-${index}`} className="chat-safe-output">{line}</div>);
+      }
+    });
+    
+    // Add any remaining code block
+    if (inCodeBlock && currentCodeBlock.length > 0) {
+      formattedLines.push(
+        <div key="code-final" className="code-block">
+          {currentCodeBlock.join('\n')}
+        </div>
+      );
+    }
+    
+    return <>{formattedLines}</>;
+  };
 
   return (
     <div className="container max-w-6xl py-8 compiler-page overflow-auto" style={{ height: '100vh' }}>
@@ -1500,27 +1634,36 @@ export default function CompilerPage() {
               </div>
               
               {/* Console output area */}
-              <div className="flex-1 bg-black text-[#00ff00] p-4 font-mono text-sm overflow-y-auto">
-                {consoleMessages.map((msg, index) => (
-                  <div 
-                    key={index}
-                    className={`mb-1 ${
-                      msg.type === 'input' ? 'text-[#00ff00]' : 
-                      msg.type === 'error' ? 'text-red-400' : 
-                      msg.type === 'info' ? 'text-blue-400' : 
-                      msg.type === 'system' ? 'text-[#00ff00]' :
-                      'text-[#00ff00]'
-                    }`}
-                  >
-                    {msg.type === 'input' && '> '}
-                    {msg.content}
-                  </div>
-                ))}
+              <div className="flex-1 bg-black text-[#00ff00] p-4 font-mono text-sm overflow-y-auto console-container">
+                {consoleMessages.map((msg, index) => {
+                  // Check if the message content might contain code
+                  const hasCode = msg.content.includes('{') || 
+                                 msg.content.includes('}') || 
+                                 msg.content.includes('function') || 
+                                 msg.content.includes('class') ||
+                                 msg.content.includes('def ');
+                  
+                  return (
+                    <div 
+                      key={index}
+                      className={`mb-1 ${hasCode ? 'code-block terminal-output' : 'terminal-output'} ${
+                        msg.type === 'input' ? 'text-[#00ff00]' : 
+                        msg.type === 'error' ? 'text-red-400' : 
+                        msg.type === 'info' ? 'text-blue-400' : 
+                        msg.type === 'system' ? 'text-[#00ff00]' :
+                        'text-[#00ff00]'
+                      }`}
+                    >
+                      {msg.type === 'input' && '> '}
+                      {msg.content}
+                    </div>
+                  );
+                })}
                 <div ref={consoleEndRef} />
                 
                 {/* Show blinking cursor at the end of console if waiting for input */}
                 {waitingForInput && (
-                  <div className="terminal-input-wrapper">
+                  <div className="terminal-input-wrapper terminal-output">
                     <span>{"> " + consoleInput}</span>
                     <div className="terminal-cursor"></div>
                   </div>
@@ -1552,7 +1695,9 @@ export default function CompilerPage() {
           ) : (
             <div className="bg-muted font-mono text-sm rounded-md p-4 min-h-[500px] border overflow-auto">
               {output ? (
-                <pre className="whitespace-pre-wrap">{output}</pre>
+                <div className="whitespace-pre-wrap overflow-wrap-break-word">
+                  {formatCodeOutput(output)}
+                </div>
               ) : (
                 <div className="text-muted-foreground">
                   Run your code to see the output here
