@@ -6,29 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { PlayCircle, Download, Copy, Trash, Check, Loader2, Terminal, Send, BookOpen, FileText, FileDown, BookText } from "lucide-react";
+import { PlayCircle, Download, Copy, Trash, Check, Loader2, Terminal, Send, BookOpen } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { executeCode } from '@/lib/judge0';
-import { generateWordDocument, generatePdfDocument, isCodeContent } from '@/lib/document-generator';
-import { createAIDocument, AIDocumentRequest } from '@/lib/ai-document-generator';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // Add CSS for blinking cursor
 const cursorStyles = `
@@ -199,15 +180,6 @@ export default function CompilerPage() {
     cpp: { loading: false, loaded: false, instance: null },
     csharp: { loading: false, loaded: false, instance: null }
   });
-
-  // AI document generation state
-  const [aiDocOpen, setAiDocOpen] = useState(false);
-  const [aiDocPrompt, setAiDocPrompt] = useState("");
-  const [aiDocTitle, setAiDocTitle] = useState("");
-  const [aiDocType, setAiDocType] = useState<AIDocumentRequest['type']>("essay");
-  const [aiDocLength, setAiDocLength] = useState<AIDocumentRequest['length']>("medium");
-  const [aiDocFormat, setAiDocFormat] = useState<AIDocumentRequest['format']>("word");
-  const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
 
   // Process URL parameters when the component mounts
   useEffect(() => {
@@ -1518,214 +1490,12 @@ export default function CompilerPage() {
     return <>{formattedLines}</>;
   };
 
-  // Additional functions for document export
-  const exportAsDocument = async (format: 'word' | 'pdf') => {
-    // Skip if no output
-    if (!output) {
-      addConsoleMessage('error', 'No content to export. Run the code first.');
-      return;
-    }
-    
-    // Default title based on language
-    const defaultTitle = `Code_${selectedLanguage.name}`;
-    
-    // Prompt for document title
-    const title = window.prompt('Enter document title:', defaultTitle) || defaultTitle;
-    
-    // Determine if content is code or regular text
-    const isCode = isCodeContent(output, selectedLanguage.id);
-    
-    try {
-      const docOptions = {
-        title,
-        content: output,
-        codeLanguage: isCode ? selectedLanguage.id : undefined,
-      };
-      
-      if (format === 'word') {
-        await generateWordDocument(docOptions);
-        addConsoleMessage('info', `Word document "${title}.docx" has been generated.`);
-      } else {
-        generatePdfDocument(docOptions);
-        addConsoleMessage('info', `PDF document "${title}.pdf" has been generated.`);
-      }
-    } catch (error) {
-      console.error('Failed to generate document:', error);
-      addConsoleMessage('error', `Failed to generate ${format.toUpperCase()} document: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
-  // Handle AI document generation
-  const handleAIDocumentGeneration = async () => {
-    if (!aiDocPrompt) {
-      addConsoleMessage('error', 'Please enter a document prompt.');
-      return;
-    }
-    
-    setIsGeneratingDoc(true);
-    addConsoleMessage('info', `Generating ${aiDocFormat.toUpperCase()} document with prompt: "${aiDocPrompt}"`);
-    
-    try {
-      const request: AIDocumentRequest = {
-        prompt: aiDocPrompt,
-        title: aiDocTitle || undefined,
-        type: aiDocType,
-        length: aiDocLength,
-        format: aiDocFormat
-      };
-      
-      await createAIDocument(request);
-      
-      addConsoleMessage('info', `${aiDocFormat.toUpperCase()} document "${aiDocTitle || 'AI Generated Document'}" has been generated.`);
-      setAiDocOpen(false);
-    } catch (error) {
-      console.error('Failed to generate AI document:', error);
-      addConsoleMessage('error', `Failed to generate ${aiDocFormat.toUpperCase()} document: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setIsGeneratingDoc(false);
-    }
-  };
-
   return (
     <div className="container max-w-6xl py-8 compiler-page overflow-auto" style={{ height: '100vh' }}>
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Code Compiler</h1>
         <p className="text-muted-foreground">Write, compile and run code in multiple languages</p>
       </header>
-
-      {/* AI Document Generation Dialog */}
-      <Dialog open={aiDocOpen} onOpenChange={setAiDocOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Generate AI Document</DialogTitle>
-            <DialogDescription>
-              Enter a prompt to generate a document using AI.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="doc-prompt" className="text-right">
-                Prompt
-              </Label>
-              <Textarea
-                id="doc-prompt"
-                value={aiDocPrompt}
-                onChange={(e) => setAiDocPrompt(e.target.value)}
-                placeholder="Enter a detailed document prompt..."
-                className="col-span-3 h-20"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="doc-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="doc-title"
-                value={aiDocTitle}
-                onChange={(e) => setAiDocTitle(e.target.value)}
-                placeholder="Document title (optional)"
-                className="col-span-3"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                Type
-              </Label>
-              <RadioGroup 
-                value={aiDocType} 
-                onValueChange={(value) => setAiDocType(value as AIDocumentRequest['type'])}
-                className="col-span-3 flex space-x-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="essay" id="essay" />
-                  <Label htmlFor="essay">Essay</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="report" id="report" />
-                  <Label htmlFor="report">Report</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="letter" id="letter" />
-                  <Label htmlFor="letter">Letter</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="resume" id="resume" />
-                  <Label htmlFor="resume">Resume</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                Length
-              </Label>
-              <RadioGroup 
-                value={aiDocLength} 
-                onValueChange={(value) => setAiDocLength(value as AIDocumentRequest['length'])}
-                className="col-span-3 flex space-x-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="short" id="short" />
-                  <Label htmlFor="short">Short</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="medium" id="medium" />
-                  <Label htmlFor="medium">Medium</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="long" id="long" />
-                  <Label htmlFor="long">Long</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                Format
-              </Label>
-              <RadioGroup 
-                value={aiDocFormat} 
-                onValueChange={(value) => setAiDocFormat(value as AIDocumentRequest['format'])}
-                className="col-span-3 flex space-x-2"
-              >
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="word" id="word" />
-                  <Label htmlFor="word">Word (.docx)</Label>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <RadioGroupItem value="pdf" id="pdf" />
-                  <Label htmlFor="pdf">PDF</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setAiDocOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAIDocumentGeneration}
-              disabled={isGeneratingDoc || !aiDocPrompt}
-            >
-              {isGeneratingDoc ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Document'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Code Editor Section */}
@@ -1766,41 +1536,6 @@ export default function CompilerPage() {
                   </SelectContent>
                 </Select>
               )}
-              
-              {/* AI Document Generator button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setAiDocOpen(true)}
-                title="Generate AI Document"
-              >
-                <BookText className="h-4 w-4" />
-              </Button>
-              
-              {/* Document export dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    title="Export as document"
-                    disabled={!output}
-                  >
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => exportAsDocument('word')}>
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Export as Word (.docx)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => exportAsDocument('pdf')}>
-                    <FileDown className="h-4 w-4 mr-2" />
-                    Export as PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
               <Button 
                 variant="ghost" 
                 size="icon"
