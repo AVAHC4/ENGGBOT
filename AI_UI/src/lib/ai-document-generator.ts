@@ -24,7 +24,7 @@ export async function generateDocumentContent(request: AIDocumentRequest): Promi
   let content = '';
   
   // Add title
-  content += `# ${title}\n\n`;
+  content += `${title}\n\n`;
   
   // Determine length parameters
   const paragraphCount = length === 'short' ? 3 : length === 'medium' ? 5 : 8;
@@ -32,7 +32,7 @@ export async function generateDocumentContent(request: AIDocumentRequest): Promi
   
   // Generate content based on type
   if (type === 'essay') {
-    content += `## Introduction\n\n`;
+    content += `Introduction\n\n`;
     content += generateParagraph(prompt, sentencesPerParagraph);
     content += '\n\n';
     
@@ -42,22 +42,22 @@ export async function generateDocumentContent(request: AIDocumentRequest): Promi
       content += '\n\n';
     }
     
-    content += `## Conclusion\n\n`;
+    content += `Conclusion\n\n`;
     content += generateParagraph(prompt, sentencesPerParagraph);
   } 
   else if (type === 'report') {
-    content += `## Executive Summary\n\n`;
+    content += `Executive Summary\n\n`;
     content += generateParagraph(prompt, sentencesPerParagraph);
     content += '\n\n';
     
-    content += `## Findings\n\n`;
+    content += `Findings\n\n`;
     for (let i = 0; i < paragraphCount - 3; i++) {
-      content += `### Key Finding ${i + 1}\n\n`;
+      content += `Key Finding ${i + 1}\n\n`;
       content += generateParagraph(prompt, sentencesPerParagraph);
       content += '\n\n';
     }
     
-    content += `## Recommendations\n\n`;
+    content += `Recommendations\n\n`;
     content += generateParagraph(prompt, sentencesPerParagraph);
   }
   else if (type === 'letter') {
@@ -71,24 +71,24 @@ export async function generateDocumentContent(request: AIDocumentRequest): Promi
     content += `Sincerely,\n\nYour Name`;
   }
   else if (type === 'resume') {
-    content += `## Professional Summary\n\n`;
+    content += `Professional Summary\n\n`;
     content += generateParagraph(prompt, sentencesPerParagraph - 2);
     content += '\n\n';
     
-    content += `## Experience\n\n`;
+    content += `Experience\n\n`;
     for (let i = 0; i < 3; i++) {
-      content += `### Position ${i + 1}\n\n`;
-      content += `**Company Name** | Location | Date - Date\n\n`;
+      content += `Position ${i + 1}\n`;
+      content += `Company Name | Location | Date - Date\n\n`;
       content += generateBulletPoints(prompt, 4);
       content += '\n\n';
     }
     
-    content += `## Education\n\n`;
-    content += `**Degree Name** | Institution | Year\n\n`;
+    content += `Education\n\n`;
+    content += `Degree Name | Institution | Year\n\n`;
     content += generateBulletPoints(prompt, 2);
     content += '\n\n';
     
-    content += `## Skills\n\n`;
+    content += `Skills\n\n`;
     content += generateBulletPoints(prompt, 6);
   }
   else {
