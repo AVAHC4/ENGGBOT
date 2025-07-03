@@ -35,16 +35,40 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <style>{`
+          :root {
+            --sidebar-width-collapsed: 0px;
+            --main-content-left-margin: 0px;
+          }
+          
+          @media (min-width: 1024px) {
+            .sidebar-closed main {
+              margin-left: var(--main-content-left-margin) !important;
+              width: 100% !important;
+              max-width: calc(100% - var(--main-content-left-margin)) !important;
+            }
+            
+            .sidebar-open main {
+              margin-left: 280px !important;
+              width: calc(100% - 280px) !important;
+              padding-left: 1rem;
+            }
+            
+            main {
+              transition: margin-left 0.3s ease, width 0.3s ease, padding-left 0.3s ease;
+            }
+          }
+        `}</style>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
           <ChatProvider>
-            <SidebarWrapper defaultOpen={true}>
-              <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
+            <SidebarWrapper defaultOpen={false}>
+              <div className="grid min-h-screen w-full lg:grid-cols-[auto_1fr] sidebar-container border-none sidebar-closed">
                 <AppSidebar className="hidden lg:block border-none" />
-                <main className="transition-all duration-300 w-full border-none">{children}</main>
+                <main className="transition-all duration-300 w-full border-none pl-0">{children}</main>
               </div>
               <ProfileVisibilityFixer />
             </SidebarWrapper>
