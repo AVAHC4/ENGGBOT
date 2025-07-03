@@ -53,10 +53,11 @@ export function ChatMessageList({
 
 interface ChatMessageListCompactProps extends React.HTMLAttributes<HTMLDivElement> {
   smooth?: boolean;
+  children?: React.ReactNode;
 }
 
 const ChatMessageListCompact = React.forwardRef<HTMLDivElement, ChatMessageListCompactProps>(
-  ({ className, children, smooth = false, ...props }, _ref) => {
+  ({ className, children, smooth = false, ...props }, ref) => {
     const {
       scrollRef,
       isAtBottom,
