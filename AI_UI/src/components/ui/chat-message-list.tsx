@@ -66,7 +66,7 @@ const ChatMessageListCompact = React.forwardRef<HTMLDivElement, ChatMessageListC
       disableAutoScroll,
     } = useAutoScroll({
       smooth,
-      content: children,
+      content: children as unknown,
     });
 
     return (
