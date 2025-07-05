@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./sidebar-fixes.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { SidebarWrapper } from "@/components/blocks/sidebar-wrapper";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
@@ -40,13 +41,13 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ChatProvider>
-            <div className="flex flex-col sidebar-container">
+            <SidebarWrapper defaultOpen={true}>
               <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
                 <AppSidebar className="hidden lg:block border-none" />
                 <main className="transition-all duration-300 w-full border-none">{children}</main>
               </div>
               <ProfileVisibilityFixer />
-            </div>
+            </SidebarWrapper>
           </ChatProvider>
         </ThemeProvider>
         <Toaster />
