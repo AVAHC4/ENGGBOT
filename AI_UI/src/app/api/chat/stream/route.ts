@@ -115,8 +115,8 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
     
-    // Always use deepseek-v3 model regardless of what was passed
-    const modelName = AVAILABLE_MODELS["deepseek-v3"];
+    // Use deepseek-lite model which is free instead of deepseek-v3
+    const modelName = AVAILABLE_MODELS["deepseek-lite"];
     
     // Format messages for the API
     const messages = [];
