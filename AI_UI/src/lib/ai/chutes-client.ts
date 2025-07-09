@@ -91,7 +91,8 @@ export class ChutesClient {
         "messages": messagePayload,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "stream": stream
+        "stream": stream,
+        "route": "fallback"
       };
       
       // Make the API call with increased timeout
@@ -166,7 +167,8 @@ export class ChutesClient {
       "messages": messagePayload,
       "temperature": temperature,
       "max_tokens": max_tokens,
-      "stream": true
+      "stream": true,
+      "route": "fallback"
     };
     
     // Make the API call with streaming - with increased timeout
