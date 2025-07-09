@@ -41,6 +41,7 @@ interface ChatContextType {
   displayedMessageIds: Set<string>;
   useStreaming: boolean; // Add streaming option
   toggleStreaming: () => void; // Add toggle function
+  regenerateLastResponse: () => Promise<void>; // Add regenerate function
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -432,6 +433,39 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
   }, [conversationId]);
 
+  // Add regenerate function
+  const regenerateLastResponse = useCallback(async () => {
+    // Find the last user message and AI response pair
+    const lastUserMessageIndex = [...messages].reverse().findIndex(m => m.isUser);
+    
+    if (lastUserMessageIndex === -1) {
+      console.log("No user messages found to regenerate response for");
+      return;
+    }
+    
+    // Get the actual index in the messages array (from the end)
+    const actualIndex = messages.length - 1 - lastUserMessageIndex;
+    const lastUserMessage = messages[actualIndex];
+    
+    // If there's an AI response after this user message, remove it
+    if (actualIndex < messages.length - 1) {
+      const updatedMessages = messages.slice(0, actualIndex + 1);
+      setMessages(updatedMessages);
+      
+      // Save the conversation without the AI response
+      if (typeof window !== 'undefined') {
+        saveConversation(conversationId, updatedMessages);
+      }
+    }
+    
+    // Re-send the last user message to generate a new response
+    await sendMessage(
+      lastUserMessage.content, 
+      lastUserMessage.attachments ? [] : undefined, // We can't re-upload files, but we keep the references
+      lastUserMessage.replyToId
+    );
+  }, [messages, sendMessage, conversationId]);
+
   // Helper function to handle timestamp conversion
   const getTimestamp = (timestamp: any): string => {
     if (typeof timestamp === 'string') {
@@ -537,6 +571,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     displayedMessageIds,
     useStreaming,
     toggleStreaming,
+    regenerateLastResponse, // Add regenerate function to context value
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

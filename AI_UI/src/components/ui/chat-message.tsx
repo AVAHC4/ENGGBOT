@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { Avatar } from "@/components/ui/avatar";
-import { User, Bot, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Reply, Wrench, Copy, Check, ClipboardCopy } from "lucide-react";
+import { User, Bot, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Reply, Wrench, Copy, Check, ClipboardCopy, RefreshCw } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import { CodeBlock } from "@/components/ui/code-block";
@@ -32,9 +32,10 @@ export function ChatMessage({
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, setReplyToMessage, useStreaming } = useChat();
+  const { messages, setReplyToMessage, useStreaming, regenerateLastResponse } = useChat();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   
   // Get the message being replied to if replyToId exists
   const replyToMessage = messageData.replyToId 
@@ -71,6 +72,13 @@ export function ChatMessage({
     // Include the language parameter in the URL
     const compilerUrl = `/compiler?code=${encodeURIComponent(code)}&language=${encodeURIComponent(language)}`;
     window.open(compilerUrl, '_blank');
+  };
+  
+  // Function to handle regeneration of AI response
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    await regenerateLastResponse();
+    setIsRegenerating(false);
   };
   
   // Function to determine the appropriate icon based on file type
@@ -332,7 +340,7 @@ export function ChatMessage({
 
   return (
     <div className={cn(
-      "message-container",
+      "message-container group",
       isUser ? "user-message" : "assistant-message"
     )}>
       <div className="message-wrapper">
@@ -353,17 +361,30 @@ export function ChatMessage({
           </div>
           
           {/* Action buttons (visible on hover) */}
-          <div className="message-actions">
+          <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
             {!isUser && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                className="action-button"
-              >
-                {copied ? <Check className="action-icon" /> : <Copy className="action-icon" />}
-                <span>{copied ? "Copied!" : "Copy"}</span>
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="action-button"
+                >
+                  {copied ? <Check className="action-icon h-4 w-4 mr-1" /> : <Copy className="action-icon h-4 w-4 mr-1" />}
+                  <span>{copied ? "Copied!" : "Copy"}</span>
+                </Button>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRegenerate}
+                  className="action-button"
+                  disabled={isRegenerating}
+                >
+                  <RefreshCw className={`action-icon h-4 w-4 mr-1 ${isRegenerating ? 'animate-spin' : ''}`} />
+                  <span>{isRegenerating ? "Regenerating..." : "Regenerate"}</span>
+                </Button>
+              </>
             )}
           </div>
         </div>
