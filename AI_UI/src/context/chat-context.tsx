@@ -435,7 +435,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Add regenerate function
   const regenerateLastResponse = useCallback(async () => {
-    // Find the last user message and AI response pair
+    // Find the last user message
     const lastUserMessageIndex = [...messages].reverse().findIndex(m => m.isUser);
     
     if (lastUserMessageIndex === -1) {
@@ -444,27 +444,282 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
     
     // Get the actual index in the messages array (from the end)
-    const actualIndex = messages.length - 1 - lastUserMessageIndex;
-    const lastUserMessage = messages[actualIndex];
+    const actualUserIndex = messages.length - 1 - lastUserMessageIndex;
+    const lastUserMessage = messages[actualUserIndex];
     
-    // If there's an AI response after this user message, remove it
-    if (actualIndex < messages.length - 1) {
-      const updatedMessages = messages.slice(0, actualIndex + 1);
+    // Find the AI response that follows this user message (if any)
+    const aiResponseIndex = actualUserIndex + 1;
+    const hasAiResponse = aiResponseIndex < messages.length && !messages[aiResponseIndex].isUser;
+    
+    // Create a new request ID for this regeneration
+    const requestId = crypto.randomUUID();
+    currentRequestIdRef.current = requestId;
+    
+    // Reset the canceled state
+    isCanceledRef.current = false;
+    
+    // Set loading states
+    setIsLoading(true);
+    setIsGenerating(true);
+    
+    // If streaming is enabled, update the existing AI message or create a new one
+    if (useStreaming) {
+      let aiMessageId;
+      let updatedMessages;
+      
+      if (hasAiResponse) {
+        // Use the existing AI message ID
+        aiMessageId = messages[aiResponseIndex].id;
+        
+        // Update the existing AI message to show it's streaming again
+        updatedMessages = [...messages];
+        updatedMessages[aiResponseIndex] = {
+          ...updatedMessages[aiResponseIndex],
+          content: "",
+          isStreaming: true
+        };
+      } else {
+        // Create a new AI message
+        aiMessageId = crypto.randomUUID();
+        const aiMessage = {
+          id: aiMessageId,
+          content: "",
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isStreaming: true
+        };
+        
+        // Add the new AI message after the user message
+        updatedMessages = [...messages.slice(0, actualUserIndex + 1), aiMessage];
+      }
+      
+      // Update the messages state
       setMessages(updatedMessages);
       
-      // Save the conversation without the AI response
+      // Save the conversation state
       if (typeof window !== 'undefined') {
         saveConversation(conversationId, updatedMessages);
       }
+      
+      try {
+        // Make a fetch request with streaming response
+        const response = await fetch('/api/chat/stream', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: lastUserMessage.content,
+            hasAttachments: !!lastUserMessage.attachments,
+            model: currentModel,
+            thinkingMode: thinkingMode,
+            conversationId: conversationId,
+            replyToId: lastUserMessage.replyToId,
+            conversationHistory: messages.slice(0, actualUserIndex + 1).slice(-10)
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error("Stream reader could not be created");
+        }
+        
+        const decoder = new TextDecoder();
+        let buffer = "";
+        
+        // Process the stream chunks
+        while (true) {
+          // Check if the request was canceled
+          if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
+            reader.cancel();
+            break;
+          }
+          
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            // Update message to mark as no longer streaming
+            setMessages(prev => {
+              const updated = prev.map(m => 
+                m.id === aiMessageId ? { ...m, isStreaming: false } : m
+              );
+              
+              // Save conversation
+              if (typeof window !== 'undefined') {
+                saveConversation(conversationId, updated);
+              }
+              
+              return updated;
+            });
+            
+            // Reset states
+            setIsLoading(false);
+            setIsGenerating(false);
+            break;
+          }
+          
+          // Decode and process the chunk
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Split buffer by lines and process each line
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+          
+          for (const line of lines) {
+            if (line.trim() === '') continue;
+            if (!line.startsWith('data:')) continue;
+            
+            try {
+              const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+              
+              if (eventData === "[DONE]") {
+                // End of stream, no need to parse as JSON
+                continue;
+              }
+              
+              try {
+                const data = JSON.parse(eventData);
+                
+                // Update the streaming message
+                if (data.text) {
+                  setMessages(prev => {
+                    // Find the message with the matching ID
+                    const messageIndex = prev.findIndex(m => m.id === aiMessageId);
+                    if (messageIndex === -1) return prev;
+                    
+                    // Create a new array with the updated message
+                    const updated = [...prev];
+                    updated[messageIndex] = {
+                      ...updated[messageIndex],
+                      content: updated[messageIndex].content + data.text
+                    };
+                    
+                    // Save intermediate state periodically
+                    if (typeof window !== 'undefined') {
+                      saveConversation(conversationId, updated);
+                    }
+                    
+                    return updated;
+                  });
+                }
+              } catch (parseError) {
+                console.error("Error parsing JSON data:", parseError);
+              }
+            } catch (error) {
+              console.error("Error processing stream line:", error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error in streaming:", error);
+        
+        // Update message to show error
+        setMessages(prev => {
+          const messageIndex = prev.findIndex(m => m.id === aiMessageId);
+          if (messageIndex === -1) return prev;
+          
+          const updated = [...prev];
+          updated[messageIndex] = {
+            ...updated[messageIndex],
+            isStreaming: false,
+            content: updated[messageIndex].content || "Sorry, there was an error generating a response."
+          };
+          
+          return updated;
+        });
+        
+        // Reset states
+        setIsLoading(false);
+        setIsGenerating(false);
+      }
+    } else {
+      // Non-streaming implementation
+      try {
+        // If there's an AI response, keep only up to the user message
+        if (hasAiResponse) {
+          const updatedMessages = messages.slice(0, actualUserIndex + 1);
+          setMessages(updatedMessages);
+          
+          // Save the conversation without the AI response
+          if (typeof window !== 'undefined') {
+            saveConversation(conversationId, updatedMessages);
+          }
+        }
+        
+        // Make a non-streaming request
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            message: lastUserMessage.content,
+            hasAttachments: !!lastUserMessage.attachments,
+            model: currentModel,
+            thinkingMode: thinkingMode,
+            conversationId: conversationId,
+            replyToId: lastUserMessage.replyToId,
+            conversationHistory: messages.slice(0, actualUserIndex + 1).slice(-10)
+          }),
+        });
+        
+        // Check if this request was canceled before continuing
+        if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
+          console.log('Request was canceled or superseded');
+          return;
+        }
+        
+        if (!response.ok) {
+          throw new Error('Failed to get response');
+        }
+        
+        const data = await response.json();
+        
+        // Check again if the request was canceled during json parsing
+        if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
+          console.log('Request was canceled or superseded after response');
+          return;
+        }
+        
+        // Add AI response to messages
+        const messagesWithResponse = [...messages.slice(0, actualUserIndex + 1), data.message];
+        setMessages(messagesWithResponse);
+        
+        // Save conversation after adding AI response
+        if (typeof window !== 'undefined') {
+          saveConversation(conversationId, messagesWithResponse);
+        }
+      } catch (error) {
+        console.error("Error regenerating response:", error);
+        
+        // Add error message if not canceled
+        if (!isCanceledRef.current) {
+          const errorMessage = {
+            id: crypto.randomUUID(),
+            content: 'Sorry, there was an error regenerating the response.',
+            isUser: false,
+            timestamp: new Date().toISOString(),
+          };
+          
+          const messagesWithError = [...messages.slice(0, actualUserIndex + 1), errorMessage];
+          setMessages(messagesWithError);
+          
+          // Save conversation with the error message
+          if (typeof window !== 'undefined') {
+            saveConversation(conversationId, messagesWithError);
+          }
+        }
+      } finally {
+        // Reset states
+        setIsLoading(false);
+        setIsGenerating(false);
+      }
     }
-    
-    // Re-send the last user message to generate a new response
-    await sendMessage(
-      lastUserMessage.content, 
-      lastUserMessage.attachments ? [] : undefined, // We can't re-upload files, but we keep the references
-      lastUserMessage.replyToId
-    );
-  }, [messages, sendMessage, conversationId]);
+  }, [messages, sendMessage, conversationId, currentModel, thinkingMode, useStreaming]);
 
   // Helper function to handle timestamp conversion
   const getTimestamp = (timestamp: any): string => {
