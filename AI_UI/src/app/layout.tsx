@@ -9,7 +9,6 @@ import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
-import { ResponsiveMainContent } from "@/components/layout/responsive-main-content";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,7 +44,7 @@ export default function RootLayout({
             <SidebarWrapper defaultOpen={true}>
               <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
                 <AppSidebar className="hidden lg:block border-none" />
-                <ResponsiveMainContent>{children}</ResponsiveMainContent>
+                <main className="transition-all duration-300 w-full border-none">{children}</main>
               </div>
               <ProfileVisibilityFixer />
             </SidebarWrapper>
