@@ -3,7 +3,7 @@ import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 
-// Simple stream processor to transform Chutes AI stream into an event stream
+// Simple stream processor to transform OpenRouter stream into an event stream
 function processChutesStream(
   stream: ReadableStream,
   encoder = new TextEncoder(),
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     const { 
       message, 
       hasAttachments = false,
-      model = "deepseek-v3", 
+      model = "deepseek-r1", 
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
@@ -115,8 +115,8 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
     
-    // Use deepseek-lite model which is free instead of deepseek-v3
-    const modelName = AVAILABLE_MODELS["deepseek-lite"];
+    // Use deepseek-r1 model from OpenRouter
+    const modelName = AVAILABLE_MODELS["deepseek-r1"];
     
     // Format messages for the API
     const messages = [];

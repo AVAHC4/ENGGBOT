@@ -28,7 +28,7 @@ export function getChutesClient(): ChutesClient {
     if (SUPPRESS_INIT_LOG) {
       // Temporarily override console.log to suppress the initialization message
       console.log = (...args) => {
-        if (typeof args[0] === 'string' && args[0].includes('Initialized Chutes AI client')) {
+        if (typeof args[0] === 'string' && args[0].includes('Initialized OpenRouter client')) {
           // Suppress the initialization log
           return;
         }
@@ -38,7 +38,7 @@ export function getChutesClient(): ChutesClient {
     
     // Create the instance
     _chutesClientInstance = new ChutesClient({
-      defaultModel: "deepseek-ai/DeepSeek-Lite"
+      defaultModel: "deepseek/deepseek-r1-0528"
     });
     
     if (SUPPRESS_INIT_LOG) {
@@ -62,7 +62,7 @@ export async function initializeAIClient(): Promise<Promise<void>> {
     return initializationPromise || Promise.resolve();
   }
 
-  console.log("🔄 Pre-initializing Chutes AI client...");
+  console.log("🔄 Pre-initializing OpenRouter AI client...");
   
   initializationPromise = new Promise<void>(async (resolve) => {
     try {
@@ -74,10 +74,10 @@ export async function initializeAIClient(): Promise<Promise<void>> {
       });
       
       isInitialized = true;
-      console.log("✅ Chutes AI client successfully pre-initialized");
+      console.log("✅ OpenRouter AI client successfully pre-initialized");
       resolve();
     } catch (error) {
-      console.error("❌ Failed to pre-initialize Chutes AI client:", error);
+      console.error("❌ Failed to pre-initialize OpenRouter AI client:", error);
       // Even if initialization fails, we consider it "done" to avoid repeated attempts
       isInitialized = true;
       resolve();

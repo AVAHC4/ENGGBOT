@@ -1,15 +1,15 @@
 /**
- * DeepSeek AI Client via Chutes AI
+ * DeepSeek AI Client via OpenRouter
  * 
- * TypeScript adaptation of the Python client for web use
+ * TypeScript adaptation for web use
  */
 
 // Model definitions
 export const AVAILABLE_MODELS = {
-  "deepseek-r1": "deepseek-ai/DeepSeek-R1-0528",
-  "deepseek-v3": "deepseek-ai/DeepSeek-V3-0324",
-  "deepseek-lite": "deepseek-ai/DeepSeek-Lite",
-  "mistral": "mistralai/Mistral-7B-Instruct-v0.2"
+  "deepseek-r1": "deepseek/deepseek-r1-0528",
+  "deepseek-v3": "deepseek/deepseek-v3-0324",
+  "deepseek-lite": "deepseek/deepseek-lite",
+  "mistral": "mistralai/mistral-7b-instruct-v0.2"
 };
 
 // Default API key
@@ -32,7 +32,7 @@ export interface GenerateOptions {
 }
 
 /**
- * Client for interacting with DeepSeek models via Chutes AI
+ * Client for interacting with DeepSeek models via OpenRouter
  */
 export class ChutesClient {
   private apiKey: string;
@@ -42,15 +42,17 @@ export class ChutesClient {
 
   constructor(options?: ChutesClientOptions) {
     this.apiKey = options?.apiKey || DEFAULT_API_KEY;
-    this.apiUrl = "https://llm.chutes.ai/v1/chat/completions";
+    this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
     this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
     
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "HTTP-Referer": "http://localhost:3001",
+      "X-Title": "AI UI Demo"
     };
     
-    console.log(`Initialized Chutes AI client with model: ${this.defaultModel}`);
+    console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
   }
   
   /**
@@ -107,7 +109,9 @@ export class ChutesClient {
         clearTimeout(timeoutId); // Clear timeout on successful response
         
         if (!response.ok) {
-          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+          const errorText = await response.text().catch(() => "No error details available");
+          console.error(`OpenRouter API error (${response.status}): ${errorText}`);
+          throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
         }
         
         const result = await response.json();
@@ -180,7 +184,9 @@ export class ChutesClient {
       clearTimeout(timeoutId); // Clear timeout on successful response
       
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text().catch(() => "No error details available");
+        console.error(`OpenRouter API error (${response.status}): ${errorText}`);
+        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
       }
       
       // Return the raw stream
