@@ -13,7 +13,7 @@ export const AVAILABLE_MODELS = {
 };
 
 // Default API key
-const DEFAULT_API_KEY = "***REMOVED***";
+const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || "";
 
 // Client interface
 export interface ChutesClientOptions {
