@@ -6,13 +6,6 @@ dist
 .env
 .env.local
 .env.*.local
-.env.*
-!.env.example
-.env-*
-*.env
-*.env.*
-!*.env.example
-*.env copy
 
 # Build outputs
 .DS_Store
@@ -39,10 +32,3 @@ yarn-error.log*
 
 # Local Netlify folder
 .netlify
-
-# Security - explicitly ignore files that might contain keys
-**/secrets/
-**/credentials/
-*api_keys*
-*auth_keys*
-*client_secret*
