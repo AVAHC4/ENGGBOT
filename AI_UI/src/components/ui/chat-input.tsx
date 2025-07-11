@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, ZapIcon } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, ZapIcon, EyeOff } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +19,8 @@ interface ChatInputProps {
   onToggleWebSearch?: () => void;
   useStreaming?: boolean;
   toggleStreaming?: () => void;
+  isPrivateMode?: boolean;
+  togglePrivateMode?: () => void;
 }
 
 export function ChatInput({
@@ -33,8 +35,10 @@ export function ChatInput({
   onToggleWebSearch,
   useStreaming,
   toggleStreaming,
+  isPrivateMode = false,
+  togglePrivateMode,
 }: ChatInputProps) {
-  const { replyToMessage, setReplyToMessage, useStreaming: contextUseStreaming } = useChat();
+  const { replyToMessage, setReplyToMessage, useStreaming: contextUseStreaming, isPrivateMode: contextIsPrivateMode, togglePrivateMode: contextTogglePrivateMode } = useChat();
   const [message, setMessage] = useState("");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -284,6 +288,29 @@ export function ChatInput({
               </TooltipContent>
             </Tooltip>
           )}
+
+          {/* Private mode toggle button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                  contextIsPrivateMode && "text-red-500 dark:text-red-400"
+                )}
+                onClick={contextTogglePrivateMode}
+                disabled={awaitingResponse}
+              >
+                <EyeOff className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p className="text-xs">
+                {contextIsPrivateMode ? "Private mode enabled" : "Enable private mode"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
 
           <textarea
             ref={textareaRef}

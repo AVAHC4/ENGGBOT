@@ -42,6 +42,8 @@ interface ChatContextType {
   useStreaming: boolean; // Add streaming option
   toggleStreaming: () => void; // Add toggle function
   regenerateLastResponse: () => Promise<void>; // Add regenerate function
+  isPrivateMode: boolean; // Add private mode flag
+  togglePrivateMode: () => void; // Add toggle function for private mode
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -55,6 +57,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const currentModel = "deepseek-v3";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isPrivateMode, setIsPrivateMode] = useState(false);
   
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -88,7 +91,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Load conversation on startup or when switching conversations
   useEffect(() => {
-    if (isMounted) {
+    if (isMounted && !isPrivateMode) {
       const savedMessages = loadConversation(conversationId);
       if (savedMessages?.length) {
         setMessages(savedMessages);
@@ -102,14 +105,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Save active conversation ID with user-specific key
       localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
     }
-  }, [conversationId, isMounted]);
+  }, [conversationId, isMounted, isPrivateMode]);
   
   // Save messages when they change
   useEffect(() => {
-    if (isMounted && messages.length > 0) {
+    if (isMounted && messages.length > 0 && !isPrivateMode) {
       saveConversation(conversationId, messages);
     }
-  }, [messages, conversationId, isMounted]);
+  }, [messages, conversationId, isMounted, isPrivateMode]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
@@ -169,7 +172,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setReplyToMessage(null);
       
       // Save conversation after adding user message
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
       
@@ -244,7 +247,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               setIsGenerating(false);
               
               // Save conversation
-              if (typeof window !== 'undefined') {
+              if (typeof window !== 'undefined' && !isPrivateMode) {
                 saveConversation(
                   conversationId, 
                   messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
@@ -285,7 +288,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                       );
                       
                       // Save intermediate state periodically
-                      if (typeof window !== 'undefined') {
+                      if (typeof window !== 'undefined' && !isPrivateMode) {
                         saveConversation(conversationId, updatedMessages);
                       }
                       
@@ -363,7 +366,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setMessages(messagesWithResponse);
       
       // Save conversation after adding AI response
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, messagesWithResponse);
       }
       
@@ -391,7 +394,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setMessages(messagesWithError);
       
       // Save conversation with the error message
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, messagesWithError);
       }
       
@@ -402,15 +405,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // We've handled state resetting in both success and error cases
       // No additional state handling needed here
     }
-  }, [conversationId, currentModel, messages, thinkingMode, useStreaming]);
+  }, [conversationId, currentModel, messages, thinkingMode, useStreaming, isPrivateMode]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
     // Clear the conversation from storage
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isPrivateMode) {
       saveConversation(conversationId, []);
     }
-  }, [conversationId]);
+  }, [conversationId, isPrivateMode]);
   
   const addMessage = useCallback((message: Partial<ExtendedChatMessage>) => {
     const newMessage: ExtendedChatMessage = {
@@ -426,12 +429,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages(prev => {
       const updatedMessages = [...prev, newMessage];
       // Save conversation after adding message
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
       return updatedMessages;
     });
-  }, [conversationId]);
+  }, [conversationId, isPrivateMode]);
 
   // Add regenerate function
   const regenerateLastResponse = useCallback(async () => {
@@ -497,7 +500,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setMessages(updatedMessages);
       
       // Save the conversation state
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
       
@@ -549,7 +552,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               );
               
               // Save conversation
-              if (typeof window !== 'undefined') {
+              if (typeof window !== 'undefined' && !isPrivateMode) {
                 saveConversation(conversationId, updated);
               }
               
@@ -599,7 +602,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     };
                     
                     // Save intermediate state periodically
-                    if (typeof window !== 'undefined') {
+                    if (typeof window !== 'undefined' && !isPrivateMode) {
                       saveConversation(conversationId, updated);
                     }
                     
@@ -645,7 +648,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           setMessages(updatedMessages);
           
           // Save the conversation without the AI response
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && !isPrivateMode) {
             saveConversation(conversationId, updatedMessages);
           }
         }
@@ -690,7 +693,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setMessages(messagesWithResponse);
         
         // Save conversation after adding AI response
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !isPrivateMode) {
           saveConversation(conversationId, messagesWithResponse);
         }
       } catch (error) {
@@ -709,7 +712,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           setMessages(messagesWithError);
           
           // Save conversation with the error message
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && !isPrivateMode) {
             saveConversation(conversationId, messagesWithError);
           }
         }
@@ -719,7 +722,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setIsGenerating(false);
       }
     }
-  }, [messages, sendMessage, conversationId, currentModel, thinkingMode, useStreaming]);
+  }, [messages, sendMessage, conversationId, currentModel, thinkingMode, useStreaming, isPrivateMode]);
 
   // Helper function to handle timestamp conversion
   const getTimestamp = (timestamp: any): string => {
@@ -796,6 +799,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setUseStreaming(prev => !prev);
   }, []);
 
+  // Toggle private mode
+  const togglePrivateMode = useCallback(() => {
+    setIsPrivateMode(prev => {
+      const newValue = !prev;
+      
+      if (newValue) {
+        // When enabling private mode, clear the current conversation
+        setMessages([]);
+      } else {
+        // When disabling private mode, load the saved conversation
+        const savedMessages = loadConversation(conversationId);
+        if (savedMessages?.length) {
+          setMessages(savedMessages);
+        }
+      }
+      
+      return newValue;
+    });
+  }, [conversationId]);
+
   // Add useEffect to clean up resources on unmount
   useEffect(() => {
     return () => {
@@ -826,7 +849,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     displayedMessageIds,
     useStreaming,
     toggleStreaming,
-    regenerateLastResponse, // Add regenerate function to context value
+    regenerateLastResponse,
+    isPrivateMode,
+    togglePrivateMode,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
