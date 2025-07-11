@@ -3,7 +3,7 @@ import { ChatMessageList } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
 import { useChat } from '@/context/chat-context';
-import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe } from 'lucide-react';
+import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,8 @@ import { BOT_CONFIG } from '@/lib/ai/response-middleware';
 import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
 import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 // Enhanced typing animation component
 function TypingIndicator() {
@@ -95,9 +97,7 @@ export function ChatInterface() {
     conversationId,
     addMessage,
     isPrivateMode,
-    togglePrivateMode,
-    useStreaming,
-    toggleStreaming
+    togglePrivateMode
   } = useChat();
   
   // Add local loading state to ensure animation shows immediately
@@ -291,6 +291,28 @@ export function ChatInterface() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          
+          {/* Private Mode Toggle Button in Header */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "ml-2 h-8 w-8 rounded-full",
+                  isPrivateMode && "text-red-500 dark:text-red-400"
+                )}
+                onClick={togglePrivateMode}
+              >
+                <EyeOff className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p className="text-xs">
+                {isPrivateMode ? "Private mode enabled" : "Enable private mode"}
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
       
@@ -336,10 +358,6 @@ export function ChatInterface() {
             placeholder={isAIInitializing ? "AI is initializing..." : `Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
             isAwaitingResponse={isLoading || isGenerating}
             onStopGeneration={stopGeneration}
-            useStreaming={useStreaming}
-            toggleStreaming={toggleStreaming}
-            isPrivateMode={isPrivateMode}
-            togglePrivateMode={togglePrivateMode}
           />
         </div>
       </div>

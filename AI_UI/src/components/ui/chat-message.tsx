@@ -32,7 +32,7 @@ export function ChatMessage({
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, setReplyToMessage, useStreaming, regenerateLastResponse } = useChat();
+  const { messages, setReplyToMessage, regenerateLastResponse } = useChat();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -275,8 +275,8 @@ export function ChatMessage({
           </div>
         );
       } else {
-        // Use streaming effect or normal text based on settings and state
-        const shouldUseStreamingEffect = !skipAnim && !isUser && useStreaming && !isStreaming;
+        // Use streaming effect for AI messages that aren't being skipped or streaming
+        const shouldUseStreamingEffect = !skipAnim && !isUser && !isStreaming;
         
         return shouldUseStreamingEffect ? (
           <div key={index} className="markdown-content">
