@@ -10,16 +10,25 @@ import os
 import tempfile
 import shutil
 import uuid
+import traceback
+import logging
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from file_processor import process_file, get_file_metadata, extract_text_from_elements
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
@@ -59,6 +68,20 @@ class ProcessingError(BaseModel):
 # Dictionary to store processing results
 processing_results = {}
 
+# Add middleware for request logging
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = datetime.now()
+    response = await call_next(request)
+    process_time = (datetime.now() - start_time).total_seconds()
+    
+    logger.info(
+        f"Request: {request.method} {request.url.path} - "
+        f"Status: {response.status_code} - "
+        f"Process time: {process_time:.4f}s"
+    )
+    return response
+
 def cleanup_old_files(max_age_hours: int = 24):
     """
     Clean up files older than the specified age.
@@ -75,8 +98,9 @@ def cleanup_old_files(max_age_hours: int = 24):
             if file_age > max_age_seconds:
                 try:
                     file_path.unlink()
+                    logger.info(f"Deleted old file: {file_path}")
                 except Exception as e:
-                    print(f"Error deleting old file {file_path}: {e}")
+                    logger.error(f"Error deleting old file {file_path}: {e}")
 
 @app.post("/process-file/", response_model=ProcessingResponse)
 async def process_uploaded_file(
@@ -98,6 +122,8 @@ async def process_uploaded_file(
     # Create a path for the uploaded file
     file_path = UPLOAD_DIR / f"{file_id}_{file.filename}"
     
+    logger.info(f"Processing file: {file.filename} (size: {file.size if hasattr(file, 'size') else 'unknown'} bytes)")
+    
     try:
         # Start timing
         start_time = datetime.now()
@@ -106,10 +132,14 @@ async def process_uploaded_file(
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         
+        logger.info(f"File saved to: {file_path}")
+        
         # Process the file
+        logger.info(f"Starting file processing with unstructured.io")
         elements = process_file(str(file_path))
         
         if not elements:
+            logger.warning(f"No elements extracted from file: {file.filename}")
             raise HTTPException(
                 status_code=422,
                 detail=f"Could not extract content from file: {file.filename}"
@@ -119,10 +149,12 @@ async def process_uploaded_file(
         metadata = get_file_metadata(str(file_path))
         
         # Extract text
+        logger.info(f"Extracting text from {len(elements)} elements")
         full_text = extract_text_from_elements(elements)
         
         # Calculate processing time
         processing_time = (datetime.now() - start_time).total_seconds()
+        logger.info(f"Processing completed in {processing_time:.2f} seconds")
         
         # Create response
         response = {
@@ -151,9 +183,17 @@ async def process_uploaded_file(
         return response
     
     except Exception as e:
+        # Log the full error with traceback
+        logger.error(f"Error processing file {file.filename}: {str(e)}")
+        logger.error(traceback.format_exc())
+        
         # If an error occurs, clean up the file and raise an exception
         if file_path.exists():
-            file_path.unlink()
+            try:
+                file_path.unlink()
+                logger.info(f"Deleted file after error: {file_path}")
+            except Exception as del_err:
+                logger.error(f"Error deleting file {file_path}: {str(del_err)}")
         
         raise HTTPException(
             status_code=500,
@@ -175,14 +215,17 @@ async def get_full_text(request: TextRequest):
         Dict[str, Any]: The full extracted text and metadata
     """
     file_id = request.file_id
+    logger.info(f"Text requested for file_id: {file_id}")
     
     if file_id not in processing_results:
+        logger.warning(f"File ID not found: {file_id}")
         raise HTTPException(
             status_code=404,
             detail=f"No processed file found with ID: {file_id}"
         )
     
     result = processing_results[file_id]
+    logger.info(f"Returning text for {result['filename']} ({len(result['full_text'])} characters)")
     
     return {
         "file_id": file_id,
@@ -200,12 +243,28 @@ async def health_check():
     Returns:
         Dict[str, str]: Health status
     """
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "files_processed": len(processing_results)
+    }
+
+# Error handler for uncaught exceptions
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {str(exc)}")
+    logger.error(traceback.format_exc())
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc)}
+    )
 
 if __name__ == "__main__":
     import uvicorn
     
     # Run the API server
+    logger.info("Starting ENGGBOT File Processor API server")
     uvicorn.run(
         "api_wrapper:app",
         host="0.0.0.0",

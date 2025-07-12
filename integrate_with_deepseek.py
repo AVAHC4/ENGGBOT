@@ -21,7 +21,8 @@ from file_processor import process_file, extract_text_from_elements
 
 # OpenRouter API configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEEPSEEK_MODEL = "deepseek/deepseek-chat-v1"  # Update to your specific DeepSeek model
+# Update to match the exact model name expected by OpenRouter
+DEEPSEEK_MODEL = "deepseek/deepseek-coder-v1"  # Alternative: "deepseek/deepseek-llm-7b-chat"
 
 def get_api_key() -> str:
     """Get the OpenRouter API key from environment variables."""
@@ -44,9 +45,11 @@ def create_prompt_from_document(document_text: str, question: str) -> List[Dict[
         List[Dict[str, str]]: The formatted messages for the AI model
     """
     # Truncate document text if it's too long (most models have a context limit)
-    max_document_length = 14000  # Adjust based on your model's context window
-    if len(document_text) > max_document_length:
+    max_document_length = 8000  # Reduced from 14000 to be safer
+    original_length = len(document_text)
+    if original_length > max_document_length:
         document_text = document_text[:max_document_length] + "...[truncated]"
+        print(f"Document text truncated from {original_length} to {max_document_length} characters")
     
     return [
         {
@@ -79,12 +82,18 @@ def query_deepseek_model(messages: List[Dict[str, str]]) -> Optional[str]:
         Optional[str]: The model's response or None if an error occurred
     """
     try:
+        # Get API key
+        api_key = get_api_key()
+        print(f"Using API key: {api_key[:5]}...{api_key[-4:] if len(api_key) > 8 else ''}")
+        
+        # Set up headers with proper HTTP-Referer
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {get_api_key()}",
-            "HTTP-Referer": "http://localhost:3000",  # Update with your actual domain
+            "Authorization": f"Bearer {api_key}",
+            "HTTP-Referer": "http://localhost:3001",  # Update to match your actual domain
         }
         
+        # Prepare payload
         payload = {
             "model": DEEPSEEK_MODEL,
             "messages": messages,
@@ -92,27 +101,47 @@ def query_deepseek_model(messages: List[Dict[str, str]]) -> Optional[str]:
             "max_tokens": 1024
         }
         
+        # Log request details (excluding full message content for brevity)
+        print(f"\nSending request to: {OPENROUTER_API_URL}")
+        print(f"Using model: {DEEPSEEK_MODEL}")
+        print(f"Headers: {json.dumps({k: v for k, v in headers.items() if k != 'Authorization'})}")
+        print(f"Payload structure: {len(messages)} messages, temperature: {payload['temperature']}, max_tokens: {payload['max_tokens']}")
+        
+        # Make the API request
         response = requests.post(
             OPENROUTER_API_URL,
             headers=headers,
-            data=json.dumps(payload)
+            data=json.dumps(payload),
+            timeout=60  # Add timeout to prevent hanging
         )
         
-        if response.status_code != 200:
-            print(f"Error: API returned status code {response.status_code}")
-            print(f"Response: {response.text}")
-            return None
+        # Log response details
+        print(f"\nResponse status code: {response.status_code}")
         
+        if response.status_code != 200:
+            print(f"Error response headers: {dict(response.headers)}")
+            print(f"Error response body: {response.text}")
+            return f"Error: API returned status code {response.status_code}. Details: {response.text}"
+        
+        # Parse response
         response_data = response.json()
+        print("Response received successfully")
+        
         if "choices" in response_data and len(response_data["choices"]) > 0:
             return response_data["choices"][0]["message"]["content"]
         else:
-            print(f"Unexpected API response format: {response_data}")
-            return None
+            print(f"Unexpected API response format: {json.dumps(response_data)}")
+            return "Error: Unexpected API response format. Please check server logs."
             
+    except requests.exceptions.RequestException as e:
+        print(f"Request error: {str(e)}")
+        return f"Error: Request failed. Details: {str(e)}"
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {str(e)}")
+        return "Error: Could not parse API response as JSON."
     except Exception as e:
-        print(f"Error querying DeepSeek model: {str(e)}")
-        return None
+        print(f"Unexpected error: {str(e)}")
+        return f"Error: An unexpected error occurred. Details: {str(e)}"
 
 def main():
     """Main function to demonstrate integration with DeepSeek model."""
