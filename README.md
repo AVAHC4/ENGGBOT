@@ -1,141 +1,99 @@
-# Animated Landing Page
+# ENGGBOT File Processor
 
-A modern, responsive landing page built with React, Express, and Tailwind CSS. This project features a beautiful animated interface with smooth transitions and interactive components.
+A robust document processing module for ENGGBOT, an academic AI chatbot. This module serves as the first step in a Retrieval-Augmented Generation (RAG) pipeline.
 
 ## Features
 
-- Modern and responsive design with mobile-first approach
-- Animated components using Framer Motion for smooth transitions
-- Full-stack TypeScript application with type safety
-- Express.js backend with RESTful API endpoints
-- PostgreSQL database integration with Drizzle ORM
-- Tailwind CSS for utility-first styling
-- User authentication system
-- Real-time updates using WebSocket
-- Form validation with Zod
-- Error handling and logging
+- Process multiple document types (PDF, DOCX, PPTX, TXT, etc.)
+- Extract structured content from documents
+- Special high-resolution processing for academic PDFs and engineering schematics
+- Extract document metadata
+- Robust error handling
 
-## Tech Stack
+## Installation
 
-- Frontend:
-  - React 18 with TypeScript
-  - Vite for fast development and building
-  - Tailwind CSS for styling
-  - Framer Motion for animations
-  - React Query for data fetching
-  - Wouter for routing
+1. Clone this repository:
+   ```
+   git clone <repository-url>
+   cd enggbot-file-processor
+   ```
 
-- Backend:
-  - Express.js with TypeScript
-  - PostgreSQL database
-  - Drizzle ORM for database operations
-  - Passport.js for authentication
-  - WebSocket for real-time features
+2. Create a virtual environment:
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-## Getting Started
+3. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-1. Clone the repository:
-```bash
-git clone https://github.com/AVAHC4/ENGGBOT.git
-cd ENGGBOT
+4. System dependencies:
+   - For PDF processing: Install Tesseract OCR and Poppler
+     - On Ubuntu: `sudo apt-get install -y tesseract-ocr poppler-utils`
+     - On macOS: `brew install tesseract poppler`
+     - On Windows: Download and install Tesseract from [here](https://github.com/UB-Mannheim/tesseract/wiki)
+
+## Usage
+
+### Basic Usage
+
+```python
+from file_processor import process_file
+
+# Process a file and get structured elements
+elements = process_file("path/to/your/document.pdf")
+
+# Print the number of extracted elements
+print(f"Extracted {len(elements)} elements")
+
+# Print the first element
+if elements:
+    print(elements[0])
 ```
 
-2. Install dependencies:
-```bash
-npm install
+### Command Line Usage
+
+You can also run the script directly from the command line:
+
+```
+python file_processor.py path/to/your/document.pdf
 ```
 
-3. Set up environment variables:
-Create a `.env` file in the root directory with the following variables:
-```env
-DATABASE_URL=your_database_url
-SESSION_SECRET=your_session_secret
-PORT=3000
-NODE_ENV=development
+### Additional Functions
+
+```python
+from file_processor import get_file_metadata, extract_text_from_elements
+
+# Get file metadata
+metadata = get_file_metadata("path/to/your/document.pdf")
+print(metadata)
+
+# Extract plain text from elements
+elements = process_file("path/to/your/document.pdf")
+text = extract_text_from_elements(elements)
+print(text)
 ```
 
-4. Set up the database:
-```bash
-npm run db:push
-```
+## Supported File Types
 
-5. Start the development server:
-```bash
-npm run dev
-```
+- PDF documents (`.pdf`)
+- Word documents (`.docx`, `.doc`)
+- PowerPoint presentations (`.pptx`, `.ppt`)
+- Excel spreadsheets (`.xlsx`, `.xls`)
+- Plain text files (`.txt`)
+- HTML files (`.html`, `.htm`)
+- And more...
 
-6. Build for production:
-```bash
-npm run build
-```
+## Integration with RAG Pipeline
 
-7. Start the production server:
-```bash
-npm start
-```
+This file processor is designed to be the first step in a Retrieval-Augmented Generation (RAG) pipeline. The extracted elements can be:
 
-## Project Structure
-
-- `/client` - Frontend React application
-  - `/components` - Reusable UI components
-  - `/pages` - Page components
-  - `/hooks` - Custom React hooks
-  - `/utils` - Utility functions
-- `/server` - Express.js backend
-  - `/routes` - API routes
-  - `/controllers` - Route controllers
-  - `/middleware` - Custom middleware
-  - `/models` - Database models
-- `/shared` - Shared types and utilities
-
-## Deployment
-
-This project can be deployed on various platforms:
-
-1. **Render** (Recommended)
-   - Create a new Web Service
-   - Connect your GitHub repository
-   - Set build command: `npm install && npm run build`
-   - Set start command: `npm start`
-   - Add environment variables
-
-2. **Railway**
-   - Create a new project
-   - Connect your GitHub repository
-   - Add environment variables
-   - Deploy
-
-3. **Vercel** (Frontend only)
-   - Import your repository
-   - Configure build settings
-   - Deploy
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Chunked for embedding
+2. Stored in a vector database
+3. Retrieved during query time to provide context to an LLM
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. // Updated email configuration for better contribution tracking
-
-## Enhanced Features
-
-- Improved response formatting
-- Better code block highlighting
-- Responsive UI for mobile devices
-
-## User Experience Improvements
-
-- Added keyboard shortcuts
-- Optimized loading times
-- Implemented accessibility features
-
-## Documentation Updates
-
-- Added comprehensive API documentation
-- Included setup instructions for new developers
-- Updated troubleshooting guide
+[MIT License](LICENSE)
