@@ -8,6 +8,7 @@ pdf2image>=1.16.3
 pdfminer.six>=20221105
 pytesseract>=0.3.10
 poppler-utils>=23.01.0
+PyPDF2>=3.0.0
 
 # Office documents support
 unstructured[docx]>=0.10.0
@@ -31,7 +32,9 @@ pydantic>=2.0.0
 
 # OpenRouter API integration
 requests>=2.31.0
+httpx>=0.24.1
 
 # Other helpers
 python-magic>=0.4.27
-nltk>=3.8.1 
+nltk>=3.8.1
+tqdm>=4.65.0 
