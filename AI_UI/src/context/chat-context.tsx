@@ -177,145 +177,145 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Set generating state to true immediately when sending message
       setIsGenerating(true);
 
-      // Create a placeholder for the AI response
-      const aiMessageId = crypto.randomUUID();
-      const aiMessage: ExtendedChatMessage = {
-        id: aiMessageId,
-        content: "",
-        isUser: false,
-        timestamp: new Date().toISOString(),
-        isStreaming: true
-      };
-      
-      // Add the placeholder to messages
-      const messagesWithPlaceholder = [...updatedMessages, aiMessage];
-      setMessages(messagesWithPlaceholder);
-      
-      try {
-        // Make a fetch request with streaming response instead of EventSource
-        const response = await fetch('/api/chat/stream', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: content,
-            hasAttachments: !!attachments,
-            model: currentModel,
-            thinkingMode: thinkingMode,
-            conversationId: conversationId,
-            replyToId,
-            conversationHistory: updatedMessages.slice(-10)
-          })
-        });
+        // Create a placeholder for the AI response
+        const aiMessageId = crypto.randomUUID();
+        const aiMessage: ExtendedChatMessage = {
+          id: aiMessageId,
+          content: "",
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isStreaming: true
+        };
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+        // Add the placeholder to messages
+        const messagesWithPlaceholder = [...updatedMessages, aiMessage];
+        setMessages(messagesWithPlaceholder);
         
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error("Stream reader could not be created");
-        }
-        
-        const decoder = new TextDecoder();
-        let buffer = "";
-        
-        // Process the stream chunks
-        while (true) {
-          // Check if the request was canceled
-          if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
-            reader.cancel();
-            break;
+        try {
+          // Make a fetch request with streaming response instead of EventSource
+          const response = await fetch('/api/chat/stream', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: content,
+              hasAttachments: !!attachments,
+              model: currentModel,
+              thinkingMode: thinkingMode,
+              conversationId: conversationId,
+              replyToId,
+              conversationHistory: updatedMessages.slice(-10)
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
           }
           
-          const { done, value } = await reader.read();
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error("Stream reader could not be created");
+          }
           
-          if (done) {
-            // Update message to mark as no longer streaming
-            setMessages(prev => prev.map(m => 
-              m.id === aiMessageId ? { ...m, isStreaming: false } : m
-            ));
-            
-            // Reset states
-            setIsLoading(false);
-            setIsGenerating(false);
-            
-            // Save conversation
-            if (typeof window !== 'undefined' && !isPrivateMode) {
-              saveConversation(
-                conversationId, 
-                messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
-              );
+          const decoder = new TextDecoder();
+          let buffer = "";
+          
+          // Process the stream chunks
+          while (true) {
+            // Check if the request was canceled
+            if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
+              reader.cancel();
+              break;
             }
-            break;
-          }
-          
-          // Decode and process the chunk
-          buffer += decoder.decode(value, { stream: true });
-          
-          // Split buffer by lines and process each line
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
-          
-          for (const line of lines) {
-            if (line.trim() === '') continue;
-            if (!line.startsWith('data:')) continue;
             
-            try {
-              const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              // Update message to mark as no longer streaming
+              setMessages(prev => prev.map(m => 
+                m.id === aiMessageId ? { ...m, isStreaming: false } : m
+              ));
               
-              if (eventData === "[DONE]") {
-                // End of stream, no need to parse as JSON
-                continue;
+              // Reset states
+              setIsLoading(false);
+              setIsGenerating(false);
+              
+              // Save conversation
+            if (typeof window !== 'undefined' && !isPrivateMode) {
+                saveConversation(
+                  conversationId, 
+                  messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
+                );
               }
+              break;
+            }
+            
+            // Decode and process the chunk
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Split buffer by lines and process each line
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+            
+            for (const line of lines) {
+              if (line.trim() === '') continue;
+              if (!line.startsWith('data:')) continue;
               
               try {
-                const data = JSON.parse(eventData);
+                const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
                 
-                // Update the streaming message
-                if (data.text) {
-                  setMessages(prev => {
-                    const updatedMessages = prev.map(m => 
-                      m.id === aiMessageId 
-                        ? { ...m, content: m.content + data.text } 
-                        : m
-                    );
-                    
-                    // Save intermediate state periodically
-                    if (typeof window !== 'undefined' && !isPrivateMode) {
-                      saveConversation(conversationId, updatedMessages);
-                    }
-                    
-                    return updatedMessages;
-                  });
+                if (eventData === "[DONE]") {
+                  // End of stream, no need to parse as JSON
+                  continue;
                 }
-              } catch (parseError) {
-                console.error("Error parsing JSON data:", parseError);
+                
+                try {
+                  const data = JSON.parse(eventData);
+                  
+                  // Update the streaming message
+                  if (data.text) {
+                    setMessages(prev => {
+                      const updatedMessages = prev.map(m => 
+                        m.id === aiMessageId 
+                          ? { ...m, content: m.content + data.text } 
+                          : m
+                      );
+                      
+                      // Save intermediate state periodically
+                    if (typeof window !== 'undefined' && !isPrivateMode) {
+                        saveConversation(conversationId, updatedMessages);
+                      }
+                      
+                      return updatedMessages;
+                    });
+                  }
+                } catch (parseError) {
+                  console.error("Error parsing JSON data:", parseError);
+                }
+              } catch (error) {
+                console.error("Error processing stream line:", error);
               }
-            } catch (error) {
-              console.error("Error processing stream line:", error);
             }
           }
+        } catch (error) {
+          console.error("Error in streaming:", error);
+          
+          // Update message to show error
+          setMessages(prev => prev.map(m => 
+            m.id === aiMessageId 
+              ? { 
+                  ...m, 
+                  isStreaming: false, 
+                  content: m.content || "Sorry, there was an error generating a response."
+                } 
+              : m
+          ));
+          
+          // Reset states
+          setIsLoading(false);
+          setIsGenerating(false);
         }
-      } catch (error) {
-        console.error("Error in streaming:", error);
-        
-        // Update message to show error
-        setMessages(prev => prev.map(m => 
-          m.id === aiMessageId 
-            ? { 
-                ...m, 
-                isStreaming: false, 
-                content: m.content || "Sorry, there was an error generating a response."
-              } 
-            : m
-        ));
-        
-        // Reset states
-        setIsLoading(false);
-        setIsGenerating(false);
-      }
     } catch (error) {
       console.error('Error sending message:', error);
       

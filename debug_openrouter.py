@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
-Debug script for testing the OpenRouter API connection.
+Simplified debug script for testing the OpenRouter API connection.
 
 This script helps diagnose issues with the OpenRouter API by:
 1. Testing the API key
-2. Testing different model names
-3. Testing with minimal content
-4. Providing detailed error information
+2. Testing the model name format
+3. Providing detailed error information
 
 Usage:
     export OPENROUTER_API_KEY=your_api_key_here
@@ -22,12 +21,8 @@ from typing import Dict, Any, List
 # OpenRouter API configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Test with different model names
-TEST_MODELS = [
-    "deepseek/deepseek-coder-v1",
-    "deepseek/deepseek-llm-7b-chat",
-    "deepseek/deepseek-chat"
-]
+# Test with the correct model name
+TEST_MODEL = "deepseek/deepseek-coder-v1"
 
 def get_api_key() -> str:
     """Get the OpenRouter API key from environment variables."""
@@ -39,42 +34,32 @@ def get_api_key() -> str:
         sys.exit(1)
     return api_key
 
-def test_api_connection() -> None:
+def test_api_connection() -> bool:
     """Test basic connection to the OpenRouter API."""
     print("\n=== Testing OpenRouter API Connection ===")
     try:
         response = requests.get("https://openrouter.ai/api/v1/models", timeout=10)
         if response.status_code == 200:
             print("✅ Successfully connected to OpenRouter API")
-            models_data = response.json()
-            print(f"Available models: {len(models_data.get('data', []))}")
-            
-            # Check if DeepSeek models are available
-            deepseek_models = [model for model in models_data.get('data', []) 
-                              if 'deepseek' in model.get('id', '').lower()]
-            
-            if deepseek_models:
-                print("\nAvailable DeepSeek models:")
-                for model in deepseek_models:
-                    print(f"  - {model['id']}")
-            else:
-                print("\n❌ No DeepSeek models found in available models")
+            return True
         else:
             print(f"❌ Connection failed with status code: {response.status_code}")
             print(f"Response: {response.text}")
+            return False
     except Exception as e:
         print(f"❌ Connection error: {str(e)}")
+        return False
 
-def test_model(model_name: str) -> None:
-    """Test a specific model with a minimal prompt."""
-    print(f"\n=== Testing Model: {model_name} ===")
+def test_model() -> bool:
+    """Test the model with a minimal prompt."""
+    print(f"\n=== Testing Model: {TEST_MODEL} ===")
     
     api_key = get_api_key()
     
     # Create a minimal test message
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Hello, can you hear me? Please respond with a single word."}
+        {"role": "user", "content": "Hello, respond with a single word: 'Working'"}
     ]
     
     headers = {
@@ -84,10 +69,10 @@ def test_model(model_name: str) -> None:
     }
     
     payload = {
-        "model": model_name,
+        "model": TEST_MODEL,
         "messages": messages,
         "temperature": 0.7,
-        "max_tokens": 50
+        "max_tokens": 10
     }
     
     print("Sending test request...")
@@ -96,7 +81,7 @@ def test_model(model_name: str) -> None:
         response = requests.post(
             OPENROUTER_API_URL,
             headers=headers,
-            json=payload,  # Use json parameter instead of data for automatic serialization
+            json=payload,
             timeout=30
         )
         
@@ -106,26 +91,33 @@ def test_model(model_name: str) -> None:
             response_data = response.json()
             content = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
             print(f"✅ Success! Response: {content}")
+            return True
         else:
             print(f"❌ Request failed with status code: {response.status_code}")
             print(f"Response headers: {dict(response.headers)}")
             print(f"Response body: {response.text}")
+            return False
     except Exception as e:
         print(f"❌ Request error: {str(e)}")
+        return False
 
 def main():
     """Main function to run the tests."""
-    print("OpenRouter API Debug Tool")
-    print("========================")
+    print("OpenRouter API Debug Tool (Simplified)")
+    print("====================================")
     
     # Test basic connection
-    test_api_connection()
+    connection_ok = test_api_connection()
     
-    # Test each model
-    for model in TEST_MODELS:
-        test_model(model)
+    # Test model
+    model_ok = test_model()
     
-    print("\nDebug complete. Check the results above for any issues.")
+    if connection_ok and model_ok:
+        print("\n✅ All tests passed! OpenRouter API is working correctly.")
+        return 0
+    else:
+        print("\n❌ Some tests failed. Please check the issues above.")
+        return 1
 
 if __name__ == "__main__":
-    main() 
+    sys.exit(main()) 
