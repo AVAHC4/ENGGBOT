@@ -9,7 +9,9 @@ It serves as the first step in a Retrieval-Augmented Generation (RAG) pipeline.
 
 import os
 import logging
-from typing import List, Union, Optional
+import time
+import traceback
+from typing import List, Union, Optional, Dict, Any
 from pathlib import Path
 
 # Configure logging
@@ -22,6 +24,8 @@ logger = logging.getLogger(__name__)
 try:
     from unstructured.partition.auto import partition
     from unstructured.documents.elements import Element
+    from unstructured.partition.pdf import partition_pdf
+    from unstructured.cleaners.core import clean_extra_whitespace, replace_unicode_quotes
 except ImportError:
     logger.error("Required packages not installed. Please install with: pip install -r requirements.txt")
     raise
@@ -39,6 +43,7 @@ def process_file(file_path: str) -> List[Element]:
                       Returns empty list if processing fails
     """
     try:
+        start_time = time.time()
         file_path = Path(file_path)
         
         if not file_path.exists():
@@ -53,13 +58,35 @@ def process_file(file_path: str) -> List[Element]:
         # Special handling for PDF files - use hi_res strategy
         if file_extension == '.pdf':
             logger.info("Using hi_res strategy for PDF processing")
-            elements = partition(
-                filename=str(file_path),
-                strategy="hi_res",
-                pdf_infer_table_structure=True,
-                extract_images_in_pdf=False,  # Set to True if image extraction is needed
-                chunking_strategy="by_title"
-            )
+            try:
+                # First try with hi_res strategy
+                elements = partition_pdf(
+                    filename=str(file_path),
+                    strategy="hi_res",
+                    infer_table_structure=True,
+                    extract_images=False,  # Set to True if image extraction is needed
+                    chunking_strategy="by_title",
+                    max_pages=100  # Limit number of pages for very large PDFs
+                )
+                
+                # If no elements were extracted, try with fast strategy
+                if not elements:
+                    logger.warning("Hi-res strategy yielded no elements, falling back to fast strategy")
+                    elements = partition_pdf(
+                        filename=str(file_path),
+                        strategy="fast",
+                        infer_table_structure=True,
+                        extract_images=False,
+                        chunking_strategy="by_title"
+                    )
+            except Exception as pdf_error:
+                logger.error(f"Error with PDF-specific processing: {str(pdf_error)}")
+                logger.info("Falling back to generic partition method")
+                # Fall back to generic partition method
+                elements = partition(
+                    filename=str(file_path),
+                    chunking_strategy="by_title"
+                )
         else:
             # For other document types, use default settings
             elements = partition(
@@ -67,8 +94,22 @@ def process_file(file_path: str) -> List[Element]:
                 chunking_strategy="by_title"
             )
         
-        logger.info(f"Successfully extracted {len(elements)} elements from {file_path}")
-        return elements
+        # Clean the extracted elements
+        cleaned_elements = []
+        for element in elements:
+            try:
+                # Apply text cleaning functions
+                if hasattr(element, 'text'):
+                    element.text = clean_extra_whitespace(element.text)
+                    element.text = replace_unicode_quotes(element.text)
+                cleaned_elements.append(element)
+            except Exception as clean_error:
+                logger.warning(f"Error cleaning element: {str(clean_error)}")
+                cleaned_elements.append(element)  # Add original element
+        
+        processing_time = time.time() - start_time
+        logger.info(f"Successfully extracted {len(cleaned_elements)} elements from {file_path} in {processing_time:.2f} seconds")
+        return cleaned_elements
     
     except FileNotFoundError:
         logger.error(f"File not found: {file_path}")
@@ -78,6 +119,7 @@ def process_file(file_path: str) -> List[Element]:
         return []
     except Exception as e:
         logger.error(f"Error processing file {file_path}: {str(e)}")
+        logger.error(traceback.format_exc())
         return []
 
 
@@ -100,7 +142,18 @@ def get_file_metadata(file_path: str) -> dict:
         
         stats = file_path.stat()
         
-        return {
+        # Try to get page count for PDF files
+        page_count = None
+        if file_path.suffix.lower() == '.pdf':
+            try:
+                import PyPDF2
+                with open(file_path, 'rb') as pdf_file:
+                    pdf_reader = PyPDF2.PdfReader(pdf_file)
+                    page_count = len(pdf_reader.pages)
+            except Exception as e:
+                logger.warning(f"Could not get PDF page count: {str(e)}")
+        
+        metadata = {
             "filename": file_path.name,
             "file_extension": file_path.suffix,
             "file_size_bytes": stats.st_size,
@@ -108,8 +161,15 @@ def get_file_metadata(file_path: str) -> dict:
             "last_modified": stats.st_mtime,
             "created": stats.st_ctime,
         }
+        
+        # Add page count if available
+        if page_count is not None:
+            metadata["page_count"] = page_count
+            
+        return metadata
     except Exception as e:
         logger.error(f"Error extracting metadata from {file_path}: {str(e)}")
+        logger.error(traceback.format_exc())
         return {}
 
 
@@ -124,10 +184,35 @@ def extract_text_from_elements(elements: List[Element]) -> str:
         str: Concatenated text from all elements
     """
     try:
-        return "\n\n".join(str(element) for element in elements)
+        # Join elements with double newlines for better separation
+        text = "\n\n".join(str(element) for element in elements)
+        
+        # Clean up the text
+        text = clean_extra_whitespace(text)
+        text = replace_unicode_quotes(text)
+        
+        return text
     except Exception as e:
         logger.error(f"Error extracting text from elements: {str(e)}")
+        logger.error(traceback.format_exc())
         return ""
+
+
+def get_element_types(elements: List[Element]) -> Dict[str, int]:
+    """
+    Get a count of each element type in the document.
+    
+    Args:
+        elements (List[Element]): List of unstructured Element objects
+        
+    Returns:
+        Dict[str, int]: Dictionary with element type counts
+    """
+    element_types = {}
+    for element in elements:
+        element_type = type(element).__name__
+        element_types[element_type] = element_types.get(element_type, 0) + 1
+    return element_types
 
 
 if __name__ == "__main__":
@@ -154,12 +239,23 @@ if __name__ == "__main__":
             sys.exit(1)
     
     # Process the file
+    print(f"Processing file: {file_path}")
+    start_time = time.time()
     elements = process_file(file_path)
+    processing_time = time.time() - start_time
     
     # Print results
     if elements:
         print(f"Successfully processed {file_path}")
         print(f"Total elements extracted: {len(elements)}")
+        print(f"Processing time: {processing_time:.2f} seconds")
+        
+        # Get element type distribution
+        element_types = get_element_types(elements)
+        print("\nElement type distribution:")
+        for element_type, count in element_types.items():
+            print(f"  {element_type}: {count}")
+        
         print("\nFirst element type:", type(elements[0]).__name__)
         print("\nFirst element content:")
         print("-" * 50)
