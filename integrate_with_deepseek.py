@@ -22,7 +22,7 @@ from file_processor import process_file, extract_text_from_elements
 # OpenRouter API configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Update to match the exact model name expected by OpenRouter
-DEEPSEEK_MODEL = "deepseek/deepseek-coder-v1"  # Alternative: "deepseek/deepseek-llm-7b-chat"
+DEEPSEEK_MODEL = "deepseek/deepseek-chat"  # Free model: DeepSeek: R1 0528
 
 def get_api_key() -> str:
     """Get the OpenRouter API key from environment variables."""

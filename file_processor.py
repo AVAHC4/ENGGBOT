@@ -54,24 +54,32 @@ def process_file(file_path: str) -> List[Element]:
         
         # Get file extension to determine processing strategy
         file_extension = file_path.suffix.lower()
+        elements = []
         
-        # Special handling for PDF files - use hi_res strategy
+        # Special handling for PDF files - try multiple strategies
         if file_extension == '.pdf':
-            logger.info("Using hi_res strategy for PDF processing")
+            logger.info("Processing PDF file with multiple strategies")
+            
+            # Strategy 1: Try with hi_res strategy
             try:
-                # First try with hi_res strategy
+                logger.info("Trying hi_res strategy")
                 elements = partition_pdf(
                     filename=str(file_path),
                     strategy="hi_res",
                     infer_table_structure=True,
-                    extract_images=False,  # Set to True if image extraction is needed
+                    extract_images=False,
                     chunking_strategy="by_title",
-                    max_pages=100  # Limit number of pages for very large PDFs
+                    max_pages=100
                 )
-                
-                # If no elements were extracted, try with fast strategy
-                if not elements:
-                    logger.warning("Hi-res strategy yielded no elements, falling back to fast strategy")
+                if elements:
+                    logger.info(f"Hi-res strategy succeeded with {len(elements)} elements")
+            except Exception as e:
+                logger.warning(f"Hi-res strategy failed: {str(e)}")
+            
+            # Strategy 2: If hi_res failed, try fast strategy
+            if not elements:
+                try:
+                    logger.info("Trying fast strategy")
                     elements = partition_pdf(
                         filename=str(file_path),
                         strategy="fast",
@@ -79,20 +87,68 @@ def process_file(file_path: str) -> List[Element]:
                         extract_images=False,
                         chunking_strategy="by_title"
                     )
-            except Exception as pdf_error:
-                logger.error(f"Error with PDF-specific processing: {str(pdf_error)}")
-                logger.info("Falling back to generic partition method")
-                # Fall back to generic partition method
-                elements = partition(
-                    filename=str(file_path),
-                    chunking_strategy="by_title"
-                )
+                    if elements:
+                        logger.info(f"Fast strategy succeeded with {len(elements)} elements")
+                except Exception as e:
+                    logger.warning(f"Fast strategy failed: {str(e)}")
+            
+            # Strategy 3: If both PDF-specific methods failed, try generic partition
+            if not elements:
+                try:
+                    logger.info("Trying generic partition method")
+                    elements = partition(
+                        filename=str(file_path),
+                        chunking_strategy="by_title"
+                    )
+                    if elements:
+                        logger.info(f"Generic partition succeeded with {len(elements)} elements")
+                except Exception as e:
+                    logger.warning(f"Generic partition failed: {str(e)}")
+            
+            # Strategy 4: If all unstructured methods failed, try PyPDF2 directly
+            if not elements:
+                try:
+                    logger.info("Trying PyPDF2 direct extraction")
+                    import PyPDF2
+                    from unstructured.documents.elements import Text
+                    
+                    pdf_elements = []
+                    with open(file_path, 'rb') as f:
+                        reader = PyPDF2.PdfReader(f)
+                        for i, page in enumerate(reader.pages):
+                            text = page.extract_text()
+                            if text.strip():  # Only add non-empty pages
+                                pdf_elements.append(Text(text=text, metadata={"page_number": i+1}))
+                    
+                    elements = pdf_elements
+                    if elements:
+                        logger.info(f"PyPDF2 extraction succeeded with {len(elements)} elements")
+                except Exception as e:
+                    logger.warning(f"PyPDF2 extraction failed: {str(e)}")
+            
+            # Strategy 5: Last resort - try pdfminer.six
+            if not elements:
+                try:
+                    logger.info("Trying pdfminer.six extraction")
+                    from pdfminer.high_level import extract_text as pdfminer_extract_text
+                    from unstructured.documents.elements import Text
+                    
+                    text = pdfminer_extract_text(str(file_path))
+                    if text.strip():
+                        elements = [Text(text=text)]
+                        logger.info("pdfminer.six extraction succeeded")
+                except Exception as e:
+                    logger.warning(f"pdfminer.six extraction failed: {str(e)}")
         else:
             # For other document types, use default settings
             elements = partition(
                 filename=str(file_path),
                 chunking_strategy="by_title"
             )
+        
+        if not elements:
+            logger.error(f"All extraction methods failed for {file_path}")
+            return []
         
         # Clean the extracted elements
         cleaned_elements = []

@@ -1,10 +1,20 @@
 #!/bin/bash
-# Run debug script for ENGGBOT file processor and OpenRouter integration
+# Run debug script for ENGGBOT File Processor and OpenRouter integration
 
 # Check if OPENROUTER_API_KEY is set
 if [ -z "$OPENROUTER_API_KEY" ]; then
     echo "ERROR: OPENROUTER_API_KEY environment variable is not set."
-    echo "Please set it with: export OPENROUTER_API_KEY=your_api_key_here"
+    echo "Please set it with: export OPENROUTER_API_KEY=your_actual_api_key_here"
+    echo "You can get an API key from https://openrouter.ai/keys"
+    exit 1
+fi
+
+# Check if the API key is the default placeholder
+if [ "$OPENROUTER_API_KEY" = "your_api_key_here" ]; then
+    echo "ERROR: You are using the placeholder API key."
+    echo "Please set your actual OpenRouter API key with:"
+    echo "export OPENROUTER_API_KEY=your_actual_api_key_here"
+    echo "You can get an API key from https://openrouter.ai/keys"
     exit 1
 fi
 
@@ -51,6 +61,15 @@ pip install httpx --retries 5
 pip install fastapi uvicorn python-multipart --retries 5
 pip install PyPDF2 --retries 5
 
+# Display API key info (first 5 and last 4 chars)
+KEY_LENGTH=${#OPENROUTER_API_KEY}
+if [ $KEY_LENGTH -gt 8 ]; then
+    KEY_PREVIEW="${OPENROUTER_API_KEY:0:5}...${OPENROUTER_API_KEY: -4}"
+else
+    KEY_PREVIEW="[too short, please check]"
+fi
+echo "Using OpenRouter API key: $KEY_PREVIEW"
+
 # Try to run the debug script
 echo "Running OpenRouter API debug tests..."
 python debug_openrouter.py
@@ -61,7 +80,7 @@ if [ $? -eq 0 ]; then
     # Run the API server
     python api_wrapper.py
 else
-    echo -e "\n\nOpenRouter API debug failed. Please fix the issues before starting the server."
+    echo -e "\n\nOpenRouter API debug failed. Please check the issues above."
     
     # If debug failed, try installing more packages
     echo "Attempting to install additional required packages..."
@@ -76,7 +95,11 @@ else
         echo -e "\n\nStarting the API server..."
         python api_wrapper.py
     else
-        echo -e "\n\nOpenRouter API debug still failing. Please check your network connection and try again."
+        echo -e "\n\nOpenRouter API debug still failing."
+        echo "Please check that:"
+        echo "1. Your API key is valid and has sufficient credits"
+        echo "2. You have network connectivity to openrouter.ai"
+        echo "3. The DeepSeek model is available on your OpenRouter plan"
         exit 1
     fi
 fi 

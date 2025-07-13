@@ -21,8 +21,8 @@ from typing import Dict, Any, List
 # OpenRouter API configuration
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Test with the correct model name
-TEST_MODEL = "deepseek/deepseek-coder-v1"
+# Test with the free DeepSeek model
+TEST_MODEL = "deepseek/deepseek-chat"  # Free model: DeepSeek: R1 0528
 
 def get_api_key() -> str:
     """Get the OpenRouter API key from environment variables."""
@@ -38,7 +38,14 @@ def test_api_connection() -> bool:
     """Test basic connection to the OpenRouter API."""
     print("\n=== Testing OpenRouter API Connection ===")
     try:
-        response = requests.get("https://openrouter.ai/api/v1/models", timeout=10)
+        api_key = get_api_key()
+        headers = {
+            "Authorization": f"Bearer {api_key}"
+        }
+        
+        print(f"Using API key: {api_key[:5]}...{api_key[-4:] if len(api_key) > 8 else ''}")
+        response = requests.get("https://openrouter.ai/api/v1/models", headers=headers, timeout=10)
+        
         if response.status_code == 200:
             print("✅ Successfully connected to OpenRouter API")
             return True
@@ -63,9 +70,10 @@ def test_model() -> bool:
     ]
     
     headers = {
-        "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "http://localhost:3001"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://openrouter.ai/",  # Updated this to match OpenRouter's domain
+        "X-Title": "API Test"  # Added title for better tracking
     }
     
     payload = {
@@ -76,6 +84,8 @@ def test_model() -> bool:
     }
     
     print("Sending test request...")
+    print(f"Headers: {json.dumps({k: v for k, v in headers.items() if k != 'Authorization'})}")
+    print(f"Payload: {json.dumps(payload)}")
     
     try:
         response = requests.post(
