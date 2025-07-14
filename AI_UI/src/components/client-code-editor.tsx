@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import Editor from '@monaco-editor/react';
+import React, { useEffect, useState } from 'react';
+import Editor, { OnMount } from '@monaco-editor/react';
+import type * as Monaco from 'monaco-editor';
 
 interface CodeEditorProps {
   value: string;
@@ -53,10 +54,15 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
   };
 
   // Handle cursor position change
-  const handleCursorPositionChange = (e: any) => {
+  const handleCursorPositionChange = (e: Monaco.editor.ICursorPositionChangedEvent) => {
     if (onCursorPositionChange && e.position) {
       onCursorPositionChange(e.position.lineNumber, e.position.column);
     }
+  };
+
+  // Handle editor mount
+  const handleEditorMount: OnMount = (editor) => {
+    editor.onDidChangeCursorPosition(handleCursorPositionChange);
   };
 
   // If not initialized yet, show a simple textarea
@@ -87,9 +93,7 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
         tabSize: 2,
         automaticLayout: true,
       }}
-      onMount={(editor) => {
-        editor.onDidChangeCursorPosition(handleCursorPositionChange);
-      }}
+      onMount={handleEditorMount}
     />
   );
 } 
