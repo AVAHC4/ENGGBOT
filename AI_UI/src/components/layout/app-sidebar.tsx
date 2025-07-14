@@ -142,7 +142,7 @@ const data = {
       icon: MessageSquare,
     },
     {
-      title: "Sandbox",
+      title: "Compiler",
       url: "/sandbox",
       icon: Code,
     },
