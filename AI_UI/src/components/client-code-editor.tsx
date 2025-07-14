@@ -62,6 +62,19 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     }
   };
 
+  // Handle selection
+  const handleSelection = () => {
+    if (textareaRef.current) {
+      const start = textareaRef.current.selectionStart;
+      const end = textareaRef.current.selectionEnd;
+      
+      // Update cursor position
+      if (start === end) {
+        calculateCursorPosition({ currentTarget: textareaRef.current } as React.SyntheticEvent<HTMLTextAreaElement>);
+      }
+    }
+  };
+
   // Update highlighted code when value changes
   useEffect(() => {
     if (highlightedRef.current && initialized) {
@@ -150,9 +163,14 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
         onMouseUp={calculateCursorPosition}
         onScroll={syncScroll}
         onClick={calculateCursorPosition}
+        onSelect={handleSelection}
         spellCheck="false"
-        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent font-mono text-sm resize-none outline-none"
-        style={{ caretColor: 'white', color: 'transparent', cursor: 'text' }}
+        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent font-mono text-sm resize-none outline-none selection:bg-blue-500/30 selection:text-white/30"
+        style={{ 
+          caretColor: 'white', 
+          color: 'rgba(255, 255, 255, 0.05)', 
+          cursor: 'text'
+        }}
       />
     </div>
   );
