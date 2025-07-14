@@ -130,6 +130,15 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
 
   return (
     <div className="relative h-full w-full">
+      <pre 
+        ref={preRef} 
+        className="absolute top-0 left-0 right-0 bottom-0 m-0 p-4 overflow-auto bg-[#1e1e1e] text-white font-mono text-sm"
+        aria-hidden="true"
+      >
+        <code ref={highlightedRef} className={`language-${getLanguage(language)}`}>
+          {value}
+        </code>
+      </pre>
       <textarea
         ref={textareaRef}
         value={value}
@@ -142,19 +151,9 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
         onScroll={syncScroll}
         onClick={calculateCursorPosition}
         spellCheck="false"
-        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-[#1e1e1e] text-white font-mono text-sm resize-none outline-none"
-        style={{ caretColor: 'white' }}
+        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent font-mono text-sm resize-none outline-none"
+        style={{ caretColor: 'white', color: 'transparent', cursor: 'text' }}
       />
-      <pre 
-        ref={preRef} 
-        className="absolute top-0 left-0 right-0 bottom-0 m-0 p-4 overflow-auto bg-transparent text-transparent font-mono text-sm pointer-events-none"
-        aria-hidden="true"
-        style={{ pointerEvents: 'none' }}
-      >
-        <code ref={highlightedRef} className={`language-${getLanguage(language)}`}>
-          {value}
-        </code>
-      </pre>
     </div>
   );
 } 
