@@ -234,45 +234,12 @@
   }
   
   /* Adjust pages for collapsed sidebar */
-  .app-layout.sidebar-collapsed .compiler-page,
   .app-layout.sidebar-collapsed .team-page {
     padding-left: 0;
     width: calc(100% - 80px);
     margin-left: 80px;
   }
 
-  /* Ensure compiler page has proper scrolling */
-  .compiler-page {
-    height: auto;
-    min-height: 100vh;
-    overflow-y: auto;
-    padding-bottom: 2rem;
-  }
-
-  .compiler-page::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .compiler-page::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .compiler-page::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-
-  .compiler-page::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.4);
-  }
-
-  /* For Firefox */
-  .compiler-page {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-  }
 }
 
 /* Remove borders from sidebar components */
@@ -390,23 +357,9 @@ html, body, #__next, main {
   overflow: hidden;
 }
 
-/* Only compiler layout gets scrolling */
-.app-layout:has(.compiler-page) {
-  overflow: auto !important;
-}
-
 /* Chat page should not scroll */
 .chat-page {
   overflow: hidden !important;
-}
-
-/* Compiler page should scroll */
-.compiler-page {
-  height: auto;
-  min-height: 100vh;
-  overflow-y: auto !important;
-  padding-bottom: 2rem;
-  position: relative;
 }
 
 /* Make sure the output section is scrollable too */
