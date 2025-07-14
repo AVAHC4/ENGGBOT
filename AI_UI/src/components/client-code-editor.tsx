@@ -151,8 +151,14 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
         onScroll={syncScroll}
         onClick={calculateCursorPosition}
         spellCheck="false"
-        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent text-transparent caret-white font-mono text-sm resize-none outline-none z-10"
-        style={{ caretColor: 'white', cursor: 'text' }}
+        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent font-mono text-sm resize-none outline-none z-10"
+        style={{ 
+          caretColor: 'white', 
+          cursor: 'text', 
+          color: 'rgba(255,255,255,0.01)', 
+          WebkitTextFillColor: 'rgba(255,255,255,0.01)',
+          userSelect: 'text'
+        }}
       />
     </div>
   );
