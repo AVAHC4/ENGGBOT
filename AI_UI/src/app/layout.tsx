@@ -9,6 +9,7 @@ import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
+import Link from 'next/link';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

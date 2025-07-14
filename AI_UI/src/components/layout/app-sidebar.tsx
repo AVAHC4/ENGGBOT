@@ -37,7 +37,8 @@ import {
   Crown,
   Pencil,
   Share2,
-  MoreVertical
+  MoreVertical,
+  Code
 } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
@@ -144,6 +145,11 @@ const data = {
       title: "Compiler",
       url: "/compiler",
       icon: FileCode,
+    },
+    {
+      title: "Sandbox",
+      url: "/sandbox",
+      icon: Code,
     },
     {
       title: "Teams",
