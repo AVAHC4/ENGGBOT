@@ -132,7 +132,7 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     <div className="relative h-full w-full">
       <pre 
         ref={preRef} 
-        className="absolute top-0 left-0 right-0 bottom-0 m-0 p-4 overflow-auto bg-[#1e1e1e] text-white font-mono text-sm pointer-events-none"
+        className="absolute top-0 left-0 right-0 bottom-0 m-0 p-4 overflow-auto bg-[#1e1e1e] text-white font-mono text-sm pointer-events-none z-0"
         aria-hidden="true"
       >
         <code ref={highlightedRef} className={`language-${getLanguage(language)}`}>
@@ -151,7 +151,7 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
         onScroll={syncScroll}
         onClick={calculateCursorPosition}
         spellCheck="false"
-        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent text-transparent caret-white font-mono text-sm resize-none outline-none"
+        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent text-transparent caret-white font-mono text-sm resize-none outline-none z-10"
         style={{ caretColor: 'white', cursor: 'text' }}
       />
     </div>
