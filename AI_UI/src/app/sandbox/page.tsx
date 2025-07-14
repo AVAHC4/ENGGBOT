@@ -1,6 +1,6 @@
 'use client';
 
-import ClientCompiler from '@/components/client-compiler';
+import ClientCompiler from '../../components/client-compiler';
 
 export default function SandboxPage() {
   return (
