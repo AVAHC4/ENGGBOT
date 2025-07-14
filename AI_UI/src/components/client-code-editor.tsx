@@ -1,21 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Prism from 'prismjs';
-
-// Import Prism CSS themes - you can choose a different theme
-import 'prismjs/themes/prism-tomorrow.css';
-// Import languages
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-jsx';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-tsx';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markup'; // HTML
-import 'prismjs/components/prism-c';
-import 'prismjs/components/prism-cpp';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-java';
+import Editor from '@monaco-editor/react';
 
 interface CodeEditorProps {
   value: string;
@@ -25,21 +11,18 @@ interface CodeEditorProps {
 }
 
 export function ClientCodeEditor({ value, onChange, language, onCursorPositionChange }: CodeEditorProps) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const preRef = useRef<HTMLPreElement>(null);
-  const highlightedRef = useRef<HTMLElement>(null);
-  const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [initialized, setInitialized] = useState(false);
+  const [editorValue, setEditorValue] = useState(value);
   
-  // Handle language mapping for Prism
-  const getLanguage = (lang: string): string => {
+  // Map our language names to Monaco's language identifiers
+  const getMonacoLanguage = (lang: string): string => {
     const languageMap: Record<string, string> = {
       'js': 'javascript',
-      'jsx': 'jsx',
+      'jsx': 'javascript',
       'ts': 'typescript',
-      'tsx': 'tsx',
+      'tsx': 'typescript',
       'css': 'css',
-      'html': 'markup',
+      'html': 'html',
       'c': 'c',
       'cpp': 'cpp',
       'python': 'python',
@@ -54,79 +37,26 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     setInitialized(true);
   }, []);
 
-  // Sync scroll between textarea and highlighted code
-  const syncScroll = () => {
-    if (preRef.current && textareaRef.current) {
-      preRef.current.scrollTop = textareaRef.current.scrollTop;
-      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
-    }
-  };
-
-  // Handle selection
-  const handleSelection = () => {
-    if (textareaRef.current) {
-      const start = textareaRef.current.selectionStart;
-      const end = textareaRef.current.selectionEnd;
-      
-      // Update cursor position
-      if (start === end) {
-        calculateCursorPosition({ currentTarget: textareaRef.current } as React.SyntheticEvent<HTMLTextAreaElement>);
-      }
-    }
-  };
-
-  // Update highlighted code when value changes
+  // Update editor value when prop changes
   useEffect(() => {
-    if (highlightedRef.current && initialized) {
-      highlightedRef.current.textContent = value;
-      Prism.highlightElement(highlightedRef.current);
+    if (value !== editorValue) {
+      setEditorValue(value);
     }
-  }, [value, initialized]);
+  }, [value]);
 
-  // Initialize Prism highlighting
-  useEffect(() => {
-    if (highlightedRef.current && initialized) {
-      Prism.highlightElement(highlightedRef.current);
-    }
-  }, [language, initialized]);
-
-  // Calculate cursor position (line and column)
-  const calculateCursorPosition = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const textarea = e.currentTarget;
-    const cursorIndex = textarea.selectionStart;
-    const textBeforeCursor = textarea.value.substring(0, cursorIndex);
-    const lines = textBeforeCursor.split('\n');
-    const line = lines.length;
-    const column = lines[lines.length - 1].length + 1;
-    
-    setCursorPosition({ line, column });
-    
-    if (onCursorPositionChange) {
-      onCursorPositionChange(line, column);
-    }
-  };
-
-  // Handle tab key
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const start = e.currentTarget.selectionStart;
-      const end = e.currentTarget.selectionEnd;
-      
-      // Insert 2 spaces for indentation
-      const newValue = value.substring(0, start) + '  ' + value.substring(end);
+  // Handle editor change
+  const handleEditorChange = (newValue: string | undefined) => {
+    if (newValue !== undefined) {
+      setEditorValue(newValue);
       onChange(newValue);
-      
-      // Move cursor position after the inserted tab
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
-        }
-      }, 0);
     }
-    
-    // Update cursor position
-    calculateCursorPosition(e);
+  };
+
+  // Handle cursor position change
+  const handleCursorPositionChange = (e: any) => {
+    if (onCursorPositionChange && e.position) {
+      onCursorPositionChange(e.position.lineNumber, e.position.column);
+    }
   };
 
   // If not initialized yet, show a simple textarea
@@ -142,36 +72,24 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
   }
 
   return (
-    <div className="relative h-full w-full">
-      <pre 
-        ref={preRef} 
-        className="absolute top-0 left-0 right-0 bottom-0 m-0 p-4 overflow-auto bg-[#1e1e1e] text-white font-mono text-sm"
-        aria-hidden="true"
-      >
-        <code ref={highlightedRef} className={`language-${getLanguage(language)}`}>
-          {value}
-        </code>
-      </pre>
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => {
-          onChange(e.target.value);
-          calculateCursorPosition(e);
-        }}
-        onKeyDown={handleKeyDown}
-        onMouseUp={calculateCursorPosition}
-        onScroll={syncScroll}
-        onClick={calculateCursorPosition}
-        onSelect={handleSelection}
-        spellCheck="false"
-        className="absolute top-0 left-0 right-0 bottom-0 h-full w-full p-4 bg-transparent font-mono text-sm resize-none outline-none selection:bg-blue-500/30 selection:text-white/30"
-        style={{ 
-          caretColor: 'white', 
-          color: 'rgba(255, 255, 255, 0.05)', 
-          cursor: 'text'
-        }}
-      />
-    </div>
+    <Editor
+      height="100%"
+      width="100%"
+      language={getMonacoLanguage(language)}
+      value={editorValue}
+      onChange={handleEditorChange}
+      theme="vs-dark"
+      options={{
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontFamily: 'monospace',
+        fontSize: 14,
+        tabSize: 2,
+        automaticLayout: true,
+      }}
+      onMount={(editor) => {
+        editor.onDidChangeCursorPosition(handleCursorPositionChange);
+      }}
+    />
   );
 } 
