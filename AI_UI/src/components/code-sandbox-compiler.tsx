@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Bundler } from '@/lib/bundler';
-import { CodeEditor } from './code-editor';
+import { ClientCodeEditor } from './client-code-editor';
 
 // Supported languages
 const LANGUAGES = [
@@ -246,7 +246,7 @@ export function CodeSandboxCompiler() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Code editor */}
         <div className="flex-1 overflow-auto">
-          <CodeEditor 
+          <ClientCodeEditor 
             value={code}
             onChange={setCode}
             language={getLanguageFromExtension(selectedLanguage.extension)}
