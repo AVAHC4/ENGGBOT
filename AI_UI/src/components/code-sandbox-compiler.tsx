@@ -233,13 +233,24 @@ export function CodeSandboxCompiler() {
         </div>
         <div className="flex items-center space-x-4">
           <button 
-            className="px-3 py-1 text-xs bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
             disabled={isRunning}
           >
             {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
           </button>
         </div>
+      </div>
+
+      {/* Fixed Run button at top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <button 
+          className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 shadow-lg"
+          onClick={runCode}
+          disabled={isRunning}
+        >
+          {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
+        </button>
       </div>
 
       {/* Main content */}
