@@ -4,24 +4,22 @@
  * TypeScript adaptation for web use
  */
 
-// Model definitions
+// Model definitions - only DeepSeek R1 0528
 export const AVAILABLE_MODELS = {
-  "deepseek-r1": "deepseek/deepseek-r1-0528",
-  "deepseek-v3": "deepseek/deepseek-v3-0324",
-  "deepseek-lite": "deepseek/deepseek-lite",
-  "mistral": "mistralai/mistral-7b-instruct-v0.2"
+  "deepseek-r1": "deepseek/deepseek-r1-0528:free"
 };
 
 // Default API key
 const DEFAULT_API_KEY = "***REMOVED***";
 
 // Client interface
-export interface ChutesClientOptions {
+interface ChutesClientOptions {
   apiKey?: string;
   defaultModel?: string;
 }
 
-export interface GenerateOptions {
+// Generate options interface
+interface GenerateOptions {
   prompt: string;
   model?: string;
   temperature?: number;

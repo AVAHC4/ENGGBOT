@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
     
-    // Use deepseek-r1 model from OpenRouter
+    // Always use deepseek-r1 model
     const modelName = AVAILABLE_MODELS["deepseek-r1"];
     
     // Format messages for the API

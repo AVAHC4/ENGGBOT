@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const { 
       message, 
       hasAttachments = false,
-      model = "deepseek-v3",
+      model = "deepseek-r1",
       thinkingMode = true,
       conversationHistory = [] 
     } = await request.json();
@@ -70,8 +70,8 @@ export async function POST(request: Request) {
         : message
     });
     
-    // Always use deepseek-v3 model regardless of what was passed
-    const modelName = AVAILABLE_MODELS["deepseek-v3"];
+    // Always use deepseek-r1 model
+    const modelName = AVAILABLE_MODELS["deepseek-r1"];
     
     try {
       // Generate response from the AI
