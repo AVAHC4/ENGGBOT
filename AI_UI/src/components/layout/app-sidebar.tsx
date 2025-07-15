@@ -143,7 +143,7 @@ const data = {
     },
     {
       title: "Compiler",
-      url: "/sandbox",
+      url: "/compiler",
       icon: Code,
     },
     {

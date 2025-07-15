@@ -15,7 +15,7 @@ const LANGUAGES = [
 ];
 
 // Main component for the GDB-like compiler
-export function CodeSandboxCompiler() {
+export function Compiler() {
   // Use a ref to track if component is mounted to prevent hydration issues
   const isMounted = useRef(false);
   
