@@ -163,7 +163,7 @@ export class Bundler {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CodeSandbox</title>
+  <title>Compiler</title>
   ${this.getFile('/styles.css') ? '<style>' + this.getFile('/styles.css') + '</style>' : ''}
 </head>
 <body>

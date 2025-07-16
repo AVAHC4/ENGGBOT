@@ -144,11 +144,6 @@ const data = {
     {
       title: "Compiler",
       url: "/compiler",
-      icon: FileCode,
-    },
-    {
-      title: "Sandbox",
-      url: "/sandbox",
       icon: Code,
     },
     {
@@ -465,8 +460,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         padding-left: 0 !important;
       }
       
-      /* Compiler and team sections specific adjustments */
-      body.sidebar-collapsed .compiler-page,
+      /* Team sections specific adjustments */
       body.sidebar-collapsed .team-page {
         margin-left: 0;
         padding-left: 60px;
