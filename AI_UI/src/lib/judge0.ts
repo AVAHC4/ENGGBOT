@@ -46,34 +46,39 @@ const apiHeaders = {
 
 // Submit code for execution
 export async function submitCode(code: string, languageId: string): Promise<Submission> {
-  const response = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
+  const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
+  const body = JSON.stringify({
+    source_code: code,
+    language_id: mapLanguageId(languageId),
+    stdin: '',
+  });
+  console.log('[Judge0] Submitting code:', { url, headers: apiHeaders, body });
+  const response = await fetch(url, {
     method: 'POST',
     headers: apiHeaders,
-    body: JSON.stringify({
-      source_code: code,
-      language_id: mapLanguageId(languageId),
-      stdin: '',
-    }),
+    body,
   });
-
+  const responseBody = await response.clone().text();
+  console.log('[Judge0] Submission response:', { status: response.status, responseBody });
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
   }
-
   return response.json();
 }
 
 // Get a submission's result
 export async function getSubmissionResult(token: string): Promise<SubmissionResult> {
-  const response = await fetch(`${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`, {
+  const url = `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`;
+  console.log('[Judge0] Getting submission result:', { url, headers: apiHeaders });
+  const response = await fetch(url, {
     method: 'GET',
     headers: apiHeaders,
   });
-
+  const responseBody = await response.clone().text();
+  console.log('[Judge0] Result response:', { status: response.status, responseBody });
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
   }
-
   return response.json();
 }
 
