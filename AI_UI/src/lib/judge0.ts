@@ -2,7 +2,7 @@
 // API docs: https://ce.judge0.com/
 
 // Base URL for Judge0 API (using the public instance, should be replaced with your own for production)
-const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
+const JUDGE0_API_URL = 'https://ce.judge0.com';
 
 // Language IDs for Judge0 API
 export const LANGUAGE_IDS = {
@@ -42,8 +42,6 @@ export interface SubmissionResult {
 // Judge0 API headers
 const apiHeaders = {
   'Content-Type': 'application/json',
-  'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
-  'X-RapidAPI-Key': '***REMOVED***', // Replace with your actual RapidAPI key
 };
 
 // Submit code for execution
