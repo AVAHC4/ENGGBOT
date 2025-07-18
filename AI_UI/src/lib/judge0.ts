@@ -8,7 +8,7 @@ const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 export const LANGUAGE_IDS = {
   python: 71,    // Python 3.8.1
   javascript: 93, // JavaScript (Node.js 12.14.0)
-  java: 89,      // Java (OpenJDK 8) - Changed to use Java 8 which has lower memory requirements
+  java: 91,      // Java (JDK 17.0.1)
   c: 50,         // C (GCC 9.2.0)
   cpp: 54,       // C++ (GCC 9.2.0)
 };
@@ -24,10 +24,6 @@ export function mapLanguageId(languageId: string): number {
 }
 
 // Type definitions for Judge0 API responses
-export interface Submission {
-  token: string;
-}
-
 export interface SubmissionResult {
   stdout: string | null;
   stderr: string | null;
@@ -65,75 +61,6 @@ export const COMMAND_LINE_ARGS = {
   javascript: "",
   python: ""
 };
-
-// Submit code for execution with language-specific options
-export async function submitCode(code: string, languageId: string, stdin: string = ''): Promise<Submission> {
-  const language = languageId as keyof typeof LANGUAGE_IDS;
-  const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
-  
-  // Set memory limits based on language
-  let memoryLimit = 128000; // Default 128MB
-  if (language === 'java') {
-    memoryLimit = 256000; // 256MB for Java
-  }
-  
-  // For Java, we'll skip sending compiler options as they might be causing issues
-  const compilerOptions = language === 'java' ? "" : COMPILER_OPTIONS[language] || "";
-  
-  const body = JSON.stringify({
-    source_code: code,
-    language_id: mapLanguageId(languageId),
-    stdin: stdin,
-    compiler_options: compilerOptions,
-    command_line_arguments: COMMAND_LINE_ARGS[language] || "",
-    // Adding additional options for better execution
-    cpu_time_limit: language === 'java' ? 10 : 5,       // 10 seconds for Java, 5 for others
-    cpu_extra_time: language === 'java' ? 2 : 1,       // 2 seconds for Java, 1 for others
-    wall_time_limit: language === 'java' ? 20 : 10,     // 20 seconds for Java, 10 for others
-    memory_limit: memoryLimit,
-    stack_limit: language === 'java' ? 128000 : 64000,  // 128MB for Java, 64MB for others
-    max_processes_and_or_threads: 60,
-    enable_per_process_and_thread_time_limit: false,
-    enable_per_process_and_thread_memory_limit: true,
-    max_file_size: 1024,     // 1KB
-  });
-  
-  console.log('[Judge0] Submitting code:', { url, language, body });
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: apiHeaders,
-    body,
-  });
-  
-  const responseBody = await response.clone().text();
-  console.log('[Judge0] Submission response:', { status: response.status, responseBody });
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
-  }
-  
-  return response.json();
-}
-
-// Get a submission's result
-export async function getSubmissionResult(token: string): Promise<SubmissionResult> {
-  const url = `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`;
-  console.log('[Judge0] Getting submission result:', { url, headers: apiHeaders });
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: apiHeaders,
-  });
-  
-  const responseBody = await response.clone().text();
-  console.log('[Judge0] Result response:', { status: response.status, responseBody });
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
-  }
-  
-  return response.json();
-}
 
 // Status descriptions - expanded for better error reporting
 const STATUS_DESCRIPTIONS = {
@@ -253,54 +180,65 @@ export function parseResult(result: SubmissionResult, languageId: string): strin
 // Execute code and get the result (polls until completion)
 export async function executeCode(code: string, languageId: string, stdin: string = ''): Promise<string> {
   try {
-    // Special handling for Java code
-    let processedCode = code;
-    
     // For Java, we'll use a completely different approach
     if (languageId === 'java') {
       return executeJavaCode(code, stdin);
     }
     
-    // Submit the code with primary language ID
-    let submission: Submission;
-    let error: Error | null = null;
+    // Process the code if needed
+    let processedCode = code;
     
+    // Submit the code with wait=true to get the result immediately
     try {
-      submission = await submitCode(processedCode, languageId, stdin);
-    } catch (e) {
-      error = e as Error;
+      const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`;
+      const language = languageId as keyof typeof LANGUAGE_IDS;
       
-      // If all attempts failed, throw the original error
-      if (error) {
-        throw error;
+      // Set memory limits based on language
+      let memoryLimit = 128000; // Default 128MB
+      
+      const body = JSON.stringify({
+        source_code: processedCode,
+        language_id: mapLanguageId(languageId),
+        stdin: stdin,
+        compiler_options: COMPILER_OPTIONS[language] || "",
+        command_line_arguments: COMMAND_LINE_ARGS[language] || "",
+        // Required empty fields
+        additional_files: "",
+        callback_url: "",
+        expected_output: "",
+        // Resource limits
+        cpu_time_limit: 5,
+        cpu_extra_time: 1,
+        wall_time_limit: 10,
+        memory_limit: memoryLimit,
+        stack_limit: 64000,
+        max_processes_and_or_threads: 60,
+        enable_per_process_and_thread_time_limit: false,
+        enable_per_process_and_thread_memory_limit: true,
+        max_file_size: 1024,
+      });
+      
+      console.log('[Judge0] Submitting code:', { url, language });
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: apiHeaders,
+        body,
+      });
+      
+      if (!response.ok) {
+        const responseBody = await response.text();
+        throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
       }
+      
+      // Since we're using wait=true, the result should be included in the response
+      const result = await response.json();
+      return parseResult(result, languageId);
+      
+    } catch (error) {
+      console.error('Code execution error:', error);
+      return `Error: ${error instanceof Error ? error.message : String(error)}`;
     }
     
-    // Poll for results
-    let result: SubmissionResult | null = null;
-    let retries = 0;
-    const maxRetries = 10;
-    
-    while (retries < maxRetries) {
-      // Wait before polling
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Get the result
-      result = await getSubmissionResult(submission!.token);
-      
-      // If processing is complete, break the loop
-      if (result.status.id !== 1 && result.status.id !== 2) {
-        break;
-      }
-      
-      retries++;
-    }
-    
-    if (!result) {
-      return "Error: Failed to get execution result.";
-    }
-    
-    return parseResult(result, languageId);
   } catch (error) {
     console.error('Code execution error:', error);
     return `Error: ${error instanceof Error ? error.message : String(error)}`;
@@ -313,27 +251,32 @@ async function executeJavaCode(code: string, stdin: string = ''): Promise<string
     // Process Java code to ensure it has a proper class and main method
     const processedCode = processJavaCode(code);
     
-    // Try with Java 8 first (ID 89)
-    const javaVersions = [89, 90, 62, 91];
+    // Try with Java versions in sequence
+    const javaVersions = [91, 62, 90];  // JDK 17, OpenJDK 13, JDK 11
     
     for (const javaId of javaVersions) {
       try {
         console.log(`[Judge0] Trying Java with ID ${javaId}`);
         
-        // Create a minimal submission with no compiler options
-        const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
+        // Create a submission with required parameters
+        const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`;
         const body = JSON.stringify({
           source_code: processedCode,
           language_id: javaId,
           stdin: stdin,
-          // No compiler options
-          // Minimal resource limits
+          // Required empty fields
+          additional_files: "",
+          callback_url: "",
+          compiler_options: "",
+          command_line_arguments: "",
+          expected_output: "",
+          // Resource limits
           cpu_time_limit: 5,
           memory_limit: 128000,
           stack_limit: 64000,
         });
         
-        console.log('[Judge0] Submitting Java code:', { url, javaId, body });
+        console.log('[Judge0] Submitting Java code:', { url, javaId });
         const response = await fetch(url, {
           method: 'POST',
           headers: apiHeaders,
@@ -346,57 +289,18 @@ async function executeJavaCode(code: string, stdin: string = ''): Promise<string
           continue; // Try next version
         }
         
-        const submission = await response.json();
-        
-        // Poll for results
-        let result: SubmissionResult | null = null;
-        let retries = 0;
-        const maxRetries = 10;
-        
-        while (retries < maxRetries) {
-          // Wait before polling
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Get the result
-          const resultResponse = await fetch(
-            `${JUDGE0_API_URL}/submissions/${submission.token}?base64_encoded=false`,
-            {
-              method: 'GET',
-              headers: apiHeaders,
-            }
-          );
-          
-          if (!resultResponse.ok) {
-            const responseBody = await resultResponse.text();
-            console.error(`[Judge0] Java result fetch failed:`, responseBody);
-            break;
-          }
-          
-          result = await resultResponse.json();
-          
-          // If processing is complete, break the loop
-          if (result.status.id !== 1 && result.status.id !== 2) {
-            break;
-          }
-          
-          retries++;
-        }
-        
-        if (!result) {
-          console.log(`[Judge0] No result received for Java ID ${javaId}, trying next version`);
-          continue; // Try next version
-        }
+        // Since we're using wait=true, the result should be included in the response
+        const result = await response.json();
         
         // Check for compilation errors related to memory
-        if (result.status.id === 6 && result.compile_output && 
+        if (result.status && result.status.id === 6 && result.compile_output && 
             result.compile_output.includes("Could not allocate")) {
           console.log(`[Judge0] Java ID ${javaId} had memory allocation error, trying next version`);
           continue; // Try next version
         }
         
         // If we got here, we have a valid result (success or other error)
-        const finalResult = result; // Create a non-null reference
-        return parseResult(finalResult, 'java');
+        return parseResult(result, 'java');
         
       } catch (error) {
         console.error(`[Judge0] Error with Java ID ${javaId}:`, error);
