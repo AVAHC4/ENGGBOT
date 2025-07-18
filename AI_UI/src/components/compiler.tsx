@@ -111,7 +111,7 @@ export function Compiler() {
           setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
         }
       } else {
-        // For other languages, use the API
+        // For other languages, use the Judge0 Extra CE API
         try {
           const response = await fetch('/api/compile', {
             method: 'POST',
