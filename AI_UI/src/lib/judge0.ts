@@ -8,9 +8,14 @@ const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 export const LANGUAGE_IDS = {
   python: 71,    // Python 3.8.1
   javascript: 93, // JavaScript (Node.js 12.14.0)
-  java: 62,      // Java (OpenJDK 13.0.1)
+  java: 91,      // Java (JDK 17.0.1) - Changed from 62 (OpenJDK 13.0.1)
   c: 50,         // C (GCC 9.2.0)
   cpp: 54,       // C++ (GCC 9.2.0)
+};
+
+// Fallback language IDs if the primary ones fail
+export const FALLBACK_LANGUAGE_IDS = {
+  java: [62, 90, 89]  // Try OpenJDK 13, then JDK 11, then JDK 8
 };
 
 // Map our internal language IDs to Judge0 language IDs
@@ -47,7 +52,7 @@ const apiHeaders = {
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=c11 -O2",
   cpp: "-Wall -std=c++17 -O2",
-  java: "-Xmx256m -XX:MaxMetaspaceSize=64m",
+  java: "-Xms64m -Xmx128m -XX:MetaspaceSize=32m -XX:MaxMetaspaceSize=64m -XX:+UseSerialGC",
   javascript: "",
   python: "-m"
 };
@@ -242,8 +247,45 @@ export async function executeCode(code: string, languageId: string, stdin: strin
       processedCode = processJavaCode(code);
     }
     
-    // Submit the code
-    const submission = await submitCode(processedCode, languageId, stdin);
+    // Submit the code with primary language ID
+    let submission: Submission;
+    let error: Error | null = null;
+    
+    try {
+      submission = await submitCode(processedCode, languageId, stdin);
+    } catch (e) {
+      error = e as Error;
+      
+      // If primary language ID fails and there are fallbacks, try them
+      if (languageId === 'java' && FALLBACK_LANGUAGE_IDS.java) {
+        console.log('[Judge0] Primary Java submission failed, trying fallbacks');
+        
+        // Try each fallback language ID
+        for (const fallbackId of FALLBACK_LANGUAGE_IDS.java) {
+          try {
+            // Override the language ID temporarily
+            const originalId = LANGUAGE_IDS.java;
+            LANGUAGE_IDS.java = fallbackId;
+            
+            submission = await submitCode(processedCode, languageId, stdin);
+            
+            // Restore the original language ID
+            LANGUAGE_IDS.java = originalId;
+            
+            // If we get here, the submission succeeded
+            error = null;
+            break;
+          } catch (fallbackError) {
+            console.error(`[Judge0] Fallback Java ID ${fallbackId} failed:`, fallbackError);
+          }
+        }
+      }
+      
+      // If all attempts failed, throw the original error
+      if (error) {
+        throw error;
+      }
+    }
     
     // Poll for results
     let result: SubmissionResult | null = null;
@@ -255,7 +297,7 @@ export async function executeCode(code: string, languageId: string, stdin: strin
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Get the result
-      result = await getSubmissionResult(submission.token);
+      result = await getSubmissionResult(submission!.token);
       
       // If processing is complete, break the loop
       if (result.status.id !== 1 && result.status.id !== 2) {
