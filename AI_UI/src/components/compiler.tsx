@@ -111,110 +111,26 @@ export function Compiler() {
           setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
         }
       } else {
-        // For other languages, use the Judge0 Extra CE API directly
+        // For other languages, use the Judge0 Extra CE API
         try {
-          // Use Judge0 Extra CE API directly
-          const JUDGE0_API_URL = 'https://judge0-extra-ce.p.rapidapi.com';
-          const JUDGE0_API_KEY = '***REMOVED***';
-          const JUDGE0_API_HOST = 'judge0-extra-ce.p.rapidapi.com';
-          
-          // Language IDs for Judge0 Extra CE API
-          const LANGUAGE_IDS: Record<string, number> = {
-            python: 71, // Python 3
-            javascript: 93, // Node.js
-            java: 62, // Java (OpenJDK 13)
-            c: 50, // C (GCC 9.2.0)
-            cpp: 54, // C++ (GCC 9.2.0)
-            csharp: 51, // C# (Mono 6.6.0)
-          };
-          
-          // Map language to Judge0 language ID
-          const languageId = LANGUAGE_IDS[selectedLanguage.id] || 71;
-          
-          // Submit code for execution
-          const submitResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
+          const response = await fetch('/api/compile', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-rapidapi-host': JUDGE0_API_HOST,
-              'x-rapidapi-key': JUDGE0_API_KEY,
             },
             body: JSON.stringify({
-              source_code: code,
-              language_id: languageId,
-              stdin: '',
+              code,
+              language: selectedLanguage.id,
             }),
           });
           
-          if (!submitResponse.ok) {
-            throw new Error(`API Error: ${submitResponse.status} ${submitResponse.statusText}`);
+          const result = await response.json();
+          
+          if (result.error) {
+            setConsoleOutput(prev => [...prev, result.error]);
+          } else if (result.output) {
+            setConsoleOutput(prev => [...prev, result.output]);
           }
-          
-          const submission = await submitResponse.json();
-          
-          // Poll for results
-          let result = null;
-          let retries = 0;
-          const maxRetries = 10;
-          
-          while (retries < maxRetries) {
-            // Wait before polling
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Get the result
-            const resultResponse = await fetch(`${JUDGE0_API_URL}/submissions/${submission.token}?base64_encoded=false`, {
-              method: 'GET',
-              headers: {
-                'x-rapidapi-host': JUDGE0_API_HOST,
-                'x-rapidapi-key': JUDGE0_API_KEY,
-              },
-            });
-            
-            if (!resultResponse.ok) {
-              throw new Error(`API Error: ${resultResponse.status} ${resultResponse.statusText}`);
-            }
-            
-            result = await resultResponse.json();
-            
-            // If processing is complete, break the loop
-            if (result.status.id !== 1 && result.status.id !== 2) {
-              break;
-            }
-            
-            retries++;
-          }
-          
-          if (!result) {
-            throw new Error('Failed to get execution result after multiple attempts');
-          }
-          
-          // Format the output
-          let output = '';
-          
-          // Handle different status codes
-          if (result.status.id !== 3) {
-            output += `Status: ${result.status.description}\n`;
-            
-            // Add more details based on status
-            if (result.status.id === 6) {
-              output += `\nCompilation Error:\n${result.compile_output || ''}`;
-            } else if ([7, 8, 9, 10, 11, 12].includes(result.status.id)) {
-              output += `\nRuntime Error:\n${result.stderr || result.message || ''}`;
-            }
-          } else {
-            // If execution was successful, show stdout
-            if (result.stdout) {
-              output += result.stdout;
-            } else {
-              output += "[No output]";
-            }
-            
-            // Add execution details
-            output += `\n\nExecution Time: ${result.time}s`;
-          }
-          
-          // Display the formatted output
-          setConsoleOutput(prev => [...prev, output]);
           
           // Simulate waiting for input if code contains input functions
           if (
@@ -234,8 +150,8 @@ export function Compiler() {
             return; // Don't show program exit yet
           }
           
-          // Add exit code (status.id 3 means success)
-          setConsoleOutput(prev => [...prev, `Program exited with code ${result.status.id === 3 ? 0 : 1}`]);
+          // Add exit code
+          setConsoleOutput(prev => [...prev, `Program exited with code ${result.exitCode || 0}`]);
         } catch (error) {
           setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
         }
