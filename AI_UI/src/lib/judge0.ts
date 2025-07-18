@@ -8,14 +8,14 @@ const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 export const LANGUAGE_IDS = {
   python: 71,    // Python 3.8.1
   javascript: 93, // JavaScript (Node.js 12.14.0)
-  java: 91,      // Java (JDK 17.0.1) - Changed from 62 (OpenJDK 13.0.1)
+  java: 89,      // Java (OpenJDK 8) - Changed to use Java 8 which has lower memory requirements
   c: 50,         // C (GCC 9.2.0)
   cpp: 54,       // C++ (GCC 9.2.0)
 };
 
 // Fallback language IDs if the primary ones fail
 export const FALLBACK_LANGUAGE_IDS = {
-  java: [62, 90, 89]  // Try OpenJDK 13, then JDK 11, then JDK 8
+  java: [90, 62]  // Try JDK 11, then OpenJDK 13
 };
 
 // Map our internal language IDs to Judge0 language IDs
@@ -52,7 +52,7 @@ const apiHeaders = {
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=c11 -O2",
   cpp: "-Wall -std=c++17 -O2",
-  java: "-Xms64m -Xmx128m -XX:MetaspaceSize=32m -XX:MaxMetaspaceSize=64m -XX:+UseSerialGC",
+  java: "-XX:CompressedClassSpaceSize=64m -XX:MaxMetaspaceSize=100m -Xmx128m",
   javascript: "",
   python: "-m"
 };
@@ -77,11 +77,14 @@ export async function submitCode(code: string, languageId: string, stdin: string
     memoryLimit = 256000; // 256MB for Java
   }
   
+  // For Java, we'll skip sending compiler options as they might be causing issues
+  const compilerOptions = language === 'java' ? "" : COMPILER_OPTIONS[language] || "";
+  
   const body = JSON.stringify({
     source_code: code,
     language_id: mapLanguageId(languageId),
     stdin: stdin,
-    compiler_options: COMPILER_OPTIONS[language] || "",
+    compiler_options: compilerOptions,
     command_line_arguments: COMMAND_LINE_ARGS[language] || "",
     // Adding additional options for better execution
     cpu_time_limit: language === 'java' ? 10 : 5,       // 10 seconds for Java, 5 for others
@@ -192,6 +195,15 @@ export function parseResult(result: SubmissionResult, languageId: string): strin
   if (result.status.id !== 3) {
     output += `Status: ${STATUS_DESCRIPTIONS[result.status.id as keyof typeof STATUS_DESCRIPTIONS] || result.status.description}\n`;
     
+    // Special handling for Java memory errors
+    if (language === 'java' && result.compile_output) {
+      if (result.compile_output.includes("Could not allocate")) {
+        output += "\nJava Memory Allocation Error: The code requires too much memory to compile.\n";
+        output += "Try simplifying your code or reducing the number of classes and methods.\n";
+        return output;
+      }
+    }
+    
     // Add more details based on status
     if (result.status.id === 6) {
       output += `\nCompilation Error:\n${result.compile_output || ''}`;
@@ -243,8 +255,10 @@ export async function executeCode(code: string, languageId: string, stdin: strin
   try {
     // Special handling for Java code
     let processedCode = code;
+    
+    // For Java, we'll use a completely different approach
     if (languageId === 'java') {
-      processedCode = processJavaCode(code);
+      return executeJavaCode(code, stdin);
     }
     
     // Submit the code with primary language ID
@@ -255,31 +269,6 @@ export async function executeCode(code: string, languageId: string, stdin: strin
       submission = await submitCode(processedCode, languageId, stdin);
     } catch (e) {
       error = e as Error;
-      
-      // If primary language ID fails and there are fallbacks, try them
-      if (languageId === 'java' && FALLBACK_LANGUAGE_IDS.java) {
-        console.log('[Judge0] Primary Java submission failed, trying fallbacks');
-        
-        // Try each fallback language ID
-        for (const fallbackId of FALLBACK_LANGUAGE_IDS.java) {
-          try {
-            // Override the language ID temporarily
-            const originalId = LANGUAGE_IDS.java;
-            LANGUAGE_IDS.java = fallbackId;
-            
-            submission = await submitCode(processedCode, languageId, stdin);
-            
-            // Restore the original language ID
-            LANGUAGE_IDS.java = originalId;
-            
-            // If we get here, the submission succeeded
-            error = null;
-            break;
-          } catch (fallbackError) {
-            console.error(`[Judge0] Fallback Java ID ${fallbackId} failed:`, fallbackError);
-          }
-        }
-      }
       
       // If all attempts failed, throw the original error
       if (error) {
@@ -318,15 +307,121 @@ export async function executeCode(code: string, languageId: string, stdin: strin
   }
 }
 
+// Special function just for Java execution
+async function executeJavaCode(code: string, stdin: string = ''): Promise<string> {
+  try {
+    // Process Java code to ensure it has a proper class and main method
+    const processedCode = processJavaCode(code);
+    
+    // Try with Java 8 first (ID 89)
+    const javaVersions = [89, 90, 62, 91];
+    
+    for (const javaId of javaVersions) {
+      try {
+        console.log(`[Judge0] Trying Java with ID ${javaId}`);
+        
+        // Create a minimal submission with no compiler options
+        const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
+        const body = JSON.stringify({
+          source_code: processedCode,
+          language_id: javaId,
+          stdin: stdin,
+          // No compiler options
+          // Minimal resource limits
+          cpu_time_limit: 5,
+          memory_limit: 128000,
+          stack_limit: 64000,
+        });
+        
+        console.log('[Judge0] Submitting Java code:', { url, javaId, body });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: apiHeaders,
+          body,
+        });
+        
+        if (!response.ok) {
+          const responseBody = await response.text();
+          console.error(`[Judge0] Java submission failed with ID ${javaId}:`, responseBody);
+          continue; // Try next version
+        }
+        
+        const submission = await response.json();
+        
+        // Poll for results
+        let result: SubmissionResult | null = null;
+        let retries = 0;
+        const maxRetries = 10;
+        
+        while (retries < maxRetries) {
+          // Wait before polling
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Get the result
+          const resultResponse = await fetch(
+            `${JUDGE0_API_URL}/submissions/${submission.token}?base64_encoded=false`,
+            {
+              method: 'GET',
+              headers: apiHeaders,
+            }
+          );
+          
+          if (!resultResponse.ok) {
+            const responseBody = await resultResponse.text();
+            console.error(`[Judge0] Java result fetch failed:`, responseBody);
+            break;
+          }
+          
+          result = await resultResponse.json();
+          
+          // If processing is complete, break the loop
+          if (result.status.id !== 1 && result.status.id !== 2) {
+            break;
+          }
+          
+          retries++;
+        }
+        
+        if (!result) {
+          console.log(`[Judge0] No result received for Java ID ${javaId}, trying next version`);
+          continue; // Try next version
+        }
+        
+        // Check for compilation errors related to memory
+        if (result.status.id === 6 && result.compile_output && 
+            result.compile_output.includes("Could not allocate")) {
+          console.log(`[Judge0] Java ID ${javaId} had memory allocation error, trying next version`);
+          continue; // Try next version
+        }
+        
+        // If we got here, we have a valid result (success or other error)
+        const finalResult = result; // Create a non-null reference
+        return parseResult(finalResult, 'java');
+        
+      } catch (error) {
+        console.error(`[Judge0] Error with Java ID ${javaId}:`, error);
+        // Continue to next version
+      }
+    }
+    
+    // If all versions failed
+    return "Error: Failed to compile Java code with any available Java version. Please simplify your code.";
+    
+  } catch (error) {
+    console.error('Java code execution error:', error);
+    return `Error: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
 // Helper function to process Java code before submission
 function processJavaCode(code: string): string {
   // Check if the code already has a class definition
   if (!/class\s+\w+/.test(code)) {
-    // Wrap the code in a Main class if it doesn't have one
+    // Wrap the code in a very simple Main class to minimize memory usage
     return `
 public class Main {
     public static void main(String[] args) {
-        ${code}
+${code}
     }
 }`;
   }
@@ -338,10 +433,10 @@ public class Main {
     // Check if the class has opening brace
     const hasOpenBrace = new RegExp(`class\\s+${className}\\s*\\{`).test(code);
     if (hasOpenBrace) {
-      // Insert main method after the opening brace
+      // Insert a simple main method after the opening brace
       return code.replace(
         new RegExp(`(class\\s+${className}\\s*\\{)`), 
-        `$1\n    public static void main(String[] args) {\n        // Auto-generated main method\n        System.out.println("Running " + ${className}.class.getName());\n    }\n`
+        `$1\n    public static void main(String[] args) {\n        // Auto-generated main method\n    }\n`
       );
     }
   }
