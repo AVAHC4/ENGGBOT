@@ -47,7 +47,7 @@ const apiHeaders = {
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=c11 -O2",
   cpp: "-Wall -std=c++17 -O2",
-  java: "",
+  java: "-Xmx256m -XX:MaxMetaspaceSize=64m",
   javascript: "",
   python: "-m"
 };
@@ -66,6 +66,12 @@ export async function submitCode(code: string, languageId: string, stdin: string
   const language = languageId as keyof typeof LANGUAGE_IDS;
   const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
   
+  // Set memory limits based on language
+  let memoryLimit = 128000; // Default 128MB
+  if (language === 'java') {
+    memoryLimit = 256000; // 256MB for Java
+  }
+  
   const body = JSON.stringify({
     source_code: code,
     language_id: mapLanguageId(languageId),
@@ -73,11 +79,11 @@ export async function submitCode(code: string, languageId: string, stdin: string
     compiler_options: COMPILER_OPTIONS[language] || "",
     command_line_arguments: COMMAND_LINE_ARGS[language] || "",
     // Adding additional options for better execution
-    cpu_time_limit: 5,       // 5 seconds
-    cpu_extra_time: 1,       // 1 second
-    wall_time_limit: 10,     // 10 seconds
-    memory_limit: 128000,    // 128MB
-    stack_limit: 64000,      // 64MB
+    cpu_time_limit: language === 'java' ? 10 : 5,       // 10 seconds for Java, 5 for others
+    cpu_extra_time: language === 'java' ? 2 : 1,       // 2 seconds for Java, 1 for others
+    wall_time_limit: language === 'java' ? 20 : 10,     // 20 seconds for Java, 10 for others
+    memory_limit: memoryLimit,
+    stack_limit: language === 'java' ? 128000 : 64000,  // 128MB for Java, 64MB for others
     max_processes_and_or_threads: 60,
     enable_per_process_and_thread_time_limit: false,
     enable_per_process_and_thread_memory_limit: true,
@@ -154,7 +160,11 @@ export const LANGUAGE_HINTS = {
   java: {
     "ClassNotFoundException": "Ensure class name matches the file name exactly.",
     "NullPointerException": "An object reference is null when you're trying to use it.",
-    "ArrayIndexOutOfBoundsException": "Trying to access an array element outside its bounds."
+    "ArrayIndexOutOfBoundsException": "Trying to access an array element outside its bounds.",
+    "could not allocate metaspace": "Java metaspace allocation error. Your class might be too complex or use too many dependencies.",
+    "OutOfMemoryError": "Your program is using too much memory. Check for memory leaks or large data structures.",
+    "main method not found": "Make sure your class has a 'public static void main(String[] args)' method.",
+    "cannot find symbol": "Variable or method not found. Check for typos or missing declarations."
   },
   javascript: {
     "ReferenceError": "Variable or function is not defined. Check spelling and scope.",
@@ -226,8 +236,14 @@ export function parseResult(result: SubmissionResult, languageId: string): strin
 // Execute code and get the result (polls until completion)
 export async function executeCode(code: string, languageId: string, stdin: string = ''): Promise<string> {
   try {
+    // Special handling for Java code
+    let processedCode = code;
+    if (languageId === 'java') {
+      processedCode = processJavaCode(code);
+    }
+    
     // Submit the code
-    const submission = await submitCode(code, languageId, stdin);
+    const submission = await submitCode(processedCode, languageId, stdin);
     
     // Poll for results
     let result: SubmissionResult | null = null;
@@ -258,4 +274,35 @@ export async function executeCode(code: string, languageId: string, stdin: strin
     console.error('Code execution error:', error);
     return `Error: ${error instanceof Error ? error.message : String(error)}`;
   }
+}
+
+// Helper function to process Java code before submission
+function processJavaCode(code: string): string {
+  // Check if the code already has a class definition
+  if (!/class\s+\w+/.test(code)) {
+    // Wrap the code in a Main class if it doesn't have one
+    return `
+public class Main {
+    public static void main(String[] args) {
+        ${code}
+    }
+}`;
+  }
+  
+  // If there's a class but no main method, try to detect the class name and add a main method
+  const classMatch = code.match(/class\s+(\w+)/);
+  if (classMatch && !/public\s+static\s+void\s+main/.test(code)) {
+    const className = classMatch[1];
+    // Check if the class has opening brace
+    const hasOpenBrace = new RegExp(`class\\s+${className}\\s*\\{`).test(code);
+    if (hasOpenBrace) {
+      // Insert main method after the opening brace
+      return code.replace(
+        new RegExp(`(class\\s+${className}\\s*\\{)`), 
+        `$1\n    public static void main(String[] args) {\n        // Auto-generated main method\n        System.out.println("Running " + ${className}.class.getName());\n    }\n`
+      );
+    }
+  }
+  
+  return code;
 } 
