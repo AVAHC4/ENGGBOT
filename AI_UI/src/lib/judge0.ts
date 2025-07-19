@@ -185,7 +185,7 @@ ${code}
       // Set memory limits based on language
       let memoryLimit = 128000; // Default 128MB
       if (language === 'java') {
-        memoryLimit = 256000; // 256MB for Java
+        memoryLimit = 512000; // 512MB for Java to handle metaspace
       }
       
       // Check if the language exists in our compiler options
@@ -202,9 +202,9 @@ ${code}
         compiler_options: compilerOptions,
         command_line_arguments: commandLineArgs,
         // Resource limits
-        cpu_time_limit: language === 'java' ? 10 : 5,
-        cpu_extra_time: language === 'java' ? 2 : 1,
-        wall_time_limit: language === 'java' ? 20 : 10,
+        cpu_time_limit: language === 'java' ? 15 : 5,
+        cpu_extra_time: language === 'java' ? 3 : 1,
+        wall_time_limit: language === 'java' ? 30 : 10,
         memory_limit: memoryLimit,
         stack_limit: language === 'java' ? 128000 : 64000,
         max_processes_and_or_threads: 60,
@@ -244,7 +244,7 @@ ${code}
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=c11 -O2",
   cpp: "-Wall -std=c++17 -O2",
-  java: "-Xms64m -Xmx128m -XX:MetaspaceSize=32m -XX:MaxMetaspaceSize=64m",
+  java: "-Xms64m -Xmx256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m",
   javascript: "",
   python: "-m"
 };
