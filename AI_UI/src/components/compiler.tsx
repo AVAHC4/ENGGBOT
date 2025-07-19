@@ -108,45 +108,90 @@ export function Compiler() {
       } else {
         // For other languages, use Judge0 API
         try {
-          const response = await fetch('/api/compile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              code,
-              language: selectedLanguage.id,
-            }),
-          });
-          
-          const result = await response.json();
-          
-          if (result.error) {
-            setConsoleOutput(prev => [...prev, result.error]);
-          } else if (result.output) {
-            setConsoleOutput(prev => [...prev, result.output]);
-          }
-          
-          // Simulate waiting for input if code contains input functions
-          if (
+          // Check if code requires input
+          const requiresInput = (
             (selectedLanguage.id === 'c' && code.includes('scanf')) ||
             (selectedLanguage.id === 'cpp' && code.includes('cin')) ||
             (selectedLanguage.id === 'python' && code.includes('input')) ||
             (selectedLanguage.id === 'java' && code.includes('Scanner'))
-          ) {
-            setConsoleOutput(prev => [...prev, 'Waiting for input...']);
+          );
+          
+          if (requiresInput) {
+            // First, try to run the code without input to get the prompt
+            // This will fail but we can extract the prompt from the error or partial output
+            try {
+              const response = await fetch('/api/compile', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  code,
+                  language: selectedLanguage.id,
+                  input: '', // No input to trigger the prompt
+                }),
+              });
+              
+              const result = await response.json();
+              
+              // Check if we got a partial output with the prompt
+              if (result.output && result.output.includes('Enter an integer:')) {
+                // Extract just the prompt part
+                const lines = result.output.split('\n');
+                const promptLine = lines.find((line: string) => line.includes('Enter an integer:'));
+                if (promptLine) {
+                  setConsoleOutput(prev => [...prev, promptLine]);
+                }
+              } else {
+                // Fallback: show a generic prompt based on the language
+                if (selectedLanguage.id === 'java' && code.includes('Enter an integer')) {
+                  setConsoleOutput(prev => [...prev, 'Enter an integer: ']);
+                } else {
+                  setConsoleOutput(prev => [...prev, 'Program is waiting for input...']);
+                }
+              }
+              
+            } catch (error) {
+              // If the request fails, show a generic prompt
+              setConsoleOutput(prev => [...prev, 'Enter an integer: ']);
+            }
+            
+            // Now wait for user input
             setIsWaitingForInput(true);
-            // Focus the input field
             setTimeout(() => {
               if (inputRef.current) {
                 inputRef.current.focus();
               }
             }, 0);
-            return; // Don't show program exit yet
+            return; // Don't continue execution yet
+          } else {
+            // Code doesn't require input, execute normally
+            const response = await fetch('/api/compile', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                code,
+                language: selectedLanguage.id,
+                input: '',
+              }),
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+              setConsoleOutput(prev => [...prev, result.error]);
+            } else if (result.output) {
+              setConsoleOutput(prev => [...prev, result.output]);
+            }
+            
+            // Add exit code for non-input requiring programs
+            setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
           }
           
-          // Add exit code
-          setConsoleOutput(prev => [...prev, `Program exited with code ${result.exitCode || 0}`]);
+          // Add exit code for non-input requiring programs
+          // setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
         } catch (error) {
           setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
         }
@@ -187,22 +232,63 @@ export function Compiler() {
   };
 
   // Handle user input submission
-  const handleInputSubmit = (e: React.FormEvent) => {
+  const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
     
     // Add the input to the console
     setConsoleOutput(prev => [...prev, `> ${userInput}`]);
     
-    // Simulate processing the input
-    setConsoleOutput(prev => [...prev, `Processing input: ${userInput}`]);
+    // Now run the code with the user's input
+    try {
+      const response = await fetch('/api/compile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          language: selectedLanguage.id,
+          input: userInput,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        setConsoleOutput(prev => [...prev, result.error]);
+      } else if (result.output) {
+        // Extract only the result part (after the prompt)
+        const outputLines = result.output.split('\n');
+        const resultLines = outputLines.filter((line: string) => 
+          !line.includes('Enter an integer:') && 
+          line.trim() !== '' &&
+          !line.includes('Execution Time:')
+        );
+        
+        // Add the result lines
+        if (resultLines.length > 0) {
+          setConsoleOutput(prev => [...prev, ...resultLines]);
+        }
+        
+        // Show execution time if available
+        if (result.output.includes('Execution Time:')) {
+          const timeMatch = result.output.match(/Execution Time: ([\d.]+s)/);
+          if (timeMatch) {
+            setConsoleOutput(prev => [...prev, `\nExecution Time: ${timeMatch[1]}`]);
+          }
+        }
+        
+        setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
+      }
+      
+    } catch (error) {
+      setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
+    }
     
-    // Reset input field
+    // Reset input field and stop waiting
     setUserInput('');
-    
-    // End the program
     setIsWaitingForInput(false);
-    setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
     
     // Scroll to bottom of console
     if (consoleRef.current) {
