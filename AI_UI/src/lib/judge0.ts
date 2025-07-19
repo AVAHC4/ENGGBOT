@@ -36,12 +36,18 @@ export interface SubmissionResult {
   memory: number;
 }
 
-// Judge0 API headers
-const apiHeaders = {
-  'Content-Type': 'application/json',
-  'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
-  'x-rapidapi-key': '***REMOVED***',
-};
+// Get Judge0 API headers with environment variable
+function getApiHeaders() {
+  const apiKey = process.env.JUDGE0_API_KEY || process.env.NEXT_PUBLIC_JUDGE0_API_KEY;
+  if (!apiKey) {
+    throw new Error('Judge0 API key not found. Please set JUDGE0_API_KEY in your environment variables.');
+  }
+  return {
+    'Content-Type': 'application/json',
+    'x-rapidapi-host': 'judge0-ce.p.rapidapi.com',
+    'x-rapidapi-key': apiKey,
+  };
+}
 
 // Submit code for execution
 export async function submitCode(code: string, languageId: string): Promise<Submission> {
@@ -51,6 +57,7 @@ export async function submitCode(code: string, languageId: string): Promise<Subm
     language_id: mapLanguageId(languageId),
     stdin: '',
   });
+  const apiHeaders = getApiHeaders();
   console.log('[Judge0] Submitting code:', { url, headers: apiHeaders, body });
   const response = await fetch(url, {
     method: 'POST',
@@ -68,6 +75,7 @@ export async function submitCode(code: string, languageId: string): Promise<Subm
 // Get a submission's result
 export async function getSubmissionResult(token: string): Promise<SubmissionResult> {
   const url = `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`;
+  const apiHeaders = getApiHeaders();
   console.log('[Judge0] Getting submission result:', { url, headers: apiHeaders });
   const response = await fetch(url, {
     method: 'GET',
@@ -185,15 +193,20 @@ ${code}
       // Set memory limits based on language
       let memoryLimit = 128000; // Default 128MB
       if (language === 'java') {
-        memoryLimit = 512000; // 512MB for Java to handle metaspace
+        memoryLimit = 256000; // 256MB for Java - must match JVM -Xmx128m setting
       }
       
       // Check if the language exists in our compiler options
       const compilerOptions = language in COMPILER_OPTIONS ? 
         COMPILER_OPTIONS[language as keyof typeof COMPILER_OPTIONS] : "";
         
-      const commandLineArgs = language in COMMAND_LINE_ARGS ?
+      
+
+      let commandLineArgs = language in COMMAND_LINE_ARGS ?
         COMMAND_LINE_ARGS[language as keyof typeof COMMAND_LINE_ARGS] : "";
+      // No extra command line args for Java after using -J flags
+
+      
       
       const body = JSON.stringify({
         source_code: processedCode,
@@ -202,18 +215,20 @@ ${code}
         compiler_options: compilerOptions,
         command_line_arguments: commandLineArgs,
         // Resource limits
-        cpu_time_limit: language === 'java' ? 15 : 5,
-        cpu_extra_time: language === 'java' ? 3 : 1,
-        wall_time_limit: language === 'java' ? 30 : 10,
+        cpu_time_limit: language === 'java' ? 10 : 5,
+        cpu_extra_time: language === 'java' ? 2 : 1,
+        wall_time_limit: language === 'java' ? 20 : 10,
         memory_limit: memoryLimit,
-        stack_limit: language === 'java' ? 128000 : 64000,
+        stack_limit: language === 'java' ? 64000 : 64000,
         max_processes_and_or_threads: 60,
         enable_per_process_and_thread_time_limit: false,
         enable_per_process_and_thread_memory_limit: true,
         max_file_size: 1024,
+        ...(language === 'java' ? { } : {}),
       });
       
-      console.log('[Judge0] Submitting code:', { url, language });
+      console.log('[Judge0] Submitting code:', { url, language, memoryLimit, compilerOptions, body: JSON.parse(body) });
+      const apiHeaders = getApiHeaders();
       const response = await fetch(url, {
         method: 'POST',
         headers: apiHeaders,
@@ -242,12 +257,12 @@ ${code}
 
 // Language-specific compiler options
 export const COMPILER_OPTIONS = {
-  c: "-Wall -std=c11 -O2",
-  cpp: "-Wall -std=c++17 -O2",
-  java: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0",
+  c: "-Wall -std=gnu99 -O2 -o a.out source_file.c -lm",
+  cpp: "-Wall -std=c++17 -O2 -o a.out source_file.cpp",
+  python: "",
   javascript: "",
-  python: "-m"
-};
+  java: "-J-Xmx128m -J-XX:MetaspaceSize=32m -J-XX:MaxMetaspaceSize=64m",
+}; 
 
 // Language-specific command line arguments
 export const COMMAND_LINE_ARGS = {
