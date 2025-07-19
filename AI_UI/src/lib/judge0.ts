@@ -8,7 +8,7 @@ const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 export const LANGUAGE_IDS = {
   python: 71,    // Python 3.8.1
   javascript: 63, // JavaScript (Node.js 12.14.0)
-  java: 62,      // Java (OpenJDK 13.0.1)
+  java: 91,      // Java 17 (OpenJDK 17.0.1)
   c: 50,         // C (GCC 9.2.0)
   cpp: 54,       // C++ (GCC 9.2.0)
 };
@@ -193,7 +193,7 @@ ${code}
       // Set memory limits based on language
       let memoryLimit = 128000; // Default 128MB
       if (language === 'java') {
-        memoryLimit = 256000; // 256MB for Java - must match JVM -Xmx128m setting
+        memoryLimit = 1024000; // 1GB for Java to avoid native memory errors
       }
       
       // Check if the language exists in our compiler options
@@ -261,7 +261,7 @@ export const COMPILER_OPTIONS = {
   cpp: "-Wall -std=c++17 -O2 -o a.out source_file.cpp",
   python: "",
   javascript: "",
-  java: "-J-Xmx128m -J-XX:MetaspaceSize=32m -J-XX:MaxMetaspaceSize=64m",
+  java: "-J-Xmx256m -J-XX:MaxMetaspaceSize=128m -J-XX:+UseSerialGC -J-XX:ActiveProcessorCount=1",
 }; 
 
 // Language-specific command line arguments
