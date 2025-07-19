@@ -67,14 +67,11 @@ export function Compiler() {
     setConsoleOutput(prev => [...prev, `Compiling ${selectedLanguage.name} code...`]);
     
     try {
-      // Simulate compilation delay
-      await new Promise(resolve => setTimeout(resolve, 500));
       setIsCompiling(false);
-      
       // Add execution message
       setConsoleOutput(prev => [...prev, `Running ${selectedLanguage.name} code...`]);
       
-      // For JavaScript, we can actually run the code in the browser
+      // For JavaScript, we can run the code locally in the browser
       if (selectedLanguage.id === 'javascript') {
         try {
           // Create a function from the code to capture console.log output
@@ -100,18 +97,16 @@ export function Compiler() {
           } catch (error) {
             if (error instanceof Error) {
               setConsoleOutput(prev => [...prev, `Error: ${error.message}`]);
-            } else {
-              setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
             }
+          } finally {
+            // Restore original console.log
+            console.log = originalConsoleLog;
           }
-          
-          // Restore console.log
-          console.log = originalConsoleLog;
         } catch (error) {
-          setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
+          setConsoleOutput(prev => [...prev, `Error: ${error instanceof Error ? error.message : String(error)}`]);
         }
       } else {
-        // For other languages, use the API
+        // For other languages, use Judge0 API
         try {
           const response = await fetch('/api/compile', {
             method: 'POST',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { AIVoiceInput } from '@/components/ui/ai-voice-input';
+// import { AIVoiceInput } from '@/components/ui/ai-voice-input'; // Temporarily commented out due to React type compatibility issues
 import { Button } from '@/components/ui/button';
 
 interface VoiceInputModalProps {
@@ -59,10 +59,10 @@ export function VoiceInputModal({
         </div>
         
         <div className="p-4">
-          <AIVoiceInput 
+          {/* <AIVoiceInput 
             onStart={handleVoiceStart} 
             onStop={handleVoiceStop}
-          />
+          /> */} {/* Temporarily commented out due to React type compatibility issues */}
           
           <div className="text-center mt-2 text-sm text-muted-foreground dark:text-gray-400">
             {recording ? 
