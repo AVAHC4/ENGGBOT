@@ -244,7 +244,7 @@ ${code}
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=c11 -O2",
   cpp: "-Wall -std=c++17 -O2",
-  java: "-Xms64m -Xmx256m -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=128m",
+  java: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0",
   javascript: "",
   python: "-m"
 };
