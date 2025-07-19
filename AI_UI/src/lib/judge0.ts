@@ -193,7 +193,7 @@ ${code}
       // Set memory limits based on language
       let memoryLimit = 128000; // Default 128MB
       if (language === 'java') {
-        memoryLimit = 1024000; // 1GB for Java to avoid native memory errors
+        memoryLimit = 256000; // 256MB for Java - more reasonable limit
       }
       
       // Check if the language exists in our compiler options
@@ -214,15 +214,15 @@ ${code}
         stdin: stdin,
         compiler_options: compilerOptions,
         command_line_arguments: commandLineArgs,
-        // Resource limits
-        cpu_time_limit: language === 'java' ? 10 : 5,
-        cpu_extra_time: language === 'java' ? 2 : 1,
-        wall_time_limit: language === 'java' ? 20 : 10,
+        // Resource limits - more conservative for stability
+        cpu_time_limit: language === 'java' ? 5 : 2,
+        cpu_extra_time: language === 'java' ? 1 : 0.5,
+        wall_time_limit: language === 'java' ? 10 : 5,
         memory_limit: memoryLimit,
-        stack_limit: language === 'java' ? 64000 : 64000,
-        max_processes_and_or_threads: 60,
+        stack_limit: 64000,
+        max_processes_and_or_threads: 30,
         enable_per_process_and_thread_time_limit: false,
-        enable_per_process_and_thread_memory_limit: true,
+        enable_per_process_and_thread_memory_limit: false,
         max_file_size: 1024,
         ...(language === 'java' ? { } : {}),
       });
@@ -261,7 +261,7 @@ export const COMPILER_OPTIONS = {
   cpp: "-Wall -std=c++17 -O2 -o a.out source_file.cpp",
   python: "",
   javascript: "",
-  java: "-J-Xmx256m -J-XX:MaxMetaspaceSize=128m -J-XX:+UseSerialGC -J-XX:ActiveProcessorCount=1",
+  java: "", // Simplified - let Judge0 handle Java compilation with default settings
 }; 
 
 // Language-specific command line arguments
