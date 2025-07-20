@@ -103,7 +103,7 @@ export function Compiler() {
             console.log = originalConsoleLog;
           }
         } catch (error) {
-          seConsoleOutput(prev => [...prev, `Error: ${error instanceof Error ? error.message : String(error)}`]);
+          setConsoleOutput(prev => [...prev, `Error: ${error instanceof Error ? error.message : String(error)}`]);
         }
       } else {
         // For other languages, use Judge0 API
