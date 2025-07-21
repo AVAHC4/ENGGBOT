@@ -42,6 +42,8 @@ import passport from "passport";
 import { initGoogleAuth } from "./auth/google.js";
 import { supabase } from "./lib/supabase.js";
 import { initTestAuth } from "./auth/test.js";
+import projectsRouter from "./routes/projects.js";
+import ragRouter from "./routes/rag.js";
 
 // Log the full environment variables for debugging
 console.log("Environment Variables:");
@@ -200,6 +202,12 @@ apiRouter.get("/user", (req, res) => {
 
 // Mount API routes under /api
 app.use("/api", apiRouter);
+
+// Mount projects routes
+app.use("/api/projects", projectsRouter);
+
+// Mount RAG routes
+app.use("/api/rag", ragRouter);
 
 // Initialize Google auth
 initGoogleAuth(app);
