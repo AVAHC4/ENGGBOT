@@ -51,7 +51,6 @@ import {
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
-import { NavProjects } from "./nav-projects"
 import { NavSecondary } from "./nav-secondary"
 // import { NavUser } from "./nav-user" // Temporarily commented out due to React type compatibility issues
 import {
@@ -827,7 +826,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                 </SidebarMenuItem>
               </SidebarMenu>
             </div>
-            <NavProjects className="mt-4" />
             <NavSecondary items={data.navSecondary} className="mt-auto" />
           </SidebarContent>
           <SidebarFooter 
