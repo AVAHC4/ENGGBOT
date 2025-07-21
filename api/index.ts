@@ -187,6 +187,32 @@ apiRouter.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+// Test projects endpoint without auth (for debugging)
+apiRouter.get("/test-projects", async (req, res) => {
+  console.log("Test projects endpoint hit");
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: 'Database error', details: error });
+    }
+    
+    res.json({ 
+      status: "ok", 
+      message: "Projects table is accessible",
+      authenticated: !!req.user,
+      user: req.user || null
+    });
+  } catch (err) {
+    console.error('Unexpected error:', err);
+    res.status(500).json({ error: 'Server error', details: String(err) });
+  }
+});
+
 // Get current user
 apiRouter.get("/user", (req, res) => {
   console.log("User endpoint hit. User authenticated:", !!req.user);
