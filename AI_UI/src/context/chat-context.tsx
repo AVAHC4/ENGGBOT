@@ -4,6 +4,7 @@ import React, { createContext, useState, useContext, useCallback, ReactNode, use
 import { ChatMessage } from '@/app/api/chat/route';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
+import { useProjects } from './projects-context';
 
 export interface Attachment {
   id: string;
@@ -17,6 +18,7 @@ export interface ExtendedChatMessage extends ChatMessage {
   replyToId?: string; // ID of the message being replied to
   metadata?: Record<string, any>; // Add metadata field for additional data like search results
   isStreaming?: boolean; // Add streaming status indicator
+  projectId?: string; // Add project ID for project-aware conversations
 }
 
 interface ChatContextType {
@@ -42,6 +44,10 @@ interface ChatContextType {
   regenerateLastResponse: () => Promise<void>; // Add regenerate function
   isPrivateMode: boolean; // Add private mode flag
   togglePrivateMode: () => void; // Add toggle function for private mode
+  // Project-aware features
+  currentProjectId: string | null;
+  projectContextEnabled: boolean;
+  toggleProjectContext: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -56,6 +62,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
+  const [projectContextEnabled, setProjectContextEnabled] = useState(true);
+  
+  // Get projects context
+  const { activeProject, searchProject, ingestText } = useProjects();
   
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -669,6 +679,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
   }, [conversationId]);
 
+  // Toggle project context
+  const toggleProjectContext = useCallback(() => {
+    setProjectContextEnabled(prev => !prev);
+  }, []);
+
+  // Get current project ID
+  const currentProjectId = activeProject?.id || null;
+
   // Add useEffect to clean up resources on unmount
   useEffect(() => {
     return () => {
@@ -700,6 +718,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     regenerateLastResponse,
     isPrivateMode,
     togglePrivateMode,
+    // Project-aware features
+    currentProjectId,
+    projectContextEnabled,
+    toggleProjectContext,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
