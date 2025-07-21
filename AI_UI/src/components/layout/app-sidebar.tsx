@@ -52,7 +52,6 @@ import {
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
 import { NavProjects } from "./nav-projects"
-import { NavUser } from "./nav-user"
 import { NavSecondary } from "./nav-secondary"
 // import { NavUser } from "./nav-user" // Temporarily commented out due to React type compatibility issues
 import {
@@ -844,7 +843,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
               padding: '12px'
             }}
           >
-            <NavUser user={userData} />
+            {/* <NavUser user={userData} /> */} {/* Temporarily commented out due to React type compatibility issues */}
           </SidebarFooter>
         </Sidebar>
 
