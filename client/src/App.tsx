@@ -15,8 +15,6 @@ import { useEffect } from "react";
 import React from "react";
 import { 
   isAuthenticated, 
-  shouldRedirectToChat, 
-  setRedirectToChat,
   clearAuthData
 } from "@/lib/auth-storage";
 
@@ -28,14 +26,9 @@ function ProtectedChatDashboard() {
   // First check for quick auth indicators before doing a full API check
   React.useEffect(() => {
     // Check authentication using the centralized helper
-    if (isAuthenticated() || shouldRedirectToChat()) {
+    if (isAuthenticated()) {
       // If any auth evidence exists, proceed to chat interface
       setLocalAuth(true);
-      
-      // Clean up redirect flag
-      if (shouldRedirectToChat()) {
-        setRedirectToChat(false);
-      }
     }
   }, []);
   
@@ -104,43 +97,26 @@ function Router() {
 function App() {
   const [location, setLocation] = useLocation();
 
-  // Check for redirects immediately on mount and route changes
+  // Handle only logout functionality, no redirect checks
   useEffect(() => {
-    console.log("App useEffect - checking redirects. Current location:", location);
-    
-    // Check if this is a logout or force main page request
+    // Check if this is a logout request
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('logout') || urlParams.has('no_redirect') || 
-        localStorage.getItem('forceMainPage') === 'true') {
-      // Clear the flag
-      localStorage.removeItem('forceMainPage');
-      console.log("Detected logout or force main page request, staying on main page");
+    if (urlParams.has('logout') || urlParams.has('force_logout')) {
+      console.log("Logout detected, clearing user data");
       
-      // Check for force logout and clear all user data
-      if (urlParams.has('force_logout') || localStorage.getItem('forceLogout') === 'true') {
-        console.log("Forcing complete logout and clearing all user data");
-        
-        // Clear all auth data using centralized helper
-        clearAuthData();
-        
-        // Forcefully reload the page to reset all state
-        if (!urlParams.has('no_reload')) {
-          window.location.href = '/';
-          return;
-        }
+      // Clear all auth data using centralized helper
+      clearAuthData();
+      
+      // Forcefully reload the page to reset all state
+      if (!urlParams.has('no_reload')) {
+        window.location.href = '/';
+        return;
       }
       
       // If we're on a path other than root, redirect to root
       if (location !== '/') {
         setLocation('/');
       }
-      return;
-    }
-    
-    // Check if user should redirect to chat using centralized helper
-    if (location !== '/chat' && shouldRedirectToChat()) {
-      console.log("Auth success detected, redirecting to chat");
-      setLocation('/chat');
     }
   }, [location, setLocation]);
 

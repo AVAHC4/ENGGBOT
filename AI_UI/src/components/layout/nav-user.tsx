@@ -31,6 +31,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/blocks/sidebar"
+import { logout } from "@/lib/auth-helpers"
 
 export function NavUser({
   user,
@@ -45,21 +46,8 @@ export function NavUser({
   const router = useRouter()
 
   const handleLogout = () => {
-    // Clear authentication data from localStorage
-    localStorage.removeItem('authenticated')
-    localStorage.removeItem('user_data')
-    localStorage.removeItem('user_name')
-    localStorage.removeItem('user_email')
-    localStorage.removeItem('user_avatar')
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    
-    // Clear any other auth-related data
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('session_id')
-    
-    // Redirect to landing page
-    router.push('/')
+    console.log('Logout clicked - starting logout process')
+    logout() // Use the imported logout function that redirects to localhost:3000
   }
 
   return (
@@ -123,7 +111,15 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
+            <DropdownMenuItem 
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('Logout menu item clicked')
+                handleLogout()
+              }}
+              className="cursor-pointer"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
