@@ -33,6 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Component as ProfileCard } from "@/components/ui/profile-card"
 
 const languages = [
   { label: "English", value: "en" },
@@ -211,6 +212,18 @@ export function AccountForm() {
             </FormItem>
           )}
         />
+        <FormItem>
+          <FormLabel>Profile Card Preview</FormLabel>
+          <FormControl>
+            <div className="w-full h-auto">
+              <ProfileCard />
+            </div>
+          </FormControl>
+          <FormDescription>
+            This is a preview of how your profile card will appear.
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
         <Button type="submit">Update account</Button>
       </form>
     </Form>
