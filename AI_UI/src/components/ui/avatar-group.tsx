@@ -55,7 +55,7 @@ const Avatar = ({
       <AnimatePresence mode="popLayout">
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{
               opacity: 1,
               y: 0,
@@ -66,8 +66,8 @@ const Avatar = ({
                 damping: 20,
               },
             }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute -top-16 whitespace-nowrap flex text-xs flex-col items-center justify-center rounded-xl bg-white z-50 shadow-lg px-4 py-2 border min-w-max"
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="absolute top-14 whitespace-nowrap flex text-xs flex-col items-center justify-center rounded-xl bg-white z-50 shadow-lg px-4 py-2 border min-w-max"
           >
             <div className="font-bold text-gray-900 relative z-30 text-base text-center">
               {item.name}
