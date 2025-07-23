@@ -1,4 +1,5 @@
 import { Separator } from "@/components/ui/separator"
+import { Component as ProfileCard } from "@/components/ui/profile-card"
 import { AccountForm } from "./account-form"
 
 export default function SettingsAccountPage() {
@@ -12,6 +13,7 @@ export default function SettingsAccountPage() {
         </p>
       </div>
       <Separator />
+      <ProfileCard />
       <AccountForm />
     </div>
   )
