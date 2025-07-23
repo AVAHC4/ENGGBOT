@@ -34,6 +34,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Component as ProfileCard } from "@/components/ui/profile-card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 const languages = [
   { label: "English", value: "en" },
@@ -212,18 +220,22 @@ export function AccountForm() {
             </FormItem>
           )}
         />
-        <FormItem>
-          <FormLabel>Profile Card Preview</FormLabel>
-          <FormControl>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Profile Card Preview</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Profile Card</DialogTitle>
+              <DialogDescription>
+                This is a preview of how your profile card will appear.
+              </DialogDescription>
+            </DialogHeader>
             <div className="w-full h-auto">
               <ProfileCard />
             </div>
-          </FormControl>
-          <FormDescription>
-            This is a preview of how your profile card will appear.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
+          </DialogContent>
+        </Dialog>
         <Button type="submit">Update account</Button>
       </form>
     </Form>
