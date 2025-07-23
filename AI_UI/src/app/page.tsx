@@ -3,39 +3,10 @@
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { ChatPresenceIndicator } from "@/components/chat-presence-indicator";
+
 import { checkExternalAuth } from "@/lib/auth-helpers";
 import { useRouter } from "next/navigation";
 
-// Team members with presence status
-const teamMembers = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    avatar: "https://i.pravatar.cc/150?img=1",
-    isOnline: true,
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    avatar: "https://i.pravatar.cc/150?img=8",
-    isOnline: true,
-  },
-  {
-    id: "3",
-    name: "Jessica Smith",
-    avatar: "https://i.pravatar.cc/150?img=5",
-    isOnline: false,
-    lastSeen: "20m ago",
-  },
-  {
-    id: "4",
-    name: "David Rodriguez",
-    avatar: "https://i.pravatar.cc/150?img=3",
-    isOnline: false,
-    lastSeen: "1h ago",
-  },
-];
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -67,10 +38,7 @@ export default function Home() {
   if (isAuthenticated) {
     return (
       <main className="flex flex-col min-h-screen chat-page overflow-hidden">
-        {/* Presence indicator moved to the chat interface */}
-        <div className="absolute top-4 right-4 z-10">
-          <ChatPresenceIndicator members={teamMembers} />
-        </div>
+
         
         <div className="flex-1 p-2 md:p-4 lg:p-6">
           <ChatInterface />
