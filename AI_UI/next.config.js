@@ -4,6 +4,16 @@ const nextConfig = {
   // Disable Vercel deployment badge/logo (the "N" circle)
   images: {
     disableStaticImages: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.pravatar.cc',
+      },
+    ],
   },
   eslint: {
     ignoreDuringBuilds: true,
