@@ -55,7 +55,6 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-user-email': userEmail,
       ...options.headers,
     },
   });
@@ -67,25 +66,29 @@ export async function saveConversation(id: string, messages: any[]) {
   
   try {
     // First, ensure the conversation exists
-    let title = `Conversation ${id.substring(0, 6)}`;
-    
-    // Update title based on first message if messages exist
-    if (messages.length > 0) {
-      const firstUserMessage = messages.find(m => m.isUser)?.content;
-      if (firstUserMessage) {
-        title = firstUserMessage.substring(0, 30) + (firstUserMessage.length > 30 ? '...' : '');
+    // Determine title: from first message or default
+    const title = messages.find(m => m.role === 'user')?.content.substring(0, 50) || 'New Conversation';
+
+    // First, try to update the conversation metadata (will fail if it doesn't exist)
+    const metadataResponse = await apiCall(`/api/conversations/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({ title })
+      });
+
+    // If the update fails, it's likely because the conversation doesn't exist yet.
+    if (!metadataResponse.ok) {
+      const createResponse = await apiCall('/api/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ conversationId: id, title })
+      });
+
+      // If creation also fails (and it's not a conflict), then we have a problem.
+      if (!createResponse.ok && createResponse.status !== 409) {
+        const errorData = await createResponse.json();
+        console.error('Error: Failed to create conversation metadata', JSON.stringify(errorData));
+        return; // Exit if we can't create the conversation
       }
-    }
-    
-    // Create or update conversation
-    const response = await apiCall('/api/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ conversationId: id, title })
-    });
-    
-    if (!response.ok) {
-      console.error('Failed to save conversation metadata');
-      return;
     }
     
     // Save each message

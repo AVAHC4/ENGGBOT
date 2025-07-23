@@ -312,8 +312,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   // Load conversations - only on client side after mounting
   React.useEffect(() => {
     if (isMounted) {
-      const loadConversations = () => {
-        const allConversations = getAllConversationsMetadata();
+      const loadConversations = async () => {
+        const allConversations = await getAllConversationsMetadata();
         setConversations(allConversations);
       };
       
@@ -555,39 +555,43 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   }, [friends]);
   
   // Function to handle conversation rename
-  const handleRenameConversation = (id: string, newTitle: string) => {
+  const handleRenameConversation = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) {
       setEditingConversationId(null);
       return;
     }
     
-    // Get all conversations from storage
-    const allConversations = getAllConversationsMetadata();
-    
-    // Find the conversation that needs to be renamed
-    const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
-    
-    if (conversationToUpdate) {
-      // Get existing metadata
-      const existingMeta = getConversationMetadata(id) || {
-        title: `Conversation ${id.substring(0, 6)}`,
-        created: new Date().toISOString(),
-        updated: new Date().toISOString()
-      };
+    try {
+      // Get all conversations from storage
+      const allConversations = await getAllConversationsMetadata();
       
-      // Update metadata with new title and timestamp
-      const updatedMeta = {
-        ...existingMeta,
-        title: newTitle,
-        updated: new Date().toISOString()
-      };
+      // Find the conversation that needs to be renamed
+      const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
       
-      // Save updated metadata
-      saveConversationMetadata(id, updatedMeta);
-      
-      // Force update conversations list to reflect the change
-      const updatedConversations = getAllConversationsMetadata();
-      setConversations(updatedConversations);
+      if (conversationToUpdate) {
+        // Get existing metadata
+        const existingMeta = await getConversationMetadata(id) || {
+          title: `Conversation ${id.substring(0, 6)}`,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString()
+        };
+        
+        // Update metadata with new title and timestamp
+        const updatedMeta = {
+          ...existingMeta,
+          title: newTitle,
+          updated: new Date().toISOString()
+        };
+        
+        // Save updated metadata
+        await saveConversationMetadata(id, updatedMeta);
+        
+        // Force update conversations list to reflect the change
+        const updatedConversations = await getAllConversationsMetadata();
+        setConversations(updatedConversations);
+      }
+    } catch (error) {
+      console.error('Error renaming conversation:', error);
     }
     
     // Reset editing state

@@ -75,39 +75,47 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Initialize conversationId after mount
   useEffect(() => {
     if (isMounted) {
-      // Get user-specific prefix
-      const userPrefix = getUserPrefix();
-      
-      // Get the stored conversation ID or generate a new one
-      const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
-      if (storedId) {
-        setConversationId(storedId);
-      }
+      const initializeConversation = async () => {
+        const conversations = await getConversationList();
+        if (conversations && conversations.length > 0) {
+          // Assuming the list is sorted by date, set the most recent one
+          setConversationId(conversations[0].id);
+        } else {
+          // No conversations exist, so start a new one
+          startNewConversation();
+        }
+      };
+
+      initializeConversation();
     }
+    // Disabling exhaustive-deps because we only want this to run once on mount.
+    // startNewConversation is a dependency but including it would cause a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
   // Load conversation on startup or when switching conversations
   useEffect(() => {
-    if (isMounted && !isPrivateMode) {
-      const savedMessages = loadConversation(conversationId);
-      if (savedMessages?.length) {
-        setMessages(savedMessages);
-      } else {
-        setMessages([]);
-      }
-      
-      // Get user-specific prefix
-      const userPrefix = getUserPrefix();
-      
-      // Save active conversation ID with user-specific key
-      localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
+    if (isMounted && !isPrivateMode && conversationId) {
+      const loadMessages = async () => {
+        const savedMessages = await loadConversation(conversationId);
+        if (savedMessages?.length) {
+          setMessages(savedMessages);
+        } else {
+          setMessages([]);
+        }
+      };
+
+      loadMessages();
     }
   }, [conversationId, isMounted, isPrivateMode]);
   
   // Save messages when they change
   useEffect(() => {
-    if (isMounted && messages.length > 0 && !isPrivateMode) {
-      saveConversation(conversationId, messages);
+    if (isMounted && !isPrivateMode && messages.length > 0) {
+      const save = async () => {
+        await saveConversation(conversationId, messages);
+      };
+      save();
     }
   }, [messages, conversationId, isMounted, isPrivateMode]);
 
@@ -601,7 +609,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [isGenerating, isLoading, stopGeneration]);
   
   // Start a new conversation
-  const startNewConversation = useCallback(() => {
+  const startNewConversation = useCallback(async () => {
     // Stop any ongoing generation
     if (isGenerating || isLoading) {
       stopGeneration();
@@ -612,28 +620,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setMessages([]);
     
     if (isMounted) {
-      const userPrefix = getUserPrefix();
-      localStorage.setItem(`${userPrefix}-activeConversation`, newId);
-      saveConversation(newId, []);
+      await saveConversation(newId, []);
     }
   }, [isGenerating, isLoading, stopGeneration, isMounted]);
   
   // Delete the current conversation
-  const deleteCurrentConversation = useCallback(() => {
+  const deleteCurrentConversation = useCallback(async () => {
     if (isMounted) {
       // Get conversation list before deletion
-      const conversations = getConversationList();
+      const conversations = await getConversationList();
       
       // Delete current conversation
-      deleteConversation(conversationId);
+      await deleteConversation(conversationId);
       
       // If there are other conversations, switch to the most recent one
       // Otherwise, create a new conversation
-      const remainingConversations = conversations.filter((id: string) => id !== conversationId);
+      const remainingConversations = conversations.filter((c: any) => c.id !== conversationId);
       
       if (remainingConversations.length > 0) {
-        // Switch to the first conversation in the list
-        switchConversation(remainingConversations[0]);
+        // Switch to the most recent conversation in the list (assuming it's sorted by date)
+        switchConversation(remainingConversations[0].id);
       } else {
         // Create a new conversation if no others exist
         startNewConversation();
@@ -650,24 +656,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Toggle private mode
-  const togglePrivateMode = useCallback(() => {
-    setIsPrivateMode(prev => {
-      const newValue = !prev;
-      
-      if (newValue) {
-        // When enabling private mode, clear the current conversation
-        setMessages([]);
-      } else {
-        // When disabling private mode, load the saved conversation
-        const savedMessages = loadConversation(conversationId);
+  const togglePrivateMode = useCallback(async () => {
+    const newIsPrivateMode = !isPrivateMode;
+    setIsPrivateMode(newIsPrivateMode);
+
+    if (newIsPrivateMode) {
+      // When enabling private mode, clear the current conversation
+      setMessages([]);
+    } else {
+      // When disabling private mode, load the saved conversation
+      if (conversationId) {
+        const savedMessages = await loadConversation(conversationId);
         if (savedMessages?.length) {
           setMessages(savedMessages);
+        } else {
+          setMessages([]);
         }
       }
-      
-      return newValue;
-    });
-  }, [conversationId]);
+    }
+  }, [conversationId, isPrivateMode]);
 
   // Add useEffect to clean up resources on unmount
   useEffect(() => {

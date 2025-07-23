@@ -8,11 +8,12 @@ export async function POST(
 ) {
   try {
     const { role, content, metadata } = await request.json();
-    const userEmail = request.headers.get('x-user-email');
-    
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email not provided' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.email) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
+    const userEmail = user.email;
 
     // Verify the conversation belongs to this user
     const { data: conversation, error: convError } = await supabase

@@ -7,11 +7,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const userEmail = request.headers.get('x-user-email');
-    
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email not provided' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.email) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
+    const userEmail = user.email;
 
     // Fetch conversation metadata (verify ownership with email)
     const { data: conversation, error: convError } = await supabase
@@ -54,11 +55,12 @@ export async function PUT(
 ) {
   try {
     const { title } = await request.json();
-    const userEmail = request.headers.get('x-user-email');
-    
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email not provided' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.email) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
+    const userEmail = user.email;
 
     // Update conversation (verify ownership with email)
     const { data: conversation, error } = await supabase
@@ -91,14 +93,15 @@ export async function PUT(
 // DELETE /api/conversations/[id] - Delete a conversation and all its messages
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id:string } }
 ) {
   try {
-    const userEmail = request.headers.get('x-user-email');
-    
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email not provided' }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user || !user.email) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
+    const userEmail = user.email;
 
     // Delete conversation (verify ownership with email, messages will be deleted automatically due to CASCADE)
     const { error } = await supabase
