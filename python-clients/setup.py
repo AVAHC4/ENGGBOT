@@ -8,6 +8,8 @@ import re
 import shutil
 import subprocess as sp
 from glob import glob
+
+import grpc_tools.protoc
 import setuptools
 from setuptools.command.build_py import build_py
 
