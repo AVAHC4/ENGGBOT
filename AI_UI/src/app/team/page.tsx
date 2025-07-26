@@ -1090,26 +1090,32 @@ export default function TeamPage() {
       }
 
       if (data) {
-        // User exists in Supabase, add as team member with proper data
+        // User exists in Supabase, create them as a pending member until they accept
         const newMember: ExtendedTeamMember = {
           id: `member-${Date.now()}`,
           name: data.full_name || data.email.split('@')[0],
           avatar: data.avatar_url || '',
           email: data.email,
           role: 'Team Member',
-          bio: '',
+          bio: data.bio || '',
           isOnline: false,
           lastSeen: new Date().toISOString(),
-          pending: false
+          pending: true // They need to accept the invitation
         };
 
-        // Update team members list
+        // Update team members list with pending status
         setTeamMembersList(prevMembers => [...prevMembers, newMember]);
         
         // Add notification for the sender
-        toast.success(`${newMember.name} has been added to your team.`);
+        toast.success(`Invitation sent to ${newMember.name}`, {
+          description: `${newMember.name} will receive a notification to join your team`
+        });
 
-        // Add notification for the person who was added
+        // Create an in-app invitation notification for the invited user
+        // In a real app, this would be stored in the database and shown when they log in
+        addReceivedInvitationNotification("You", "Current Team", newMember.id);
+
+        // Add notification for the sender
         addInvitationNotification(newMember.email);
 
       } else {
