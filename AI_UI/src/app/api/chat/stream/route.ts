@@ -139,13 +139,14 @@ export async function POST(request: Request) {
       role: 'user',
       content: hasAttachments 
         ? `${message} (The user has also provided some files or attachments with this message)`
-        : message
+        : message,
+      prompt: "",
     });
     
     try {
       // Generate streaming response from the AI
       const stream = await chutesClient.generateStream({
-        prompt: message,
+        prompt: "",
         model: modelName,
         messages: messages,
         temperature: 0.7,

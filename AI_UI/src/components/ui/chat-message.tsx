@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { EnggBotLogo } from './enggbot-logo';
+import AITextLoading from '@/components/ui/ai-text-loading';
 
 export interface ChatMessageProps {
   message: string;
@@ -163,12 +164,7 @@ export function ChatMessage({
     
     return (
       <div className="typing-indicator">
-        <div className="typing-dots">
-          <div className="dot"></div>
-          <div className="dot"></div>
-          <div className="dot"></div>
-        </div>
-        <span>AI is typing...</span>
+        <AITextLoading />
       </div>
     );
   };

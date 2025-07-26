@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import AITextLoading from '@/components/ui/ai-text-loading';
 import { ChatMessageList } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
@@ -33,40 +34,9 @@ import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-// Enhanced typing animation component
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="animate-bounce h-1.5 w-1.5 bg-current rounded-full delay-0" />
-      <span className="animate-bounce h-1.5 w-1.5 bg-current rounded-full delay-150" style={{ animationDelay: '0.2s' }} />
-      <span className="animate-bounce h-1.5 w-1.5 bg-current rounded-full delay-300" style={{ animationDelay: '0.4s' }} />
-    </div>
-  );
-}
-
 // AI thinking animation component
 function ThinkingAnimation() {
-  return (
-    <div className="assistant-message">
-      <div className="message-wrapper">
-        <div className="message-avatar assistant-avatar">
-          <EnggBotLogo />
-        </div>
-        <div className="message-content">
-          <div className="message-body">
-            <div className="typing-indicator">
-              <div className="typing-dots">
-                <div className="dot"></div>
-                <div className="dot"></div>
-                <div className="dot"></div>
-              </div>
-              <span>AI is thinking...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <AITextLoading />;
 }
 
 // Initializing AI indicator component

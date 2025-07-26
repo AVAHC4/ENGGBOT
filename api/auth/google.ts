@@ -37,7 +37,46 @@ declare module 'express-session' {
   }
 }
 
-// Always register the strategy with the correct callback URL
+// In-memory cache for frequently accessed users (optional optimization)
+const userCache = new Map<string, any>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Optimized user upsert function
+async function upsertUser(profile: any) {
+  const cacheKey = profile.id;
+  const cached = userCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    console.log("Using cached user data");
+    return cached.data;
+  }
+
+  const userData = {
+    google_id: profile.id,
+    email: profile.emails?.[0]?.value,
+    name: profile.displayName,
+    avatar: profile.photos?.[0]?.value,
+    updated_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from('users')
+    .upsert(userData, {
+      onConflict: 'google_id',
+      ignoreDuplicates: false
+    })
+    .select('id, name, avatar')
+    .single();
+
+  if (error) {
+    console.error("Database upsert error:", error);
+    throw error;
+  }
+
+  userCache.set(cacheKey, { data, timestamp: Date.now() });
+  return data;
+}
+
+// Configure Google Strategy - optimized for speed
 passport.use(
   new GoogleStrategy(
     {
@@ -45,8 +84,10 @@ passport.use(
       clientSecret: CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
       scope: ["profile", "email"],
-      proxy: true,
-      passReqToCallback: true // Pass request object to the callback
+      proxy: process.env.NODE_ENV === 'production',
+      passReqToCallback: true,
+      skipUserProfile: false,
+      userProfileURL: "https://www.googleapis.com/oauth2/v2/userinfo"
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
@@ -55,68 +96,24 @@ passport.use(
         // Log session ID for debugging
         console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
         
-        // Check if user exists in our database
-        const { data: existingUser, error: findError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('google_id', profile.id)
-          .single();
-        
-        if (findError && findError.code !== 'PGRST116') {
-          console.error("Error finding user:", findError);
-          throw findError;
-        }
-        
+        // Single UPSERT operation handles both create and update
         let userData;
-        
-        if (!existingUser) {
-          // User doesn't exist, create a new one
-          console.log("Creating new user with Google ID:", profile.id);
-          
-          const newUser = {
-            google_id: profile.id,
-            email: profile.emails?.[0]?.value,
-            name: profile.displayName,
-            avatar: profile.photos?.[0]?.value,
-          };
-          
-          const { data: insertedUser, error: insertError } = await supabase
-            .from('users')
-            .insert([newUser])
-            .select();
-          
-          if (insertError) {
-            console.error("Error inserting user:", insertError);
-            throw insertError;
-          }
-          
-          userData = insertedUser[0];
-          console.log("Successfully created user:", userData);
-        } else {
-          // User exists, update their info
-          console.log("User already exists, updating profile");
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({
-              email: profile.emails?.[0]?.value,
-              name: profile.displayName,
-              avatar: profile.photos?.[0]?.value,
-            })
-            .eq('google_id', profile.id)
-            .select();
-          
-          if (updateError) {
-            console.error("Error updating user:", updateError);
-            // Continue with existing user data
-            userData = existingUser;
-          } else {
-            userData = updatedUser[0];
-            console.log("User data updated:", userData);
-          }
+        try {
+          userData = await upsertUser(profile);
+          console.log("User upserted successfully:", userData);
+        } catch (dbErr) {
+          console.error("Database upsert error:", dbErr);
+          return done(dbErr as Error);
         }
         
-        return done(null, userData);
+        // Store minimal user data for faster serialization
+        const minimalUserData = {
+          id: userData.id,
+          name: userData.name,
+          avatar: userData.avatar
+        };
+        
+        return done(null, minimalUserData);
       } catch (error) {
         console.error("Error in Google Strategy callback:", error);
         return done(error as Error);
@@ -135,24 +132,24 @@ passport.serializeUser((user: any, done) => {
 // Deserialize user from the session
 passport.deserializeUser(async (id: string, done) => {
   try {
-    console.log(`Deserializing user with ID: ${id}`);
+    const cacheKey = `user_${id}`;
+    const cached = userCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      return done(null, cached.data);
+    }
+
     const { data: user, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, name, avatar, email')
       .eq('id', id)
       .single();
 
-    if (error) {
-      console.error("Error deserializing user:", error);
-      throw error;
-    }
-
-    if (!user) {
-      console.error("No user found with ID:", id);
+    if (error || !user) {
+      console.error("User deserialization failed:", error);
       return done(null, false);
     }
 
-    console.log("Successfully deserialized user:", user.id);
+    userCache.set(cacheKey, { data: user, timestamp: Date.now() });
     done(null, user);
   } catch (error) {
     console.error("Deserialization error:", error);
@@ -164,38 +161,22 @@ passport.deserializeUser(async (id: string, done) => {
 export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
 
-  // Google auth route
+  // Simplified state generation for faster performance
+  function generateState(): string {
+    return Math.random().toString(36).substring(2, 15);
+  }
+
+  // Google auth initiation - optimized for speed
   app.get("/api/auth/google", (req: Request, res: Response, next: NextFunction) => {
-    console.log("Google auth route hit - redirecting to Google");
-    
-    // Ensure session is created and saved before proceeding
-    if (!req.session.id) {
-      console.log("No session ID found - initializing session");
-    }
-    
-    // Generate a random state parameter for security
-    const state = Math.random().toString(36).substring(2, 15);
+    const state = generateState();
     req.session.oauthState = state;
-    
-    console.log("Session before save:", req.session.id);
-    
-    // Force session save before redirecting
-    req.session.save((err) => {
-      if (err) {
-        console.error("Failed to save session:", err);
-        return res.status(500).send("Session error before authentication");
-      }
-      
-      console.log("Session saved with state:", state);
-      console.log("Session ID:", req.session.id);
-      
-      // Save session first, then authenticate
-      passport.authenticate("google", { 
-        scope: ["profile", "email"],
-        prompt: "select_account",
-        state: state
-      })(req, res, next);
-    });
+
+    // Immediate redirect without session save for faster performance
+    passport.authenticate("google", { 
+      scope: ["profile"],
+      prompt: "select_account",
+      state: state
+    })(req, res, next);
   });
 
   // Google callback route
@@ -429,14 +410,17 @@ export const initGoogleAuth = (app: any) => {
     }
   );
 
-  // Test route to check authentication
+  // Lightweight status endpoint
   app.get("/api/auth/status", (req: Request, res: Response) => {
-    console.log("Auth status route hit");
-    console.log("Session ID:", req.session.id);
-    console.log("isAuthenticated:", req.isAuthenticated());
-    
     if (req.isAuthenticated()) {
-      res.json({ authenticated: true, user: req.user });
+      res.json({ 
+        authenticated: true, 
+        user: {
+          id: (req.user as any).id,
+          name: (req.user as any).name,
+          avatar: (req.user as any).avatar
+        }
+      });
     } else {
       res.json({ authenticated: false });
     }
@@ -444,8 +428,26 @@ export const initGoogleAuth = (app: any) => {
 
   // Logout route
   app.get("/api/auth/logout", (req: Request, res: Response) => {
+    // Clear user from cache
+    if (req.user) {
+      const userId = (req.user as any).id;
+      userCache.delete(`user_${userId}`);
+    }
     req.logout(() => {
-      res.redirect("/");
+      req.session.destroy(() => {
+        res.clearCookie('connect.sid');
+        res.redirect("/");
+      });
     });
   });
+
+  // Clean up cache periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, value] of userCache.entries()) {
+      if (now - (value as any).timestamp > CACHE_TTL) {
+        userCache.delete(key);
+      }
+    }
+  }, CACHE_TTL);
 }; 
