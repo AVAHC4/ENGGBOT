@@ -105,7 +105,7 @@ passport.use(
       clientSecret: CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
       scope: ["profile", "email"],
-      proxy: process.env.NODE_ENV === 'productin',
+      proxy: process.env.NODE_ENV === 'production',
       passReqToCallback: true,
       skipUserProfile: false,
       userProfileURL: "https://www.googleapis.com/oauth2/v2/userinfo"
