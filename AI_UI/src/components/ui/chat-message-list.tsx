@@ -56,49 +56,44 @@ interface ChatMessageListCompactProps extends React.HTMLAttributes<HTMLDivElemen
   children?: React.ReactNode;
 }
 
-const ChatMessageListCompact = React.forwardRef<HTMLDivElement, ChatMessageListCompactProps>(
-  ({ className, children, smooth = false, ...props }, ref) => {
-    const {
-      scrollRef,
-      isAtBottom,
-      autoScrollEnabled,
-      scrollToBottom,
-      disableAutoScroll,
-    } = useAutoScroll({
-      smooth,
-      content: children as unknown,
-    });
+function ChatMessageListCompact({ className, children, smooth = false, ...props }: ChatMessageListCompactProps) {
+  const {
+    scrollRef,
+    isAtBottom,
+    scrollToBottom,
+    disableAutoScroll,
+  } = useAutoScroll({
+    smooth,
+    content: children as unknown,
+  });
 
-    return (
-      <div className="relative w-full h-full">
-        <div
-          className={`flex flex-col w-full h-full p-2 overflow-y-auto ${className}`}
-          ref={scrollRef}
-          onWheel={disableAutoScroll}
-          onTouchMove={disableAutoScroll}
-          {...props}
-        >
-          <div className="flex flex-col gap-2">{children}</div>
-        </div>
-
-        {!isAtBottom && (
-          <Button
-            onClick={() => {
-              scrollToBottom();
-            }}
-            size="icon"
-            variant="outline"
-            className="absolute bottom-2 left-1/2 transform -translate-x-1/2 inline-flex rounded-full shadow-md"
-            aria-label="Scroll to bottom"
-          >
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-        )}
+  return (
+    <div className="relative w-full h-full">
+      <div
+        className={`flex flex-col w-full h-full p-2 overflow-y-auto ${className}`}
+        ref={scrollRef}
+        onWheel={disableAutoScroll}
+        onTouchMove={disableAutoScroll}
+        {...props}
+      >
+        <div className="flex flex-col gap-2">{children}</div>
       </div>
-    );
-  }
-);
 
-ChatMessageListCompact.displayName = "ChatMessageListCompact";
+      {!isAtBottom && (
+        <Button
+          onClick={() => {
+            scrollToBottom();
+          }}
+          size="icon"
+          variant="outline"
+          className="absolute bottom-2 left-1/2 transform -translate-x-1/2 inline-flex rounded-full shadow-md"
+          aria-label="Scroll to bottom"
+        >
+          <ArrowDown className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export { ChatMessageListCompact };

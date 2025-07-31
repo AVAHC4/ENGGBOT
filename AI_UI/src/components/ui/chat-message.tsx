@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { Avatar } from "@/components/ui/avatar";
-import { User, Bot, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Reply, Wrench, Copy, Check, ClipboardCopy, RefreshCw } from "lucide-react";
+
+import { User, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
-import { CodeBlock } from "@/components/ui/code-block";
+
 import { BOT_CONFIG } from "@/lib/ai/response-middleware";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -17,8 +17,7 @@ import AITextLoading from '@/components/ui/ai-text-loading';
 export interface ChatMessageProps {
   message: string;
   isUser: boolean;
-  timestamp?: string;
-  avatarSrc?: string;
+
   attachments?: Attachment[];
   skipGeneration?: boolean;
   messageData: ExtendedChatMessage;
@@ -27,13 +26,12 @@ export interface ChatMessageProps {
 export function ChatMessage({ 
   message, 
   isUser, 
-  timestamp, 
-  avatarSrc,
+
   attachments = [],
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, setReplyToMessage, regenerateLastResponse } = useChat();
+  const { messages, regenerateLastResponse } = useChat();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -46,10 +44,7 @@ export function ChatMessage({
   // Determine if this message is currently streaming
   const isStreaming = messageData.isStreaming === true;
 
-  // Function to handle reply to this message
-  const handleReply = () => {
-    setReplyToMessage(messageData);
-  };
+
   
   // Function to copy message content to clipboard
   const handleCopy = () => {

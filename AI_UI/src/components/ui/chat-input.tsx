@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, SendHorizonal, MicIcon, PaperclipIcon, Eraser, EyeOff } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
 
@@ -31,10 +31,9 @@ export function ChatInput({
   onStopGeneration,
   webSearchMode = false,
   onToggleWebSearch,
-  isPrivateMode = false,
-  togglePrivateMode,
+  
 }: ChatInputProps) {
-  const { replyToMessage, setReplyToMessage, isPrivateMode: contextIsPrivateMode, togglePrivateMode: contextTogglePrivateMode } = useChat();
+  const { replyToMessage, setReplyToMessage } = useChat();
   const [message, setMessage] = useState("");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -92,9 +91,7 @@ export function ChatInput({
     }
   };
 
-  const handleVoiceClick = () => {
-    setIsVoiceModalOpen(true);
-  };
+  
 
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);
