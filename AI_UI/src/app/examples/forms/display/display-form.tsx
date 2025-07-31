@@ -104,13 +104,12 @@ export function DisplayForm() {
                           <Checkbox
                             checked={field.value?.includes(item.id)}
                             onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...(field.value || []), item.id])
-                                : field.onChange(
-                                    field.value?.filter(
-                                      (value) => value !== item.id
-                                    )
-                                  )
+                              const currentValue = field.value || [];
+                              if (checked) {
+                                field.onChange([...currentValue, item.id]);
+                              } else {
+                                field.onChange(currentValue.filter((value) => value !== item.id));
+                              }
                             }}
                           />
                         </FormControl>
