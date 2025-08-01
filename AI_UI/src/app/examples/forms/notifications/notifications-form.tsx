@@ -201,7 +201,7 @@ export function NotificationsForm() {
               <FormControl>
                 <Checkbox
                   checked={field.value}
-                  onCheckedChange={field.onChange}
+                  onCheckedChange={(checked) => field.onChange(checked)}
                 />
               </FormControl>
               <div className="space-y-1 leading-none">

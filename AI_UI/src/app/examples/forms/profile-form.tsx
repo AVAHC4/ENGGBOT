@@ -6,7 +6,7 @@ import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
-import { toast } from "@/hooks/use-toast"
+import { useToast, toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -125,7 +125,7 @@ export function ProfileForm() {
               </Select>
               <FormDescription>
                 You can manage verified email addresses in your{" "}
-                <Link href="/examples/forms" className="text-primary underline-offset-4 hover:underline">email settings</Link>.
+                <Link href="/examples/forms">email settings</Link>.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -145,7 +145,8 @@ export function ProfileForm() {
                 />
               </FormControl>
               <FormDescription>
-                You can @mention other users and organizations to link to them.
+                You can <span>@mention</span> other users and organizations to
+                link to them.
               </FormDescription>
               <FormMessage />
             </FormItem>
