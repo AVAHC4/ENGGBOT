@@ -19,7 +19,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // This ensures the Vercel logo is not displayed and disables the loading indicator
-  devIndicators: false,
+    devIndicators: {
+    buildActivity: false,
+  },
 }
 
 module.exports = nextConfig 
