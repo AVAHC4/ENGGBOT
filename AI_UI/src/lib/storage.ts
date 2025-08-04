@@ -85,12 +85,19 @@ export function loadConversation(id: string) {
 }
 
 // Get list of all saved conversations
-export function getConversationList() {
+export function getConversationList(): string[] {
   if (isServer()) return [];
-  
+
   const userId = getCurrentUserId();
   const saved = localStorage.getItem(`${userId}-conversations`);
-  return saved ? JSON.parse(saved) : [];
+  const list: string[] = saved ? JSON.parse(saved) : [];
+
+  if (!Array.isArray(list)) {
+    return [];
+  }
+
+  // Return a unique list of IDs
+  return [...new Set(list)];
 }
 
 // Delete a conversation
@@ -144,10 +151,12 @@ export function getAllConversationsMetadata() {
   if (isServer()) return [];
   
   const conversations = getConversationList();
-  return conversations.map((id: string) => ({
-    id,
-    ...getConversationMetadata(id)
-  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+  const allMetadata = conversations
+    .map((id: string) => getConversationMetadata(id))
+    .filter((meta: ConversationMetadata | null): meta is ConversationMetadata => meta !== null)
+    .sort((a: ConversationMetadata, b: ConversationMetadata) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+
+  return allMetadata;
 }
 
 // Clear all conversations
