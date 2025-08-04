@@ -247,7 +247,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   });
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
-  const [conversations, setConversations] = React.useState<(ConversationMetadata & { id: string })[]>([]);
+  const [conversations, setConversations] = React.useState<ConversationMetadata[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('/');
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
@@ -315,7 +315,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       const loadConversations = () => {
         const allConversations = getAllConversationsMetadata();
         // Filter out conversations that don't have a valid ID
-        const validConversations = allConversations.filter((c): c is ConversationMetadata & { id: string } => !!(c && c.id));
+                        const validConversations = allConversations.filter((c: ConversationMetadata): c is ConversationMetadata => !!(c && c.id));
         setConversations(validConversations);
       };
 
@@ -568,11 +568,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     const allConversations = getAllConversationsMetadata();
     
     // Find the conversation that needs to be renamed
-    const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
+            const conversationToUpdate = allConversations.find((c: ConversationMetadata) => c.id === id);
     
     if (conversationToUpdate) {
       // Get existing metadata
       const existingMeta = getConversationMetadata(id) || {
+        id: id,
         title: `Conversation ${id.substring(0, 6)}`,
         created: new Date().toISOString(),
         updated: new Date().toISOString()

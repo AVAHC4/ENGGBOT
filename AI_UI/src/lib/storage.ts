@@ -55,6 +55,7 @@ export function saveConversation(id: string, messages: any[]) {
   
   // Update conversation metadata
   const metadata = getConversationMetadata(id) || { 
+    id: id,
     title: `Conversation ${id.substring(0, 6)}`,
     created: new Date().toISOString(),
     updated: new Date().toISOString()
@@ -115,6 +116,7 @@ export function deleteConversation(id: string) {
 
 // Interface for conversation metadata
 export interface ConversationMetadata {
+  id: string;
   title: string;
   created: string;
   updated: string;
