@@ -17,7 +17,7 @@ import AITextLoading from '@/components/ui/ai-text-loading';
 export interface ChatMessageProps {
   message: string;
   isUser: boolean;
-
+  timestamp?: string;
   attachments?: Attachment[];
   skipGeneration?: boolean;
   messageData: ExtendedChatMessage;
@@ -26,7 +26,7 @@ export interface ChatMessageProps {
 export function ChatMessage({ 
   message, 
   isUser, 
-
+  timestamp,
   attachments = [],
   skipGeneration = false,
   messageData
@@ -350,6 +350,7 @@ export function ChatMessage({
             {renderAttachments()}
             {renderStreamingIndicator()}
           </div>
+          {timestamp && <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>}
           
           {/* Action buttons (visible on hover) */}
           <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
