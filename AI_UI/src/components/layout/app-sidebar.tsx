@@ -68,7 +68,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
+import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, ConversationMetadata } from "@/lib/storage"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -247,7 +247,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   });
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
-  const [conversations, setConversations] = React.useState<any[]>([]);
+  const [conversations, setConversations] = React.useState<(ConversationMetadata & { id: string })[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('/');
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
@@ -314,17 +314,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     if (isMounted) {
       const loadConversations = () => {
         const allConversations = getAllConversationsMetadata();
-        setConversations(allConversations);
+        // Filter out conversations that don't have a valid ID
+        const validConversations = allConversations.filter((c): c is ConversationMetadata & { id: string } => !!(c && c.id));
+        setConversations(validConversations);
       };
-      
+
       loadConversations();
-      
-      // Refresh conversations every 5 seconds
+
+      // Set up an interval to refresh conversations periodically
       const intervalId = setInterval(loadConversations, 5000);
-      
+
+      // Clean up the interval when the component unmounts
       return () => clearInterval(intervalId);
     }
-  }, [conversationId, isMounted]);
+  }, [isMounted]); // Reruns only when isMounted changes
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -734,7 +737,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                               onClick={() => switchConversation(convo.id)}
                               className={cn(
                                 "w-full justify-between group pr-1", 
-                                convo.id === conversationId && "bg-muted/50"
+                                convo.id === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
                               <div className="flex flex-col items-start overflow-hidden">
