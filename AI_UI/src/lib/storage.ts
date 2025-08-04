@@ -55,7 +55,6 @@ export function saveConversation(id: string, messages: any[]) {
   
   // Update conversation metadata
   const metadata = getConversationMetadata(id) || { 
-    id: id,
     title: `Conversation ${id.substring(0, 6)}`,
     created: new Date().toISOString(),
     updated: new Date().toISOString()
@@ -85,19 +84,12 @@ export function loadConversation(id: string) {
 }
 
 // Get list of all saved conversations
-export function getConversationList(): string[] {
+export function getConversationList() {
   if (isServer()) return [];
-
+  
   const userId = getCurrentUserId();
   const saved = localStorage.getItem(`${userId}-conversations`);
-  const list: string[] = saved ? JSON.parse(saved) : [];
-
-  if (!Array.isArray(list)) {
-    return [];
-  }
-
-  // Return a unique list of IDs
-  return [...new Set(list)];
+  return saved ? JSON.parse(saved) : [];
 }
 
 // Delete a conversation
@@ -123,7 +115,6 @@ export function deleteConversation(id: string) {
 
 // Interface for conversation metadata
 export interface ConversationMetadata {
-  id: string;
   title: string;
   created: string;
   updated: string;
@@ -151,12 +142,10 @@ export function getAllConversationsMetadata() {
   if (isServer()) return [];
   
   const conversations = getConversationList();
-  const allMetadata = conversations
-    .map((id: string) => getConversationMetadata(id))
-    .filter((meta: ConversationMetadata | null): meta is ConversationMetadata => meta !== null)
-    .sort((a: ConversationMetadata, b: ConversationMetadata) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
-
-  return allMetadata;
+  return conversations.map((id: string) => ({
+    id,
+    ...getConversationMetadata(id)
+  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 }
 
 // Clear all conversations

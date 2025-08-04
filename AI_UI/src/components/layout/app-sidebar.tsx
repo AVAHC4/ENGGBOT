@@ -68,7 +68,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, ConversationMetadata } from "@/lib/storage"
+import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -247,7 +247,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   });
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
-  const [conversations, setConversations] = React.useState<ConversationMetadata[]>([]);
+  const [conversations, setConversations] = React.useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('/');
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
@@ -314,20 +314,17 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     if (isMounted) {
       const loadConversations = () => {
         const allConversations = getAllConversationsMetadata();
-        // Filter out conversations that don't have a valid ID
-                        const validConversations = allConversations.filter((c: ConversationMetadata): c is ConversationMetadata => !!(c && c.id));
-        setConversations(validConversations);
+        setConversations(allConversations);
       };
-
+      
       loadConversations();
-
-      // Set up an interval to refresh conversations periodically
+      
+      // Refresh conversations every 5 seconds
       const intervalId = setInterval(loadConversations, 5000);
-
-      // Clean up the interval when the component unmounts
+      
       return () => clearInterval(intervalId);
     }
-  }, [isMounted]); // Reruns only when isMounted changes
+  }, [conversationId, isMounted]);
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -568,12 +565,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     const allConversations = getAllConversationsMetadata();
     
     // Find the conversation that needs to be renamed
-            const conversationToUpdate = allConversations.find((c: ConversationMetadata) => c.id === id);
+    const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
     
     if (conversationToUpdate) {
       // Get existing metadata
       const existingMeta = getConversationMetadata(id) || {
-        id: id,
         title: `Conversation ${id.substring(0, 6)}`,
         created: new Date().toISOString(),
         updated: new Date().toISOString()
