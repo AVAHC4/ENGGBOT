@@ -1,8 +1,10 @@
 "use client"
 
+import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronDown } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { useTheme } from "next-themes"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
@@ -31,26 +33,39 @@ const appearanceFormSchema = z.object({
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<AppearanceFormValues> = {
-  theme: "light",
-}
+
 
 export function AppearanceForm() {
+  const { theme, setTheme } = useTheme()
   const { toast } = useToast()
+  const [isMounted, setIsMounted] = React.useState(false);
+
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
-    defaultValues,
+    defaultValues: {
+      theme: "light", // Default to light on server
+      font: "inter",
+    },
   })
 
+  // When the component mounts, update the form with the actual theme.
+  React.useEffect(() => {
+    if (theme) {
+      form.setValue("theme", theme as "light" | "dark");
+    }
+    setIsMounted(true);
+  }, [theme, form]);
+
+  // Prevent rendering the form until the component is mounted on the client
+  if (!isMounted) {
+    return null;
+  }
+
   function onSubmit(data: AppearanceFormValues) {
+    setTheme(data.theme)
     toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      title: "Preferences updated!",
+      description: "Your theme and font settings have been saved.",
     })
   }
 
@@ -97,7 +112,10 @@ export function AppearanceForm() {
               </FormDescription>
               <FormMessage />
               <RadioGroup
-                onValueChange={field.onChange}
+                onValueChange={(value: "light" | "dark") => {
+                  field.onChange(value)
+                  setTheme(value)
+                }}
                 defaultValue={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
               >
