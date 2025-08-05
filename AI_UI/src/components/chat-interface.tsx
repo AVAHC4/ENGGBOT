@@ -34,6 +34,7 @@ import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 // AI thinking animation component
 function ThinkingAnimation() {
@@ -237,9 +238,16 @@ export function ChatInterface() {
     );
   };
 
+  const { theme } = useTheme();
+
+  const getGridOpacity = () => {
+    return theme === "light" ? 0.8 : 0.2;
+  };
+
   return (
-    <div className="chatgpt-container">
-      <div className="relative flex h-full flex-col">
+    <div className="chatgpt-container fixed inset-0 overflow-hidden">
+      <FlickeringGrid color="#CCCCCC" maxOpacity={getGridOpacity()} className="absolute inset-0 z-0" />
+      <div className="relative flex h-full flex-col bg-transparent">
         <div className="chatgpt-header">
         <div className="header-actions">
           <AlertDialog>
@@ -289,7 +297,6 @@ export function ChatInterface() {
       </div>
       
       <div className="chatgpt-messages relative flex-grow" style={{ background: 'transparent' }}>
-        <FlickeringGrid color="#CCCCCC" maxOpacity={0.8} className="absolute inset-0 z-0" />
         <ChatMessageList 
           className="message-list relative z-10"
           smooth={true}
