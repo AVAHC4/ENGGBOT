@@ -31,6 +31,7 @@ import { BOT_CONFIG } from '@/lib/ai/response-middleware';
 import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
 import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -238,7 +239,8 @@ export function ChatInterface() {
 
   return (
     <div className="chatgpt-container">
-      <div className="chatgpt-header">
+      <div className="relative flex h-full flex-col">
+        <div className="chatgpt-header">
         <div className="header-actions">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -286,9 +288,10 @@ export function ChatInterface() {
         </div>
       </div>
       
-      <div className="chatgpt-messages">
+      <div className="chatgpt-messages relative flex-grow" style={{ background: 'transparent' }}>
+        <FlickeringGrid color="#CCCCCC" maxOpacity={0.8} className="absolute inset-0 z-0" />
         <ChatMessageList 
-          className="message-list"
+          className="message-list relative z-10"
           smooth={true}
         >
           {messages.length === 0 ? (
@@ -341,6 +344,7 @@ export function ChatInterface() {
           <span className="private-mode-text">Private Mode</span>
         </div>
       )}
+      </div>
     </div>
   );
 }
