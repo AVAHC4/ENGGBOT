@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { SidebarMenu, SidebarGroupLabel } from '@/components/blocks/sidebar';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
+import { AddTeamMemberDialog } from '@/components/dialogs/add-team-member-dialog';
 import { cn } from '@/lib/utils';
 
 export interface TeamMember {
@@ -51,9 +54,15 @@ export function TeamMemberAvatar({ member }: { member: TeamMember }) {
 }
 
 export function NavTeam({ title = "Team", members, className }: NavTeamProps) {
+  const [isAddMemberDialogOpen, setIsAddMemberDialogOpen] = React.useState(false);
   return (
     <div className={cn("py-4", className)}>
-      <SidebarGroupLabel>{title}</SidebarGroupLabel>
+            <div className="flex items-center justify-between">
+        <SidebarGroupLabel>{title}</SidebarGroupLabel>
+        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsAddMemberDialogOpen(true)}>
+          <PlusIcon className="h-4 w-4" />
+        </Button>
+      </div>
       <div className="mt-1 space-y-1">
         {members.map((member) => (
           <div key={member.id} className="px-3 py-2 rounded-md hover:bg-accent cursor-pointer">
@@ -61,6 +70,7 @@ export function NavTeam({ title = "Team", members, className }: NavTeamProps) {
           </div>
         ))}
       </div>
+      <AddTeamMemberDialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen} />
     </div>
   );
 } 
