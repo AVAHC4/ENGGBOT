@@ -1075,32 +1075,35 @@ export default function TeamPage() {
     const loadingToastId = toast.loading("Checking if the user exists in our system");
 
     try {
-      // Check if the email exists in the Supabase users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', newMemberEmail.trim())
-        .maybeSingle();
+      const response = await fetch('/api/team/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: newMemberEmail.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to check user existence.');
+      }
+
+      const { exists, user } = result;
 
       // Remove loading toast
       toast.dismiss(loadingToastId);
 
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        // User exists in Supabase, create them as a pending member until they accept
+      if (exists && user) {
         const newMember: ExtendedTeamMember = {
-          id: `member-${Date.now()}`,
-          name: data.full_name || data.email.split('@')[0],
-          avatar: data.avatar_url || '',
-          email: data.email,
-          role: 'Team Member',
-          bio: data.bio || '',
+          id: user.id,
+          name: user.user_metadata.name || 'New Member',
+          email: user.email || newMemberEmail,
+          avatar: user.user_metadata.avatar_url || '',
+          role: 'Member',
+          bio: 'No bio available.',
           isOnline: false,
-          lastSeen: new Date().toISOString(),
-          pending: true // They need to accept the invitation
+          pending: true, // Mark as pending until they accept
         };
 
         // Update team members list with pending status
