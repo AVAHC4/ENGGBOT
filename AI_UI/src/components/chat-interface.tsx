@@ -250,7 +250,12 @@ export function ChatInterface() {
       className="chatgpt-container fixed top-0 bottom-0 right-0 overflow-hidden transition-all duration-300 ease-in-out"
       style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
     >
-      <FlickeringGrid color="#CCCCCC" maxOpacity={getGridOpacity()} className="absolute inset-0 z-0" />
+      <FlickeringGrid 
+        key={`grid-${isSidebarCollapsed ? 'collapsed' : 'expanded'}`}
+        color="#CCCCCC" 
+        maxOpacity={getGridOpacity()} 
+        className="absolute inset-0 z-0" 
+      />
       <div className="relative flex h-full flex-col bg-transparent">
         <div className="chatgpt-header">
         <div className="header-actions">
