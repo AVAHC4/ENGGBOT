@@ -234,6 +234,18 @@
   }
   
   /* Adjust pages for collapsed sidebar */
+
+  /* Adjust chat container position based on sidebar state */
+  body:not(.sidebar-collapsed) .chatgpt-container {
+    left: 280px;
+    transition: left 0.3s ease-in-out;
+  }
+
+  body.sidebar-collapsed .chatgpt-container {
+    left: 0px;
+    transition: left 0.3s ease-in-out;
+  }
+
   .app-layout.sidebar-collapsed .team-page {
     padding-left: 0;
     width: calc(100% - 80px);
