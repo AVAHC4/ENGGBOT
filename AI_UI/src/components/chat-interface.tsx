@@ -74,6 +74,7 @@ export function ChatInterface() {
   
   // Add local loading state to ensure animation shows immediately
   const [localLoading, setLocalLoading] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
   
   // Track which messages have already been displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -245,7 +246,10 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="chatgpt-container fixed inset-0 overflow-hidden">
+    <div 
+      className="chatgpt-container fixed top-0 bottom-0 right-0 overflow-hidden transition-all duration-300 ease-in-out"
+      style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
+    >
       <FlickeringGrid color="#CCCCCC" maxOpacity={getGridOpacity()} className="absolute inset-0 z-0" />
       <div className="relative flex h-full flex-col bg-transparent">
         <div className="chatgpt-header">
