@@ -261,8 +261,8 @@ export function ChatInterface() {
         maxOpacity={getGridOpacity()} 
         className="absolute inset-0 z-0" 
       />
-      <div className="relative flex h-full flex-col bg-transparent">
-        <div className="chatgpt-header">
+      <div className="relative grid h-full grid-rows-[auto_1fr_auto] bg-transparent">
+        <div className="chatgpt-header p-2 md:p-4 lg:p-6">
         <div className="header-actions">
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -310,7 +310,7 @@ export function ChatInterface() {
         </div>
       </div>
       
-            <div className="chatgpt-messages relative flex-1 overflow-y-auto min-h-0" style={{ background: 'transparent' }}>
+      <div className="chat-messages-container relative overflow-y-auto min-h-0" style={{ background: 'transparent' }}>
         <ChatMessageList 
           className="message-list relative z-10"
           smooth={true}
@@ -341,7 +341,7 @@ export function ChatInterface() {
         </ChatMessageList>
       </div>
       
-      <div className="chatgpt-input-container">
+      <div className="chatgpt-input-container p-2 md:p-4 lg:p-6">
         <div className="chatgpt-input-wrapper">
           <ChatInput 
             onSend={handleSendMessage} 

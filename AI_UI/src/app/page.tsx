@@ -38,7 +38,7 @@ export default function Home() {
   // Show chat interface if authenticated
   if (isAuthenticated) {
     return (
-      <main className="flex flex-col min-h-screen chat-page overflow-hidden">
+      <main className="min-h-screen chat-page overflow-hidden">
         <div className="absolute top-4 right-4 z-10">
           <AvatarGroup
             items={[
@@ -85,7 +85,7 @@ export default function Home() {
         </div>
 
         
-        <div className="flex-1 p-2 md:p-4 lg:p-6">
+        <div className="flex-1">
           <ChatInterface />
         </div>
       </main>
