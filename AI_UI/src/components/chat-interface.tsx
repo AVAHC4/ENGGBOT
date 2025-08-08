@@ -78,6 +78,7 @@ export function ChatInterface() {
   
   // Track which messages have already been displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Previous messages count ref to detect new messages
   const previousMessagesCountRef = useRef(messages.length);
@@ -133,6 +134,10 @@ export function ChatInterface() {
       setDisplayedMessageIds(new Set());
     }
   }, [messages.length]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
   
   // Update local loading state
   useEffect(() => {
@@ -305,7 +310,7 @@ export function ChatInterface() {
         </div>
       </div>
       
-      <div className="chatgpt-messages relative flex-grow" style={{ background: 'transparent' }}>
+            <div className="chatgpt-messages relative flex-1 overflow-y-auto min-h-0" style={{ background: 'transparent' }}>
         <ChatMessageList 
           className="message-list relative z-10"
           smooth={true}
@@ -332,6 +337,7 @@ export function ChatInterface() {
               {shouldShowThinking() && <ThinkingAnimation />}
             </>
           )}
+          <div ref={messagesEndRef} />
         </ChatMessageList>
       </div>
       

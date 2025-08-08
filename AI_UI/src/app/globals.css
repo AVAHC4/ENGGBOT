@@ -1,4 +1,23 @@
 @import "tailwindcss";
+
+/* Custom scrollbar for chat interface */
+.chatgpt-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chatgpt-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chatgpt-messages::-webkit-scrollbar-thumb {
+  background-color: #555; /* A medium grey */
+  border-radius: 4px;
+}
+
+.chatgpt-messages::-webkit-scrollbar-thumb:hover {
+  background-color: #777; /* Lighter grey on hover */
+}
+
 @import "tw-animate-css";
 @import "../styles/chatgpt-theme.css";
 
