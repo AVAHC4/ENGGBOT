@@ -466,21 +466,16 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         padding-left: 60px;
       }
       
-      /* Fix for selection boxes on interactive elements */
-      [data-slot="sidebar"] a,
-      [data-slot="sidebar"] button,
-      [data-slot="sidebar"] [role="button"],
-      [data-slot="sidebar-menu-button"] a,
-      [data-slot="sidebar-menu-button"] {
-        outline: none !important;
-        box-shadow: none !important;
-      }
-      
-      [data-slot="sidebar"] a:focus,
-      [data-slot="sidebar"] button:focus,
-      [data-slot="sidebar"] [role="button"]:focus {
-        outline: none !important;
-        box-shadow: none !important;
+      /* Accessible focus ring for interactive elements in sidebar */
+      [data-slot="sidebar"] a:focus-visible,
+      [data-slot="sidebar"] button:focus-visible,
+      [data-slot="sidebar"] [role="button"]:focus-visible,
+      [data-slot="sidebar-menu-button"] a:focus-visible,
+      [data-slot="sidebar-menu-button"]:focus-visible,
+      [data-slot="sidebar-menu-sub-button"]:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+        border-radius: 8px;
       }
       
       /* Fix for active state in Chat button */
