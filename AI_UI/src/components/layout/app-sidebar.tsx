@@ -466,17 +466,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         padding-left: 60px;
       }
       
-      /* Accessible focus ring for interactive elements in sidebar */
-      [data-slot="sidebar"] a:focus-visible,
-      [data-slot="sidebar"] button:focus-visible,
-      [data-slot="sidebar"] [role="button"]:focus-visible,
-      [data-slot="sidebar-menu-button"] a:focus-visible,
-      [data-slot="sidebar-menu-button"]:focus-visible,
-      [data-slot="sidebar-menu-sub-button"]:focus-visible {
-        outline: 2px solid var(--ring);
-        outline-offset: 2px;
-        border-radius: 8px;
-      }
+      /* Use default component focus styles; no custom outlines here to match other buttons */
       
       /* Fix for active state in Chat button */
       [data-slot="sidebar-menu-button"][data-active="true"] a {
