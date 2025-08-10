@@ -94,6 +94,8 @@ try:
                     _stdout_buffer.write(str(prompt))
                 # no extra waiting or echo lines; behave like stdin
                 val = _getInputSync(prompt)
+                # add a newline after user submits so prompt is its own line
+                _stdout_buffer.write('\\n')
                 return str(val)
             builtins.input = _enggbot_input
         else:

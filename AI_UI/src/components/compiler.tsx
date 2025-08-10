@@ -44,11 +44,15 @@ export function Compiler() {
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
   const [inputPrompt, setInputPrompt] = useState('');
+  const [inlineInput, setInlineInput] = useState('');
   const consoleRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null); // legacy, unused for inline input
   const bundlerRef = useRef<Bundler | null>(null);
   const pendingInputResolve = useRef<((v: string) => void) | null>(null);
   const [pythonBooting, setPythonBooting] = useState(false);
+  // Track prompts and user inputs to merge into final stdout
+  const echoPromptsRef = useRef<string[]>([]);
+  const echoInputsRef = useRef<string[]>([]);
   
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
@@ -108,13 +112,16 @@ export function Compiler() {
         code,
         '',
         async (prompt: string) => {
-          // Interactive input requested from executor (no console noise)
-          setInputPrompt(prompt || '');
+          // Show prompt as a console line and capture keystrokes inline
+          const p = String(prompt || '');
+          echoPromptsRef.current.push(p);
+          setConsoleOutput(prev => [...prev, p]);
+          setInlineInput('');
+          setInputPrompt(p);
           setIsWaitingForInput(true);
-          // Focus the input box next tick
-          setTimeout(() => inputRef.current?.focus(), 0);
+          // Focus the console for typing
+          setTimeout(() => consoleRef.current?.focus(), 0);
           return await new Promise<string>((resolve) => {
-            // Store resolver on ref
             (pendingInputResolve.current as any) = resolve;
           });
         }
@@ -130,8 +137,22 @@ export function Compiler() {
         setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
       } else {
         if (out.trim().length > 0) {
-          const lines = out.split('\n').filter((l: string) => l !== '');
-          setConsoleOutput(prev => [...prev, ...lines]);
+          let lines = out.split('\n').filter((l: string) => l !== '');
+          // Merge echoed inputs into their prompts so it looks like a terminal
+          if (echoPromptsRef.current.length > 0) {
+            const merged: string[] = [];
+            let idx = 0;
+            for (const line of lines) {
+              if (idx < echoPromptsRef.current.length && line === echoPromptsRef.current[idx]) {
+                merged.push(line + (echoInputsRef.current[idx] ?? ''));
+                idx++;
+              } else {
+                merged.push(line);
+              }
+            }
+            lines = merged;
+          }
+          setConsoleOutput(lines);
         } else {
           setConsoleOutput(prev => [...prev, `[No output]`]);
         }
@@ -141,6 +162,14 @@ export function Compiler() {
       setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
     } finally {
       setIsRunning(false);
+      // Reset echo trackers for next run
+      echoPromptsRef.current = [];
+      echoInputsRef.current = [];
+      
+      // Scroll to bottom of console
+      if (consoleRef.current) {
+        consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+      }
     }
     
     // Scroll to bottom of console
@@ -173,25 +202,44 @@ export function Compiler() {
   };
 
   // Handle user input submission
-  const handleInputSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Inline key handling for terminal-like input
+  const handleConsoleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isWaitingForInput) return;
-    
-    // Do not echo user input into console
-    // Resolve back to executor
-    if (pendingInputResolve.current) {
-      const toSend = userInput;
-      pendingInputResolve.current(toSend);
-      pendingInputResolve.current = null;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const toSend = inlineInput;
+      // Commit typed text to the last console line next to the prompt
+      setConsoleOutput(prev => {
+        const arr = [...prev];
+        if (arr.length > 0) arr[arr.length - 1] = (arr[arr.length - 1] || '') + toSend;
+        return arr;
+      });
+      echoInputsRef.current.push(toSend);
+      setIsWaitingForInput(false);
+      setInputPrompt('');
+      setInlineInput('');
+      if (pendingInputResolve.current) {
+        pendingInputResolve.current(toSend);
+        pendingInputResolve.current = null;
+      }
+      return;
     }
-    setUserInput('');
-    setIsWaitingForInput(false);
-    setInputPrompt('');
-    
-    // Scroll to bottom of console
-    if (consoleRef.current) {
-      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      setInlineInput((s) => s.slice(0, -1));
+      return;
     }
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      setInlineInput((s) => s + e.key);
+    }
+  };
+
+  const handleConsolePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (!isWaitingForInput) return;
+    e.preventDefault();
+    const text = e.clipboardData.getData('text');
+    if (text) setInlineInput((s) => s + text.replace(/\r/g, ''));
   };
 
   return (
@@ -259,46 +307,32 @@ export function Compiler() {
 
           <div 
             ref={consoleRef}
-            className="flex-1 overflow-auto p-2 font-mono text-sm"
+            className="flex-1 overflow-auto p-2 font-mono text-sm outline-none"
+            tabIndex={0}
+            onKeyDown={handleConsoleKeyDown}
+            onPaste={handleConsolePaste}
           >
             {consoleOutput.length > 0 ? (
-              consoleOutput.map((line, i) => (
-                <div key={i} className={
-                  line.startsWith('Error') ? 'text-red-400' : 
-                  line.startsWith('Waiting') ? 'text-yellow-300' :
-                  line.startsWith('>') ? 'text-blue-300' :
-                  (line.startsWith('Compiling ') || line.startsWith('Running ') || line.trim() === 'Program exited with code 0') ? 'text-green-400' :
-                  'text-white'
-                }>
-                  {line}
-                </div>
-              ))
+              consoleOutput.map((line, i) => {
+                const isPromptLine = isWaitingForInput && i === consoleOutput.length - 1;
+                const display = isPromptLine ? (line + inlineInput) : line;
+                const cls = line.startsWith('Error') ? 'text-red-400' :
+                  (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
+                return (
+                  <div key={i} className={cls}>
+                    {display}
+                    {isPromptLine && (
+                      <span className="inline-block ml-1 w-2 h-4 bg-green-500 align-baseline animate-pulse" />
+                    )}
+                  </div>
+                );
+              })
             ) : (
               <div className="text-gray-500 italic">Run your code to see output here</div>
             )}
           </div>
           
-          {/* Input area */}
-          {isWaitingForInput && (
-            <form onSubmit={handleInputSubmit} className="flex items-center px-2 py-2 border-t border-[#3c3c3c] bg-[#1a1a1a]">
-              <span className="text-yellow-300 mr-2">{inputPrompt ? `${inputPrompt}` : 'stdin>'}</span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                className="flex-1 bg-[#252526] text-white px-2 py-1 rounded border border-[#3c3c3c] focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Enter input..."
-                autoFocus
-              />
-              <button 
-                type="submit"
-                className="ml-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-              >
-                Submit
-              </button>
-            </form>
-          )}
+          {/* No separate input box; typing happens inline in the console */}
         </div>
       </div>
 
