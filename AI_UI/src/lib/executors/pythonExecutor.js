@@ -8,6 +8,11 @@
 let worker = null;
 let isInitialized = false;
 let initPromise = null;
+// Track in-flight execution so we can cancel
+let currentResolve = null;
+let currentMsgHandler = null;
+let currentExecTimeoutId = null;
+let currentInputWaitTimeoutId = null;
 
 export async function init() {
   if (isInitialized) return;
@@ -85,9 +90,16 @@ export async function execute(code, stdin = '', onInputRequest) {
     const sabBuffer = interactive ? new SharedArrayBuffer(64 * 1024) : null; // 64KB input
     const bufView = sabBuffer ? new Uint8Array(sabBuffer) : null;
 
+    // Timers
+    let execTimeoutId = null;        // main execution timeout
+    let inputWaitTimeoutId = null;   // longer timeout when waiting for user input
+
     const handler = async (e) => {
       const msg = e.data || {};
       if (msg.type === 'REQUEST_INPUT') {
+        // Pause main execution timeout while waiting for input
+        if (execTimeoutId) { clearTimeout(execTimeoutId); execTimeoutId = null; }
+
         let answer = '';
         try {
           if (typeof onInputRequest === 'function') {
@@ -105,13 +117,42 @@ export async function execute(code, stdin = '', onInputRequest) {
           Atomics.store(signal, 0, 1);
           Atomics.notify(signal, 0);
         }
+
+        // Clear any input-wait timer and resume main execution timeout
+        if (inputWaitTimeoutId) { clearTimeout(inputWaitTimeoutId); inputWaitTimeoutId = null; }
+        execTimeoutId = setTimeout(() => {
+          try {
+            worker.removeEventListener('message', handler);
+            worker.terminate();
+          } catch {}
+          isInitialized = false;
+          worker = null;
+          initPromise = null;
+          if (currentResolve) { currentResolve({ output: '', error: 'Execution timeout: Code took too long to execute' }); }
+          currentResolve = null;
+          currentMsgHandler = null;
+          currentExecTimeoutId = null;
+          currentInputWaitTimeoutId = null;
+        }, 60000);
+
+        return;
       }
       if (msg.type === 'EXECUTION_RESULT') {
         worker.removeEventListener('message', handler);
-        resolve({ output: msg.output || '', error: msg.error || '' });
+        if (execTimeoutId) clearTimeout(execTimeoutId);
+        if (inputWaitTimeoutId) clearTimeout(inputWaitTimeoutId);
+        currentExecTimeoutId = null;
+        currentInputWaitTimeoutId = null;
+        currentMsgHandler = null;
+        const res = { output: msg.output || '', error: msg.error || '' };
+        if (currentResolve) { currentResolve(res); }
+        currentResolve = null;
       }
     };
     worker.addEventListener('message', handler);
+    // expose to cancel()
+    currentMsgHandler = handler;
+    currentResolve = resolve;
 
     worker.postMessage({
       type: 'EXECUTE',
@@ -122,29 +163,55 @@ export async function execute(code, stdin = '', onInputRequest) {
       sabBuffer,
     });
 
-    // Add a safety timeout (same as JS executor)
-    const timeoutId = setTimeout(() => {
-      try {
-        worker.removeEventListener('message', handler);
-        // Terminate worker to stop any pending waits
-        worker.terminate();
-      } catch {}
-      // Force re-init on next run
-      isInitialized = false;
-      worker = null;
-      initPromise = null;
-      resolve({ output: '', error: 'Execution timeout: Code took too long to execute' });
-    }, 10000);
+    // Start timers: if interactive, allow long wait for the initial input
+    if (interactive) {
+      // While waiting for first input, don't kill the worker too soon
+      inputWaitTimeoutId = setTimeout(() => {
+        try {
+          worker.removeEventListener('message', handler);
+          worker.terminate();
+        } catch {}
+        isInitialized = false;
+        worker = null;
+        initPromise = null;
+        if (currentResolve) { currentResolve({ output: '', error: 'Input timeout: no input received' }); }
+        currentResolve = null;
+        currentMsgHandler = null;
+        currentExecTimeoutId = null;
+        currentInputWaitTimeoutId = null;
+      }, 5 * 60 * 1000); // 5 minutes
+    } else {
+      // Non-interactive run: regular execution timeout
+      execTimeoutId = setTimeout(() => {
+        try {
+          worker.removeEventListener('message', handler);
+          worker.terminate();
+        } catch {}
+        isInitialized = false;
+        worker = null;
+        initPromise = null;
+        if (currentResolve) { currentResolve({ output: '', error: 'Execution timeout: Code took too long to execute' }); }
+        currentResolve = null;
+        currentMsgHandler = null;
+        currentExecTimeoutId = null;
+        currentInputWaitTimeoutId = null;
+      }, 60000);
+    }
 
-    // Clear timeout if we get a result
+    // Clear timers if we get a result (handled in main handler as well)
     const clearOnResult = (e) => {
       const msg = e.data || {};
       if (msg.type === 'EXECUTION_RESULT') {
-        clearTimeout(timeoutId);
+        if (execTimeoutId) clearTimeout(execTimeoutId);
+        if (inputWaitTimeoutId) clearTimeout(inputWaitTimeoutId);
         worker?.removeEventListener('message', clearOnResult);
       }
     };
     worker.addEventListener('message', clearOnResult);
+
+    // keep timer refs globally for cancel()
+    currentExecTimeoutId = execTimeoutId;
+    currentInputWaitTimeoutId = inputWaitTimeoutId;
   });
 }
 
@@ -159,4 +226,25 @@ export function getInfo() {
     version: 'v0.24.1',
     ready: isInitialized,
   };
+}
+
+export async function cancel() {
+  // Terminate running execution and resolve pending promise
+  try {
+    if (worker && currentMsgHandler) {
+      try { worker.removeEventListener('message', currentMsgHandler); } catch {}
+    }
+    if (worker) {
+      try { worker.terminate(); } catch {}
+    }
+  } finally {
+    if (currentExecTimeoutId) { clearTimeout(currentExecTimeoutId); currentExecTimeoutId = null; }
+    if (currentInputWaitTimeoutId) { clearTimeout(currentInputWaitTimeoutId); currentInputWaitTimeoutId = null; }
+    isInitialized = false;
+    worker = null;
+    initPromise = null;
+    if (currentResolve) { currentResolve({ output: '', error: 'Execution stopped by user' }); }
+    currentResolve = null;
+    currentMsgHandler = null;
+  }
 }

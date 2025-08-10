@@ -178,6 +178,24 @@ export function Compiler() {
     }
   };
 
+  // Stop current execution (generic)
+  const stopExecution = async () => {
+    try {
+      const ex = EXECUTORS[selectedLanguage.id];
+      if (ex && typeof ex.cancel === 'function') {
+        await ex.cancel();
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setIsWaitingForInput(false);
+      setInlineInput('');
+      setInputPrompt('');
+      setIsRunning(false);
+      setConsoleOutput(prev => [...prev, 'Program stopped by user']);
+    }
+  };
+
   // Handle language change
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const langId = e.target.value;
@@ -258,7 +276,7 @@ export function Compiler() {
             ))}
           </select>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <button 
             className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
@@ -266,17 +284,31 @@ export function Compiler() {
           >
             {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
           </button>
+          <button
+            className="px-3 py-2 text-sm font-medium bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+            onClick={stopExecution}
+            disabled={!isRunning}
+          >
+            Stop
+          </button>
         </div>
       </div>
 
       {/* Fixed Run button at top right */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex space-x-2">
         <button 
           className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 shadow-lg"
           onClick={runCode}
           disabled={isRunning}
         >
           {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
+        </button>
+        <button 
+          className="px-4 py-2 text-sm font-medium bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 shadow-lg"
+          onClick={stopExecution}
+          disabled={!isRunning}
+        >
+          Stop
         </button>
       </div>
 
@@ -322,7 +354,7 @@ export function Compiler() {
                   <div key={i} className={cls}>
                     {display}
                     {isPromptLine && (
-                      <span className="inline-block ml-1 w-2 h-4 bg-green-500 align-baseline animate-pulse" />
+                      <span className="relative inline-block ml-1 w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]" />
                     )}
                   </div>
                 );
