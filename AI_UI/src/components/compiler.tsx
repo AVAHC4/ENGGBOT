@@ -48,6 +48,8 @@ export function Compiler() {
   const consoleRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bundlerRef = useRef<Bundler | null>(null);
+  const pendingInputResolve = useRef<((v: string) => void) | null>(null);
+  const [pythonBooting, setPythonBooting] = useState(false);
   
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
@@ -55,6 +57,17 @@ export function Compiler() {
     bundlerRef.current = new Bundler({
       [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
     });
+    // Pre-warm Python executor to avoid first-run delay perception
+    (async () => {
+      try {
+        setPythonBooting(true);
+        await pythonExecutor.init();
+      } catch (e) {
+        console.warn('[Compiler] Python init failed:', e);
+      } finally {
+        setPythonBooting(false);
+      }
+    })();
     
     return () => {
       isMounted.current = false;
@@ -82,6 +95,9 @@ export function Compiler() {
     
     // Add compilation message
     setConsoleOutput(prev => [...prev, `Compiling ${selectedLanguage.name} code...`]);
+    if (selectedLanguage.id === 'python' && pythonBooting) {
+      setConsoleOutput(prev => [...prev, 'Downloading Python runtime (Pyodide)...']);
+    }
     
     try {
       setIsCompiling(false);
@@ -164,8 +180,6 @@ export function Compiler() {
   };
 
   // Handle user input submission
-  const pendingInputResolve = useRef<((v: string) => void) | null>(null);
-
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isWaitingForInput) return;

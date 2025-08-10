@@ -1,5 +1,5 @@
 // Python execution worker with interactive stdin using Pyodide
-// Classic worker script
+// Classic worker script served from /public to avoid bundler issues
 
 let pyodide = null;
 let isReady = false;
@@ -10,7 +10,7 @@ self.onmessage = async (e) => {
   const data = e.data || {};
   if (data.type === 'INIT') {
     try {
-      // Load Pyodide in worker
+      // Load Pyodide in worker (use credentialless-friendly COEP)
       self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js');
       pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
 
@@ -89,9 +89,11 @@ try:
             def _enggbot_input(prompt=''):
                 if prompt:
                     _stdout_buffer.write(str(prompt))
-                _stdout_buffer.write('Waiting for input...\n')
+                _stdout_buffer.write('Waiting for input...')
+                _stdout_buffer.write('\\n')
                 val = _getInputSync(prompt)
-                _stdout_buffer.write('> ' + str(val) + '\n')
+                _stdout_buffer.write('> ' + str(val))
+                _stdout_buffer.write('\\n')
                 return str(val)
             builtins.input = _enggbot_input
         else:
@@ -99,7 +101,8 @@ try:
             def _no_input(prompt=''):
                 if prompt:
                     _stdout_buffer.write(str(prompt))
-                _stderr_buffer.write('Input requested but interactive input is unavailable. Provide stdin before running.\n')
+                _stderr_buffer.write('Input requested but interactive input is unavailable. Provide stdin before running.')
+                _stderr_buffer.write('\\n')
                 raise EOFError('No input available')
             builtins.input = _no_input
 

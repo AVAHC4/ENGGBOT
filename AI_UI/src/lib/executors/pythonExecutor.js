@@ -15,9 +15,8 @@ export async function init() {
 
   initPromise = new Promise((resolve, reject) => {
     try {
-      // Create worker referencing the bundled file
-      const workerUrl = new URL('./pythonWorker.js', import.meta.url);
-      worker = new Worker(workerUrl, { type: 'classic' });
+      // Create worker from public path to avoid bundler issues
+      worker = new Worker('/workers/pythonWorker.js', { type: 'classic' });
 
       const onMessage = (e) => {
         const msg = e.data || {};
@@ -27,13 +26,33 @@ export async function init() {
         } else if (msg.type === 'READY') {
           isInitialized = true;
           worker.removeEventListener('message', onMessage);
+          worker.removeEventListener('error', onError);
+          clearTimeout(initTimeout);
           resolve();
         } else if (msg.type === 'ERROR') {
           worker.removeEventListener('message', onMessage);
+          worker.removeEventListener('error', onError);
+          clearTimeout(initTimeout);
           reject(new Error(msg.error || 'Worker init error'));
         }
       };
       worker.addEventListener('message', onMessage);
+
+      const onError = (ev) => {
+        try { worker.removeEventListener('message', onMessage); } catch {}
+        try { worker.removeEventListener('error', onError); } catch {}
+        clearTimeout(initTimeout);
+        initPromise = null;
+        reject(new Error('Python worker failed to start'));
+      };
+      worker.addEventListener('error', onError);
+
+      const initTimeout = setTimeout(() => {
+        try { worker.removeEventListener('message', onMessage); } catch {}
+        try { worker.removeEventListener('error', onError); } catch {}
+        initPromise = null;
+        reject(new Error('Python worker initialization timed out'));
+      }, 10000);
     } catch (err) {
       reject(err);
     }
@@ -57,12 +76,14 @@ export async function execute(code, stdin = '', onInputRequest) {
   return new Promise((resolve) => {
     const encoded = btoa(unescape(encodeURIComponent(code)));
     const encodedStdin = btoa(unescape(encodeURIComponent(stdin)));
+    const coi = typeof crossOriginIsolated !== 'undefined' && crossOriginIsolated === true;
+    const interactive = !stdin && coi;
 
-    // Create shared buffers for interactive input
-    const sabSignal = new SharedArrayBuffer(8); // Int32[2]: [flag, length]
-    const signal = new Int32Array(sabSignal);
-    const sabBuffer = new SharedArrayBuffer(64 * 1024); // 64KB input
-    const bufView = new Uint8Array(sabBuffer);
+    // Create shared buffers for interactive input only if COI
+    const sabSignal = interactive ? new SharedArrayBuffer(8) : null; // Int32[2]: [flag, length]
+    const signal = sabSignal ? new Int32Array(sabSignal) : null;
+    const sabBuffer = interactive ? new SharedArrayBuffer(64 * 1024) : null; // 64KB input
+    const bufView = sabBuffer ? new Uint8Array(sabBuffer) : null;
 
     const handler = async (e) => {
       const msg = e.data || {};
@@ -77,11 +98,13 @@ export async function execute(code, stdin = '', onInputRequest) {
         } catch {
           answer = '';
         }
-        const bytes = new TextEncoder().encode(answer);
-        bufView.set(bytes, 0);
-        Atomics.store(signal, 1, bytes.length);
-        Atomics.store(signal, 0, 1);
-        Atomics.notify(signal, 0);
+        if (signal && bufView) {
+          const bytes = new TextEncoder().encode(answer);
+          bufView.set(bytes, 0);
+          Atomics.store(signal, 1, bytes.length);
+          Atomics.store(signal, 0, 1);
+          Atomics.notify(signal, 0);
+        }
       }
       if (msg.type === 'EXECUTION_RESULT') {
         worker.removeEventListener('message', handler);
@@ -94,16 +117,34 @@ export async function execute(code, stdin = '', onInputRequest) {
       type: 'EXECUTE',
       codeB64: encoded,
       stdinB64: encodedStdin,
-      interactive: !stdin,
+      interactive,
       sabSignal,
       sabBuffer,
     });
 
     // Add a safety timeout (same as JS executor)
-    setTimeout(() => {
-      worker.removeEventListener('message', handler);
+    const timeoutId = setTimeout(() => {
+      try {
+        worker.removeEventListener('message', handler);
+        // Terminate worker to stop any pending waits
+        worker.terminate();
+      } catch {}
+      // Force re-init on next run
+      isInitialized = false;
+      worker = null;
+      initPromise = null;
       resolve({ output: '', error: 'Execution timeout: Code took too long to execute' });
     }, 10000);
+
+    // Clear timeout if we get a result
+    const clearOnResult = (e) => {
+      const msg = e.data || {};
+      if (msg.type === 'EXECUTION_RESULT') {
+        clearTimeout(timeoutId);
+        worker?.removeEventListener('message', clearOnResult);
+      }
+    };
+    worker.addEventListener('message', clearOnResult);
   });
 }
 
