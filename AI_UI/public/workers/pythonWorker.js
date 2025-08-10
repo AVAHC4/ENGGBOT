@@ -62,7 +62,10 @@ def clear_output():
           // Wait until main thread writes and notifies
           Atomics.wait(inputSignal, 0, 0);
           const len = Atomics.load(inputSignal, 1);
-          const bytes = new Uint8Array(inputBuffer, 0, len);
+          // TextDecoder cannot decode a SharedArrayBuffer view directly; copy to a normal buffer
+          const sharedView = new Uint8Array(inputBuffer, 0, len);
+          const bytes = new Uint8Array(len);
+          bytes.set(sharedView);
           const text = new TextDecoder().decode(bytes);
           return text;
         };

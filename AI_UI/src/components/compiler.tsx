@@ -39,7 +39,6 @@ export function Compiler() {
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
   const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
   const [userInput, setUserInput] = useState('');
-  const [stdinText, setStdinText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
@@ -112,7 +111,7 @@ export function Compiler() {
 
       const result = await executor.execute(
         code,
-        stdinText,
+        '',
         async (prompt: string) => {
           // Interactive input requested from executor
           setConsoleOutput(prev => [...prev, 'Waiting for input...']);
@@ -263,16 +262,7 @@ export function Compiler() {
               Clear
             </button>
           </div>
-          {/* Stdin input area */}
-          <div className="px-2 py-2 border-b border-[#3c3c3c] bg-[#0f0f0f]">
-            <label className="block text-xs text-gray-300 mb-1">Stdin (used on next Run)</label>
-            <textarea
-              value={stdinText}
-              onChange={(e) => setStdinText(e.target.value)}
-              className="w-full min-h-[64px] bg-[#151515] text-white px-2 py-1 rounded border border-[#3c3c3c] focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Type input here. Each line corresponds to an input() call."
-            />
-          </div>
+          
 
           <div 
             ref={consoleRef}
