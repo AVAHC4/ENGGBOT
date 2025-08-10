@@ -44,6 +44,7 @@ export function Compiler() {
   const [isCompiling, setIsCompiling] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
+  const [inputPrompt, setInputPrompt] = useState('');
   const consoleRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bundlerRef = useRef<Bundler | null>(null);
@@ -93,7 +94,22 @@ export function Compiler() {
         return;
       }
 
-      const result = await executor.execute(code, stdinText);
+      const result = await executor.execute(
+        code,
+        stdinText,
+        async (prompt: string) => {
+          // Interactive input requested from executor
+          setConsoleOutput(prev => [...prev, 'Waiting for input...']);
+          setInputPrompt(prompt || '');
+          setIsWaitingForInput(true);
+          // Focus the input box next tick
+          setTimeout(() => inputRef.current?.focus(), 0);
+          return await new Promise<string>((resolve) => {
+            // Store resolver on ref
+            (pendingInputResolve.current as any) = resolve;
+          });
+        }
+      );
 
       const out = (result.output ?? '').toString();
       const err = (result.error ?? '').toString();
@@ -148,17 +164,23 @@ export function Compiler() {
   };
 
   // Handle user input submission
+  const pendingInputResolve = useRef<((v: string) => void) | null>(null);
+
   const handleInputSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userInput.trim()) return;
+    if (!isWaitingForInput) return;
     
     // Add the input to the console
     setConsoleOutput(prev => [...prev, `> ${userInput}`]);
-    
-    // Currently, stdin is not supported in the new in-browser executors
-    setConsoleOutput(prev => [...prev, 'stdin is not supported for this language yet.']);
+    // Resolve back to executor
+    if (pendingInputResolve.current) {
+      const toSend = userInput;
+      pendingInputResolve.current(toSend);
+      pendingInputResolve.current = null;
+    }
     setUserInput('');
     setIsWaitingForInput(false);
+    setInputPrompt('');
     
     // Scroll to bottom of console
     if (consoleRef.current) {
@@ -262,7 +284,7 @@ export function Compiler() {
           {/* Input area */}
           {isWaitingForInput && (
             <form onSubmit={handleInputSubmit} className="flex items-center px-2 py-2 border-t border-[#3c3c3c] bg-[#1a1a1a]">
-              <span className="text-yellow-300 mr-2">stdin&gt;</span>
+              <span className="text-yellow-300 mr-2">{inputPrompt ? `${inputPrompt}` : 'stdin>'}</span>
               <input
                 ref={inputRef}
                 type="text"

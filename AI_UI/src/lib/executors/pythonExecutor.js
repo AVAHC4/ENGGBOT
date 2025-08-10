@@ -1,185 +1,121 @@
 /**
- * Python Code Executor using Pyodide
- * 
- * This module provides Python code execution in the browser using Pyodide,
- * a Python distribution for the browser and Node.js based on WebAssembly.
+ * Python Code Executor using Pyodide (Web Worker)
+ *
+ * Runs Pyodide inside a Worker and supports interactive input via a
+ * SharedArrayBuffer handoff. Falls back to pre-supplied stdin if provided.
  */
 
-let pyodide = null;
+let worker = null;
 let isInitialized = false;
-let isInitializing = false;
+let initPromise = null;
 
-/**
- * Initialize the Pyodide runtime
- * This function loads Pyodide and should only be called once
- * @returns {Promise<void>}
- */
 export async function init() {
-  if (isInitialized) {
-    return;
-  }
-  
-  if (isInitializing) {
-    // Wait for the current initialization to complete
-    while (isInitializing) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+  if (isInitialized) return;
+  if (initPromise) return initPromise;
+
+  initPromise = new Promise((resolve, reject) => {
+    try {
+      // Create worker referencing the bundled file
+      const workerUrl = new URL('./pythonWorker.js', import.meta.url);
+      worker = new Worker(workerUrl, { type: 'classic' });
+
+      const onMessage = (e) => {
+        const msg = e.data || {};
+        if (msg.type === 'BOOT') {
+          // Worker loaded; kick off init inside worker
+          worker.postMessage({ type: 'INIT' });
+        } else if (msg.type === 'READY') {
+          isInitialized = true;
+          worker.removeEventListener('message', onMessage);
+          resolve();
+        } else if (msg.type === 'ERROR') {
+          worker.removeEventListener('message', onMessage);
+          reject(new Error(msg.error || 'Worker init error'));
+        }
+      };
+      worker.addEventListener('message', onMessage);
+    } catch (err) {
+      reject(err);
     }
-    return;
-  }
-  
-  try {
-    isInitializing = true;
-    console.log('[PythonExecutor] Initializing Pyodide...');
-    
-    // Load Pyodide from CDN
-    const pyodideScript = document.createElement('script');
-    pyodideScript.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
-    
-    await new Promise((resolve, reject) => {
-      pyodideScript.onload = resolve;
-      pyodideScript.onerror = reject;
-      document.head.appendChild(pyodideScript);
-    });
-    
-    // Initialize Pyodide
-    pyodide = await window.loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
-    });
-    
-    // Set up output capture
-    await pyodide.runPython(`
-import sys
-import io
-from contextlib import redirect_stdout, redirect_stderr
+  });
 
-# Create string buffers for capturing output
-_stdout_buffer = io.StringIO()
-_stderr_buffer = io.StringIO()
-
-def get_output():
-    """Get captured stdout and stderr"""
-    stdout_content = _stdout_buffer.getvalue()
-    stderr_content = _stderr_buffer.getvalue()
-    return stdout_content, stderr_content
-
-def clear_output():
-    """Clear the output buffers"""
-    global _stdout_buffer, _stderr_buffer
-    _stdout_buffer = io.StringIO()
-    _stderr_buffer = io.StringIO()
-`);
-    
-    isInitialized = true;
-    console.log('[PythonExecutor] Pyodide initialized successfully');
-    
-  } catch (error) {
-    console.error('[PythonExecutor] Failed to initialize Pyodide:', error);
-    throw new Error(`Failed to initialize Python executor: ${error.message}`);
-  } finally {
-    isInitializing = false;
-  }
+  return initPromise;
 }
 
 /**
  * Execute Python code and capture output
- * @param {string} code - The Python code to execute
+ * @param {string} code
+ * @param {string} stdin
+ * @param {(prompt: string) => Promise<string>} onInputRequest optional callback for interactive input
  * @returns {Promise<{output: string, error: string}>}
  */
-export async function execute(code, stdin = '') {
+export async function execute(code, stdin = '', onInputRequest) {
   if (!isInitialized) {
     await init();
   }
-  
-  try {
-    console.log('[PythonExecutor] Executing Python code...');
-    
-    // Clear previous output
-    await pyodide.runPython('clear_output()');
 
-    // Base64-encode the code and stdin to avoid escaping issues
+  return new Promise((resolve) => {
     const encoded = btoa(unescape(encodeURIComponent(code)));
     const encodedStdin = btoa(unescape(encodeURIComponent(stdin)));
 
-    // Execute the user code with output redirection and return JSON of outputs
-    const jsonResult = await pyodide.runPython(`
-import base64, json, sys, io, builtins, js
-_orig_stdin = sys.stdin
-_orig_input = getattr(builtins, 'input', None)
-try:
-    # Prepare stdin
-    _stdin_str = base64.b64decode("${encodedStdin}").decode('utf-8')
-    if _stdin_str:
-        # Use provided stdin
-        sys.stdin = io.StringIO(_stdin_str)
-    else:
-        # Interactive input using browser prompt
-        def _enggbot_input(prompt=''):
-            if prompt:
-                _stdout_buffer.write(str(prompt))
-            _stdout_buffer.write('Waiting for input...\n')
-            val = js.window.prompt(prompt) or ''
-            _stdout_buffer.write('> ' + str(val) + '\n')
-            return str(val)
-        builtins.input = _enggbot_input
+    // Create shared buffers for interactive input
+    const sabSignal = new SharedArrayBuffer(8); // Int32[2]: [flag, length]
+    const signal = new Int32Array(sabSignal);
+    const sabBuffer = new SharedArrayBuffer(64 * 1024); // 64KB input
+    const bufView = new Uint8Array(sabBuffer);
 
-    with redirect_stdout(_stdout_buffer), redirect_stderr(_stderr_buffer):
-        _code_str = base64.b64decode("${encoded}").decode('utf-8')
-        # Execute in the global namespace so built-ins like print are available
-        exec(_code_str, globals())
-except Exception as e:
-    import traceback
-    _stderr_buffer.write(traceback.format_exc())
-finally:
-    sys.stdin = _orig_stdin
-    if _orig_input is not None:
-        builtins.input = _orig_input
-stdout_content, stderr_content = get_output()
-json.dumps({'stdout': stdout_content, 'stderr': stderr_content})
-`);
-    
-    // Parse the JSON result
-    let stdout = '', stderr = '';
-    try {
-      const parsed = JSON.parse(jsonResult);
-      stdout = parsed.stdout || '';
-      stderr = parsed.stderr || '';
-    } catch (e) {
-      stderr = `Failed to parse Python output: ${e.message}`;
-    }
-    
-    console.log('[PythonExecutor] Execution completed');
-    
-    return {
-      output: stdout || '',
-      error: stderr || ''
+    const handler = async (e) => {
+      const msg = e.data || {};
+      if (msg.type === 'REQUEST_INPUT') {
+        let answer = '';
+        try {
+          if (typeof onInputRequest === 'function') {
+            answer = await onInputRequest(String(msg.prompt || ''));
+          } else {
+            answer = window.prompt(String(msg.prompt || '')) || '';
+          }
+        } catch {
+          answer = '';
+        }
+        const bytes = new TextEncoder().encode(answer);
+        bufView.set(bytes, 0);
+        Atomics.store(signal, 1, bytes.length);
+        Atomics.store(signal, 0, 1);
+        Atomics.notify(signal, 0);
+      }
+      if (msg.type === 'EXECUTION_RESULT') {
+        worker.removeEventListener('message', handler);
+        resolve({ output: msg.output || '', error: msg.error || '' });
+      }
     };
-    
-  } catch (error) {
-    console.error('[PythonExecutor] Execution error:', error);
-    return {
-      output: '',
-      error: `Python execution error: ${error.message}`
-    };
-  }
+    worker.addEventListener('message', handler);
+
+    worker.postMessage({
+      type: 'EXECUTE',
+      codeB64: encoded,
+      stdinB64: encodedStdin,
+      interactive: !stdin,
+      sabSignal,
+      sabBuffer,
+    });
+
+    // Add a safety timeout (same as JS executor)
+    setTimeout(() => {
+      worker.removeEventListener('message', handler);
+      resolve({ output: '', error: 'Execution timeout: Code took too long to execute' });
+    }, 10000);
+  });
 }
 
-/**
- * Check if the Python executor is ready
- * @returns {boolean}
- */
 export function isReady() {
   return isInitialized;
 }
 
-/**
- * Get information about the Python executor
- * @returns {object}
- */
 export function getInfo() {
   return {
     name: 'Python Executor',
-    runtime: 'Pyodide',
-    version: isInitialized ? pyodide.version : 'Not initialized',
-    ready: isInitialized
+    runtime: 'Pyodide (Worker)',
+    version: 'v0.24.1',
+    ready: isInitialized,
   };
 }
