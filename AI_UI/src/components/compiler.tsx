@@ -4,6 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Bundler } from '@/lib/bundler';
 import { ClientCodeEditor } from './client-code-editor';
+import * as pythonExecutor from '@/lib/executors/pythonExecutor';
+import * as javascriptExecutor from '@/lib/executors/javascriptExecutor';
+import * as cExecutor from '@/lib/executors/cExecutor';
+import * as rustExecutor from '@/lib/executors/rustExecutor';
+import * as javaExecutor from '@/lib/executors/javaExecutor';
 
 // Supported languages
 const LANGUAGES = [
@@ -13,6 +18,16 @@ const LANGUAGES = [
   { id: 'python', name: 'Python', extension: '.py', defaultCode: 'print("Hello, World!")' },
   { id: 'java', name: 'Java', extension: '.java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' },
 ];
+
+// Map languages to their executors
+const EXECUTORS: Record<string, any> = {
+  javascript: javascriptExecutor,
+  python: pythonExecutor,
+  c: cExecutor,
+  cpp: cExecutor,
+  java: javaExecutor,
+  rust: rustExecutor,
+};
 
 // Main component for the GDB-like compiler
 export function Compiler() {
@@ -24,6 +39,7 @@ export function Compiler() {
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
   const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
   const [userInput, setUserInput] = useState('');
+  const [stdinText, setStdinText] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
@@ -70,131 +86,31 @@ export function Compiler() {
       setIsCompiling(false);
       // Add execution message
       setConsoleOutput(prev => [...prev, `Running ${selectedLanguage.name} code...`]);
-      
-      // For JavaScript, we can run the code locally in the browser
-      if (selectedLanguage.id === 'javascript') {
-        try {
-          // Create a function from the code to capture console.log output
-          const originalConsoleLog = console.log;
-          const logs: string[] = [];
-          
-          console.log = (...args) => {
-            const message = args.map(arg => 
-              typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-            ).join(' ');
-            logs.push(message);
-            originalConsoleLog.apply(console, args);
-          };
-          
-          // Execute the code
-          try {
-            // eslint-disable-next-line no-new-func
-            const fn = new Function(code);
-            fn();
-            
-            // Add the output to the console
-            setConsoleOutput(prev => [...prev, ...logs]);
-          } catch (error) {
-            if (error instanceof Error) {
-              setConsoleOutput(prev => [...prev, `Error: ${error.message}`]);
-            }
-          } finally {
-            // Restore original console.log
-            console.log = originalConsoleLog;
-          }
-        } catch (error) {
-          setConsoleOutput(prev => [...prev, `Error: ${error instanceof Error ? error.message : String(error)}`]);
-        }
+
+      const executor = EXECUTORS[selectedLanguage.id];
+      if (!executor || typeof executor.execute !== 'function') {
+        setConsoleOutput(prev => [...prev, `Error: No executor available for ${selectedLanguage.name}`]);
+        return;
+      }
+
+      const result = await executor.execute(code, stdinText);
+
+      const out = (result.output ?? '').toString();
+      const err = (result.error ?? '').toString();
+
+      if (err.trim().length > 0) {
+        // Print error first
+        const errLines = err.split('\n').filter((l: string) => l !== '');
+        setConsoleOutput(prev => [...prev, ...errLines.map((l: string) => `Error: ${l}`)]);
+        setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
       } else {
-        // For other languages, use Judge0 API
-        try {
-          // Check if code requires input
-          const requiresInput = (
-            (selectedLanguage.id === 'c' && code.includes('scanf')) ||
-            (selectedLanguage.id === 'cpp' && code.includes('cin')) ||
-            (selectedLanguage.id === 'python' && code.includes('input')) ||
-            (selectedLanguage.id === 'java' && code.includes('Scanner'))
-          );
-          
-          if (requiresInput) {
-            // First, try to run the code without input to get the prompt
-            // This will fail but we can extract the prompt from the error or partial output
-            try {
-              const response = await fetch('/api/compile', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  code,
-                  language: selectedLanguage.id,
-                  input: '', // No input to trigger the prompt
-                }),
-              });
-              
-              const result = await response.json();
-              
-              // Check if we got a partial output with the prompt
-              if (result.output && result.output.includes('Enter an integer:')) {
-                // Extract just the prompt part
-                const lines = result.output.split('\n');
-                const promptLine = lines.find((line: string) => line.includes('Enter an integer:'));
-                if (promptLine) {
-                  setConsoleOutput(prev => [...prev, promptLine]);
-                }
-              } else {
-                // Fallback: show a generic prompt based on the language
-                if (selectedLanguage.id === 'java' && code.includes('Enter an integer')) {
-                  setConsoleOutput(prev => [...prev, 'Enter an integer: ']);
-                } else {
-                  setConsoleOutput(prev => [...prev, 'Program is waiting for input...']);
-                }
-              }
-              
-            } catch (error) {
-              // If the request fails, show a generic prompt
-              setConsoleOutput(prev => [...prev, 'Enter an integer: ']);
-            }
-            
-            // Now wait for user input
-            setIsWaitingForInput(true);
-            setTimeout(() => {
-              if (inputRef.current) {
-                inputRef.current.focus();
-              }
-            }, 0);
-            return; // Don't continue execution yet
-          } else {
-            // Code doesn't require input, execute normally
-            const response = await fetch('/api/compile', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                code,
-                language: selectedLanguage.id,
-                input: '',
-              }),
-            });
-            
-            const result = await response.json();
-            
-            if (result.error) {
-              setConsoleOutput(prev => [...prev, result.error]);
-            } else if (result.output) {
-              setConsoleOutput(prev => [...prev, result.output]);
-            }
-            
-            // Add exit code for non-input requiring programs
-            setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
-          }
-          
-          // Add exit code for non-input requiring programs
-          // setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
-        } catch (error) {
-          setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
+        if (out.trim().length > 0) {
+          const lines = out.split('\n').filter((l: string) => l !== '');
+          setConsoleOutput(prev => [...prev, ...lines]);
+        } else {
+          setConsoleOutput(prev => [...prev, `[No output]`]);
         }
+        setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
       }
     } catch (error) {
       setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
@@ -239,54 +155,8 @@ export function Compiler() {
     // Add the input to the console
     setConsoleOutput(prev => [...prev, `> ${userInput}`]);
     
-    // Now run the code with the user's input
-    try {
-      const response = await fetch('/api/compile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code,
-          language: selectedLanguage.id,
-          input: userInput,
-        }),
-      });
-      
-      const result = await response.json();
-      
-      if (result.error) {
-        setConsoleOutput(prev => [...prev, result.error]);
-      } else if (result.output) {
-        // Extract only the result part (after the prompt)
-        const outputLines = result.output.split('\n');
-        const resultLines = outputLines.filter((line: string) => 
-          !line.includes('Enter an integer:') && 
-          line.trim() !== '' &&
-          !line.includes('Execution Time:')
-        );
-        
-        // Add the result lines
-        if (resultLines.length > 0) {
-          setConsoleOutput(prev => [...prev, ...resultLines]);
-        }
-        
-        // Show execution time if available
-        if (result.output.includes('Execution Time:')) {
-          const timeMatch = result.output.match(/Execution Time: ([\d.]+s)/);
-          if (timeMatch) {
-            setConsoleOutput(prev => [...prev, `\nExecution Time: ${timeMatch[1]}`]);
-          }
-        }
-        
-        setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
-      }
-      
-    } catch (error) {
-      setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
-    }
-    
-    // Reset input field and stop waiting
+    // Currently, stdin is not supported in the new in-browser executors
+    setConsoleOutput(prev => [...prev, 'stdin is not supported for this language yet.']);
     setUserInput('');
     setIsWaitingForInput(false);
     
@@ -357,6 +227,17 @@ export function Compiler() {
               Clear
             </button>
           </div>
+          {/* Stdin input area */}
+          <div className="px-2 py-2 border-b border-[#3c3c3c] bg-[#0f0f0f]">
+            <label className="block text-xs text-gray-300 mb-1">Stdin (used on next Run)</label>
+            <textarea
+              value={stdinText}
+              onChange={(e) => setStdinText(e.target.value)}
+              className="w-full min-h-[64px] bg-[#151515] text-white px-2 py-1 rounded border border-[#3c3c3c] focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Type input here. Each line corresponds to an input() call."
+            />
+          </div>
+
           <div 
             ref={consoleRef}
             className="flex-1 overflow-auto p-2 font-mono text-sm"
@@ -367,7 +248,8 @@ export function Compiler() {
                   line.startsWith('Error') ? 'text-red-400' : 
                   line.startsWith('Waiting') ? 'text-yellow-300' :
                   line.startsWith('>') ? 'text-blue-300' :
-                  'text-green-300'
+                  (line.startsWith('Compiling ') || line.startsWith('Running ') || line.trim() === 'Program exited with code 0') ? 'text-green-400' :
+                  'text-white'
                 }>
                   {line}
                 </div>
