@@ -102,12 +102,25 @@ export async function execute(code, stdin = '') {
 
     // Execute the user code with output redirection and return JSON of outputs
     const jsonResult = await pyodide.runPython(`
-import base64, json, sys, io
+import base64, json, sys, io, builtins, js
 _orig_stdin = sys.stdin
+_orig_input = getattr(builtins, 'input', None)
 try:
     # Prepare stdin
     _stdin_str = base64.b64decode("${encodedStdin}").decode('utf-8')
-    sys.stdin = io.StringIO(_stdin_str)
+    if _stdin_str:
+        # Use provided stdin
+        sys.stdin = io.StringIO(_stdin_str)
+    else:
+        # Interactive input using browser prompt
+        def _enggbot_input(prompt=''):
+            if prompt:
+                _stdout_buffer.write(str(prompt))
+            _stdout_buffer.write('Waiting for input...\n')
+            val = js.window.prompt(prompt) or ''
+            _stdout_buffer.write('> ' + str(val) + '\n')
+            return str(val)
+        builtins.input = _enggbot_input
 
     with redirect_stdout(_stdout_buffer), redirect_stderr(_stderr_buffer):
         _code_str = base64.b64decode("${encoded}").decode('utf-8')
@@ -118,6 +131,8 @@ except Exception as e:
     _stderr_buffer.write(traceback.format_exc())
 finally:
     sys.stdin = _orig_stdin
+    if _orig_input is not None:
+        builtins.input = _orig_input
 stdout_content, stderr_content = get_output()
 json.dumps({'stdout': stdout_content, 'stderr': stderr_content})
 `);
