@@ -92,11 +92,8 @@ try:
             def _enggbot_input(prompt=''):
                 if prompt:
                     _stdout_buffer.write(str(prompt))
-                _stdout_buffer.write('Waiting for input...')
-                _stdout_buffer.write('\\n')
+                # no extra waiting or echo lines; behave like stdin
                 val = _getInputSync(prompt)
-                _stdout_buffer.write('> ' + str(val))
-                _stdout_buffer.write('\\n')
                 return str(val)
             builtins.input = _enggbot_input
         else:

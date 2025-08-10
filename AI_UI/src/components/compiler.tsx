@@ -92,16 +92,11 @@ export function Compiler() {
     setConsoleOutput([]);
     setIsWaitingForInput(false);
     
-    // Add compilation message
-    setConsoleOutput(prev => [...prev, `Compiling ${selectedLanguage.name} code...`]);
-    if (selectedLanguage.id === 'python' && pythonBooting) {
-      setConsoleOutput(prev => [...prev, 'Downloading Python runtime (Pyodide)...']);
-    }
+    // Do not print extra compilation/runtime logs
     
     try {
       setIsCompiling(false);
-      // Add execution message
-      setConsoleOutput(prev => [...prev, `Running ${selectedLanguage.name} code...`]);
+      // Do not print extra runtime logs
 
       const executor = EXECUTORS[selectedLanguage.id];
       if (!executor || typeof executor.execute !== 'function') {
@@ -113,8 +108,7 @@ export function Compiler() {
         code,
         '',
         async (prompt: string) => {
-          // Interactive input requested from executor
-          setConsoleOutput(prev => [...prev, 'Waiting for input...']);
+          // Interactive input requested from executor (no console noise)
           setInputPrompt(prompt || '');
           setIsWaitingForInput(true);
           // Focus the input box next tick
@@ -183,8 +177,7 @@ export function Compiler() {
     e.preventDefault();
     if (!isWaitingForInput) return;
     
-    // Add the input to the console
-    setConsoleOutput(prev => [...prev, `> ${userInput}`]);
+    // Do not echo user input into console
     // Resolve back to executor
     if (pendingInputResolve.current) {
       const toSend = userInput;
