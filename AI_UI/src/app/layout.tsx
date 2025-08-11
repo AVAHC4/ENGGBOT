@@ -11,6 +11,7 @@ import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-f
 // import { Toaster } from "@/components/ui/toaster"; // Temporarily commented out due to React type compatibility issues
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
+import { FlickeringGrid } from "@/components/ui/flickering-grid";
 
 
 
@@ -33,6 +34,10 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
+        {/* Global animated background */}
+        <div className="fixed inset-0 -z-10 pointer-events-none">
+          <FlickeringGrid color="#CCCCCC" maxOpacity={0.2} className="absolute inset-0" />
+        </div>
         <ThemeProvider>
           <ChatProvider>
             <SidebarWrapper defaultOpen={true}>

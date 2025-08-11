@@ -31,10 +31,9 @@ import { BOT_CONFIG } from '@/lib/ai/response-middleware';
 import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
 import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
-import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
+ 
 
 // AI thinking animation component
 function ThinkingAnimation() {
@@ -74,7 +73,7 @@ export function ChatInterface() {
   
   // Add local loading state to ensure animation shows immediately
   const [localLoading, setLocalLoading] = useState(false);
-  const [showGrid, setShowGrid] = useState(true);
+  
   
   // Track which messages have already been displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -244,23 +243,13 @@ export function ChatInterface() {
     );
   };
 
-  const { theme } = useTheme();
-
-  const getGridOpacity = () => {
-    return theme === "light" ? 0.8 : 0.2;
-  };
+  
 
   return (
     <div 
       className="chatgpt-container fixed top-0 bottom-0 right-0 overflow-hidden transition-all duration-300 ease-in-out"
       style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
     >
-      <FlickeringGrid 
-        key={`grid-${isSidebarCollapsed ? 'collapsed' : 'expanded'}`}
-        color="#CCCCCC" 
-        maxOpacity={getGridOpacity()} 
-        className="absolute inset-0 z-0" 
-      />
       <div className="relative grid h-full grid-rows-[auto_1fr_auto] bg-transparent">
         <div className="chatgpt-header p-2 md:p-4 lg:p-6">
         <div className="header-actions">
