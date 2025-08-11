@@ -243,7 +243,8 @@
   }
 
   body.sidebar-collapsed .chatgpt-container {
-    left: 0px;
+    /* Keep 80px gutter to match collapsed grid and avoid jank */
+    left: 80px;
     transition: left 0.3s ease-in-out;
   }
 
@@ -262,6 +263,25 @@
 [data-slot="sidebar-footer"] {
   border: none !important;
   box-shadow: none !important;
+}
+
+/* Smooth hover/click transitions for sidebar items */
+[data-slot="sidebar"] a,
+[data-slot="sidebar"] button,
+[data-slot="sidebar-menu-button"],
+[data-slot="sidebar-menu-item"],
+[data-slot="sidebar-menu-sub-button"],
+[data-slot="sidebar-menu-sub-item"] {
+  transition: background-color 200ms ease, color 200ms ease, opacity 200ms ease, transform 200ms ease;
+}
+
+[data-slot="sidebar"] a:hover,
+[data-slot="sidebar"] button:hover,
+[data-slot="sidebar-menu-button"]:hover,
+[data-slot="sidebar-menu-item"]:hover,
+[data-slot="sidebar-menu-sub-button"]:hover,
+[data-slot="sidebar-menu-sub-item"]:hover {
+  transform: translateX(2px);
 }
 
 .sidebar-container,
