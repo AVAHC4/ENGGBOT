@@ -41,6 +41,7 @@ import {
   Code
 } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import {
   DropdownMenu,
@@ -249,7 +250,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [newFriendName, setNewFriendName] = React.useState("");
   const [conversations, setConversations] = React.useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
-  const [activePath, setActivePath] = React.useState('/');
+  const [activePath, setActivePath] = React.useState('');
+  const pathname = usePathname();
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
   
   // Use default empty values for initial server-side rendering
@@ -335,39 +337,24 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-  // Set active path based on current location
+  // Track active path from Next.js router pathname so Chat doesn't stay highlighted
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const updateActivePath = () => {
-        const pathname = window.location.pathname;
-        
-        // Special handling for the team page
-        if (pathname.startsWith('/team')) {
-          setActivePath('/team');
-          return;
-        }
-        
-        // Find the matching nav item with the longest URL match
-        // This ensures more specific paths like /compiler take precedence over /
-        const matchingItem = data.navMain.find(item => 
-          pathname === item.url || (item.url !== '/' && pathname.startsWith(item.url))
-        );
-        
-        if (matchingItem) {
-          setActivePath(matchingItem.url);
-        } else if (pathname === '/') {
-          setActivePath('/');
-        }
-      };
-      
-      // Update on initial load
-      updateActivePath();
-      
-      // Listen for route changes
-      window.addEventListener('popstate', updateActivePath);
-      return () => window.removeEventListener('popstate', updateActivePath);
+    if (!pathname) return;
+    // Normalize to known main routes when applicable; otherwise use exact pathname
+    if (pathname.startsWith('/team')) {
+      setActivePath('/team');
+      return;
     }
-  }, []);
+    const matchingItem = data.navMain.find(
+      (item) => pathname === item.url || (item.url !== '/' && pathname.startsWith(item.url))
+    );
+    if (matchingItem) {
+      setActivePath(matchingItem.url);
+    } else {
+      // Use current pathname so no main item stays active on secondary pages (e.g., Settings)
+      setActivePath(pathname);
+    }
+  }, [pathname]);
 
   // Update the useEffect section with better visibility handling
   React.useEffect(() => {
