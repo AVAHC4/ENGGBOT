@@ -116,6 +116,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setDisplayedMessageIds(new Set(messages.map(m => m.id)));
   }, [messages]);
 
+  // Helper to hide appended technical context from the user message bubble
+  const getUserDisplayContent = (text: string) => {
+    const markers = ['\n\n[WEB SEARCH RESULTS', '\n\n[FILES CONTEXT]'];
+    let cutoff = text.length;
+    for (const m of markers) {
+      const idx = text.indexOf(m);
+      if (idx >= 0 && idx < cutoff) cutoff = idx;
+    }
+    return text.slice(0, cutoff);
+  };
+
   // Helper function to process file attachments
   const processAttachments = (files: File[]): Attachment[] => {
     return files.map(file => ({
@@ -148,9 +159,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Process any attachments
       const attachments = files.length > 0 ? processAttachments(files) : undefined;
       
-      // Add user message - remove any web search data for user display
-      // The web search data will be appended after [WEB SEARCH RESULTS] marker
-      const userDisplayContent = content.split('\n\n[WEB SEARCH RESULTS')[0];
+      // Add user message - remove any appended context for user display
+      // We hide [WEB SEARCH RESULTS] and [FILES CONTEXT] blocks
+      const userDisplayContent = getUserDisplayContent(content);
       
       const userMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
@@ -177,6 +188,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Set generating state to true immediately when sending message
       setIsGenerating(true);
 
+      // Build content for API, optionally enriched with processed files context
+      let contentForAPI = content;
+
+      if (files.length > 0) {
+        try {
+          const formData = new FormData();
+          files.forEach((f, i) => formData.append(`file${i}`, f));
+
+          const fpRes = await fetch('/api/files/process', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (fpRes.ok) {
+            const data = await fpRes.json();
+            const fileLines = (data.files || []).map((f: any) => `- ${f.name}${f.truncated ? ' (truncated)' : ''}`).join('\n');
+            const filesContext = `\n\n[FILES CONTEXT]\nThe user attached ${(data.files || []).length || files.length} file(s):\n${fileLines}\n\n[FILES TEXT]\n${data.combinedText || ''}\n[/FILES TEXT]\n`;
+            const followUpDirective = `\nPlease use the files context above to answer the user's request. If appropriate, ask one concise follow-up question to confirm intent or propose next steps.`;
+            contentForAPI = content + filesContext + followUpDirective;
+          } else {
+            console.error('File processing failed with status:', fpRes.status);
+          }
+        } catch (e) {
+          console.error('File processing error:', e);
+        }
+      }
+
         // Create a placeholder for the AI response
         const aiMessageId = crypto.randomUUID();
         const aiMessage: ExtendedChatMessage = {
@@ -199,8 +237,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              message: content,
-              hasAttachments: !!attachments,
+              message: contentForAPI,
+              hasAttachments: files.length > 0,
               model: currentModel,
               thinkingMode: thinkingMode,
               conversationId: conversationId,
