@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import AITextLoading from '@/components/ui/ai-text-loading';
-import { ChatMessageList } from '@/components/ui/chat-message-list';
+import { ChatMessageListCompact } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
 import { useChat } from '@/context/chat-context';
@@ -134,9 +134,13 @@ export function ChatInterface() {
     }
   }, [messages.length]);
 
+  // Avoid smooth scrolling on each token update to prevent jitter
+  // ChatMessageList handles keeping view pinned to bottom when appropriate
+  // If we ever need to force-jump, do it instantly (no smooth)
+  // Chat list manages auto-scroll; no need to force-scroll here
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    // no-op
+  }, [messages.length]);
   
   // Update local loading state
   useEffect(() => {
@@ -299,10 +303,10 @@ export function ChatInterface() {
         </div>
       </div>
       
-      <div className="chat-messages-container relative overflow-y-auto min-h-0" style={{ background: 'transparent' }}>
-        <ChatMessageList 
+      <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
+        <ChatMessageListCompact 
           className="message-list relative z-10"
-          smooth={true}
+          smooth={false}
         >
           {messages.length === 0 ? (
             <div className="empty-chat">
@@ -326,8 +330,7 @@ export function ChatInterface() {
               {shouldShowThinking() && <ThinkingAnimation />}
             </>
           )}
-          <div ref={messagesEndRef} />
-        </ChatMessageList>
+        </ChatMessageListCompact>
       </div>
       
       <div className="chatgpt-input-container p-2 md:p-4 lg:p-6">
