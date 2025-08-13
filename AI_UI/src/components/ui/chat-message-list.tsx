@@ -61,7 +61,6 @@ function ChatMessageListCompact({ className, children, smooth = false, ...props 
     scrollRef,
     isAtBottom,
     scrollToBottom,
-    disableAutoScroll,
   } = useAutoScroll({
     smooth,
     content: children as unknown,
@@ -72,8 +71,6 @@ function ChatMessageListCompact({ className, children, smooth = false, ...props 
       <div
         className={`flex flex-col w-full h-full p-2 overflow-y-auto ${className}`}
         ref={scrollRef}
-        onWheel={disableAutoScroll}
-        onTouchMove={disableAutoScroll}
         {...props}
       >
         <div className="flex flex-col gap-2">{children}</div>
