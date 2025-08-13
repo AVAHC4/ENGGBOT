@@ -300,6 +300,19 @@ export function ChatMessage({
                     rel="noopener noreferrer"
                   />
                 ),
+                // Handle images in markdown content
+                img: ({ node, ...props }) => (
+                  <img 
+                    {...props} 
+                    className="max-w-full h-auto rounded-lg my-2 shadow-sm"
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      console.error('Failed to load image:', target.src);
+                    }}
+                  />
+                ),
                 // Add explicit table components to ensure proper rendering
                 table: ({ node, ...props }) => (
                   <table {...props} />
