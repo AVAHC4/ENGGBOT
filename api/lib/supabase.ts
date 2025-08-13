@@ -22,36 +22,38 @@ export const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
-// Test insert to verify it works with the service role key
-(async () => {
-  try {
-    console.log('Testing Supabase connection with SERVICE ROLE KEY...');
-    const testUser = {
-      email: `test-${Date.now()}@example.com`,
-      name: 'Test User',
-      google_id: `test-${Date.now()}`
-    };
-    
-    const { data, error } = await supabase
-      .from('users')
-      .insert(testUser)
-      .select()
-      .single();
+// Optional dev-only Supabase connection test (disabled in production to avoid cold-start latency)
+if (process.env.NODE_ENV === 'development' && process.env.SUPABASE_TEST === '1') {
+  (async () => {
+    try {
+      console.log('Testing Supabase connection with SERVICE ROLE KEY...');
+      const testUser = {
+        email: `test-${Date.now()}@example.com`,
+        name: 'Test User',
+        google_id: `test-${Date.now()}`
+      };
       
-    if (error) {
-      console.error('❌ TEST INSERT FAILED:', error);
-      console.error('This suggests the service role key is not working properly.');
-    } else {
-      console.log('✅ TEST INSERT SUCCESSFUL!', data);
-      console.log('The service role key is working properly.');
-      
-      // Clean up the test user
-      await supabase
+      const { data, error } = await supabase
         .from('users')
-        .delete()
-        .match({ id: data.id });
+        .insert(testUser)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('❌ TEST INSERT FAILED:', error);
+        console.error('This suggests the service role key is not working properly.');
+      } else {
+        console.log('✅ TEST INSERT SUCCESSFUL!', data);
+        console.log('The service role key is working properly.');
+        
+        // Clean up the test user
+        await supabase
+          .from('users')
+          .delete()
+          .match({ id: data.id });
+      }
+    } catch (err) {
+      console.error('Error testing Supabase connection:', err);
     }
-  } catch (err) {
-    console.error('Error testing Supabase connection:', err);
-  }
-})(); 
+  })();
+}

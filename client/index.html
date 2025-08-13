@@ -6,6 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
     <title>ENGGBOT - AI Powered Engineering Assistant</title>
+    
+    <!-- Resource Hints: Make Google OAuth render faster -->
+    <link rel="dns-prefetch" href="//accounts.google.com" />
+    <link rel="dns-prefetch" href="//ssl.gstatic.com" />
+    <link rel="dns-prefetch" href="//apis.google.com" />
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="preconnect" href="https://ssl.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://apis.google.com" crossorigin />
+    
+    <!-- Optional: Prefetch API host to avoid serverless cold-start latency -->
+    <link rel="dns-prefetch" href="//enggbot.vercel.app" />
+    <link rel="preconnect" href="https://enggbot.vercel.app" crossorigin />
     <style>
       #google-auth-container {
         display: none;
@@ -107,7 +119,20 @@
         }
       };
     </script>
-    
+    </div>
+
+    <!-- Warm up API quickly (uses Vite env if set, else same-origin) -->
+    <script type="module">
+      const api = (import.meta.env && import.meta.env.VITE_API_URL) || window.location.origin;
+      try {
+        const healthUrl = `${api.replace(/\/$/, '')}/api/health`;
+        Promise.race([
+          fetch(healthUrl, { credentials: 'include', mode: 'cors', cache: 'no-store' }),
+          new Promise(r => setTimeout(r, 1200)) // don't block rendering
+        ]).catch(() => {});
+      } catch (_) {}
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

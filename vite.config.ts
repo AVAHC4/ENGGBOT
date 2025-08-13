@@ -22,7 +22,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    // Run frontend on 5173 to avoid conflict with API (3000)
+    port: 5173,
     proxy: {
       "/api": {
         target: "http://localhost:3000",

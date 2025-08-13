@@ -55,68 +55,26 @@ passport.use(
         // Log session ID for debugging
         console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
         
-        // Check if user exists in our database
-        const { data: existingUser, error: findError } = await supabase
+        // Upsert user by google_id (single round-trip)
+        const upsertUser = {
+          google_id: profile.id,
+          email: profile.emails?.[0]?.value,
+          name: profile.displayName,
+          avatar: profile.photos?.[0]?.value,
+        };
+
+        const { data: userRow, error: upsertError } = await supabase
           .from('users')
+          .upsert(upsertUser, { onConflict: 'google_id' })
           .select('*')
-          .eq('google_id', profile.id)
           .single();
-        
-        if (findError && findError.code !== 'PGRST116') {
-          console.error("Error finding user:", findError);
-          throw findError;
+
+        if (upsertError) {
+          console.error("Error upserting user:", upsertError);
+          throw upsertError;
         }
-        
-        let userData;
-        
-        if (!existingUser) {
-          // User doesn't exist, create a new one
-          console.log("Creating new user with Google ID:", profile.id);
-          
-          const newUser = {
-            google_id: profile.id,
-            email: profile.emails?.[0]?.value,
-            name: profile.displayName,
-            avatar: profile.photos?.[0]?.value,
-          };
-          
-          const { data: insertedUser, error: insertError } = await supabase
-            .from('users')
-            .insert([newUser])
-            .select();
-          
-          if (insertError) {
-            console.error("Error inserting user:", insertError);
-            throw insertError;
-          }
-          
-          userData = insertedUser[0];
-          console.log("Successfully created user:", userData);
-        } else {
-          // User exists, update their info
-          console.log("User already exists, updating profile");
-          
-          const { data: updatedUser, error: updateError } = await supabase
-            .from('users')
-            .update({
-              email: profile.emails?.[0]?.value,
-              name: profile.displayName,
-              avatar: profile.photos?.[0]?.value,
-            })
-            .eq('google_id', profile.id)
-            .select();
-          
-          if (updateError) {
-            console.error("Error updating user:", updateError);
-            // Continue with existing user data
-            userData = existingUser;
-          } else {
-            userData = updatedUser[0];
-            console.log("User data updated:", userData);
-          }
-        }
-        
-        return done(null, userData);
+
+        return done(null, userRow);
       } catch (error) {
         console.error("Error in Google Strategy callback:", error);
         return done(error as Error);
@@ -167,6 +125,10 @@ export const initGoogleAuth = (app: any) => {
   // Google auth route
   app.get("/api/auth/google", (req: Request, res: Response, next: NextFunction) => {
     console.log("Google auth route hit - redirecting to Google");
+    const routeStart = Date.now();
+    res.on('finish', () => {
+      console.log(`[TIMER] /api/auth/google completed in ${Date.now() - routeStart}ms`);
+    });
     
     // Ensure session is created and saved before proceeding
     if (!req.session.id) {
@@ -177,25 +139,15 @@ export const initGoogleAuth = (app: any) => {
     const state = Math.random().toString(36).substring(2, 15);
     req.session.oauthState = state;
     
-    console.log("Session before save:", req.session.id);
+    console.log("Session ID before redirect:", req.session.id);
+    console.log("OAuth state set:", state);
     
-    // Force session save before redirecting
-    req.session.save((err) => {
-      if (err) {
-        console.error("Failed to save session:", err);
-        return res.status(500).send("Session error before authentication");
-      }
-      
-      console.log("Session saved with state:", state);
-      console.log("Session ID:", req.session.id);
-      
-      // Save session first, then authenticate
-      passport.authenticate("google", { 
-        scope: ["profile", "email"],
-        prompt: "select_account",
-        state: state
-      })(req, res, next);
-    });
+    // Authenticate and redirect to Google; session middleware will persist on response end
+    return passport.authenticate("google", { 
+      scope: ["profile", "email"],
+      prompt: "select_account",
+      state: state
+    })(req, res, next);
   });
 
   // Google callback route
@@ -203,6 +155,10 @@ export const initGoogleAuth = (app: any) => {
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
       console.log("Google callback route hit with query params:", req.query);
+      const cbStart = Date.now();
+      res.on('finish', () => {
+        console.log(`[TIMER] /api/auth/google/callback completed in ${Date.now() - cbStart}ms`);
+      });
       
       // Check if session exists
       if (!req.session) {
@@ -255,20 +211,8 @@ export const initGoogleAuth = (app: any) => {
       console.log("Session state:", req.session.oauthState);
       console.log("Query state:", req.query.state);
       
-      // Ensure passport session is initialized
-      if (!req.session.passport) {
-        console.log("Initializing passport session object");
-        req.session.passport = { user: null };
-      }
-      
-      // Save session before continuing to authentication
-      req.session.save((err) => {
-        if (err) {
-          console.error("Failed to save session before authentication:", err);
-          return res.status(500).send("Session error before token exchange");
-        }
-        next();
-      });
+      // Proceed to authentication; session will be persisted by middleware
+      return next();
     },
     (req: Request, res: Response, next: NextFunction) => {
       // Custom token exchange with explicit error handling
@@ -318,17 +262,8 @@ export const initGoogleAuth = (app: any) => {
             console.error("Session login error:", loginErr);
             return res.redirect('/login?error=session_error');
           }
-          
-          // Save session after login
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error("Failed to save session after login:", saveErr);
-              return res.status(500).send("Session error after login");
-            }
-            
-            console.log("User logged in and session saved");
-            next();
-          });
+          console.log("User logged in; proceeding to redirect");
+          return next();
         });
       })(req, res, next);
     },
@@ -355,15 +290,7 @@ export const initGoogleAuth = (app: any) => {
       // Set session flag and additional auth cookies
       if (req.session) {
         req.session.authenticated = true;
-        
-        // Save the session one last time
-        req.session.save((err) => {
-          if (err) {
-            console.error("Failed to save final session state:", err);
-          } else {
-            console.log("Session authenticated flag set and saved");
-          }
-        });
+        console.log("Session authenticated flag set");
       }
       
       // Prepare user data for redirect
