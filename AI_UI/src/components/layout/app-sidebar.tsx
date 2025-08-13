@@ -801,11 +801,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             <NavSecondary items={data.navSecondary} className="mt-auto" />
           </SidebarContent>
           <SidebarFooter 
-            className="relative z-30 border-t border-border bg-background" 
+            className="relative z-30 border-t border-border bg-transparent" 
             style={{
               position: 'relative',
               zIndex: 30,
-              backgroundColor: 'var(--background)',
+              backgroundColor: 'transparent',
               visibility: 'visible',
               opacity: 1,
               marginTop: 'auto',

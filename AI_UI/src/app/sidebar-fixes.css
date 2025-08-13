@@ -22,7 +22,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
 
 /* Profile section enhancements */
 [data-sidebar="footer"] {
-  background-color: var(--background) !important;
+  background-color: transparent !important;
   border-top: 1px solid var(--border);
   padding: 12px;
   margin-top: auto;
@@ -36,7 +36,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background-color: var(--background) !important;
+  background-color: transparent !important;
 }
 
 /* Ensure the sidebar content takes up proper space */
@@ -44,7 +44,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--background) !important;
+  background-color: transparent !important;
 }
 
 /* Force the last nav item to be followed by the profile */
