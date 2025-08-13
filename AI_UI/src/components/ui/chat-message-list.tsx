@@ -61,6 +61,7 @@ function ChatMessageListCompact({ className, children, smooth = false, ...props 
     scrollRef,
     isAtBottom,
     scrollToBottom,
+    disableAutoScroll,
   } = useAutoScroll({
     smooth,
     content: children as unknown,
@@ -71,23 +72,29 @@ function ChatMessageListCompact({ className, children, smooth = false, ...props 
       <div
         className={`flex flex-col w-full h-full p-2 overflow-y-auto ${className}`}
         ref={scrollRef}
+        onWheel={disableAutoScroll}
+        onTouchMove={disableAutoScroll}
         {...props}
       >
         <div className="flex flex-col gap-2">{children}</div>
       </div>
 
       {!isAtBottom && (
-        <Button
-          onClick={() => {
-            scrollToBottom();
-          }}
-          size="icon"
-          variant="outline"
-          className="absolute bottom-2 left-1/2 transform -translate-x-1/2 inline-flex rounded-full shadow-md"
-          aria-label="Scroll to bottom"
-        >
-          <ArrowDown className="h-4 w-4" />
-        </Button>
+        <div className="pointer-events-none absolute bottom-2 left-0 right-0 flex justify-center">
+          <Button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              scrollToBottom();
+            }}
+            size="icon"
+            variant="outline"
+            className="pointer-events-auto z-20 inline-flex rounded-full shadow-md"
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </Button>
+        </div>
       )}
     </div>
   );
