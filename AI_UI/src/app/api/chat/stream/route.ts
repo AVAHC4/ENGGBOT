@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS } from '@/lib/ai/models';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
+export const runtime = 'nodejs';
 
 // Simple stream processor to transform OpenRouter stream into an event stream
 function processChutesStream(

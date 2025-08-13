@@ -1,22 +1,40 @@
 services:
   - type: web
-    name: enggbot
+    name: enggbot-frontend
     env: node
+    rootDir: AI_UI
     buildCommand: npm install && npm run build
-    startCommand: node dist/server/index.js
+    startCommand: npm start
     envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 3000
-      - key: DATABASE_URL
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: CHUTES_API_KEY
+        sync: false
+      - key: APP_TITLE
+        value: ENGGBOT
+      - key: CLIENT_URL
+        sync: false
+    autoDeploy: true
+  - type: web
+    name: enggbot-api
+    env: node
+    rootDir: api
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
         sync: false
       - key: SESSION_SECRET
         generateValue: true
+      - key: CLIENT_URL
+        sync: false
     autoDeploy: true
-
-databases:
-  - name: enggbot-db
-    databaseName: enggbot
-    user: enggbot
-    plan: free 
