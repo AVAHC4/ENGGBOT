@@ -56,7 +56,7 @@ console.log("GOOGLE_CLIENT_ID value:", JSON.stringify(process.env.GOOGLE_CLIENT_
 console.log("GOOGLE_CLIENT_SECRET value length:", process.env.GOOGLE_CLIENT_SECRET?.length);
 console.log("====================================");
 
-// Fix any formatting issues in environment variable
+// Fix any formatting issues in environment variables
 if (process.env.GOOGLE_CLIENT_ID) {
   // Remove any line breaks, extra spaces or unexpected characters
   const originalId = process.env.GOOGLE_CLIENT_ID;
