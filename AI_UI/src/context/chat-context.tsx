@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
-import type { ChatMessage } from '@/types/chat';
+import { ChatMessage } from '@/app/api/chat/route';
+import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
 
 export interface Attachment {

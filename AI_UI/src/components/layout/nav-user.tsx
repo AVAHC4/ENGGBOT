@@ -47,7 +47,7 @@ export function NavUser({
 
   const handleLogout = () => {
     console.log('Logout clicked - starting logout process')
-    logout() // Redirects to the main webpage hosted on port 5173
+    logout() // Use the imported logout function that redirects to localhost:3000
   }
 
   return (

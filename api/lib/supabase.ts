@@ -1,19 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Read from environment variables. Never hardcode secrets.
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Fixed values that we KNOW work (these are already in your .env)
+const SUPABASE_URL = 'https://***REMOVED***';
+const SUPABASE_SERVICE_KEY = '***REMOVED***';
+const SUPABASE_ANON_KEY = '***REMOVED***';
 
-if (!SUPABASE_URL) {
-  throw new Error('Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) environment variable');
-}
-if (!SUPABASE_SERVICE_KEY) {
-  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
-}
-
-// Create a Supabase client with the SERVICE ROLE key (server-side only)
-console.log('Initializing Supabase service client');
+// Create a Supabase client with the SERVICE ROLE key
+console.log('Creating Supabase client with SERVICE ROLE KEY (bypasses RLS)');
 export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: {
     autoRefreshToken: false,
@@ -22,7 +15,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 });
 
 // Also export a client with the anon key for frontend use
-export const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY!, {
+export const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false

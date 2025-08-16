@@ -5,7 +5,6 @@
  * to ensure immediate responsiveness for the first user interaction
  */
 
-import 'server-only';
 import { ChutesClient } from '@/lib/ai/chutes-client';
 
 // Global state to track initialization

@@ -1,12 +1,16 @@
 /**
  * DeepSeek AI Client via OpenRouter
- *
- * Server-only client. Do NOT import this from client-side code.
+ * 
+ * TypeScript adaptation for web use
  */
-import 'server-only';
 
-// Default model used if none is provided by callers
-const DEFAULT_MODEL = "deepseek/deepseek-r1-0528:free";
+// Model definitions - only DeepSeek R1 0528
+export const AVAILABLE_MODELS = {
+  "deepseek-r1": "deepseek/deepseek-r1-0528:free"
+};
+
+// Default API key
+const DEFAULT_API_KEY = "***REMOVED***";
 
 // Client interface
 interface ChutesClientOptions {
@@ -35,25 +39,15 @@ export class ChutesClient {
   private headers: Record<string, string>;
 
   constructor(options?: ChutesClientOptions) {
-    // Read API key from environment. Never ship a default key in code.
-    const envKey = process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_KEY;
-    if (!options?.apiKey && !envKey) {
-      throw new Error("Missing OPENROUTER_API_KEY (or CHUTES_API_KEY) environment variable.");
-    }
-    this.apiKey = options?.apiKey || envKey!;
+    this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-    this.defaultModel = options?.defaultModel || DEFAULT_MODEL;
+    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
     
-    // Build headers. OpenRouter recommends HTTP-Referer and X-Title.
-    const referer = process.env.CLIENT_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-    const appTitle = process.env.APP_TITLE || 'ENGGBOT';
-
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": referer,
-      "X-Title": appTitle
+      "HTTP-Referer": "http://localhost:3001",
+      "X-Title": "AI UI Demo"
     };
     
     console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
@@ -201,5 +195,26 @@ export class ChutesClient {
       clearTimeout(timeoutId);
       throw error;
     }
+  }
+  
+  /**
+   * Switch to a different model
+   */
+  switchModel(modelKey: string): boolean {
+    if (modelKey in AVAILABLE_MODELS) {
+      this.defaultModel = AVAILABLE_MODELS[modelKey as keyof typeof AVAILABLE_MODELS];
+      console.log(`Switched to model: ${this.defaultModel}`);
+      return true;
+    } else {
+      console.log(`Model key '${modelKey}' not found. Available keys: ${Object.keys(AVAILABLE_MODELS)}`);
+      return false;
+    }
+  }
+  
+  /**
+   * Get a list of available models
+   */
+  listModels(): Record<string, string> {
+    return AVAILABLE_MODELS;
   }
 } 

@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BOT_CONFIG } from '@/lib/ai/response-middleware';
+import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
 import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -39,7 +40,17 @@ function ThinkingAnimation() {
   return <AITextLoading />;
 }
 
-// (Removed AI initialization indicator and client-side preload)
+// Initializing AI indicator component
+function InitializingAIIndicator() {
+  return (
+    <div className="initializing-indicator">
+      <div className="initializing-content">
+        <Loader2 className="initializing-spinner" />
+        <span className="initializing-text">Initializing AI...</span>
+      </div>
+    </div>
+  );
+}
 
 export function ChatInterface() {
   const { 
@@ -71,7 +82,19 @@ export function ChatInterface() {
   // Previous messages count ref to detect new messages
   const previousMessagesCountRef = useRef(messages.length);
   
-  // Removed client-side AI pre-initialization; server routes handle warmup as needed
+  // Add state to track AI client initialization
+  const [isAIInitializing, setIsAIInitializing] = useState(!isClientInitialized());
+  
+  // Initialize AI client on component mount
+  useEffect(() => {
+    if (!isClientInitialized()) {
+      setIsAIInitializing(true);
+      // Initialize the AI client
+      initializeAIClient().finally(() => {
+        setIsAIInitializing(false);
+      });
+    }
+  }, []);
   
   // Keep track of displayed messages
   useEffect(() => {
@@ -314,19 +337,20 @@ export function ChatInterface() {
         <div className="chatgpt-input-wrapper">
           <ChatInput 
             onSend={handleSendMessage} 
-            disabled={isLoading && !isGenerating}
+            disabled={isLoading && !isGenerating || isAIInitializing}
             thinkingMode={thinkingMode}
             onToggleThinking={toggleThinkingMode}
             webSearchMode={webSearchMode}
             onToggleWebSearch={toggleWebSearchMode}
-            placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
+            placeholder={isAIInitializing ? "AI is initializing..." : `Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
             isAwaitingResponse={isLoading || isGenerating}
             onStopGeneration={stopGeneration}
           />
         </div>
       </div>
       
-      {/* AI initialization indicator removed; rely on chat loading states */}
+      {/* Show AI initializing indicator */}
+      {isAIInitializing && <InitializingAIIndicator />}
       
       {/* Show private mode indicator */}
       {isPrivateMode && (

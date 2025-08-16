@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
-import { AVAILABLE_MODELS } from '@/lib/ai/models';
+import { v4 as uuidv4 } from 'uuid';
+import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 import crypto from 'crypto';
-import type { ChatMessage } from '@/types/chat';
-export const runtime = 'nodejs';
 
-// Simple interface for chat messages (shared type)
+// Simple interface for chat messages
+export interface ChatMessage {
+  id: string;
+  content: string; 
+  isUser: boolean;
+  timestamp: string;
+}
 
 /**
  * Format conversation history for the AI
