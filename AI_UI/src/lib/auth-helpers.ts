@@ -163,8 +163,11 @@ export function logout(): void {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   }
   
-  // Explicitly set the URL with path and a no_redirect parameter
-  const mainAppUrl = (process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000') + '/?logout=true&no_redirect=true&force_logout=true';
+  // Redirect to the Vite app on port 5173 (main webpage)
+  const targetOrigin =
+    (process.env.NEXT_PUBLIC_VITE_APP_URL as string | undefined)
+    || `${window.location.protocol}//${window.location.hostname}:5173`;
+  const mainAppUrl = `${targetOrigin}/`;
   
   // Use a combination of methods for maximum browser compatibility
   try {
