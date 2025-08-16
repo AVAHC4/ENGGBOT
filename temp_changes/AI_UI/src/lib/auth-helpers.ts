@@ -164,7 +164,18 @@ export function logout(): void {
   }
   
   // Explicitly set the URL with path and a no_redirect parameter
-  const mainAppUrl = (process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000') + '/?logout=true&no_redirect=true&force_logout=true';
+  // Redirect to Vite landing page on port 5173 by default, or use NEXT_PUBLIC_VITE_APP_URL if provided
+  const viteBase =
+    process.env.NEXT_PUBLIC_VITE_APP_URL ||
+    (() => {
+      try {
+        const { protocol, hostname } = window.location;
+        return `${protocol}//${hostname}:5173`;
+      } catch {
+        return 'http://localhost:5173';
+      }
+    })();
+  const mainAppUrl = `${viteBase}/?logout=true&no_redirect=true&force_logout=true`;
   
   // Use a combination of methods for maximum browser compatibility
   try {
