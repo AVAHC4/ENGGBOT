@@ -177,7 +177,7 @@ const data = {
       icon: Settings,
     },
     {
-      title: "Get Help",
+      title: "Terms and Conditions",
       url: "#",
       icon: HelpCircle,
     },
