@@ -50,7 +50,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
           <aside className="-mx-4 lg:w-1/5">
             <SidebarNav items={sidebarNavItems} />
           </aside>
-          <div className="flex-1 lg:max-w-2xl">{children}</div>
+          <div className="flex-1 lg:max-w-2xl max-h-[calc(100vh-13rem)] overflow-y-auto pr-4">{children}</div>
         </div>
       </div>
     </>
