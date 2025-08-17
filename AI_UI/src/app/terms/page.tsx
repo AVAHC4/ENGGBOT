@@ -53,7 +53,7 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold">3. Accounts and Security</h2>
           <p>
             You are responsible for your account, credentials, and all activity under your account. Notify us promptly at
-            [Contact Email] of any unauthorized access or security incident.
+            crashcourse3879@gmail.com of any unauthorized access or security incident.
           </p>
           <p>
             You must keep your registration information accurate and up to date and implement reasonable measures to secure your
