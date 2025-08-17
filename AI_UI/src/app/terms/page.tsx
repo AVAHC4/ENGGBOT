@@ -31,7 +31,7 @@ export default function TermsPage() {
             do not use the Service.
           </p>
           <p>
-            These Terms constitute a binding agreement between you and [Company/Entity Name]. Please review them regularly as we
+            These Terms constitute a binding agreement between you and ENGGBOT. Please review them regularly as we
             may update them from time to time. If you are using the Service on behalf of an organization, you represent that you
             have authority to bind that organization to these Terms.
           </p>
@@ -242,7 +242,7 @@ export default function TermsPage() {
         <section className="space-y-4 pb-10">
           <h2 className="text-xl font-semibold">18. Contact</h2>
           <p>
-            Questions about these Terms: [Company/Entity Name], [Postal Address], [Contact Email].
+            Questions about these Terms: ENGGBOT, crashcourse3879@gmail.com.
           </p>
           <p>
             We aim to respond to inquiries within a reasonable timeframe, but response times may vary.
