@@ -18,7 +18,8 @@
     "auth/google.ts",
     "auth/test.ts",
     "lib/**/*.ts",
-    "db/**/*.ts"
+    "db/**/*.ts",
+    "types/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }
