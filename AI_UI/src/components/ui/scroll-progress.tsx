@@ -11,9 +11,9 @@ interface ScrollProgressProps {
 }
 
 const DEFAULT_SPRING_OPTIONS: SpringOptions = {
-  stiffness: 200,
-  damping: 50,
-  restDelta: 0.001,
+  stiffness: 280,
+  damping: 18,
+  mass: 0.3,
 }
 
 export function ScrollProgress({
@@ -30,11 +30,27 @@ export function ScrollProgress({
   })
 
   return (
-    <motion.div
-      className={cn('inset-x-0 top-0 h-1 origin-left', className)}
-      style={{
-        scaleX,
-      }}
-    />
+    <>
+      {/* Base track line */}
+      <div
+        className={cn(
+          'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full',
+          'bg-transparent dark:bg-[#111111]',
+        )}
+        aria-hidden
+      />
+      {/* Animated progress overlay */}
+      <motion.div
+        className={cn(
+          'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full origin-left',
+          'bg-[linear-gradient(to_right,rgba(0,0,0,0),#111111_75%,#111111_100%)]',
+          'dark:bg-[linear-gradient(to_right,rgba(255,255,255,0),#ffffff_75%,#ffffff_100%)]',
+          className,
+        )}
+        style={{
+          scaleX,
+        }}
+      />
+    </>
   )
 }
