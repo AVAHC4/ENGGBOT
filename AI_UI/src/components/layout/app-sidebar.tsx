@@ -214,7 +214,7 @@ const data = {
     },
     {
       title: "Terms and Conditions",
-      url: "#",
+      url: "/terms",
       icon: HelpCircle,
     },
     {
