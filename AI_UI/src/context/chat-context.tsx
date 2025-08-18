@@ -56,8 +56,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
-  // Track when we've determined the initial conversationId (from local or server)
-  const [isConvInitialized, setIsConvInitialized] = useState(false);
   
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -76,43 +74,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Initialize conversationId after mount
   useEffect(() => {
-    if (!isMounted) return;
-    const init = async () => {
-      try {
-        const userPrefix = getUserPrefix();
-        const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
-        if (storedId) {
-          setConversationId(storedId);
-          setIsConvInitialized(true);
-          return;
-        }
-
-        // If no stored active conversation, try fetching from backend and pick most recent
-        try {
-          const res = await fetch('/api/chat/conversations', { credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            const convs = (data.conversations || []) as Array<{ id: string; updated_at?: string; created_at?: string; }>;
-            if (convs.length > 0) {
-              const firstId = convs[0].id; // already ordered by updated_at desc in API
-              setConversationId(firstId);
-              localStorage.setItem(`${userPrefix}-activeConversation`, firstId);
-              setIsConvInitialized(true);
-              return;
-            }
-          }
-        } catch (e) {
-          console.error('Failed to initialize conversation from backend:', e);
-        }
-
-        // No existing conversations found; keep the current random conversationId
-        setIsConvInitialized(true);
-      } catch (e) {
-        console.error('Error during conversation init:', e);
-        setIsConvInitialized(true);
+    if (isMounted) {
+      // Get user-specific prefix
+      const userPrefix = getUserPrefix();
+      
+      // Get the stored conversation ID or generate a new one
+      const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
+      if (storedId) {
+        setConversationId(storedId);
       }
-    };
-    init();
+    }
   }, [isMounted]);
 
   
@@ -219,7 +190,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Load conversation on startup or when switching conversations (after helpers are defined)
   useEffect(() => {
     const load = async () => {
-      if (isMounted && isConvInitialized && !isPrivateMode) {
+      if (isMounted && !isPrivateMode) {
         // Ensure the conversation exists on backend
         ensureConversationOnServer(conversationId).catch(() => {});
 
@@ -243,7 +214,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
     };
     load();
-  }, [conversationId, isMounted, isConvInitialized, isPrivateMode, ensureConversationOnServer, fetchMessagesFromServer]);
+  }, [conversationId, isMounted, isPrivateMode, ensureConversationOnServer, fetchMessagesFromServer]);
 
   const stopGeneration = useCallback(() => {
     // Set canceled flag
