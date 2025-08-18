@@ -6,8 +6,7 @@ import {
   getAllConversationsMetadata, 
   ConversationMetadata,
   getConversationMetadata,
-  saveConversationMetadata,
-  deleteConversation
+  saveConversationMetadata
 } from '@/lib/storage';
 import { formatDistanceToNow } from 'date-fns';
 import { 
@@ -220,39 +219,9 @@ export function ConversationSidebar() {
   
   // Update conversations list
   useEffect(() => {
-    const loadConversations = async () => {
+    const loadConversations = () => {
       if (typeof window !== 'undefined') {
-        // Start with local metadata
-        let allConversations = getAllConversationsMetadata();
-
-        // Try to fetch from backend and merge
-        try {
-          const res = await fetch('/api/chat/conversations', { credentials: 'include' });
-          if (res.ok) {
-            const data = await res.json();
-            const serverConvs = (data.conversations || []).map((c: any) => ({
-              id: c.id,
-              title: c.title || `Conversation ${String(c.id).slice(0,6)}`,
-              updated: c.updated_at || c.created_at || new Date().toISOString(),
-            }));
-            // Update local storage metadata for server conversations
-            serverConvs.forEach((sc: any) => {
-              const existing = getConversationMetadata(sc.id);
-              const meta = {
-                title: sc.title,
-                created: existing?.created || new Date().toISOString(),
-                updated: sc.updated,
-              };
-              saveConversationMetadata(sc.id, meta);
-            });
-            // Refresh local after merges
-            allConversations = getAllConversationsMetadata();
-          }
-        } catch (e) {
-          // Ignore network/backend errors and keep local-only view
-          console.error('Failed to fetch conversations from backend:', e);
-        }
-
+        const allConversations = getAllConversationsMetadata();
         setConversations(allConversations);
       }
     };
@@ -278,13 +247,6 @@ export function ConversationSidebar() {
     } else {
       // Update local state to immediately reflect the deletion
       setConversations(conversations.filter(c => c.id !== id));
-      // Remove from local storage
-      deleteConversation(id);
-      // Delete on backend
-      fetch(`/api/chat/conversations/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      }).catch(() => {});
     }
   };
   
@@ -308,13 +270,6 @@ export function ConversationSidebar() {
     
     // Save updated metadata
     saveConversationMetadata(id, updatedMeta);
-    // Upsert to backend
-    fetch('/api/chat/conversations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ id, title: newTitle }),
-    }).catch(() => {});
     
     // Update local state to immediately reflect the change
     setConversations(conversations.map(c => 

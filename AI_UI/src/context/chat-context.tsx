@@ -86,7 +86,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [isMounted]);
 
-  
+  // Load conversation on startup or when switching conversations
+  useEffect(() => {
+    if (isMounted && !isPrivateMode) {
+      const savedMessages = loadConversation(conversationId);
+      if (savedMessages?.length) {
+        setMessages(savedMessages);
+      } else {
+        setMessages([]);
+      }
+      
+      // Get user-specific prefix
+      const userPrefix = getUserPrefix();
+      
+      // Save active conversation ID with user-specific key
+      localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
+    }
+  }, [conversationId, isMounted, isPrivateMode]);
   
   // Save messages when they change
   useEffect(() => {
@@ -121,100 +137,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       url: URL.createObjectURL(file)
     }));
   };
-
-  // Backend persistence helpers
-  const ensureConversationOnServer = useCallback(async (id: string, title?: string) => {
-    if (isPrivateMode) return;
-    try {
-      await fetch('/api/chat/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id, title }),
-      });
-    } catch (e) {
-      console.error('ensureConversationOnServer error:', e);
-    }
-  }, [isPrivateMode]);
-
-  const fetchMessagesFromServer = useCallback(async (id: string) => {
-    if (isPrivateMode) return null;
-    try {
-      const res = await fetch(`/api/chat/conversations/${id}/messages`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      if (!res.ok) return null;
-      const json = await res.json();
-      const msgs = (json.messages || []).map((m: any) => ({
-        id: m.id,
-        content: m.content,
-        isUser: m.role === 'user',
-        timestamp: m.created_at,
-        attachments: m.attachments || undefined,
-        replyToId: m.reply_to_id || undefined,
-      })) as ExtendedChatMessage[];
-      return msgs;
-    } catch (e) {
-      console.error('fetchMessagesFromServer error:', e);
-      return null;
-    }
-  }, [isPrivateMode]);
-
-  const saveMessageToServer = useCallback(async (convId: string, message: any) => {
-    if (isPrivateMode) return;
-    try {
-      await fetch(`/api/chat/conversations/${convId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message }),
-      });
-    } catch (e) {
-      console.error('saveMessageToServer error:', e);
-    }
-  }, [isPrivateMode]);
-
-  const deleteConversationOnServer = useCallback(async (id: string) => {
-    if (isPrivateMode) return;
-    try {
-      await fetch(`/api/chat/conversations/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-    } catch (e) {
-      console.error('deleteConversationOnServer error:', e);
-    }
-  }, [isPrivateMode]);
-
-  // Load conversation on startup or when switching conversations (after helpers are defined)
-  useEffect(() => {
-    const load = async () => {
-      if (isMounted && !isPrivateMode) {
-        // Ensure the conversation exists on backend
-        ensureConversationOnServer(conversationId).catch(() => {});
-
-        // Try backend first
-        const serverMessages = await fetchMessagesFromServer(conversationId);
-        if (serverMessages && serverMessages.length > 0) {
-          setMessages(serverMessages);
-        } else {
-          // Fallback to localStorage
-          const savedMessages = loadConversation(conversationId);
-          if (savedMessages?.length) {
-            setMessages(savedMessages);
-          } else {
-            setMessages([]);
-          }
-        }
-
-        // Persist active conversation in localStorage (per-user)
-        const userPrefix = getUserPrefix();
-        localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
-      }
-    };
-    load();
-  }, [conversationId, isMounted, isPrivateMode, ensureConversationOnServer, fetchMessagesFromServer]);
 
   const stopGeneration = useCallback(() => {
     // Set canceled flag
@@ -260,18 +182,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Save conversation after adding user message
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
-      }
-      // Ensure conversation exists and persist user message to backend
-      if (!isPrivateMode) {
-        ensureConversationOnServer(conversationId, userDisplayContent.slice(0, 30)).catch(() => {});
-        saveMessageToServer(conversationId, {
-          id: userMessage.id,
-          role: 'user',
-          content: userDisplayContent,
-          attachments,
-          reply_to_id: replyToId || null,
-          created_at: userMessage.timestamp,
-        }).catch(() => {});
       }
       
       setIsLoading(true);
@@ -348,7 +258,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           
           const decoder = new TextDecoder();
           let buffer = "";
-          let aiContent = "";
           
           // Process the stream chunks
           while (true) {
@@ -371,22 +280,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               setIsGenerating(false);
               
               // Save conversation
-              if (typeof window !== 'undefined' && !isPrivateMode) {
+            if (typeof window !== 'undefined' && !isPrivateMode) {
                 saveConversation(
-                  conversationId,
+                  conversationId, 
                   messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
                 );
-              }
-              // Persist assistant message to backend
-              if (!isPrivateMode) {
-                saveMessageToServer(conversationId, {
-                  id: aiMessageId,
-                  role: 'assistant',
-                  content: aiContent,
-                  attachments: null,
-                  reply_to_id: null,
-                  created_at: aiMessage.timestamp,
-                }).catch(() => {});
               }
               break;
             }
@@ -415,7 +313,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                   
                   // Update the streaming message
                   if (data.text) {
-                    aiContent += data.text;
                     setMessages(prev => {
                       const updatedMessages = prev.map(m => 
                         m.id === aiMessageId 
@@ -767,8 +664,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       
       // Delete current conversation
       deleteConversation(conversationId);
-      // Delete on backend as well
-      deleteConversationOnServer(conversationId).catch(() => {});
       
       // If there are other conversations, switch to the most recent one
       // Otherwise, create a new conversation
@@ -782,7 +677,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         startNewConversation();
       }
     }
-  }, [conversationId, startNewConversation, switchConversation, isMounted, deleteConversationOnServer]);
+  }, [conversationId, startNewConversation, switchConversation, isMounted]);
 
   const toggleThinkingMode = useCallback(() => {
     setThinkingMode(prev => !prev);
