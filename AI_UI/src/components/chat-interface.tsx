@@ -4,7 +4,7 @@ import { ChatMessageListCompact } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
 import { useChat } from '@/context/chat-context';
-import { Loader2, BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe, EyeOff } from 'lucide-react';
+import { BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -40,17 +40,7 @@ function ThinkingAnimation() {
   return <AITextLoading />;
 }
 
-// Initializing AI indicator component
-function InitializingAIIndicator() {
-  return (
-    <div className="initializing-indicator">
-      <div className="initializing-content">
-        <Loader2 className="initializing-spinner" />
-        <span className="initializing-text">Initializing AI...</span>
-      </div>
-    </div>
-  );
-}
+// Removed the Initializing AI indicator overlay for cleaner UX
 
 export function ChatInterface() {
   const { 
@@ -82,17 +72,10 @@ export function ChatInterface() {
   // Previous messages count ref to detect new messages
   const previousMessagesCountRef = useRef(messages.length);
   
-  // Add state to track AI client initialization
-  const [isAIInitializing, setIsAIInitializing] = useState(!isClientInitialized());
-  
-  // Initialize AI client on component mount
+  // Initialize AI client on component mount (silent, no overlay)
   useEffect(() => {
     if (!isClientInitialized()) {
-      setIsAIInitializing(true);
-      // Initialize the AI client
-      initializeAIClient().finally(() => {
-        setIsAIInitializing(false);
-      });
+      initializeAIClient().catch(() => {});
     }
   }, []);
   
@@ -337,20 +320,19 @@ export function ChatInterface() {
         <div className="chatgpt-input-wrapper">
           <ChatInput 
             onSend={handleSendMessage} 
-            disabled={isLoading && !isGenerating || isAIInitializing}
+            disabled={isLoading && !isGenerating}
             thinkingMode={thinkingMode}
             onToggleThinking={toggleThinkingMode}
             webSearchMode={webSearchMode}
             onToggleWebSearch={toggleWebSearchMode}
-            placeholder={isAIInitializing ? "AI is initializing..." : `Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
+            placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
             isAwaitingResponse={isLoading || isGenerating}
             onStopGeneration={stopGeneration}
           />
         </div>
       </div>
       
-      {/* Show AI initializing indicator */}
-      {isAIInitializing && <InitializingAIIndicator />}
+      {/* Removed AI initializing indicator */}
       
       {/* Show private mode indicator */}
       {isPrivateMode && (

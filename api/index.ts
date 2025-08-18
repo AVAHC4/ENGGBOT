@@ -227,29 +227,7 @@ const extractTextFromBuffer = async (
       return { text: raw, truncated: false };
     }
 
-    // Try PDF via dynamic import to avoid hard dependency if not installed
-    const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
-    if (isPdf) {
-      try {
-        // Lazy import; if missing, we'll catch and return a helpful note
-        const mod = await import('pdf-parse');
-        const pdfParse: any = (mod as any).default || (mod as any);
-        const parsed = await pdfParse(file.buffer);
-        const raw = (parsed?.text || '').toString();
-        const maxPerFile = 8000;
-        if (raw.length > maxPerFile) {
-          return { text: raw.slice(0, maxPerFile) + "\n...[truncated]", truncated: true };
-        }
-        return { text: raw, truncated: false };
-      } catch (e) {
-        return {
-          text: `\n[Note] A PDF was uploaded (\"${file.originalname}\"), but PDF parsing isn't available. Install 'pdf-parse' to enable PDF text extraction.`,
-          truncated: false,
-        };
-      }
-    }
-
-    // Unsupported types for now (DOCX etc.)
+    // Unsupported types for now (PDF/DOCX can be added later with libs)
     return {
       text: `\n[Note] Skipped unsupported file type for "${file.originalname}" (type: ${mime}).`,
       truncated: false,
@@ -293,7 +271,7 @@ app.post("/api/files/process", upload.any(), async (req, res) => {
 // POST /api/chat/stream — stream mock response via SSE
 app.post("/api/chat/stream", async (req, res) => {
   try {
-    const { message, model, thinkingMode, filesText } = req.body || {};
+    const { message, model, thinkingMode } = req.body || {};
 
     // SSE headers
     res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
