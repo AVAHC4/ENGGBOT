@@ -89,7 +89,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Load conversation on startup or when switching conversations
   useEffect(() => {
     if (isMounted && !isPrivateMode) {
-      const savedMessages = loadConversation(conversationId);
+      const savedMessages = loadConversatio(conversationId);
       if (savedMessages?.length) {
         setMessages(savedMessages);
       } else {
