@@ -35,7 +35,12 @@ import { getAllConversationsMetadata } from '@/lib/storage';
 import { useChat } from '@/context/chat-context';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from "@/lib/supabase";
+import { DesktopTeamsLayout } from "@/components/teams/desktop-teams-layout";
 
+export default function TeamPage() {
+  return <DesktopTeamsLayout />
+}
+ 
 // Extended team member data with more information
 interface ExtendedTeamMember {
   id: string;
@@ -819,7 +824,7 @@ function TeamChatView({
   );
 }
 
-export default function TeamPage() {
+function LegacyTeamPage() {
   const [activeTab, setActiveTab] = useState('teams');
   const [teams, setTeams] = useState<Team[]>(initialTeams);
   const [myTeams, setMyTeams] = useState<Team[]>([]); // No initial joined teams
