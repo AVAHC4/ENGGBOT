@@ -14,7 +14,6 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Crown, Shield, User, UserMinus, Settings, Archive, Edit3, Save, X, Camera } from "lucide-react"
-import { ImageCropDialog } from "@/components/teams/image-crop-dialog"
 
 interface TeamMember {
   id: string
@@ -308,15 +307,6 @@ export function TeamManagementDialog({
         </DialogContent>
       </Dialog>
 
-      <ImageCropDialog
-        isOpen={showCropDialog}
-        onClose={() => {
-          setShowCropDialog(false)
-          setSelectedImageUrl("")
-        }}
-        imageUrl={selectedImageUrl}
-        onCropComplete={handleCropComplete}
-      />
     </>
   )
 }

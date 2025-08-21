@@ -1,4 +1,4 @@
-import { DesktopTeamsLayout } from "@/components/teams/desktop-teams-layout"
+import { DesktopTeamsLayout } from "@/components/desktop-teams-layout"
 
 export default function Home() {
   return (

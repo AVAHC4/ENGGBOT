@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
-import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 
 interface Message {
   id: string
@@ -280,22 +278,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       </div>
 
-      <TeamManagementDialog
-        open={showTeamManagement}
-        onOpenChange={setShowTeamManagement}
-        teamId={selectedTeamId}
-        teamName={team?.name || ""}
-        teamAvatar={team?.avatar}
-        onTeamNameUpdate={onTeamNameUpdate}
-        onTeamAvatarUpdate={onTeamAvatarUpdate} // Added avatar update callback
-      />
-
-      <AddPeopleDialog
-        open={showAddPeople}
-        onOpenChange={setShowAddPeople}
-        teamId={selectedTeamId}
-        teamName={team?.name || ""}
-      />
     </div>
   )
 }
