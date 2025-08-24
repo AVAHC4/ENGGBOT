@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
+import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 
 interface Team {
   id: string
@@ -27,8 +29,10 @@ interface TeamsSidebarProps {
 export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
+  const [showTeamManagement, setShowTeamManagement] = useState(false)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -43,9 +47,13 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>New Team</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log("New Team clicked")}>New Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>
+                Add People
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -113,6 +121,24 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
           </div>
         ))}
       </div>
+
+      {selectedTeam && (
+        <>
+          <AddPeopleDialog
+            open={showAddPeople}
+            onOpenChange={setShowAddPeople}
+            teamId={selectedTeam.id}
+            teamName={selectedTeam.name}
+          />
+          <TeamManagementDialog
+            open={showTeamManagement}
+            onOpenChange={setShowTeamManagement}
+            teamId={selectedTeam.id}
+            teamName={selectedTeam.name}
+            teamAvatar={selectedTeam.avatar}
+          />
+        </>
+      )}
     </div>
   )
 }

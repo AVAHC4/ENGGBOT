@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
+import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 
 interface Message {
   id: string
@@ -114,6 +116,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [messages, setMessages] = useState<Message[]>([])
   const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false)
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
 
   const currentMessages = selectedTeamId ? sampleMessages[selectedTeamId] || [] : []
 
@@ -182,12 +186,12 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-9 w-9">
+          <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
             <Search className="h-4 w-4" />
           </Button>
-          <DropdownMenu>
+          <DropdownMenu open={plusMenuOpen} onOpenChange={(o) => { console.log("plus menu open:", o); setPlusMenuOpen(o) }}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
                 <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -195,17 +199,17 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
               <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <DropdownMenu>
+          <DropdownMenu open={moreMenuOpen} onOpenChange={(o) => { console.log("more menu open:", o); setMoreMenuOpen(o) }}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9">
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Team Info</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add Members</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Manage Team</DropdownMenuItem>
-              <DropdownMenuItem>Archive Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => console.log("New Team clicked")}>New Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -277,6 +281,26 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </Button>
         </div>
       </div>
+
+      {team && (
+        <>
+          <TeamManagementDialog
+            open={showTeamManagement}
+            onOpenChange={setShowTeamManagement}
+            teamId={team.id}
+            teamName={team.name}
+            teamAvatar={team.avatar}
+            onTeamNameUpdate={onTeamNameUpdate}
+            onTeamAvatarUpdate={onTeamAvatarUpdate}
+          />
+          <AddPeopleDialog
+            open={showAddPeople}
+            onOpenChange={setShowAddPeople}
+            teamId={team.id}
+            teamName={team.name}
+          />
+        </>
+      )}
 
     </div>
   )
