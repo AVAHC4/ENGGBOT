@@ -1,81 +1,43 @@
-
-# Animated Landing Page Project
+# ENGGBOT - AI Study Assistant Platform
 
 ## Project Overview
-This project is a modern, responsive animated landing page built with React, Express.js, and Tailwind CSS. It features smooth transitions, interactive components, and a beautiful user interface designed for both desktop and mobile devices.
+ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
 
-## Features
-- Modern and responsive design (mobile-first)
-- Animated components using Framer Motion
-- Full-stack TypeScript application
-- Express.js backend with RESTful API endpoints
-- PostgreSQL database integration via Drizzle ORM
-- Tailwind CSS for utility-first styling
-- User authentication system
-- Real-time updates using WebSocket
-- Form validation with Zod
-- Error handling and logging
+## Current Architecture
 
-## Tech Stack
-- **Frontend:**
-  - React 18 with TypeScript
-  - Vite for fast development and building
-  - Tailwind CSS for styling
-  - Framer Motion for animations
-  - React Query for data fetching
-  - Wouter for routing
-- **Backend:**
-  - Express.js with TypeScript
-  - PostgreSQL database
-  - Drizzle ORM for database operations
-  - Passport.js for authentication
-  - WebSocket for real-time features
+### Frontend Structure
+- **Main Application**
+  - Built with Next.js 14 and TypeScript
+  - Uses Vite as the build tool
+  - Styling with Tailwind CSS
+  - Animations using Framer Motion
+  - Component-based architecture
+  
+- **Key Components**
+  - `ai-chat.tsx`: Main AI chat interface component
+  - `login.tsx`: Google OAuth login page
+  - `main.tsx`: Application entry point
 
-## Project Structure
-- `/client` - Frontend React application
-  - `/components` - Reusable UI components
-  - `/pages` - Page components
-  - `/hooks` - Custom React hooks
-  - `/utils` - Utility functions
-- `/server` - Express.js backend
-  - `/routes` - API routes
-  - `/controllers` - Route controllers
-  - `/middleware` - Custom middleware
-  - `/models` - Database models
-- `/shared` - Shared types and utilities
+### API Integration
+- **Authentication**
+  - Google OAuth implementation in `/api/auth/google.ts`
+  - Secure session management
+  - User profile handling
 
-## Deployment
-This project can be deployed on various platforms:
-1. **Render** (Recommended)
-   - Create a new Web Service
-   - Connect your GitHub repository
-   - Set build command: `npm install && npm run build`
-   - Set start command: `npm start`
-   - Add environment variables
-2. **Railway**
-   - Create a new project
-   - Connect your GitHub repository
-   - Add environment variables
-   - Deploy
-3. **Vercel** (Frontend only)
-   - Import your repository
-   - Configure build settings
-   - Deploy
+- **AI Services**
+  - Chutes AI integration with DeepSeek models
+  - Multiple model support (DeepSeek-R1, DeepSeek-V3, Mistral)
+  - Thinking mode for detailed responses
+  - API key management
 
-## Enhanced Features
-- Improved response formatting
-- Better code block highlighting
-- Responsive UI for mobile devices
+### Current Implementation Details
 
-## User Experience Improvements
-- Added keyboard shortcuts
-- Optimized loading times
-- Implemented accessibility features
-
-## Documentation Updates
-- Added comprehensive API documentation
-- Included setup instructions for new developers
-- Updated troubleshooting guide
+#### Frontend
+- **Chat Interface**
+  - Interactive messaging UI with user/assistant format
+  - Non-streaming responses due to implementation limitations
+  - Thinking mode to display AI reasoning process
+  - Voice input via microphone integration
   
 - **User Experience**
   - Modern, responsive design
