@@ -1,81 +1,34 @@
-
-# Animated Landing Page
+# ENGGBOT - AI Study Assistant Platform
 
 ## Project Overview
-Animated Landing Page is a modern, full-stack web application featuring a visually engaging and responsive landing page with advanced animations and real-time chat capabilities. The project demonstrates best practices in frontend and backend development using TypeScript, React, Express.js, and PostgreSQL.
+ENGGBOT is a modern web application featuring an animated landing page connected to an advanced AI chatbot. The platform serves as an AI study assistant that leverages course materials to provide academically accurate responses to student queries.
 
-## Features
+## Current Architecture
 
-- Modern and responsive design (mobile-first)
-- Animated components using Framer Motion for smooth transitions
-- Full-stack TypeScript application
-- Express.js backend with RESTful API endpoints
-- PostgreSQL database integration via Drizzle ORM
-- Tailwind CSS for utility-first styling
-- User authentication system
-- Real-time updates using WebSocket
-- Form validation with Zod
-- Error handling and logging
+### Frontend Structure
+- **Main Application**
+  - Built with Next.js 14 and TypeScript
+  - Uses Vite as the build tool
+  - Styling with Tailwind CSS
+  - Animations using Framer Motion
+  - Component-based architecture
+  
+- **Key Components**
+  - `ai-chat.tsx`: Main AI chat interface component
+  - `login.tsx`: Google OAuth login page
+  - `main.tsx`: Application entry point
 
-## Tech Stack
+### API Integration
+- **Authentication**
+  - Google OAuth implementation in `/api/auth/google.ts`
+  - Secure session management
+  - User profile handling
 
-- **Frontend:**
-  - React 18 with TypeScript
-  - Vite for fast development and building
-  - Tailwind CSS for styling
-  - Framer Motion for animations
-  - React Query for data fetching
-  - Wouter for routing
-
-- **Backend:**
-  - Express.js with TypeScript
-  - PostgreSQL database
-  - Drizzle ORM for database operations
-  - Passport.js for authentication
-  - WebSocket for real-time features
-
-## Project Structure
-
-- `/client` - Frontend React application
-  - `/components` - Reusable UI components
-  - `/pages` - Page components
-  - `/hooks` - Custom React hooks
-  - `/utils` - Utility functions
-- `/server` - Express.js backend
-  - `/routes` - API routes
-  - `/controllers` - Route controllers
-  - `/middleware` - Custom middleware
-  - `/models` - Database models
-- `/shared` - Shared types and utilities
-
-## Deployment
-
-This project can be deployed on various platforms:
-
-1. **Render** (Recommended)
-   - Create a new Web Service
-   - Connect your GitHub repository
-   - Set build command: `npm install && npm run build`
-   - Set start command: `npm start`
-   - Add environment variables
-
-2. **Railway**
-   - Create a new project
-   - Connect your GitHub repository
-   - Add environment variables
-   - Deploy
-
-3. **Vercel** (Frontend only)
-   - Import your repository
-   - Configure build settings
-   - Deploy
-
-## Status
-Current version: 1.0.1
-Last updated: August 26, 2025
-
----
-*This document will be updated as the project evolves*
+- **AI Services**
+  - Chutes AI integration with DeepSeek models
+  - Multiple model support (DeepSeek-R1, DeepSeek-V3, Mistral)
+  - Thinking mode for detailed responses
+  - API key management
 
 ### Current Implementation Details
 
