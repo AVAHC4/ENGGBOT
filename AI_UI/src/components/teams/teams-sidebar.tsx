@@ -30,6 +30,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [showTeamManagement, setShowTeamManagement] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
   const selectedTeam = teams.find((t) => t.id === selectedTeamId) || null
@@ -40,23 +41,42 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
       <div className="flex items-center justify-between pl-0 pr-4 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => console.log("New Team clicked")}>New Team</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>
-                Add People
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative">
+            <DropdownMenu open={menuOpen} onOpenChange={(o) => { console.log("teams sidebar menu open:", o); setMenuOpen(o) }}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    console.log('teams sidebar trigger click');
+                    setMenuOpen((v) => !v);
+                  }}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="bottom" forceMount className="z-[9999] bg-white text-black dark:bg-neutral-900 dark:text-white border shadow-lg">
+                <DropdownMenuItem onClick={() => console.log("New Team clicked")}>New Team</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowAddPeople(true)}>
+                  Add People
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem>Archive</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {menuOpen && (
+              <div className="absolute right-0 top-9 z-[10000] w-44 rounded-md border bg-white text-black shadow-lg dark:bg-neutral-900 dark:text-white">
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => console.log('New Team clicked (fallback)')}>New Team</button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => setShowAddPeople(true)}>Add People</button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => setShowTeamManagement(true)}>Settings</button>
+                <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => console.log('Archive clicked (fallback)')}>Archive</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

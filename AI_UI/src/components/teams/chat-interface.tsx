@@ -185,33 +185,41 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
             <Search className="h-4 w-4" />
           </Button>
           <DropdownMenu open={plusMenuOpen} onOpenChange={(o) => { console.log("plus menu open:", o); setPlusMenuOpen(o) }}>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setPlusMenuOpen(v => !v)}>
                 <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" side="bottom" forceMount className="z-[9999] bg-white text-black dark:bg-neutral-900 dark:text-white border shadow-lg">
               <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu open={moreMenuOpen} onOpenChange={(o) => { console.log("more menu open:", o); setMoreMenuOpen(o) }}>
             <DropdownMenuTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMoreMenuOpen(v => !v)}>
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" side="bottom" forceMount className="z-[9999] bg-white text-black dark:bg-neutral-900 dark:text-white border shadow-lg">
               <DropdownMenuItem onClick={() => console.log("New Team clicked")}>New Team</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Settings</DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          {moreMenuOpen && (
+            <div className="absolute right-0 top-10 z-[10000] w-44 rounded-md border bg-white text-black shadow-lg dark:bg-neutral-900 dark:text-white">
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => console.log('New Team clicked (fallback)')}>New Team</button>
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => setShowAddPeople(true)}>Add People</button>
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => setShowTeamManagement(true)}>Settings</button>
+              <button className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800" onClick={() => console.log('Archive clicked (fallback)')}>Archive</button>
+            </div>
+          )}
         </div>
       </div>
 
