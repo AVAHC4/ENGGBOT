@@ -143,7 +143,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   if (!selectedTeamId) {
     return (
-      <div className="flex items-center justify-center h-full bg-transparent">
+      <div className="flex items-center justify-center h-full bg-muted/20">
         <div className="text-center">
           <div className="w-32 h-32 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
             <div className="w-16 h-16 bg-muted-foreground/20 rounded-full"></div>
@@ -162,7 +162,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-transparent">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-background">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
@@ -213,7 +213,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/5">
         {allMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
@@ -257,7 +257,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         )}
       </div>
 
-      <div className="border-t border-border p-4 bg-transparent">
+      <div className="border-t border-border p-4 bg-background">
         <div className="flex items-end gap-2">
           <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
             <Paperclip className="h-4 w-4" />
