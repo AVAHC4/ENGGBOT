@@ -80,7 +80,7 @@ export function DesktopTeamsLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-transparent">
       {/* Teams Sidebar */}
       <div className="w-80 border-r border-border flex-shrink-0">
         <TeamsSidebar selectedTeamId={selectedTeamId} onTeamSelect={handleTeamSelect} teams={teams} />
