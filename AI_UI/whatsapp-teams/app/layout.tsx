@@ -30,10 +30,10 @@ html {
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           {/* Global animated background for Teams (theme-aware) */}
-          <div className="fixed inset-0 -z-10 pointer-events-none">
+          <div className="fixed inset-0 z-0 pointer-events-none">
             <TeamsFlickerBackground className="absolute inset-0" />
           </div>
-          {children}
+          <div className="relative z-10">{children}</div>
         </ThemeProvider>
       </body>
     </html>
