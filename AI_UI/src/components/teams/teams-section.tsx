@@ -61,9 +61,9 @@ const teams: Team[] = [
 
 export function TeamsSection() {
   return (
-    <div className="max-w-md mx-auto bg-background border-x border-border min-h-screen">
+    <div className="max-w-md mx-auto bg-transparent border-x border-border min-h-screen">
       {/* Header */}
-      <div className="sticky top-0 bg-background border-b border-border px-4 py-3">
+      <div className="sticky top-0 bg-transparent border-b border-border px-4 py-3">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
       </div>
 
