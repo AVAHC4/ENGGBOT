@@ -11,12 +11,12 @@ export function TeamsFlickerBackground({ className }: Props) {
   const { resolvedTheme } = useTheme();
 
   // Dark theme: subtle light squares; Light theme: subtle dark squares
-  const color = resolvedTheme === "light" ? "#000000" : "#CCCCCC";
+  const color = resolvedTheme === "light" ? "#000000" : "#FFFFFF";
 
   return (
     <FlickeringGrid
       color={color}
-      maxOpacity={0.2}
+      maxOpacity={0.3}
       className={className}
     />
   );
