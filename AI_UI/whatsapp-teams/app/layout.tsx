@@ -26,7 +26,7 @@ html {
 }
         `}</style>
       </head>
-      <body>
+      <body className="!bg-transparent">
         {/* Global animated background to match main app */}
         <div className="fixed inset-0 -z-10 pointer-events-none">
           <FlickeringGrid color="#CCCCCC" maxOpacity={0.2} className="absolute inset-0" />
