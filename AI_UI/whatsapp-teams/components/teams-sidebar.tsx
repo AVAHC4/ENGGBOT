@@ -41,7 +41,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-2 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -61,7 +61,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
       </div>
 
       {/* Search */}
-      <div className="px-4 py-3 border-b border-border">
+      <div className="px-2 py-3 border-b border-border">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -79,7 +79,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
           <div
             key={team.id}
             onClick={() => onTeamSelect(team.id)}
-            className={`flex items-center gap-3 pl-3 pr-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 pl-2 pr-3 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
               selectedTeamId === team.id ? "bg-muted" : ""
             }`}
           >
