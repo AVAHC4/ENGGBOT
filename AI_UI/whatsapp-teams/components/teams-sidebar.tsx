@@ -79,7 +79,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
           <div
             key={team.id}
             onClick={() => onTeamSelect(team.id)}
-            className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 pl-3 pr-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
               selectedTeamId === team.id ? "bg-muted" : ""
             }`}
           >
