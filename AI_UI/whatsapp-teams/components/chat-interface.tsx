@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { TeamManagementDialog } from "@/components/team-management-dialog"
-import { AddPeopleDialog } from "@/components/add-people-dialog"
+import { TeamManagementDialog } from "./team-management-dialog"
+import { AddPeopleDialog } from "./add-people-dialog"
 
 interface Message {
   id: string

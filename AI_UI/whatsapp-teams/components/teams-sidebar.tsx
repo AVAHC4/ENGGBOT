@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import type { FC, SVGProps } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, MoreVertical } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { AddPeopleDialog } from "@/components/add-people-dialog"
+import { AddPeopleDialog } from "./add-people-dialog"
 
 interface Team {
   id: string
@@ -31,6 +32,12 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
+  // React 19 + TS JSX type mismatch workaround for lucide-react icons in this file
+  // Casting to any ensures these are treated as valid JSX components by TS.
+  // Runtime behavior is unchanged.
+  const SearchIcon: any = Search
+  const MoreVerticalIcon: any = MoreVertical
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -40,7 +47,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
+                <MoreVerticalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -56,7 +63,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
       {/* Search */}
       <div className="px-4 py-3 border-b border-border">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search teams..."
             value={searchQuery}
