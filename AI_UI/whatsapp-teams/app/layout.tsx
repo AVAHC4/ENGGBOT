@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import './globals.css'
-import { ThemeProvider } from '@/components/theme-provider'
-import { TeamsFlickerBackground } from '@/components/teams-flicker-background'
+import { ThemeProvider } from '../components/theme-provider'
+import { TeamsFlickerBackground } from '../components/teams-flicker-background'
 
 export const metadata: Metadata = {
   title: 'v0 App',

@@ -11,7 +11,8 @@ import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-f
 // import { Toaster } from "@/components/ui/toaster"; // Temporarily commented out due to React type compatibility issues
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
-import { FlickeringGrid } from "@/components/ui/flickering-grid";
+import { BackgroundProvider } from "@/context/background-context";
+import { BackgroundRenderer } from "@/components/background/background-renderer";
 
 
 
@@ -34,20 +35,20 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
-        {/* Global animated background */}
-        <div className="fixed inset-0 -z-10 pointer-events-none">
-          <FlickeringGrid color="#CCCCCC" maxOpacity={0.2} className="absolute inset-0" />
-        </div>
         <ThemeProvider>
-          <ChatProvider>
-            <SidebarWrapper defaultOpen={true}>
-              <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
-                <AppSidebar className="hidden lg:block border-none" />
-                <main className="transition-all duration-300 w-full border-none">{children}</main>
-              </div>
-              <ProfileVisibilityFixer />
-            </SidebarWrapper>
-          </ChatProvider>
+          <BackgroundProvider>
+            {/* Global background renderer driven by settings */}
+            <BackgroundRenderer />
+            <ChatProvider>
+              <SidebarWrapper defaultOpen={true}>
+                <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
+                  <AppSidebar className="hidden lg:block border-none" />
+                  <main className="transition-all duration-300 w-full border-none">{children}</main>
+                </div>
+                <ProfileVisibilityFixer />
+              </SidebarWrapper>
+            </ChatProvider>
+          </BackgroundProvider>
         </ThemeProvider>
         {/* <Toaster /> */} {/* Temporarily commented out due to React type compatibility issues */}
       </body>

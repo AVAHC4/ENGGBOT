@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
+import { useBackground } from "@/context/background-context"
 
 const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark"], {
@@ -29,6 +30,13 @@ const appearanceFormSchema = z.object({
     invalid_type_error: "Select a font",
     required_error: "Please select a font.",
   }),
+  background: z.enum([
+    "flicker",
+    "radial-vignette",
+    "sunset-gradient",
+    "solid-light",
+    "solid-dark",
+  ] as const),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
@@ -39,12 +47,14 @@ export function AppearanceForm() {
   const { theme, setTheme } = useTheme()
   const { toast } = useToast()
   const [isMounted, setIsMounted] = React.useState(false);
+  const { background, setBackground, options } = useBackground()
 
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
     defaultValues: {
       theme: "light", // Default to light on server
       font: "inter",
+      background: "flicker",
     },
   })
 
@@ -53,8 +63,11 @@ export function AppearanceForm() {
     if (theme) {
       form.setValue("theme", theme as "light" | "dark");
     }
+    if (background) {
+      form.setValue("background", background as AppearanceFormValues["background"])
+    }
     setIsMounted(true);
-  }, [theme, form]);
+  }, [theme, background, form]);
 
   // Prevent rendering the form until the component is mounted on the client
   if (!isMounted) {
@@ -63,9 +76,10 @@ export function AppearanceForm() {
 
   function onSubmit(data: AppearanceFormValues) {
     setTheme(data.theme)
+    setBackground(data.background)
     toast({
       title: "Preferences updated!",
-      description: "Your theme and font settings have been saved.",
+      description: "Your theme, font, and background settings have been saved.",
     })
   }
 
@@ -169,6 +183,94 @@ export function AppearanceForm() {
                     <span className="block w-full p-2 text-center font-normal">
                       Dark
                     </span>
+                  </FormLabel>
+                </FormItem>
+              </RadioGroup>
+            </FormItem>
+          )}
+        />
+
+        {/* Backgrounds */}
+        <FormField
+          control={form.control}
+          name="background"
+          render={({ field }) => (
+            <FormItem className="space-y-1">
+              <FormLabel>Backgrounds</FormLabel>
+              <FormDescription>
+                Choose the background style for the entire app.
+              </FormDescription>
+              <FormMessage />
+              <RadioGroup
+                onValueChange={(value) => {
+                  field.onChange(value)
+                  setBackground(value as typeof field.value)
+                }}
+                defaultValue={field.value}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2"
+              >
+                {/* Flickering Grid */}
+                <FormItem>
+                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                    <FormControl>
+                      <RadioGroupItem value="flicker" className="sr-only" />
+                    </FormControl>
+                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
+                      <div className="h-20 w-full rounded-sm bg-[radial-gradient(circle_at_1px_1px,#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(circle_at_1px_1px,#ccc_1px,transparent_1px)]" />
+                    </div>
+                    <span className="block w-full p-2 text-center font-normal">Flickering Grid</span>
+                  </FormLabel>
+                </FormItem>
+
+                {/* Radial Vignette */}
+                <FormItem>
+                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                    <FormControl>
+                      <RadioGroupItem value="radial-vignette" className="sr-only" />
+                    </FormControl>
+                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
+                      <div className="h-20 w-full rounded-sm bg-[radial-gradient(60%_50%_at_50%_30%,rgba(0,0,0,0.1),rgba(0,0,0,0))] dark:bg-[radial-gradient(60%_50%_at_50%_30%,rgba(255,255,255,0.1),rgba(0,0,0,0))]" />
+                    </div>
+                    <span className="block w-full p-2 text-center font-normal">Radial Vignette</span>
+                  </FormLabel>
+                </FormItem>
+
+                {/* Sunset Gradient */}
+                <FormItem>
+                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                    <FormControl>
+                      <RadioGroupItem value="sunset-gradient" className="sr-only" />
+                    </FormControl>
+                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
+                      <div className="h-20 w-full rounded-sm bg-[linear-gradient(135deg,#ff9a9e_0%,#fad0c4_55%,#fbc2eb_100%)] dark:bg-[linear-gradient(135deg,#0f0c29_0%,#302b63_50%,#24243e_100%)]" />
+                    </div>
+                    <span className="block w-full p-2 text-center font-normal">Sunset Gradient</span>
+                  </FormLabel>
+                </FormItem>
+
+                {/* Solid Light */}
+                <FormItem>
+                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                    <FormControl>
+                      <RadioGroupItem value="solid-light" className="sr-only" />
+                    </FormControl>
+                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
+                      <div className="h-20 w-full rounded-sm bg-white border" />
+                    </div>
+                    <span className="block w-full p-2 text-center font-normal">Solid Light</span>
+                  </FormLabel>
+                </FormItem>
+
+                {/* Solid Dark */}
+                <FormItem>
+                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                    <FormControl>
+                      <RadioGroupItem value="solid-dark" className="sr-only" />
+                    </FormControl>
+                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
+                      <div className="h-20 w-full rounded-sm bg-black" />
+                    </div>
+                    <span className="block w-full p-2 text-center font-normal">Solid Dark</span>
                   </FormLabel>
                 </FormItem>
               </RadioGroup>
