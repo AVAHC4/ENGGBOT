@@ -38,7 +38,7 @@ export function getChutesClient(): ChutesClient {
     
     // Create the instance
     _chutesClientInstance = new ChutesClient({
-      defaultModel: "deepseek/deepseek-r1-0528:free"
+      defaultModel: "deepseek/deepseek-chat-v3.1:free"
     });
     
     if (SUPPRESS_INIT_LOG) {

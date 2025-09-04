@@ -4,9 +4,13 @@
  * TypeScript adaptation for web use
  */
 
-// Model definitions - only DeepSeek R1 0528
+// Model definitions - include R1 and V3/V3.1 (free tiers where available)
 export const AVAILABLE_MODELS = {
-  "deepseek-r1": "deepseek/deepseek-r1-0528:free"
+  "deepseek-r1": "deepseek/deepseek-r1-0528:free",
+  // OpenRouter identifiers for DeepSeek V3 variants (free tiers). If a specific
+  // model is unavailable on your account, the API will fall back based on route.
+  "deepseek-v3": "deepseek/deepseek-chat:free",
+  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free"
 };
 
 // Default API key
