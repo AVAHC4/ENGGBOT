@@ -2,7 +2,7 @@ import { DesktopTeamsLayout } from "@/components/teams/desktop-teams-layout";
 
 export default function TeamPage() {
   return (
-    <main className="min-h-screen bg-transparent">
+    <main className="min-h-screen bg-transparent -ml-2">
       <DesktopTeamsLayout />
     </main>
   );
