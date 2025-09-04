@@ -11,6 +11,21 @@ export function BackgroundRenderer() {
 
   const isDark = resolvedTheme === "dark";
 
+  // Ensure text remains visible when using a light (white) background while theme is dark.
+  React.useEffect(() => {
+    const cls = "bg-solid-light-text";
+    const root = typeof document !== "undefined" ? document.documentElement : null;
+    if (!root) return;
+    if (background === "solid-light") {
+      root.classList.add(cls);
+    } else {
+      root.classList.remove(cls);
+    }
+    return () => {
+      root.classList.remove(cls);
+    };
+  }, [background]);
+
   return (
     <div className="fixed inset-0 -z-10 pointer-events-none" aria-hidden>
       {background === "flicker" && (
