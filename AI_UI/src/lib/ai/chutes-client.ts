@@ -77,7 +77,7 @@ export class ChutesClient {
         let actualPrompt = prompt;
         if (thinking_mode) {
           if (prompt.includes("?")) {
-            actualPrompt = prompt + " Please think step by step and show your reasoning process.";
+            actualPrompt = prompt + " Please thin step by step and show your reasoning process.";
           } else {
             actualPrompt = prompt + " Please think step by step and explain your thought process.";
           }
