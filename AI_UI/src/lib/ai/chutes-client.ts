@@ -10,7 +10,9 @@ export const AVAILABLE_MODELS = {
   // OpenRouter identifiers for DeepSeek V3 variants (free tiers). If a specific
   // model is unavailable on your account, the API will fall back based on route.
   "deepseek-v3": "deepseek/deepseek-chat:free",
-  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free"
+  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free",
+  // OpenAI GPT-OSS model (free tier on OpenRouter)
+  "gpt-oss-120b": "openai/gpt-oss-120b:free"
 };
 
 // Default API key
@@ -66,6 +68,11 @@ export class ChutesClient {
       
       // Use model or default
       const modelName = model || this.defaultModel;
+      const fallbacks: string[] = [
+        modelName,
+        AVAILABLE_MODELS["deepseek-v3.1"],
+        AVAILABLE_MODELS["deepseek-r1"],
+      ].filter(Boolean) as string[];
       
       // Determine whether to use messages array or prompt
       let messagePayload;
@@ -87,47 +94,56 @@ export class ChutesClient {
         messagePayload = [{"role": "user", "content": actualPrompt}];
       }
       
-      // Prepare the payload
-      const payload = {
-        "model": modelName,
-        "messages": messagePayload,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "stream": stream,
-        "route": "fallback"
-      };
-      
-      // Make the API call with increased timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
-      
-      try {
-        const response = await fetch(this.apiUrl, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId); // Clear timeout on successful response
-        
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "No error details available");
-          console.error(`OpenRouter API error (${response.status}): ${errorText}`);
-          throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+      // Try primary + fallback models
+      let lastError: any = null;
+      for (const attemptModel of fallbacks) {
+        // Prepare the payload per attempt
+        const payload = {
+          "model": attemptModel,
+          "messages": messagePayload,
+          "temperature": temperature,
+          "max_tokens": max_tokens,
+          "stream": stream,
+          "route": "fallback"
+        };
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "No error details available");
+            console.warn(`OpenRouter API error for model ${attemptModel} (${response.status}): ${errorText}`);
+            lastError = new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+            // Try next fallback if available
+            continue;
+          }
+
+          const result = await response.json();
+          if (result.choices && result.choices.length > 0) {
+            return result.choices[0].message.content;
+          } else {
+            return "No content returned from the API.";
+          }
+        } catch (err) {
+          clearTimeout(timeoutId);
+          lastError = err;
+          // Try next fallback
+          continue;
         }
-        
-        const result = await response.json();
-        
-        if (result.choices && result.choices.length > 0) {
-          return result.choices[0].message.content;
-        } else {
-          return "No content returned from the API.";
-        }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        throw error;
       }
+
+      // If we got here, all attempts failed
+      throw lastError || new Error("All model attempts failed");
     } catch (error) {
       console.error("Error generating AI response:", error);
       return `Error: ${error instanceof Error ? error.message : String(error)}`;
@@ -142,6 +158,11 @@ export class ChutesClient {
     
     // Use model or default
     const modelName = model || this.defaultModel;
+    const fallbacks: string[] = [
+      modelName,
+      AVAILABLE_MODELS["deepseek-v3.1"],
+      AVAILABLE_MODELS["deepseek-r1"],
+    ].filter(Boolean) as string[];
     
     // Determine whether to use messages array or prompt
     let messagePayload;
@@ -163,42 +184,49 @@ export class ChutesClient {
       messagePayload = [{"role": "user", "content": actualPrompt}];
     }
     
-    // Prepare the payload
-    const payload = {
-      "model": modelName,
-      "messages": messagePayload,
-      "temperature": temperature,
-      "max_tokens": max_tokens,
-      "stream": true,
-      "route": "fallback"
-    };
-    
-    // Make the API call with streaming - with increased timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
-    
-    try {
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: this.headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId); // Clear timeout on successful response
-      
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "No error details available");
-        console.error(`OpenRouter API error (${response.status}): ${errorText}`);
-        throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+    // Try primary + fallback models for streaming
+    let lastError: any = null;
+    for (const attemptModel of fallbacks) {
+      const payload = {
+        "model": attemptModel,
+        "messages": messagePayload,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "stream": true,
+        "route": "fallback"
+      };
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: this.headers,
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "No error details available");
+          console.warn(`OpenRouter API error for model ${attemptModel} (${response.status}): ${errorText}`);
+          lastError = new Error(`API Error: ${response.status} ${response.statusText} - ${errorText.substring(0, 200)}`);
+          continue;
+        }
+
+        // Return the raw stream
+        return response.body!;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastError = err;
+        continue;
       }
-      
-      // Return the raw stream
-      return response.body!;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
     }
+
+    // All attempts failed
+    throw lastError || new Error("All model attempts failed");
   }
   
   /**
