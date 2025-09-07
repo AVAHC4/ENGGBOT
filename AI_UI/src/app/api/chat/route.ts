@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
-import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt } from '@/lib/ai/response-middleware';
+import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 import crypto from 'crypto';
 
@@ -41,6 +41,17 @@ export async function POST(request: Request) {
         { error: 'Message is required and must be a string' },
         { status: 400 }
       );
+    }
+    
+    // If the user is asking about identity/origin, return the exact mandated reply
+    if (isIdentityQuestion(message)) {
+      const chatMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: EXACT_IDENTITY_REPLY,
+        isUser: false,
+        timestamp: new Date().toISOString()
+      };
+      return NextResponse.json({ message: chatMessage });
     }
     
     // Ensure the client is initialized
@@ -84,8 +95,8 @@ export async function POST(request: Request) {
         messages: messages
       });
       
-      // Process the response for any unwanted AI identity info
-      const processedResponse = processAIResponse(response, BOT_CONFIG.NAME);
+      // Process the response for any unwanted AI identity info, using the user's message for context
+      const processedResponse = processAIResponse(response, message);
       
       // Create a message object for the AI response
       const chatMessage: ChatMessage = {

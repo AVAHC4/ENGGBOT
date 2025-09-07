@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
-import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt } from '@/lib/ai/response-middleware';
+import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 
 // Simple stream processor to transform OpenRouter stream into an event stream
 function processChutesStream(
   stream: ReadableStream,
+  userMessage: string,
   encoder = new TextEncoder(),
   decoder = new TextDecoder()
 ): ReadableStream {
@@ -57,7 +58,7 @@ function processChutesStream(
                 const content = data.choices[0].delta.content;
                 
                 // Apply minimal processing to preserve formatting
-                const processedContent = processAIResponse(content, "");
+                const processedContent = processAIResponse(content, userMessage);
                 
                 // Create an event with the content
                 const event = `data: ${JSON.stringify({ text: processedContent })}\n\n`;
@@ -110,6 +111,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Short-circuit identity/origin questions with exact mandated reply
+    if (isIdentityQuestion(message)) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          const event = `data: ${JSON.stringify({ text: EXACT_IDENTITY_REPLY })}\n\n`;
+          controller.enqueue(encoder.encode(event));
+          const doneEvent = `data: [DONE]\n\n`;
+          controller.enqueue(encoder.encode(doneEvent));
+          controller.close();
+        }
+      });
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'Transfer-Encoding': 'chunked',
+          'X-Accel-Buffering': 'no'
+        }
+      });
+    }
+
     // Ensure the client is initialized before use
     if (!isClientInitialized()) {
       await initializeAIClient();
@@ -156,7 +180,7 @@ export async function POST(request: Request) {
       });
       
       // Process the stream
-      const processedStream = processChutesStream(stream);
+      const processedStream = processChutesStream(stream, message);
       
       // Return the streaming response with required headers for proper streaming
       return new Response(processedStream, {

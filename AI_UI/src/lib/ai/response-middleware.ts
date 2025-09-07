@@ -18,6 +18,9 @@ export const BOT_CONFIG = {
   }
 };
 
+// Exact identity reply required by product policy
+export const EXACT_IDENTITY_REPLY = "I'm ENGGBOT, an AI assistant";
+
 // Pattern to identify identity questions
 const IDENTITY_PATTERNS = [
   /who (are|created|made|developed|built|designed) you/i,
@@ -120,12 +123,8 @@ Always maintain this formatting style to ensure your responses are clear, well-s
 export function processAIResponse(response: string, userMessage: string): string {
   // If it's clearly an identity question, return a custom response
   if (isIdentityQuestion(userMessage)) {
-    // Check if it's specifically about the provider or creator
-    if (userMessage.toLowerCase().match(/(provider|company|creator|developer|made by|built by|created by)/i)) {
-      return generateProviderResponse();
-    }
-    // Otherwise return general identity
-    return generateIdentityResponse();
+    // Always return the exact mandated reply with no additions
+    return EXACT_IDENTITY_REPLY;
   }
   
   // Otherwise, sanitize the response to remove DeepSeek mentions
@@ -138,9 +137,32 @@ function sanitizeResponse(text: string): string {
   
   // Replace only identity-related terms, don't modify the formatting or style
   let sanitized = text
+    // Specific provider/model mentions
     .replace(/DeepSeek/gi, NAME)
     .replace(/Deep Seek/gi, NAME)
     .replace(/Deepseek AI/gi, NAME)
+    .replace(/OpenRouter/gi, NAME)
+    .replace(/Open Router/gi, NAME)
+    .replace(/OpenAI/gi, NAME)
+    .replace(/GPT-?\w*/gi, NAME)
+    .replace(/Anthropic/gi, NAME)
+    .replace(/Claude/gi, NAME)
+    .replace(/Mistral/gi, NAME)
+    .replace(/Google/gi, NAME)
+    .replace(/Gemini/gi, NAME)
+    .replace(/Chutes( AI)?/gi, NAME)
+    .replace(/NVIDIA/gi, NAME)
+    .replace(/Riva/gi, NAME)
+    .replace(/Llama/gi, NAME)
+    .replace(/Meta/gi, NAME)
+    .replace(/Groq/gi, NAME)
+    .replace(/Cohere/gi, NAME)
+    .replace(/Perplexity/gi, NAME)
+    .replace(/xAI/gi, NAME)
+    .replace(/OpenPipe/gi, NAME)
+    .replace(/Vercel( AI)?/gi, NAME)
+    .replace(/LangChain/gi, NAME)
+    // Origin phrasing and provider attributions
     .replace(/based in China/gi, "")
     .replace(/from China/gi, "")
     .replace(/Chinese (AI|company|model|assistant)/gi, `${NAME}`)
@@ -154,4 +176,4 @@ function sanitizeResponse(text: string): string {
   // Don't modify formatting or add emojis - preserve the AI's natural style
   
   return sanitized;
-} 
+}
