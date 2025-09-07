@@ -66,6 +66,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
+  // Abort controller for canceling in-flight fetch streams
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Set isMounted flag on client-side
   useEffect(() => {
@@ -141,11 +143,33 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const stopGeneration = useCallback(() => {
     // Set canceled flag
     isCanceledRef.current = true;
-    
+
+    // Abort any in-flight request
+    try {
+      abortControllerRef.current?.abort();
+    } catch (e) {
+      // no-op
+    }
+
+    // Mark the latest assistant message as finalized (no longer streaming)
+    setMessages(prev => {
+      const updated = [...prev];
+      for (let i = updated.length - 1; i >= 0; i--) {
+        if (!updated[i].isUser) {
+          updated[i] = { ...updated[i], isStreaming: false } as ExtendedChatMessage;
+          break;
+        }
+      }
+      if (typeof window !== 'undefined' && !isPrivateMode) {
+        saveConversation(conversationId, updated);
+      }
+      return updated;
+    });
+
     // Reset states
     setIsLoading(false);
     setIsGenerating(false);
-  }, []);
+  }, [conversationId, isPrivateMode]);
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
     try {
@@ -230,6 +254,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setMessages(messagesWithPlaceholder);
         
         try {
+          // Prepare abort controller for this request
+          if (abortControllerRef.current) {
+            try { abortControllerRef.current.abort(); } catch {}
+          }
+          abortControllerRef.current = new AbortController();
+
           // Make a fetch request with streaming response instead of EventSource
           const response = await fetch('/api/chat/stream', {
             method: 'POST',
@@ -244,7 +274,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               conversationId: conversationId,
               replyToId,
               conversationHistory: updatedMessages.slice(-10)
-            })
+            }),
+            signal: abortControllerRef.current.signal
           });
           
           if (!response.ok) {
@@ -336,23 +367,45 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               }
             }
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error in streaming:", error);
-          
-          // Update message to show error
-          setMessages(prev => prev.map(m => 
-            m.id === aiMessageId 
-              ? { 
-                  ...m, 
-                  isStreaming: false, 
-                  content: m.content || "Sorry, there was an error generating a response."
-                } 
-              : m
-          ));
-          
-          // Reset states
-          setIsLoading(false);
-          setIsGenerating(false);
+
+          const aborted = isCanceledRef.current || (error && (error.name === 'AbortError' || (typeof error.message === 'string' && error.message.toLowerCase().includes('aborted'))));
+
+          if (aborted) {
+            // Finalize the current partial response without error text
+            setMessages(prev => {
+              const updated = prev.map(m => 
+                m.id === aiMessageId 
+                  ? { 
+                      ...m, 
+                      isStreaming: false
+                    } 
+                  : m
+              );
+              if (typeof window !== 'undefined' && !isPrivateMode) {
+                saveConversation(conversationId, updated);
+              }
+              return updated;
+            });
+
+            setIsLoading(false);
+            setIsGenerating(false);
+          } else {
+            // Show an error message when it's a real failure
+            setMessages(prev => prev.map(m => 
+              m.id === aiMessageId 
+                ? { 
+                    ...m, 
+                    isStreaming: false, 
+                    content: m.content || "Sorry, there was an error generating a response."
+                  } 
+                : m
+            ));
+            
+            setIsLoading(false);
+            setIsGenerating(false);
+          }
         }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -481,6 +534,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
     
     try {
+      // Prepare abort controller for this request
+      if (abortControllerRef.current) {
+        try { abortControllerRef.current.abort(); } catch {}
+      }
+      abortControllerRef.current = new AbortController();
+
       // Make a fetch request with streaming response
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
@@ -495,7 +554,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           conversationId: conversationId,
           replyToId: lastUserMessage.replyToId,
           conversationHistory: messages.slice(0, actualUserIndex + 1).slice(-10)
-        })
+        }),
+        signal: abortControllerRef.current.signal
       });
       
       if (!response.ok) {
@@ -593,27 +653,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error in streaming:", error);
-      
-      // Update message to show error
-      setMessages(prev => {
-        const messageIndex = prev.findIndex(m => m.id === aiMessageId);
-        if (messageIndex === -1) return prev;
-        
-        const updated = [...prev];
-        updated[messageIndex] = {
-          ...updated[messageIndex],
-          isStreaming: false,
-          content: updated[messageIndex].content || "Sorry, there was an error generating a response."
-        };
-        
-        return updated;
-      });
-      
-      // Reset states
-      setIsLoading(false);
-      setIsGenerating(false);
+
+      const aborted = isCanceledRef.current || (error && (error.name === 'AbortError' || (typeof error.message === 'string' && error.message.toLowerCase().includes('aborted'))));
+
+      if (aborted) {
+        // Finalize the partial response without showing an error
+        setMessages(prev => {
+          const messageIndex = prev.findIndex(m => m.id === aiMessageId);
+          if (messageIndex === -1) return prev;
+          const updated = [...prev];
+          updated[messageIndex] = {
+            ...updated[messageIndex],
+            isStreaming: false,
+          };
+          // Save
+          if (typeof window !== 'undefined' && !isPrivateMode) {
+            saveConversation(conversationId, updated);
+          }
+          return updated;
+        });
+
+        setIsLoading(false);
+        setIsGenerating(false);
+      } else {
+        // Real error path
+        setMessages(prev => {
+          const messageIndex = prev.findIndex(m => m.id === aiMessageId);
+          if (messageIndex === -1) return prev;
+          const updated = [...prev];
+          updated[messageIndex] = {
+            ...updated[messageIndex],
+            isStreaming: false,
+            content: updated[messageIndex].content || "Sorry, there was an error generating a response."
+          };
+          return updated;
+        });
+        setIsLoading(false);
+        setIsGenerating(false);
+      }
     }
   }, [messages, conversationId, currentModel, thinkingMode, isPrivateMode]);
 
