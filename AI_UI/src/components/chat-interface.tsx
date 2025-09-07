@@ -317,23 +317,6 @@ export function ChatInterface() {
       </div>
       
       <div className="chatgpt-input-container p-2 md:p-4 lg:p-6">
-        {/* Thinking longer status with Skip while generating */}
-        {isGenerating && (
-          <div className="mx-auto mb-2 w-full max-w-3xl">
-            <div className="flex items-center justify-between rounded-full border border-border/40 bg-muted/40 px-3 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
-              <span>Thinking longer for a better answer</span>
-              <button
-                type="button"
-                onClick={stopGeneration}
-                className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline dark:text-blue-400"
-                aria-label="Skip waiting and use the current answer"
-              >
-                <span>Skip</span>
-                <span aria-hidden>›</span>
-              </button>
-            </div>
-          </div>
-        )}
         <div className="chatgpt-input-wrapper">
           <ChatInput 
             onSend={handleSendMessage} 
