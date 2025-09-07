@@ -14,7 +14,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
   - Component-based architecture
   
 - **Key Components**
-  - `ai-chat.tsx`: Main AI chat interface component
+  - `ai-chat.tsx`: Main ENGGBOT component
   - `login.tsx`: Google OAuth login page
   - `main.tsx`: Application entry point
 

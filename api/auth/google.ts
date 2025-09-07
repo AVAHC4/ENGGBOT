@@ -348,7 +348,7 @@ export const initGoogleAuth = (app: any) => {
             </script>
           </head>
           <body>
-            <p>Authentication successful! Redirecting to AI chat interface...</p>
+            <p>Authentication successful! Redirecting to ENGGBOT...</p>
             <p>If you are not redirected automatically, <a href="${finalRedirectUrl}">click here</a>.</p>
           </body>
         </html>
