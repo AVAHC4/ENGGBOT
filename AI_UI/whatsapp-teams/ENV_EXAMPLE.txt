@@ -2,4 +2,4 @@
 # Next.js will load .env.local automatically in dev
 
 ***REMOVED*** for Whisper transcription
-BYTEZ_API_KEY=
+BYTEZ_API_KEY=***REMOVED***
