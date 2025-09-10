@@ -58,59 +58,74 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-    const modelId = "openai/whisper-large-v3-turbo";
-    const url = `https://api.bytez.com/models/v2/${encodeURIComponent(modelId)}`;
+    const candidatePaths = [
+      "/models/v2/openai/whisper-large-v3-turbo",
+      "/models/v2/openai/whisper-large-v3",
+      "/models/v2/openai-community/whisper-large-v3-turbo",
+      "/models/v2/openai-community/whisper-large-v3",
+      "/models/v2/unsloth/whisper-large-v3-turbo",
+    ];
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
+    const errors: Array<{ path: string; status: number; snippet: string }> = [];
+    const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+    for (const path of candidatePaths) {
+      const url = `https://api.bytez.com${path}`;
+      const headers: Record<string, string> = {
         Authorization: `Key ${BYTEZ_API_KEY}`,
         "Content-Type": "application/json",
         Accept: "application/json",
-      },
-      // Force non-streaming JSON response from Bytez
-      body: JSON.stringify({ base64, stream: false, json: true }),
-    });
-
-    // Read body once as text, then parse
-    const text = await res.text();
-
-    // Attempt JSON parse first
-    let data: any | undefined;
-    try {
-      data = JSON.parse(text);
-    } catch {}
-
-    if (!res.ok) {
-      // If error, surface Bytez error or raw text for debugging
-      return Response.json(
-        { error: data?.error || `Bytez error (status ${res.status})`, raw: data ?? text },
-        { status: res.status }
-      );
-    }
-
-    // If JSON with recognizable fields
-    if (data) {
-      let output: string | null = null;
-      if (typeof data?.output === "string") output = data.output;
-      else if (data?.output && typeof data.output?.text === "string") output = data.output.text;
-      else if (typeof data?.text === "string") output = data.text;
-      else if (typeof data?.transcript === "string") output = data.transcript;
-      else if (typeof data?.result === "string") output = data.result;
-      if (output) {
-        return Response.json({ error: null, output }, { status: 200 });
+      };
+      // Closed-source OpenAI models usually require provider-key
+      if (path.includes("/openai/") && OPENAI_API_KEY) {
+        headers["provider-key"] = OPENAI_API_KEY;
       }
-      // Fallthrough to SSE parsing
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ base64, stream: false, json: true }),
+      });
+
+      const text = await res.text();
+      let data: any | undefined;
+      try {
+        data = JSON.parse(text);
+      } catch {}
+
+      if (!res.ok) {
+        errors.push({ path, status: res.status, snippet: text.slice(0, 240) });
+        continue; // try next candidate
+      }
+
+      if (data) {
+        let output: string | null = null;
+        if (typeof data?.output === "string") output = data.output;
+        else if (data?.output && typeof data.output?.text === "string") output = data.output.text;
+        else if (typeof data?.text === "string") output = data.text;
+        else if (typeof data?.transcript === "string") output = data.transcript;
+        else if (typeof data?.result === "string") output = data.result;
+        if (output) {
+          return Response.json({ error: null, output }, { status: 200 });
+        }
+      }
+
+      const parsed = parseBytezStream(text);
+      if (parsed) {
+        return Response.json({ error: null, output: parsed }, { status: 200 });
+      }
+
+      // If we reach here, parsing failed even though status was ok; record and continue
+      errors.push({ path, status: res.status, snippet: text.slice(0, 240) });
     }
 
-    // Try SSE-style parsing
-    const parsed = parseBytezStream(text);
-    if (parsed) {
-      return Response.json({ error: null, output: parsed }, { status: 200 });
-    }
-
-    // Last resort: return raw content
-    return Response.json({ error: "Invalid JSON from Bytez", raw: text }, { status: 200 });
+    return Response.json(
+      {
+        error: "All Bytez ASR endpoints failed",
+        tried: errors,
+      },
+      { status: 502 }
+    );
   } catch (err: any) {
     return Response.json({ error: err?.message || "Unexpected server error" }, { status: 500 });
   }
