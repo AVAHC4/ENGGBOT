@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-    const modelId = "openai/whisper-large-v3";
+    const modelId = "openai/whisper-large-v3-turbo";
     const url = `https://api.bytez.com/models/v2/${encodeURIComponent(modelId)}`;
 
     const res = await fetch(url, {
