@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ENGGBOT",
+  title: "AI Chat Interface",
   description: "Interactive AI chat assistant built with Next.js and shadcn UI",
 };
 

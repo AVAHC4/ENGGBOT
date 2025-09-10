@@ -2,11 +2,11 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
+import { MoreVertical, Search, Send, Paperclip, Smile, Plus, Mic, Square } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "./team-management-dialog"
 import { AddPeopleDialog } from "./add-people-dialog"
@@ -34,7 +34,7 @@ interface ChatInterfaceProps {
   selectedTeamId: string | null
   teams: Team[]
   onTeamNameUpdate: (teamId: string, newName: string) => void
-  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void // Added avatar update prop
+  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void
 }
 
 const sampleMessages: Record<string, Message[]> = {
@@ -116,6 +116,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [messages, setMessages] = useState<Message[]>([])
   const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   const currentMessages = selectedTeamId ? sampleMessages[selectedTeamId] || [] : []
 
@@ -140,6 +144,89 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       handleSendMessage()
     }
   }
+
+  const transcribeBlob = async (blob: Blob) => {
+    setIsTranscribing(true)
+    try {
+      const form = new FormData()
+      form.append("file", blob, "audio.webm")
+      const res = await fetch("/api/transcribe", { method: "POST", body: form })
+      const data = await res.json()
+      if (!res.ok || data?.error) {
+        throw new Error(data?.error || "Transcription failed")
+      }
+      const transcript = typeof data.output === "string" ? data.output : JSON.stringify(data.output)
+      setMessage((prev) => (prev ? prev + " " : "") + transcript)
+    } catch (err: any) {
+      console.error(err)
+      alert(err?.message || "Transcription error")
+    } finally {
+      setIsTranscribing(false)
+    }
+  }
+
+  const startRecording = async () => {
+    try {
+      if (typeof window === "undefined" || !("MediaRecorder" in window)) {
+        alert("Your browser does not support audio recording.")
+        return
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ]
+      const supportedMime = mimeCandidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || "audio/webm"
+      const mr = new MediaRecorder(stream, { mimeType: supportedMime })
+      mediaRecorderRef.current = mr
+      chunksRef.current = []
+      mr.ondataavailable = (e: any) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data)
+      }
+      mr.onstop = async () => {
+        try {
+          const blob = new Blob(chunksRef.current, { type: mr.mimeType })
+          await transcribeBlob(blob)
+        } finally {
+          stream.getTracks().forEach((t) => t.stop())
+          setIsRecording(false)
+        }
+      }
+      mr.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error(err)
+      alert("Microphone permission denied or unavailable")
+    }
+  }
+
+  const stopRecording = () => {
+    try {
+      mediaRecorderRef.current?.stop()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      await startRecording()
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop()
+        }
+      } catch {}
+    }
+  }, [])
 
   if (!selectedTeamId) {
     return (
@@ -264,7 +351,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </Button>
           <div className="flex-1 relative">
             <Input
-              placeholder="Type a message..."
+              placeholder={isTranscribing ? "Transcribing audio..." : "Type a message..."}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -274,7 +361,18 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
               <Smile className="h-4 w-4" />
             </Button>
           </div>
-          <Button onClick={handleSendMessage} disabled={!message.trim()} size="icon" className="h-9 w-9 flex-shrink-0">
+          <Button
+            onClick={toggleRecording}
+            variant={isRecording ? "destructive" : "default"}
+            disabled={isTranscribing}
+            size="icon"
+            className="h-9 w-9 flex-shrink-0"
+            aria-label={isRecording ? "Stop recording" : "Start recording"}
+            title={isRecording ? "Stop recording" : "Start recording"}
+          >
+            {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+          <Button onClick={handleSendMessage} disabled={!message.trim() || isTranscribing} size="icon" className="h-9 w-9 flex-shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </div>

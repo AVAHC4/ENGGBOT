@@ -40,6 +40,10 @@ export function ChatInput({
   const [awaitingResponse, setAwaitingResponse] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -91,7 +95,91 @@ export function ChatInput({
     }
   };
 
-  
+  // Transcribe an audio Blob via our Next.js API -> Bytez
+  const transcribeBlob = async (blob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const form = new FormData();
+      form.append("file", blob, "audio.webm");
+      const res = await fetch("/api/transcribe", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok || data?.error) throw new Error(data?.error || "Transcription failed");
+      const transcript = typeof data.output === "string" ? data.output : JSON.stringify(data.output);
+      setMessage((prev) => (prev ? prev + " " : "") + transcript);
+      // Focus after inserting
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || "Transcription error");
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  // Microphone recording controls
+  const startRecording = async () => {
+    try {
+      if (typeof window === "undefined" || !("MediaRecorder" in window)) {
+        alert("Your browser does not support audio recording.");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeCandidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+      ];
+      const supportedMime = mimeCandidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || "audio/webm";
+      const mr = new MediaRecorder(stream, { mimeType: supportedMime });
+      mediaRecorderRef.current = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = (e: any) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      mr.onstop = async () => {
+        try {
+          const blob = new Blob(chunksRef.current, { type: mr.mimeType });
+          await transcribeBlob(blob);
+        } finally {
+          stream.getTracks().forEach((t) => t.stop());
+          setIsRecording(false);
+        }
+      };
+      mr.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error(err);
+      alert("Microphone permission denied or unavailable");
+    }
+  };
+
+  const stopRecording = () => {
+    try {
+      mediaRecorderRef.current?.stop();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop();
+        }
+      } catch {}
+    };
+  }, []);
 
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);
@@ -195,15 +283,17 @@ export function ChatInput({
             <Paperclip className="h-5 w-5" />
           </Button>
           
-          {/* Voice input button */}
+          {/* Voice input button (Bytez transcription) */}
           <Button 
-            variant="ghost" 
+            variant={isRecording ? "default" : "ghost"}
             size="icon" 
             className="h-9 w-9 shrink-0 rounded-full" 
-            onClick={() => setIsVoiceModalOpen(true)}
-            disabled={disabled || awaitingResponse}
+            onClick={toggleRecording}
+            disabled={disabled || awaitingResponse || isTranscribing}
+            aria-label={isRecording ? "Stop recording" : "Start recording"}
+            title={isRecording ? "Stop recording" : "Start recording"}
           >
-            <Mic className="h-5 w-5" />
+            {isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </Button>
           
           {/* Web search mode toggle button */}
@@ -271,7 +361,7 @@ export function ChatInput({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={disabled || awaitingResponse}
+            disabled={disabled || awaitingResponse || isTranscribing}
             rows={1}
           />
           
@@ -296,7 +386,7 @@ export function ChatInput({
                   : "text-muted-foreground"
               )}
               onClick={handleSend}
-              disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse}
+              disabled={(!message.trim() && attachments.length === 0) || disabled || awaitingResponse || isTranscribing}
             >
               <Send className="h-5 w-5" />
             </Button>

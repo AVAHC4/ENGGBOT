@@ -150,7 +150,7 @@ export default function HeroSection() {
                       className="relative rounded-2xl px-10 py-7 text-xl font-semibold bg-gradient-to-b from-gray-50/90 to-gray-200/90 text-gray-800 hover:from-gray-100/90 hover:to-gray-300/90 shadow-lg hover:shadow-xl transition-all duration-200"
                     >
                       <Link href="/chat">
-                        <span className="text-nowrap">ENGGBOT</span>
+                        <span className="text-nowrap">AI Chat Interface</span>
                       </Link>
                     </Button>
                   </div>

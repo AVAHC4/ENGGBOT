@@ -1,0 +1,5 @@
+# Copy to .env.local and fill your values
+# Next.js will load .env.local automatically in dev
+
+***REMOVED*** for Whisper transcription
+BYTEZ_API_KEY=

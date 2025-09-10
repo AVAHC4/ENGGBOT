@@ -17,7 +17,7 @@ export default function ContentSection() {
           <img
             className="rounded-lg grayscale"
             src="/attached_assets/image_1742139682286.png"
-            alt="ENGGBOT"
+            alt="AI chat interface"
             loading="lazy"
           />
         </div>

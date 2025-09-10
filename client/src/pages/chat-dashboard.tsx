@@ -190,7 +190,7 @@ export default function ChatDashboard() {
     window.location.replace(redirectUrl.toString());
   }
 
-  // User is authenticated, show the ENGGBOT
+  // User is authenticated, show the AI chat interface
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with user info */}
