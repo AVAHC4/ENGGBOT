@@ -17,7 +17,7 @@ export interface ChatMessage {
  * Format conversation history for the AI
  */
 function formatConversationHistory(history: ChatMessage[]): Array<{role: string, content: string}> {
-  if (!histor || history.length === 0) return [];
+  if (!history || history.length === 0) return [];
   
   return history.map(msg => {
     const role = msg.isUser ? 'user' : 'assistant';
