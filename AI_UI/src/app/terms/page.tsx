@@ -222,7 +222,7 @@ export default function TermsPage() {
             exclusive jurisdiction and venue of courts located in [Venue], unless otherwise required by applicable law.
           </p>
           <p>
-            If any provision of these Terms is found unenforceable, that provision will be enforced to the maximum extent
+            If any provision of these Ter is found unenforceable, that provision will be enforced to the maximum extent
             permissible, and the remaining provisions will remain in full force and effect.
           </p>
         </section>
