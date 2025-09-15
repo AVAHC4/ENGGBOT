@@ -228,7 +228,7 @@ export default function TermsPage() {
         </section>
 
         <section className="space-y-4 pb-10">
-          <h2 className="text-xl font-semibold">17. Changes to Terms</h2>
+          <h2 className="text-xl font-sbold">17. Changes to Terms</h2>
           <p>
             We may update these Terms by posting a revised version with a new "Last Updated" date. Your continued use of the
             Service after changes become effective constitutes acceptance.
