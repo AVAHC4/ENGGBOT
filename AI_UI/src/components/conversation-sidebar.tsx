@@ -14,7 +14,7 @@ import {
   PlusCircle, 
   MessageCircle, 
   MoreVertical, 
-  Tra2,
+  Trash2,
   Pencil,
   Share2,
   X
