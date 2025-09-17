@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:with-auth": "next dev -p 3001",
     "build": "next build",
+    "vercel-build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
