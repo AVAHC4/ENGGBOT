@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
-import type { ChatMessage } from '@/app/api/chat/route';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
 
@@ -12,7 +11,15 @@ export interface Attachment {
   url: string;
 }
 
-export interface ExtendedChatMessage extends ChatMessage {
+// Local base chat message type to avoid importing from server route files
+export interface ChatMessageBase {
+  id: string;
+  content: string;
+  isUser: boolean;
+  timestamp: string;
+}
+
+export interface ExtendedChatMessage extends ChatMessageBase {
   isUser: boolean; // Explicit for build-time type safety
   attachments?: Attachment[];
   replyToId?: string; // ID of the message being replied to
