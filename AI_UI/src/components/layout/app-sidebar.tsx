@@ -70,6 +70,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
+import { supabase } from "@/lib/supabase"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -139,7 +140,7 @@ const data = {
   navMain: [
     {
       title: "Chat",
-      url: "/",
+      url: "/chat",
       icon: MessageSquare,
     },
     {
@@ -297,6 +298,28 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       
       // Refresh on mount
       refreshUserData();
+      // Also attempt to load user from Supabase session
+      supabase.auth.getUser().then(({ data }) => {
+        const user = data?.user;
+        if (user) {
+          setUserData({
+            name: (user.user_metadata?.full_name as string) || user.email || "User",
+            email: user.email || "user@example.com",
+            avatar: (user.user_metadata?.avatar_url as string) || "",
+          });
+        }
+      }).catch(() => {/* ignore */});
+      // React to auth changes
+      const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+        const user = session?.user;
+        if (user) {
+          setUserData({
+            name: (user.user_metadata?.full_name as string) || user.email || "User",
+            email: user.email || "user@example.com",
+            avatar: (user.user_metadata?.avatar_url as string) || "",
+          });
+        }
+      });
       
       // Set up event listener to refresh user data when authentication changes
       window.addEventListener('storage', (event) => {
@@ -308,6 +331,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           refreshUserData();
         }
       });
+      
+      return () => {
+        sub?.subscription?.unsubscribe?.();
+      };
     }
   }, [isMounted]);
 

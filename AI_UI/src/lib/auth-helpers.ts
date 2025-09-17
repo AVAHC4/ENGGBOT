@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 // Auth helpers to check authentication state from main application
 export function checkExternalAuth(): boolean {
   if (typeof window === 'undefined') {
@@ -106,6 +107,14 @@ export function logout(): void {
     return;
   }
   
+  // Ensure Supabase session is cleared
+  try {
+    // Fire and forget; we don't need to await signOut for redirect to proceed
+    void supabase.auth.signOut();
+  } catch (e) {
+    console.warn('Supabase signOut failed (continuing):', e);
+  }
+
   // Clear all auth-related localStorage items
   localStorage.removeItem('ai_ui_authenticated');
   localStorage.removeItem('authenticated');

@@ -24,8 +24,9 @@ const nextConfig = {
   },
   async headers() {
     return [
+      // Scope cross-origin isolation only to the compiler pages that need SharedArrayBuffer
       {
-        source: '/:path*',
+        source: '/compiler/:path*',
         headers: [
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
