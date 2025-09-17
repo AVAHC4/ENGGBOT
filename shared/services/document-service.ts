@@ -1,7 +1,6 @@
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType } from 'docx';
-import PDFDocument from 'pdfkit';
-import { saveAs } from 'file-saver';
-import blobStream from 'blob-stream';
+// NOTE: Avoid top-level imports of browser-only/heavy libs.
+// They are dynamically imported inside methods to prevent server bundles
+// (e.g., Next.js route handlers) from trying to resolve them during build.
 
 // Document content interface
 export interface DocumentContent {
@@ -34,6 +33,20 @@ export class DocumentService {
     fileName: string = 'document.docx'
   ): Promise<void> {
     try {
+      // Dynamically import browser-only libs when needed
+      const {
+        Document,
+        Packer,
+        Paragraph,
+        TextRun,
+        HeadingLevel,
+        Table,
+        TableRow,
+        TableCell,
+        WidthType,
+      } = await import('docx');
+      const { saveAs } = await import('file-saver');
+
       // Create document children array
       const children = [];
 
@@ -178,6 +191,12 @@ export class DocumentService {
     fileName: string = 'document.pdf'
   ): Promise<void> {
     try {
+      // Dynamically import browser-only libs when needed
+      const PDFDocument = (await import('pdfkit')).default;
+      const blobStreamMod: any = await import('blob-stream');
+      const blobStream = (blobStreamMod && blobStreamMod.default) ? blobStreamMod.default : blobStreamMod;
+      const { saveAs } = await import('file-saver');
+
       // Create a document
       const doc = new PDFDocument({ margin: 50 });
 
