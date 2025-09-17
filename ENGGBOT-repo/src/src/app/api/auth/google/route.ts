@@ -17,12 +17,12 @@ export async function GET(req: NextRequest) {
 
     const state = randomBytes(16).toString('hex');
     (await cookies()).set('oauth_state', state, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 10,
-    });
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 10,
+      });
 
     const redirectUri = `${origin}/api/auth/google/callback`;
     const params = new URLSearchParams({
