@@ -1,0 +1,9 @@
+# Exclude server-side source from static landing deployment on Vercel
+# Prevents Vercel from creating Serverless Functions from /api/**
+api/
+
+# Optional: exclude other server-only code not needed for the landing static build
+server/
+backend/
+python-clients/
+__pycache__/
