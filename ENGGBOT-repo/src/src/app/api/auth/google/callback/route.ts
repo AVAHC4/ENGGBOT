@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=no_code`);
     }
 
-    const stateCookie = cookies().get('oauth_state');
+    const stateCookie = (await cookies()).get('oauth_state');
     if (!stateCookie || stateCookie.value !== stateFromQuery) {
       return NextResponse.redirect(`${origin}/login?error=invalid_state`);
     }
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
 
     const redirectUrl = `${aiUiUrl}&user=${encoded}`;
 
-    cookies().set('oauth_state', '', { path: '/', maxAge: 0 });
+    (await cookies()).set('oauth_state', '', { path: '/', maxAge: 0 });
 
     return NextResponse.redirect(redirectUrl);
   } catch (err: any) {

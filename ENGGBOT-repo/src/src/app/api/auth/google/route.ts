@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     const state = randomBytes(16).toString('hex');
-    cookies().set('oauth_state', state, {
+    (await cookies()).set('oauth_state', state, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
