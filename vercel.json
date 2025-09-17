@@ -4,10 +4,14 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/AI_UI", "destination": "https://enggbot1.vercel.app" },
+    { "source": "/AI_UI/(.*)", "destination": "https://enggbot1.vercel.app/$1" },
+    { "source": "/_next/(.*)", "destination": "https://enggbot1.vercel.app/_next/$1" },
     { "source": "/api/auth/google/callback", "destination": "/api/auth/google/callback.html" },
     { "source": "/api/auth/google", "destination": "/api/auth/google.html" },
     { "source": "/api/auth/status", "destination": "/api/auth/status.html" },
     { "source": "/api/hello", "destination": "/api/hello.html" },
+    { "source": "/api/(.*)", "destination": "https://enggbot1.vercel.app/api/$1" },
     { "source": "/chat", "destination": "/chat/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
@@ -23,4 +27,4 @@
     "CLIENT_URL": "https://enggbot.vercel.app",
     "NODE_ENV": "production"
   }
-} 
+}
