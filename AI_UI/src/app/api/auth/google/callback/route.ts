@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -43,7 +44,7 @@ async function fetchGoogleUser(accessToken: string) {
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const origin = req.nextUrl.origin; // should be enggbot.vercel.app via proxy
+    const origin = process.env.AUTH_PUBLIC_ORIGIN || req.nextUrl.origin; // ensure stable origin
 
     const stateFromQuery = url.searchParams.get('state') || '';
     const code = url.searchParams.get('code');
