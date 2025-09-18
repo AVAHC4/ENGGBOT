@@ -102,9 +102,8 @@ export default function LoginPage() {
       // Mark that we should redirect to chat when auth is successful
       setRedirectToChat(true);
       
-      // Build the OAuth URL
-      // In production, always go through the AI_UI proxied path so the request reaches Next.js API routes
-      const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+      // Optimize API URL resolution
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
       
       // Use sessionStorage instead of localStorage (faster)
       const state = Math.random().toString(36).substring(2, 15);
@@ -118,12 +117,8 @@ export default function LoginPage() {
       }, 8000); // Shorter timeout
       
       // Direct navigation to Google auth endpoint with the state parameter
-      // Production: '/AI_UI/api/auth/google' is guaranteed to proxy to AI_UI
-      // Localhost: fall back to VITE_API_URL or current origin
-      const baseDevUrl = (import.meta.env.VITE_API_URL || window.location.origin);
-      const googleAuthUrl = isProd
-        ? `/AI_UI/api/auth/google?state=${state}&prompt=select_account`
-        : `${baseDevUrl}/api/auth/google?state=${state}&prompt=select_account`;
+      // Use clean URL construction to prevent double requests
+      const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
       
       // Use faster navigation method
       window.location.replace(googleAuthUrl);

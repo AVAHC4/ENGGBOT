@@ -1,5 +1,4 @@
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -9,8 +8,7 @@ import { randomBytes } from 'crypto';
 // Initiates Google OAuth by redirecting to Google's consent page.
 export async function GET(req: NextRequest) {
   try {
-    // Prefer explicit origin if provided to avoid proxy host ambiguity
-    const origin = process.env.AUTH_PUBLIC_ORIGIN || req.nextUrl.origin;
+    const origin = req.nextUrl.origin; // Should be https://enggbot.vercel.app via proxy
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // not used here, but validate presence early
