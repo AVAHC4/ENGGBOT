@@ -139,7 +139,7 @@ const data = {
   navMain: [
     {
       title: "Chat",
-      url: "/",
+      url: "/AI_UI",
       icon: MessageSquare,
     },
     {
@@ -634,7 +634,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-                  <Link href="/" className="focus:outline-none">
+                  <Link href="/AI_UI" className="focus:outline-none">
                     <ArrowUpCircle className="h-5 w-5" />
                     <span className="text-base font-semibold">ENGGBOT</span>
                   </Link>
