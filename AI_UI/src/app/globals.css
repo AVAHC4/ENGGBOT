@@ -248,15 +248,17 @@
   
   /* Adjust pages for collapsed sidebar */
 
-  /* Adjust chat container position based on sidebar state */
-  body:not(.sidebar-collapsed) .chatgpt-container {
-    left: 280px;
-    transition: left 0.3s ease-in-out;
-  }
+  /* Adjust chat container position based on sidebar state (desktop only) */
+  @media (min-width: 1024px) {
+    body:not(.sidebar-collapsed) .chatgpt-container {
+      left: 280px;
+      transition: left 0.3s ease-in-out;
+    }
 
-  body.sidebar-collapsed .chatgpt-container {
-    left: 0px;
-    transition: left 0.3s ease-in-out;
+    body.sidebar-collapsed .chatgpt-container {
+      left: 80px;
+      transition: left 0.3s ease-in-out;
+    }
   }
 
   .app-layout.sidebar-collapsed .team-page {

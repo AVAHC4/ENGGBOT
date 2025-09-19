@@ -4,8 +4,10 @@
 .chatgpt-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100vh; /* fallback */
+  height: 100dvh; /* mobile-safe */
+  max-height: 100vh; /* fallback */
+  max-height: 100dvh; /* mobile-safe */
   font-family: "Sohne", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Ubuntu", "Cantarell", "Noto Sans", "sans-serif", "Helvetica Neue", "Arial", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   overflow: hidden;
 }
@@ -68,7 +70,8 @@
 .chatgpt-input-container {
   padding: 1rem;
   position: sticky;
-  bottom: 1rem;
+  bottom: 0; /* anchor to bottom */
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   background-color: transparent;
   z-index: 10;
 }
@@ -108,7 +111,13 @@
   gap: 1rem;
   max-width: 90rem;
   margin: 0 auto;
-  padding: 0 3rem;
+  padding: 0 1rem; /* tighter on mobile */
+}
+
+@media (min-width: 1024px) {
+  .message-wrapper {
+    padding: 0 3rem; /* spacious on desktop */
+  }
 }
 
 .message-avatar {

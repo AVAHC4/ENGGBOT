@@ -39,7 +39,7 @@ export default function Home() {
   if (isAuthenticated) {
     return (
       <main className="min-h-screen chat-page overflow-hidden">
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-4 right-4 z-10 hidden md:block">
           <AvatarGroup
             items={[
               {

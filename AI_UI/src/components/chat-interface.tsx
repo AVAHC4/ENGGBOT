@@ -234,8 +234,10 @@ export function ChatInterface() {
 
   return (
     <div 
-      className="chatgpt-container fixed top-0 bottom-0 right-0 overflow-hidden transition-all duration-300 ease-in-out"
-      style={{ left: isSidebarCollapsed ? '80px' : '280px' }}
+      className={cn(
+        "chatgpt-container fixed top-0 bottom-0 right-0 left-0 overflow-hidden transition-all duration-300 ease-in-out",
+        isSidebarCollapsed ? "lg:left-[80px]" : "lg:left-[280px]"
+      )}
     >
       <div className="relative grid h-full grid-rows-[auto_1fr_auto] bg-transparent">
         <div className="chatgpt-header p-2 md:p-4 lg:p-6">
