@@ -12,6 +12,7 @@ import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-f
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
 import { BackgroundProvider } from "@/context/background-context";
+import { Analytics } from "@vercel/analytics/react";
 import { BackgroundRenderer } from "@/components/background/background-renderer";
 
 
@@ -51,6 +52,7 @@ export default function RootLayout({
           </BackgroundProvider>
         </ThemeProvider>
         {/* <Toaster /> */} {/* Temporarily commented out due to React type compatibility issues */}
+        <Analytics />
       </body>
     </html>
   );
