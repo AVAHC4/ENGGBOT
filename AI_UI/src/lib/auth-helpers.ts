@@ -163,41 +163,34 @@ export function logout(): void {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
   }
   
-  // Explicitly set the URL with path and a no_redirect parameter
-  // Redirect to Vite landing page on port 5173 by default, or use NEXT_PUBLIC_VITE_APP_URL if provided
-  const viteBase =
-    process.env.NEXT_PUBLIC_VITE_APP_URL ||
-    (() => {
+  // Compute the public landing base from env (preferred) or current origin
+  // NEXT_PUBLIC_MAIN_APP_URL is expected like: https://enggbot.vercel.app/login
+  const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL || process.env.NEXT_PUBLIC_VITE_APP_URL;
+  let baseOrigin = '';
+  let loginPath = '/login';
+  try {
+    if (configured) {
+      const u = new URL(configured);
+      baseOrigin = u.origin;
+      // If the env points directly to /login, keep that path; otherwise default to /login
+      loginPath = u.pathname && u.pathname !== '/' ? u.pathname : '/login';
+    } else {
+      baseOrigin = window.location.origin;
+      // For local dev convenience: if running on localhost:3000 and no env, prefer Vite at 5173
       try {
-        const { protocol, hostname } = window.location;
-        return `${protocol}//${hostname}:5173`;
-      } catch {
-        return 'http://localhost:5173';
-      }
-    })();
-  const mainAppUrl = `${viteBase}/?logout=true&no_redirect=true&force_logout=true`;
+        const url = new URL(window.location.href);
+        if (url.hostname === 'localhost' && url.port !== '5173') {
+          baseOrigin = `${url.protocol}//${url.hostname}:5173`;
+        }
+      } catch {}
+    }
+  } catch {
+    baseOrigin = window.location.origin;
+  }
+  const mainAppUrl = `${baseOrigin}${loginPath}?logout=true&no_redirect=true&force_logout=true`;
   
   // Use a combination of methods for maximum browser compatibility
-  try {
-    // Method 1: Replace current history entry
-    window.location.replace(mainAppUrl);
-    
-    // Method 2: As a fallback, also try setting href if replace doesn't work
-    setTimeout(() => {
-      window.location.href = mainAppUrl;
-    }, 100);
-    
-    // Method 3: For very stubborn browsers, try a form submit
-    setTimeout(() => {
-      const form = document.createElement('form');
-      form.method = 'GET';
-      form.action = mainAppUrl;
-      document.body.appendChild(form);
-      form.submit();
-    }, 200);
-  } catch (e) {
-    console.error('Error during redirection:', e);
-    // Last resort
-    window.location.href = mainAppUrl;
-  }
-} 
+  // Navigate immediately; provide a minimal fallback
+  try { window.location.replace(mainAppUrl); } catch {}
+  setTimeout(() => { try { window.location.href = mainAppUrl; } catch {} }, 100);
+}
