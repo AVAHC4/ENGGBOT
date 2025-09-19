@@ -16,7 +16,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: calc(0.5rem + env(safe-area-inset-top, 0px)) 1rem 0.75rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(6px);
 }
 
 
@@ -647,7 +651,7 @@
 /* --- Private Mode Indicator --- */
 .private-mode-indicator {
   position: absolute;
-  bottom: 5rem;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(220, 38, 38, 0.9);
