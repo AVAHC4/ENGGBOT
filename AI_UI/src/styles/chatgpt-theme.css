@@ -150,6 +150,13 @@
   max-width: 80ch;
 }
 
+/* Prevent overflow on narrow screens */
+.markdown-content,
+.message-content {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .message-body {
   position: relative;
 }
@@ -426,6 +433,7 @@
   margin-top: 0 !important;
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
+  overflow-x: auto; /* allow horizontal scroll for long lines */
 }
 
 /* --- Inline Code Styling --- */
@@ -705,4 +713,21 @@
 .chatgpt-messages {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-} 
+}
+
+/* Contain overscroll bounce within the message list */
+.message-list {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Make tables scroll on very small screens instead of overflowing */
+@media (max-width: 480px) {
+  .message-content table,
+  .markdown-content table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

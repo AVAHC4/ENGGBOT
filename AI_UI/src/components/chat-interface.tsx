@@ -4,7 +4,7 @@ import { ChatMessageListCompact } from '@/components/ui/chat-message-list';
 import { ChatMessage } from '@/components/ui/chat-message';
 import { ChatInput } from '@/components/ui/chat-input';
 import { useChat } from '@/context/chat-context';
-import { BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe, EyeOff } from 'lucide-react';
+import { BrainCircuit, ChevronDown, Square, StopCircle, Lightbulb, Globe, EyeOff, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -244,8 +244,9 @@ export function ChatInterface() {
         <div className="header-actions">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <button className="clear-chat-button">
-                Clear chat
+              <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
+                <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
+                <span className="hidden md:inline">Clear chat</span>
               </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -290,7 +291,7 @@ export function ChatInterface() {
       
       <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
         <ChatMessageListCompact 
-          className="message-list relative z-10"
+          className="message-list relative z-10 pb-24 md:pb-28 lg:pb-32"
           smooth={false}
         >
           {messages.length === 0 ? (

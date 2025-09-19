@@ -263,12 +263,12 @@ export function ChatInput({
           </div>
         )}
         
-        <div className="flex items-end gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1 py-1">
+        <div className="flex items-end gap-1.5 md:gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1.5 md:px-2 py-1">
           {/* File attachment button */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-9 w-9 shrink-0 rounded-full" 
+            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full" 
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || awaitingResponse}
           >
@@ -287,7 +287,7 @@ export function ChatInput({
           <Button 
             variant={isRecording ? "default" : "ghost"}
             size="icon" 
-            className="h-9 w-9 shrink-0 rounded-full" 
+            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full" 
             onClick={toggleRecording}
             disabled={disabled || awaitingResponse || isTranscribing}
             aria-label={isRecording ? "Stop recording" : "Start recording"}
@@ -304,7 +304,7 @@ export function ChatInput({
                   variant="ghost" 
                   size="icon" 
                   className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                    "h-8 w-8 md:h-9 md:w-9 rounded-full dark:hover:bg-gray-800",
                     webSearchMode && "text-green-500 dark:text-green-400"
                   )}
                   onClick={onToggleWebSearch}
@@ -330,7 +330,7 @@ export function ChatInput({
                   variant="ghost" 
                   size="icon" 
                   className={cn(
-                    "h-9 w-9 rounded-full dark:hover:bg-gray-800",
+                    "h-8 w-8 md:h-9 md:w-9 rounded-full dark:hover:bg-gray-800",
                     thinkingMode && "text-blue-500 dark:text-blue-400"
                   )}
                   onClick={onToggleThinking}
@@ -351,7 +351,7 @@ export function ChatInput({
             ref={textareaRef}
             placeholder={replyToMessage ? "Type your reply..." : placeholder}
             className={cn(
-              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-3 py-2 text-sm",
+              "flex-1 resize-none max-h-[150px] min-h-[40px] rounded-full border-0 bg-transparent px-2.5 py-1.5 md:px-3 md:py-2 text-sm",
               "ring-offset-background placeholder:text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-0",
               "disabled:cursor-not-allowed disabled:opacity-50",
@@ -371,7 +371,7 @@ export function ChatInput({
               onClick={handleStopGeneration} 
               size="icon" 
               variant="ghost"
-              className="rounded-full h-9 w-9 dark:hover:bg-gray-800/30"
+              className="rounded-full h-8 w-8 md:h-9 md:w-9 dark:hover:bg-gray-800/30"
             >
               <Square className="h-4 w-4" />
             </Button>
@@ -380,7 +380,7 @@ export function ChatInput({
               variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
               size="icon" 
               className={cn(
-                "h-9 w-9 shrink-0 rounded-full",
+                "h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full",
                 message.trim() || attachments.length > 0 
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
                   : "text-muted-foreground"
