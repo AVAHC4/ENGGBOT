@@ -8,7 +8,10 @@ import { randomBytes } from 'crypto';
 // Initiates Google OAuth by redirecting to Google's consent page.
 export async function GET(req: NextRequest) {
   try {
-    const origin = req.nextUrl.origin; // Should be https://enggbot.vercel.app via proxy
+    // Derive a fixed public base origin for consistent cookies/redirects
+    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://enggbot.vercel.app/login
+    const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
+    const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // not used here, but validate presence early
@@ -24,9 +27,11 @@ export async function GET(req: NextRequest) {
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 10, // 10 minutes
+      // Ensure cookie is scoped to the public domain we're using
+      domain: new URL(baseOrigin).hostname,
     });
 
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    const redirectUri = `${baseOrigin}/api/auth/google/callback`;
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,

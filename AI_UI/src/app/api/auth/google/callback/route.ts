@@ -43,37 +43,40 @@ async function fetchGoogleUser(accessToken: string) {
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const origin = req.nextUrl.origin; // should be enggbot.vercel.app via proxy
+    // Derive a fixed public base origin for consistent cookie/redirect behavior
+    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://enggbot.vercel.app/login
+    const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
+    const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 
     const stateFromQuery = url.searchParams.get('state') || '';
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
     if (error) {
-      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error)}`);
+      return NextResponse.redirect(`${baseOrigin}/login?error=${encodeURIComponent(error)}`);
     }
     if (!code) {
-      return NextResponse.redirect(`${origin}/login?error=no_code`);
+      return NextResponse.redirect(`${baseOrigin}/login?error=no_code`);
     }
 
     // Validate state to mitigate CSRF
     const stateCookie = cookies().get('oauth_state');
     if (!stateCookie || stateCookie.value !== stateFromQuery) {
-      return NextResponse.redirect(`${origin}/login?error=invalid_state`);
+      return NextResponse.redirect(`${baseOrigin}/login?error=invalid_state`);
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(`${origin}/login?error=server_config`);
+      return NextResponse.redirect(`${baseOrigin}/login?error=server_config`);
     }
 
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    const redirectUri = `${baseOrigin}/api/auth/google/callback`;
 
     const token = await exchangeCodeForTokens({ code, clientId, clientSecret, redirectUri });
     const profile = await fetchGoogleUser(token.access_token);
 
     // Build redirect to AI_UI chat with user info
-    const aiUiUrl = `${origin}/AI_UI/?auth_success=true`;
+    const aiUiUrl = `${baseOrigin}/AI_UI/?auth_success=true`;
     const userPayload = {
       id: profile.id,
       name: profile.name || '',
@@ -90,7 +93,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.redirect(redirectUrl);
   } catch (err: any) {
-    const origin = req.nextUrl.origin;
+    const configuredEnv = process.env.NEXT_PUBLIC_MAIN_APP_URL;
+    const origin = configuredEnv ? new URL(configuredEnv).origin : req.nextUrl.origin;
     const message = encodeURIComponent(err?.message || 'oauth_failed');
     return NextResponse.redirect(`${origin}/login?error=${message}`);
   }
