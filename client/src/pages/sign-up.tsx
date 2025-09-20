@@ -169,7 +169,7 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            <div className="p-3">
+            <div className="p-3 bg-card border-t">
               <p className="text-accent-foreground text-center text-sm">
                 Have an account?
                 <Button asChild variant="link" className="px-2 text-black dark:text-white">

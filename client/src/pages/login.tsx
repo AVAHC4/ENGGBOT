@@ -279,7 +279,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="p-3 bg-white dark:bg-zinc-900">
+            <div className="p-3 bg-card border-t">
               <p className="text-accent-foreground text-center text-sm">
                 Don't have an account?
                 <Button asChild variant="link" className="px-2 text-black dark:text-white">
