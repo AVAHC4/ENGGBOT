@@ -169,9 +169,9 @@ export default function LoginPage() {
       <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
-            className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border border-gray-200 dark:border-gray-700 shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
+            className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
           >
-            <div className="bg-card -m-px rounded-[14px] border border-gray-200 dark:border-gray-700 p-12 pb-10">
+            <div className="bg-card -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
                 <Link href="/" aria-label="go home" className="mx-auto block w-fit">
                   <div className="flex items-center space-x-2">
@@ -225,9 +225,9 @@ export default function LoginPage() {
               </div>
 
               <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                <hr className="border-dashed border-gray-300 dark:border-gray-600" />
+                <hr className="border-dashed" />
                 <span className="text-muted-foreground text-xs">Or continue With</span>
-                <hr className="border-dashed border-gray-300 dark:border-gray-600" />
+                <hr className="border-dashed" />
               </div>
 
               {authError && (
