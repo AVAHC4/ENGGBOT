@@ -240,7 +240,7 @@ export function ChatInterface() {
       )}
     >
       <div className="relative grid h-full grid-rows-[auto_1fr_auto] bg-transparent">
-        <div className="chatgpt-header p-2 md:p-4 lg:p-6">
+        <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
         <div className="header-actions">
           <AlertDialog>
             <AlertDialogTrigger asChild>
