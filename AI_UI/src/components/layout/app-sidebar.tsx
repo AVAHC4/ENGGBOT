@@ -401,12 +401,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         padding-left: 80px;
       }
       
-      /* Fix for the profile section - ensure footer is visible */
+      /* Footer should not block animated background */
       [data-sidebar="footer"] {
         position: relative;
         z-index: 10;
         margin-top: auto;
-        background-color: var(--background);
+        background-color: transparent !important;
         border-top: 1px solid var(--border);
         padding: 12px;
         width: 100%;
