@@ -1,5 +1,3 @@
-import 'server-only';
-
 /**
  * AI Client Pre-initialization
  * 
