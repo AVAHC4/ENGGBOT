@@ -1,7 +1,9 @@
+import 'server-only';
+
 /**
- * DeepSeek AI Client via OpenRouter
- * 
- * TypeScript adaptation for web use
+ * DeepSeek AI Client via OpenRouter (server-only)
+ *
+ * IMPORTANT: Do not import this file in client components.
  */
 
 // Model definitions - include R1 and V3/V3.1 (free tiers where available)
@@ -15,8 +17,9 @@ export const AVAILABLE_MODELS = {
   "gpt-oss-120b": "openai/gpt-oss-120b:free"
 };
 
-// Default API key
-const DEFAULT_API_KEY = "***REMOVED***";
+// Server-side API key from env.
+// Set OPENROUTER_API_KEY in AI_UI/.env.local or Vercel project settings.
+const DEFAULT_API_KEY = process.env.OPENROUTER_API_KEY || "";
 
 // Client interface
 interface ChutesClientOptions {
@@ -49,11 +52,14 @@ export class ChutesClient {
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
     this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
     
+    const httpReferer = process.env.OPENROUTER_HTTP_REFERER || process.env.NEXT_PUBLIC_MAIN_APP_URL || "http://localhost:3001";
+    const xTitle = process.env.OPENROUTER_X_TITLE || "ENGGBOT AI UI";
+
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3001",
-      "X-Title": "AI UI Demo"
+      "HTTP-Referer": httpReferer,
+      "X-Title": xTitle,
     };
     
     console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
@@ -65,6 +71,10 @@ export class ChutesClient {
   async generate(options: GenerateOptions): Promise<string> {
     try {
       const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages, stream = false } = options;
+
+      if (!this.apiKey) {
+        throw new Error('Missing OPENROUTER_API_KEY');
+      }
       
       // Use model or default
       const modelName = model || this.defaultModel;
@@ -155,6 +165,10 @@ export class ChutesClient {
    */
   async generateStream(options: GenerateOptions): Promise<ReadableStream> {
     const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages } = options;
+    
+    if (!this.apiKey) {
+      throw new Error('Missing OPENROUTER_API_KEY');
+    }
     
     // Use model or default
     const modelName = model || this.defaultModel;
