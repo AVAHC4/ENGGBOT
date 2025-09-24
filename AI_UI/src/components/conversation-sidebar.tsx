@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useChat } from '@/context/chat-context';
 import { 
   getAllConversationsMetadata, 
@@ -216,24 +216,47 @@ export function ConversationSidebar() {
   
   const [conversations, setConversations] = useState<(ConversationMetadata & { id: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [useServerData, setUseServerData] = useState(false);
   
-  // Update conversations list
-  useEffect(() => {
-    const loadConversations = () => {
-      if (typeof window !== 'undefined') {
-        const allConversations = getAllConversationsMetadata();
-        setConversations(allConversations);
+  const refreshConversations = useCallback(async () => {
+    try {
+      const authRes = await fetch('/api/auth/status', { cache: 'no-store' });
+      const authJson = await authRes.json();
+      if (authRes.ok && authJson?.authenticated) {
+        const res = await fetch('/api/conversations?limit=100&offset=0', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = (data.conversations || []).map((c: any) => ({
+            id: c.id,
+            title: c.title || `Conversation ${String(c.id).slice(0, 6)}`,
+            created: c.created_at || new Date().toISOString(),
+            updated: c.updated_at || c.created_at || new Date().toISOString(),
+          }));
+          setUseServerData(true);
+          setConversations(mapped);
+          return;
+        }
       }
+    } catch (e) {
+      // ignore and fall back
+    }
+    // Local fallback
+    setUseServerData(false);
+    const allConversations = getAllConversationsMetadata();
+    setConversations(allConversations);
+  }, []);
+  
+  // Update conversations list (server preferred, local fallback)
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (cancelled) return;
+      await refreshConversations();
     };
-    
-    loadConversations();
-    
-    // Set up interval to refresh conversations
-    const intervalId = setInterval(loadConversations, 5000);
-    
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
-  }, [conversationId]);
+    load();
+    const intervalId = setInterval(load, 5000);
+    return () => { cancelled = true; clearInterval(intervalId); };
+  }, [conversationId, refreshConversations]);
   
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(
@@ -241,37 +264,54 @@ export function ConversationSidebar() {
   );
   
   // Handle conversation deletion
-  const handleDelete = (id: string) => {
-    if (id === conversationId) {
-      deleteCurrentConversation();
+  const handleDelete = async (id: string) => {
+    if (useServerData) {
+      try {
+        const res = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete');
+        await refreshConversations();
+      } catch (e) {
+        console.error('Server delete failed, falling back:', e);
+        setConversations(prev => prev.filter(c => c.id !== id));
+      }
     } else {
-      // Update local state to immediately reflect the deletion
-      setConversations(conversations.filter(c => c.id !== id));
+      if (id === conversationId) {
+        deleteCurrentConversation();
+      } else {
+        setConversations(conversations.filter(c => c.id !== id));
+      }
     }
   };
   
   // Handle conversation rename
-  const handleRename = (id: string, newTitle: string) => {
+  const handleRename = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) return; // Don't save empty titles
-    
-    // Get existing metadata
+    if (useServerData) {
+      try {
+        const res = await fetch(`/api/conversations/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle })
+        });
+        if (!res.ok) throw new Error('Failed to rename');
+        await refreshConversations();
+        return;
+      } catch (e) {
+        console.error('Server rename failed, falling back:', e);
+      }
+    }
+    // Local fallback
     const existingMeta = getConversationMetadata(id) || {
       title: `Conversation ${id.substring(0, 6)}`,
       created: new Date().toISOString(),
       updated: new Date().toISOString()
     };
-    
-    // Update metadata with new title and timestamp
     const updatedMeta = {
       ...existingMeta,
       title: newTitle,
       updated: new Date().toISOString()
     };
-    
-    // Save updated metadata
     saveConversationMetadata(id, updatedMeta);
-    
-    // Update local state to immediately reflect the change
     setConversations(conversations.map(c => 
       c.id === id 
         ? { ...c, title: newTitle, updated: new Date().toISOString() } 
