@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     const { 
       message, 
       hasAttachments = false,
-      model = "deepseek-v3.1", 
+      model = "deepseek/deepseek-chat-v3.1:free", 
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();

@@ -60,7 +60,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(true);
   const [webSearchMode, setWebSearchMode] = useState(false);
-  const currentModel = "deepseek-v3.1";
+  const currentModel = "deepseek/deepseek-chat-v3.1:free";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
