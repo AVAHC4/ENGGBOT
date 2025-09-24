@@ -10,9 +10,7 @@ export const AVAILABLE_MODELS = {
   // OpenRouter identifiers for DeepSeek V3 variants (free tiers). If a specific
   // model is unavailable on your account, the API will fall back based on route.
   "deepseek-v3": "deepseek/deepseek-chat:free",
-  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free",
-  // OpenAI GPT-OSS model (free tier on OpenRouter)
-  "gpt-oss-120b": "openai/gpt-oss-120b:free"
+  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free"
 };
 
 // Default API key
@@ -47,7 +45,7 @@ export class ChutesClient {
   constructor(options?: ChutesClientOptions) {
     this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
+    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-v3.1"];
     
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,

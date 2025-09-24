@@ -5,7 +5,7 @@
  * to ensure immediate responsiveness for the first user interaction
  */
 
-import { ChutesClient } from '@/lib/ai/chutes-client';
+import { ChutesClient, AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 
 // Global state to track initialization
 let isInitialized = false;
@@ -38,7 +38,7 @@ export function getChutesClient(): ChutesClient {
     
     // Create the instance
     _chutesClientInstance = new ChutesClient({
-      defaultModel: "openai/gpt-oss-120b:free"
+      defaultModel: AVAILABLE_MODELS["deepseek-v3.1"]
     });
     
     if (SUPPRESS_INIT_LOG) {

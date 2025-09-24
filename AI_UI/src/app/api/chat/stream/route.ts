@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     const { 
       message, 
       hasAttachments = false,
-      model = "gpt-oss-120b", 
+      model = "deepseek-v3.1", 
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
@@ -139,8 +139,8 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
     
-    // Always use OpenAI GPT-OSS-120B (free) model
-    const modelName = AVAILABLE_MODELS["gpt-oss-120b"];
+    // Always use DeepSeek V3.1 (free) model
+    const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
     
     // Format messages for the API
     const messages = [];
