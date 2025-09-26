@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto';
 export async function GET(req: NextRequest) {
   try {
     // Derive a fixed public base origin for consistent cookies/redirects
-    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://enggbot.vercel.app/login
+    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://www.enggbot.me/login
     const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 

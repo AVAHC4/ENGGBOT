@@ -28,7 +28,7 @@
     }
   ],
   "env": {
-    "CLIENT_URL": "https://enggbot.vercel.app",
+    "CLIENT_URL": "https://www.enggbot.me",
     "NODE_ENV": "production"
   }
 }

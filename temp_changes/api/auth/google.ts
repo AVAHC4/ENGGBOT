@@ -9,12 +9,12 @@ const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
 // Update the way we handle the callback and include the BASE_URL
 const BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://enggbot.vercel.app'
+  ? 'https://www.enggbot.me'
   : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
   
 // Define callback URL explicitly
 const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://enggbot.vercel.app/api/auth/google/callback'
+  ? 'https://www.enggbot.me/api/auth/google/callback'
   : (process.env.CALLBACK_URL || `${BASE_URL}/api/auth/google/callback`);
 
 // Define auth redirect URL 

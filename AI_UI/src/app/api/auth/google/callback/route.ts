@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     // Derive a fixed public base origin for consistent cookie/redirect behavior
-    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://enggbot.vercel.app/login
+    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://www.enggbot.me/login
     const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 

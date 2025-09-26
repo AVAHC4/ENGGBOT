@@ -164,7 +164,7 @@ export function logout(): void {
   }
   
   // Compute the public landing base from env (preferred) or current origin
-  // NEXT_PUBLIC_MAIN_APP_URL is expected like: https://enggbot.vercel.app/login
+  // NEXT_PUBLIC_MAIN_APP_URL is expected like: https://www.enggbot.me/login
   const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL || process.env.NEXT_PUBLIC_VITE_APP_URL;
   let baseOrigin = '';
   let loginPath = '/login';

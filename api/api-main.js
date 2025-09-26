@@ -10,7 +10,7 @@ const supabase = createClient(
 export default async function handler(req, res) {
   // CORS handling
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'https://enggbot.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', process.env.CLIENT_URL || 'https://www.enggbot.me');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,PUT,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
   
