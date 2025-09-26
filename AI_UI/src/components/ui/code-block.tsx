@@ -53,12 +53,22 @@ export function CodeBlock({
         <span className="text-sm text-slate-400">{displayTitle}</span>
         <div className="flex gap-2">
           <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+            variant="ghost"
+            size="sm"
+            className="action-button"
             onClick={copyToClipboard}
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? (
+              <>
+                <Check className="action-icon h-4 w-4 mr-1" />
+                <span>Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="action-icon h-4 w-4 mr-1" />
+                <span>Copy</span>
+              </>
+            )}
           </Button>
           <Button 
             variant="ghost" 
