@@ -8,23 +8,13 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
 // Update the way we handle the callback and include the BASE_URL
-// Prefer configured public origins in production
-const PUBLIC_ORIGIN = process.env.AUTH_PUBLIC_ORIGIN || process.env.NEXT_PUBLIC_MAIN_APP_URL || process.env.CLIENT_URL;
-const RESOLVED_PUBLIC_ORIGIN = (() => {
-  try {
-    return PUBLIC_ORIGIN ? new URL(PUBLIC_ORIGIN).origin : undefined;
-  } catch {
-    return PUBLIC_ORIGIN; // if a bare origin already
-  }
-})();
-
-const BASE_URL = process.env.NODE_ENV === 'production'
-  ? (RESOLVED_PUBLIC_ORIGIN || 'https://www.enggbot.me')
+const BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://enggbot.vercel.app'
   : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
   
 // Define callback URL explicitly
 const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? `${BASE_URL}/api/auth/google/callback`
+  ? 'https://enggbot.vercel.app/api/auth/google/callback'
   : (process.env.CALLBACK_URL || `${BASE_URL}/api/auth/google/callback`);
 
 // Define auth redirect URL 

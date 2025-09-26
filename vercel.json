@@ -4,18 +4,18 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/AI_UI", "destination": "https://www.enggbot.me" },
-    { "source": "/AI_UI/(.*)", "destination": "https://www.enggbot.me/$1" },
-    { "source": "/_next/(.*)", "destination": "https://www.enggbot.me/_next/$1" },
-    { "source": "/compiler", "destination": "https://www.enggbot.me/compiler" },
-    { "source": "/team", "destination": "https://www.enggbot.me/team" },
-    { "source": "/terms", "destination": "https://www.enggbot.me/terms" },
-    { "source": "/examples/(.*)", "destination": "https://www.enggbot.me/examples/$1" },
-    { "source": "/api/auth/google/callback", "destination": "https://www.enggbot.me/api/auth/google/callback" },
-    { "source": "/api/auth/google", "destination": "https://www.enggbot.me/api/auth/google" },
-    { "source": "/api/auth/status", "destination": "https://www.enggbot.me/api/auth/status" },
+    { "source": "/AI_UI", "destination": "https://enggbot1.vercel.app" },
+    { "source": "/AI_UI/(.*)", "destination": "https://enggbot1.vercel.app/$1" },
+    { "source": "/_next/(.*)", "destination": "https://enggbot1.vercel.app/_next/$1" },
+    { "source": "/compiler", "destination": "https://enggbot1.vercel.app/compiler" },
+    { "source": "/team", "destination": "https://enggbot1.vercel.app/team" },
+    { "source": "/terms", "destination": "https://enggbot1.vercel.app/terms" },
+    { "source": "/examples/(.*)", "destination": "https://enggbot1.vercel.app/examples/$1" },
+    { "source": "/api/auth/google/callback", "destination": "https://enggbot1.vercel.app/api/auth/google/callback" },
+    { "source": "/api/auth/google", "destination": "https://enggbot1.vercel.app/api/auth/google" },
+    { "source": "/api/auth/status", "destination": "https://enggbot1.vercel.app/api/auth/status" },
     { "source": "/api/hello", "destination": "/api/hello.html" },
-    { "source": "/api/(.*)", "destination": "https://www.enggbot.me/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://enggbot1.vercel.app/api/$1" },
     { "source": "/chat", "destination": "/chat/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
@@ -28,7 +28,7 @@
     }
   ],
   "env": {
-    "CLIENT_URL": "https://www.enggbot.me",
+    "CLIENT_URL": "https://enggbot.vercel.app",
     "NODE_ENV": "production"
   }
 }

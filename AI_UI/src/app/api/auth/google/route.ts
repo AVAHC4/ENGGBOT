@@ -9,8 +9,8 @@ import { randomBytes } from 'crypto';
 export async function GET(req: NextRequest) {
   try {
     // Derive a fixed public base origin for consistent cookies/redirects
-    // Prefer AUTH_PUBLIC_ORIGIN, fallback to NEXT_PUBLIC_MAIN_APP_URL
-    const configured = process.env.AUTH_PUBLIC_ORIGIN || process.env.NEXT_PUBLIC_MAIN_APP_URL;
+    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://enggbot.vercel.app/login
+    const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
