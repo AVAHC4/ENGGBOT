@@ -82,7 +82,7 @@ console.log("Environment:", isProduction ? "production" : "development");
 
 // Middleware
 app.use(cors({
-  origin: [process.env.CLIENT_URL || "http://localhost:3000", "https://enggbot.vercel.app"],
+  origin: [process.env.CLIENT_URL || "http://localhost:3000", "https://www.enggbot.me"],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
