@@ -86,7 +86,6 @@ app.use(cors({
     process.env.CLIENT_URL || "http://localhost:3000",
     "http://localhost:5173",
     "https://www.enggbot.me",
-    "https://enggbot1.vercel.app",
     "http://localhost:3001",
   ],
   credentials: true,
