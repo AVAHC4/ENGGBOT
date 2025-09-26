@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * AI Client Pre-initialization
  * 
@@ -57,10 +58,9 @@ export const chutesClient = getChutesClient();
  * Initialize the AI client by making a simple request
  * This warms up the connection and any server-side resources
  */
-export async function initializeAIClient(): Promise<Promise<void>> {
-  if (isInitialized || initializationPromise) {
-    return initializationPromise || Promise.resolve();
-  }
+export async function initializeAIClient(): Promise<void> {
+  if (isInitialized) return;
+  if (initializationPromise) return initializationPromise;
 
   console.log("🔄 Pre-initializing OpenRouter AI client...");
   

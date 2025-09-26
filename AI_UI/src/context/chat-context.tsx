@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
-import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
 
 export interface Attachment {
@@ -74,6 +73,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
+  // Track the current fetch abort controller to cancel in-flight requests
+  const currentAbortControllerRef = useRef<AbortController | null>(null);
 
   // Set isMounted flag on client-side
   useEffect(() => {
@@ -153,6 +154,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Reset states
     setIsLoading(false);
     setIsGenerating(false);
+    // Abort any in-flight fetch
+    try {
+      currentAbortControllerRef.current?.abort();
+    } catch {}
+    currentAbortControllerRef.current = null;
   }, []);
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
@@ -239,6 +245,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         
         try {
           // Make a fetch request with streaming response instead of EventSource
+          // Create and store an AbortController for this request
+          const abortController = new AbortController();
+          currentAbortControllerRef.current = abortController;
+
           const response = await fetch('/api/chat/stream', {
             method: 'POST',
             headers: {
@@ -252,7 +262,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               conversationId: conversationId,
               replyToId,
               conversationHistory: updatedMessages.slice(-10)
-            })
+            }),
+            signal: abortController.signal
           });
           
           if (!response.ok) {
@@ -286,6 +297,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               // Reset states
               setIsLoading(false);
               setIsGenerating(false);
+              // Clear abort controller when done
+              currentAbortControllerRef.current = null;
               
               // Save conversation
             if (typeof window !== 'undefined' && !isPrivateMode) {
@@ -387,9 +400,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         saveConversation(conversationId, messagesWithError);
       }
       
-      // Reset both states on error
-      setIsGenerating(false);
+      // Reset states
       setIsLoading(false);
+      setIsGenerating(false);
+      // Clear abort controller on error
+      currentAbortControllerRef.current = null;
     }
   }, [conversationId, currentModel, messages, thinkingMode, isPrivateMode]);
 
@@ -490,6 +505,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     
     try {
       // Make a fetch request with streaming response
+      // Create and store an AbortController for this regeneration
+      const abortController = new AbortController();
+      currentAbortControllerRef.current = abortController;
+
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
@@ -503,7 +522,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           conversationId: conversationId,
           replyToId: lastUserMessage.replyToId,
           conversationHistory: messages.slice(0, actualUserIndex + 1).slice(-10)
-        })
+        }),
+        signal: abortController.signal
       });
       
       if (!response.ok) {
@@ -546,6 +566,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           // Reset states
           setIsLoading(false);
           setIsGenerating(false);
+          // Clear abort controller when done
+          currentAbortControllerRef.current = null;
           break;
         }
         
@@ -622,6 +644,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Reset states
       setIsLoading(false);
       setIsGenerating(false);
+      // Clear abort controller on error
+      currentAbortControllerRef.current = null;
     }
   }, [messages, conversationId, currentModel, thinkingMode, isPrivateMode]);
 

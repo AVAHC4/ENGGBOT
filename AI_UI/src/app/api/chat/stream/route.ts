@@ -1,4 +1,9 @@
 import { NextResponse } from 'next/server';
+// Run this route on the Edge for better streaming concurrency and lower latency
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+// Allow longer-lived streams when needed
+export const maxDuration = 300;
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
@@ -101,7 +106,8 @@ export async function POST(request: Request) {
       hasAttachments = false,
       model = "deepseek/deepseek-chat-v3.1:free", 
       thinkingMode = true,
-      conversationHistory = []
+      conversationHistory = [],
+      conversationId = ""
     } = await request.json();
     
     if (!message || typeof message !== 'string') {
@@ -142,6 +148,21 @@ export async function POST(request: Request) {
     // Always use DeepSeek V3.1 (free) model
     const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
     
+    // Choose API key in a deterministic way per conversation to increase concurrency if key pool is provided
+    const getApiKeyOverride = () => {
+      const keysEnv = (typeof process !== 'undefined' && process.env) ? (process.env.OPENROUTER_API_KEYS || process.env.OPENROUTER_API_KEY) : undefined;
+      if (!keysEnv) return undefined;
+      const keys = keysEnv.split(',').map(k => k.trim()).filter(Boolean);
+      if (keys.length === 0) return undefined;
+      const seed = (conversationId || message || '').toString();
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        hash = ((hash * 31) + seed.charCodeAt(i)) >>> 0;
+      }
+      return keys[hash % keys.length];
+    };
+    const apiKeyOverride = getApiKeyOverride();
+    
     // Format messages for the API
     const messages = [];
     
@@ -176,7 +197,10 @@ export async function POST(request: Request) {
         temperature: 0.7,
         max_tokens: 8000,
         thinking_mode: thinkingMode,
-        stream: true
+        stream: true,
+        // Tie provider request lifecycle to client connection
+        signal: request.signal,
+        apiKeyOverride
       });
       
       // Process the stream
