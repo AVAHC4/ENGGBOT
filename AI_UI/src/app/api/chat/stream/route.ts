@@ -51,7 +51,7 @@ function processChutesStream(
                 continue;
               }
               
-              // Parse JSON for normal data
+              // Parse JSON for normal dat
               const data = JSON.parse(jsonData);
               
               if (data.choices && data.choices[0]?.delta?.content) {
