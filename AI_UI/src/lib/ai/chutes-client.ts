@@ -14,9 +14,7 @@ export const AVAILABLE_MODELS = {
 };
 
 // Default API key
-const DEFAULT_API_KEY = (typeof process !== 'undefined' && process.env && process.env.OPENROUTER_API_KEY)
-  ? process.env.OPENROUTER_API_KEY as string
-  : "***REMOVED***";
+const DEFAULT_API_KEY = "***REMOVED***";
 
 // Client interface
 interface ChutesClientOptions {
@@ -33,10 +31,6 @@ interface GenerateOptions {
   thinking_mode?: boolean;
   messages?: Array<{role: string, content: string}>;
   stream?: boolean;
-  // Optional abort signal to allow request-scoped cancellation (e.g., client disconnect)
-  signal?: AbortSignal;
-  // Optional API key override to enable key pooling per request in server routes
-  apiKeyOverride?: string;
 }
 
 /**
@@ -56,9 +50,8 @@ export class ChutesClient {
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
-      // Prefer production client URL from env when available for provider attribution & allowlisting
-      "HTTP-Referer": (typeof process !== 'undefined' && process.env && process.env.CLIENT_URL) ? (process.env.CLIENT_URL as string) : "https://www.enggbot.me",
-      "X-Title": "ENGGBOT"
+      "HTTP-Referer": "http://localhost:3001",
+      "X-Title": "AI UI Demo"
     };
     
     console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
@@ -69,7 +62,7 @@ export class ChutesClient {
    */
   async generate(options: GenerateOptions): Promise<string> {
     try {
-      const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages, stream = false, signal } = options;
+      const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages, stream = false } = options;
       
       // Use model or default
       const modelName = model || this.defaultModel;
@@ -116,18 +109,11 @@ export class ChutesClient {
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         try {
-          // Build headers allowing per-call Authorization override
-          const headers = {
-            ...this.headers,
-            "Authorization": `Bearer ${options.apiKeyOverride ? options.apiKeyOverride : this.apiKey}`
-          };
-
           const response = await fetch(this.apiUrl, {
             method: 'POST',
-            headers,
+            headers: this.headers,
             body: JSON.stringify(payload),
-            // If a request-scoped AbortSignal is provided, prefer it; otherwise use our timeout controller
-            signal: signal ?? controller.signal
+            signal: controller.signal
           });
 
           clearTimeout(timeoutId);
@@ -166,7 +152,7 @@ export class ChutesClient {
    * Generate a streaming response from the AI model
    */
   async generateStream(options: GenerateOptions): Promise<ReadableStream> {
-    const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages, signal } = options;
+    const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages } = options;
     
     // Use model or default
     const modelName = model || this.defaultModel;
@@ -212,18 +198,11 @@ export class ChutesClient {
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       try {
-        // Build headers allowing per-call Authorization override
-        const headers = {
-          ...this.headers,
-          "Authorization": `Bearer ${options.apiKeyOverride ? options.apiKeyOverride : this.apiKey}`
-        };
-
         const response = await fetch(this.apiUrl, {
           method: 'POST',
-          headers,
+          headers: this.headers,
           body: JSON.stringify(payload),
-          // If a request-scoped AbortSignal is provided, prefer it; otherwise use our timeout controller
-          signal: signal ?? controller.signal
+          signal: controller.signal
         });
 
         clearTimeout(timeoutId);

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
-export const maxDuration = 300;
+import { v4 as uuidv4 } from 'uuid';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
+import crypto from 'crypto';
 
 // Simple interface for chat messages
 export interface ChatMessage {
@@ -34,8 +33,7 @@ export async function POST(request: Request) {
       hasAttachments = false,
       model = "deepseek/deepseek-chat-v3.1:free",
       thinkingMode = true,
-      conversationHistory = [],
-      conversationId = ""
+      conversationHistory = [] 
     } = await request.json();
     
     if (!message || typeof message !== 'string') {
@@ -86,21 +84,6 @@ export async function POST(request: Request) {
     // Always use DeepSeek V3.1 (free) model
     const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
     
-    // Choose API key in a deterministic way per conversation to increase concurrency if key pool is provided
-    const getApiKeyOverride = () => {
-      const keysEnv = (typeof process !== 'undefined' && process.env) ? (process.env.OPENROUTER_API_KEYS || process.env.OPENROUTER_API_KEY) : undefined;
-      if (!keysEnv) return undefined;
-      const keys = keysEnv.split(',').map(k => k.trim()).filter(Boolean);
-      if (keys.length === 0) return undefined;
-      const seed = (conversationId || message || '').toString();
-      let hash = 0;
-      for (let i = 0; i < seed.length; i++) {
-        hash = ((hash * 31) + seed.charCodeAt(i)) >>> 0;
-      }
-      return keys[hash % keys.length];
-    };
-    const apiKeyOverride = getApiKeyOverride();
-    
     try {
       // Generate response from the AI
       const response = await chutesClient.generate({
@@ -109,9 +92,7 @@ export async function POST(request: Request) {
         temperature: 0.5,
         max_tokens: 8000, // Increased max tokens for much longer responses
         thinking_mode: thinkingMode,
-        messages: messages,
-        signal: request.signal,
-        apiKeyOverride
+        messages: messages
       });
       
       // Process the response for any unwanted AI identity info, using the user's message for context
