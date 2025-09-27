@@ -7,6 +7,7 @@
     { "source": "/AI_UI", "destination": "https://enggbot1.vercel.app" },
     { "source": "/AI_UI/(.*)", "destination": "https://enggbot1.vercel.app/$1" },
     { "source": "/_next/(.*)", "destination": "https://enggbot1.vercel.app/_next/$1" },
+    { "source": "/workers/(.*)", "destination": "https://enggbot1.vercel.app/workers/$1" },
     { "source": "/compiler", "destination": "https://enggbot1.vercel.app/compiler" },
     { "source": "/team", "destination": "https://enggbot1.vercel.app/team" },
     { "source": "/terms", "destination": "https://enggbot1.vercel.app/terms" },
@@ -24,6 +25,20 @@
       "source": "/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/workers/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" }
+      ]
+    },
+    {
+      "source": "/compiler",
+      "headers": [
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" }
       ]
     }
   ],

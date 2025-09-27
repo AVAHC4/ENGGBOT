@@ -44,6 +44,18 @@ export async function init() {
       worker.addEventListener('message', onMessage);
 
       const onError = (ev) => {
+        // Surface details to help diagnose (e.g., 404 on /workers/pythonWorker.js)
+        try {
+          // Some browsers expose message/filename/lineno/colno on error events
+          // eslint-disable-next-line no-console
+          console.error('[PythonExecutor] Worker error:', {
+            message: ev?.message,
+            filename: ev?.filename,
+            lineno: ev?.lineno,
+            colno: ev?.colno,
+            error: ev?.error,
+          });
+        } catch {}
         try { worker.removeEventListener('message', onMessage); } catch {}
         try { worker.removeEventListener('error', onError); } catch {}
         clearTimeout(initTimeout);
