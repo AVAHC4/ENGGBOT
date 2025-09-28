@@ -124,7 +124,9 @@ export function Compiler() {
           return await new Promise<string>((resolve) => {
             (pendingInputResolve.current as any) = resolve;
           });
-        }
+        },
+        // Language hint for executors that support multiple langs (e.g., c vs cpp)
+        selectedLanguage.id
       );
 
       const out = (result.output ?? '').toString();
