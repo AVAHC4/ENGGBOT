@@ -1,81 +1,146 @@
 /**
- * Java Code Executor (Placeholder)
- * 
- * This module is a placeholder for Java code execution.
- * Future implementation should investigate DoppioJVM for in-browser Java execution.
- * 
- * TODO: Investigate DoppioJVM (JavaScript implementation of the JVM)
- * - Alternative: Use WASM-compiled JVMs or remote execution APIs
- * - Consider classpath management, security, and performance
+ * Java Code Executor using CheerpJ (OpenJDK in WASM/JS) on the main thread.
+ *
+ * Strategy:
+ * - Load CheerpJ loader from CDN dynamically.
+ * - Write user source to /str/MainUser.java and a Runner.java that redirects
+ *   System.out/err to files under /files/.
+ * - Compile both with javac (com.sun.tools.javac.Main) into /files/bin.
+ * - Run Runner (which calls MainUser.main) and then read /files/stdout.txt and
+ *   /files/stderr.txt back into JS via cjFileBlob.
+ *
+ * Notes:
+ * - No worker here because CheerpJ runtime expects DOM/window. This runs on the
+ *   page thread but is async and single-shot.
+ * - Interactive stdin is not implemented.
  */
 
 let isInitialized = false;
-let isExecuting = false;
-let currentResolve = null; // in case we later make this async
+let scriptLoaded = false;
+let loadingPromise = null;
+let currentResolve = null;
+let cancelled = false;
 
-/**
- * Initialize the Java executor (placeholder)
- * @returns {Promise<void>}
- */
+function loadCheerpJScript() {
+  if (scriptLoaded) return Promise.resolve();
+  if (loadingPromise) return loadingPromise;
+  loadingPromise = new Promise((resolve, reject) => {
+    try {
+      const id = 'cheerpj-loader';
+      if (document.getElementById(id)) {
+        scriptLoaded = true;
+        resolve();
+        return;
+      }
+      const s = document.createElement('script');
+      s.id = id;
+      s.src = 'https://cjrtnc.leaningtech.com/4.2/loader.js';
+      s.async = true;
+      s.onload = () => { scriptLoaded = true; resolve(); };
+      s.onerror = (e) => reject(new Error('Failed to load CheerpJ loader.js'));
+      document.head.appendChild(s);
+    } catch (err) {
+      reject(err);
+    }
+  });
+  return loadingPromise;
+}
+
 export async function init() {
-  if (isInitialized) {
-    return;
+  if (isInitialized) return;
+  await loadCheerpJScript();
+  if (typeof window === 'undefined' || !('cheerpjInit' in window)) {
+    throw new Error('CheerpJ not available in this environment');
   }
-  
-  console.log('[JavaExecutor] Java executor is not yet implemented');
+  // Initialize runtime
+  // @ts-ignore
+  await window.cheerpjInit();
   isInitialized = true;
 }
 
-/**
- * Execute Java code (placeholder)
- * @param {string} code - The Java code to execute
- * @returns {Promise<{output: string, error: string}>}
- */
-export async function execute(code, stdin = '', onInputRequest) {
-  console.log('[JavaExecutor] Attempted to execute Java code, but execution is not yet implemented');
-  isExecuting = true;
-  const result = {
-    output: '',
-    error: 'Execution for Java language is not yet implemented. Future versions will investigate DoppioJVM or WASM-based JVM solutions.'
-  };
-  isExecuting = false;
-  return result;
+function ensureJavaLikeClassName(name) {
+  // Very simple sanitizer: letters, digits, underscore only
+  return (name || 'MainUser').replace(/[^A-Za-z0-9_]/g, '_');
 }
 
-/**
- * Check if the Java executor is ready
- * @returns {boolean}
- */
+export async function execute(code, stdin = '', onInputRequest) {
+  cancelled = false;
+  if (!isInitialized) {
+    await init();
+  }
+
+  return new Promise(async (resolve) => {
+    currentResolve = resolve;
+    try {
+      const className = ensureJavaLikeClassName('MainUser');
+      const userFile = `/str/${className}.java`;
+      const runnerClass = 'Runner';
+      const runnerFile = `/str/${runnerClass}.java`;
+      const outDir = '/files/bin';
+      const stdoutFile = '/files/stdout.txt';
+      const stderrFile = '/files/stderr.txt';
+
+      const runnerSource = `import java.io.*;\npublic class ${runnerClass} {\n  public static void main(String[] args) {\n    try {\n      PrintStream out = new PrintStream(new FileOutputStream("${stdoutFile}"));\n      PrintStream err = new PrintStream(new FileOutputStream("${stderrFile}"));\n      PrintStream origOut = System.out;\n      PrintStream origErr = System.err;\n      System.setOut(out);\n      System.setErr(err);\n      try {\n        Class<?> cls = Class.forName("${className}");\n        java.lang.reflect.Method m = cls.getMethod("main", String[].class);\n        String[] a = new String[0];\n        m.invoke(null, (Object)a);\n      } catch (Throwable t) {\n        t.printStackTrace();\n      } finally {\n        System.out.flush();\n        System.err.flush();\n        System.setOut(origOut);\n        System.setErr(origErr);\n        out.close();\n        err.close();\n      }\n    } catch (Exception e) {\n      e.printStackTrace();\n    }\n  }\n}`;
+
+      // Write sources into /str/ (read-only from Java; populated by JS)
+      // @ts-ignore
+      window.cheerpOSAddStringFile(userFile, String(code));
+      // @ts-ignore
+      window.cheerpOSAddStringFile(runnerFile, runnerSource);
+
+      // Compile both sources into /files/bin using javac
+      // Use com.sun.tools.javac.Main via cheerpjRunMain.
+      // classPath: pass '/app' (mount of current origin). Tools are part of CheerpJ runtime.
+      // @ts-ignore
+      const compileExit = await window.cheerpjRunMain(
+        'com.sun.tools.javac.Main',
+        '/app',
+        '-d', outDir,
+        runnerFile,
+        userFile
+      );
+      if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
+      if (compileExit !== 0) {
+        return resolve({ output: '', error: `Java compilation failed (exit code ${compileExit}). Check browser console for diagnostics.` });
+      }
+
+      // Run the Runner class from /files/bin
+      // @ts-ignore
+      const runExit = await window.cheerpjRunMain(runnerClass, outDir);
+      if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
+      // Read stdout/stderr files back
+      // @ts-ignore
+      const outBlob = await window.cjFileBlob(stdoutFile).catch(() => null);
+      // @ts-ignore
+      const errBlob = await window.cjFileBlob(stderrFile).catch(() => null);
+      const output = outBlob ? await outBlob.text() : '';
+      const error = errBlob ? await errBlob.text() : (runExit === 0 ? '' : `Program exited with code ${runExit}`);
+      return resolve({ output, error });
+    } catch (e) {
+      return resolve({ output: '', error: String(e && e.message || e) });
+    } finally {
+      currentResolve = null;
+    }
+  });
+}
+
 export function isReady() {
   return isInitialized;
 }
 
-/**
- * Get information about the Java executor
- * @returns {object}
- */
 export function getInfo() {
   return {
     name: 'Java Executor',
-    runtime: 'Not implemented',
-    version: 'Placeholder',
+    runtime: 'CheerpJ (OpenJDK in WASM/JS)',
+    version: '4.2 loader',
     ready: isInitialized,
-    futureImplementation: 'DoppioJVM or WASM-based JVM'
   };
 }
 
-/**
- * Cancel current Java execution (placeholder)
- * Provided for API compatibility with other executors.
- */
 export async function cancel() {
-  // If in future we make this async, resolve the pending promise if any.
-  try {
-    if (currentResolve) {
-      currentResolve({ output: '', error: 'Execution stopped by user' });
-    }
-  } finally {
-    currentResolve = null;
-    isExecuting = false;
+  cancelled = true;
+  if (currentResolve) {
+    currentResolve({ output: '', error: 'Execution stopped by user' });
   }
+  currentResolve = null;
 }
