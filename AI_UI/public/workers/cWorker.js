@@ -6,10 +6,23 @@ import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sd
 
 let initialized = false;
 let clangPkg = null;
+const wasmCache = new Map(); // key: sha256(lang+"|"+code) => Uint8Array wasm
 async function ensureInit() {
   if (!initialized) {
     await init();
     initialized = true;
+  }
+}
+
+async function promiseWithTimeout(ms, promise, timeoutValue) {
+  let to;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((res) => { to = setTimeout(() => res(timeoutValue), ms); }),
+    ]);
+  } finally {
+    if (to) clearTimeout(to);
   }
 }
 
@@ -19,8 +32,6 @@ self.addEventListener('message', async (e) => {
   if (data.type === 'INIT') {
     try {
       await ensureInit();
-      // Pre-warm clang package from the Wasmer registry to surface any CORS/COEP issues early
-      clangPkg = await Wasmer.fromRegistry("clang/clang");
       self.postMessage({ type: 'READY' });
     } catch (err) {
       self.postMessage({ type: 'ERROR', error: String(err && err.message || err) });
@@ -53,22 +64,29 @@ self.addEventListener('message', async (e) => {
         args.splice(1, 0, "-x", "c++", "-std=c++17");
       }
 
-      const compile = await clang.entrypoint.run({
-        args,
-        mount: { "/project": project },
-      });
-      const compileResult = await compile.wait();
-      if (!compileResult.ok) {
-        const err = compileResult.stderr || `Clang failed with code ${compileResult.code}`;
-        self.postMessage({ type: 'EXECUTION_RESULT', output: '', error: String(err) });
-        return;
+      // Compute cache key and use cached wasm if available
+      const key = await sha256(`${lang}|${code}`);
+      let wasmBytes = wasmCache.get(key);
+      if (!wasmBytes) {
+        const compile = await clang.entrypoint.run({
+          args,
+          mount: { "/project": project },
+        });
+        const compileResult = await promiseWithTimeout(15000, compile.wait(), {
+          ok: false, code: 124, stderr: 'C/C++ compile timeout', stdout: ''
+        });
+        if (!compileResult.ok) {
+          const err = compileResult.stderr || `Clang failed with code ${compileResult.code}`;
+          self.postMessage({ type: 'EXECUTION_RESULT', output: '', error: String(err) });
+          return;
+        }
+        // Read produced wasm from the mounted directory (relative path)
+        wasmBytes = await project.readFile(outName);
+        wasmCache.set(key, wasmBytes);
       }
-
-      // Read produced wasm from the mounted directory (relative path)
-      const wasmBytes = await project.readFile(outName);
       const program = await Wasmer.fromFile(wasmBytes);
       const run = await program.entrypoint.run();
-      const runResult = await run.wait();
+      const runResult = await promiseWithTimeout(12000, run.wait(), { stdout: '', stderr: 'Program timeout', ok: false, code: 124 });
 
       const stdout = runResult.stdout || '';
       const stderr = runResult.stderr || '';
@@ -81,3 +99,11 @@ self.addEventListener('message', async (e) => {
 
 // Auto-init notification like other workers
 self.postMessage({ type: 'BOOT' });
+
+async function sha256(text) {
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const arr = Array.from(new Uint8Array(hash));
+  return arr.map(b => b.toString(16).padStart(2, '0')).join('');
+}

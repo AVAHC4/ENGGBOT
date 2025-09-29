@@ -13,7 +13,7 @@ import * as javaExecutor from '@/lib/executors/javaExecutor';
 // Supported languages
 const LANGUAGES = [
   { id: 'c', name: 'C', extension: '.c', defaultCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}' },
-  { id: 'cpp', name: 'C++', extension: '.cpp', defaultCode: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}' },
+  { id: 'cpp', name: 'C++', extension: '.cpp', defaultCode: '#include <cstdio>\n\nint main() {\n    std::printf("Hello, World!\\n");\n    return 0;\n}' },
   { id: 'javascript', name: 'JavaScript', extension: '.js', defaultCode: 'console.log("Hello, World!");' },
   { id: 'python', name: 'Python', extension: '.py', defaultCode: 'print("Hello, World!")' },
   { id: 'java', name: 'Java', extension: '.java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' },
@@ -110,6 +110,13 @@ export function Compiler() {
       if (!executor || typeof executor.execute !== 'function') {
         setConsoleOutput(prev => [...prev, `Error: No executor available for ${selectedLanguage.name}`]);
         return;
+      }
+
+      // Show a status hint for heavy toolchains on first run
+      if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
+        setConsoleOutput(prev => [...prev, '[C/C++] Initializing toolchain (first run can take a few seconds)...']);
+      } else if (selectedLanguage.id === 'java') {
+        setConsoleOutput(prev => [...prev, '[Java] Initializing runtime (first run can take a few seconds)...']);
       }
 
       const result = await executor.execute(

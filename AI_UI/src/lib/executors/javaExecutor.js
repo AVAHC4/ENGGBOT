@@ -35,6 +35,7 @@ function loadCheerpJScript() {
       const s = document.createElement('script');
       s.id = id;
       s.src = 'https://cjrtnc.leaningtech.com/4.2/loader.js';
+      s.crossOrigin = 'anonymous';
       s.async = true;
       s.onload = () => { scriptLoaded = true; resolve(); };
       s.onerror = (e) => reject(new Error('Failed to load CheerpJ loader.js'));
@@ -52,9 +53,13 @@ export async function init() {
   if (typeof window === 'undefined' || !('cheerpjInit' in window)) {
     throw new Error('CheerpJ not available in this environment');
   }
-  // Initialize runtime
+  // Initialize runtime and create a tiny display (CheerpJ recommends creating a display)
   // @ts-ignore
   await window.cheerpjInit();
+  try {
+    // @ts-ignore
+    await window.cheerpjCreateDisplay(1, 1);
+  } catch {}
   isInitialized = true;
 }
 
