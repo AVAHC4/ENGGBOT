@@ -2,9 +2,10 @@
 // Requires COOP/COEP on the top-level page and this worker path.
 // Headers are already configured in next.config.js and root vercel.json.
 
-import { init, Wasmer, Directory } from "https://unpkg.com/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
+import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
 
 let initialized = false;
+let clangPkg = null;
 async function ensureInit() {
   if (!initialized) {
     await init();
@@ -18,6 +19,8 @@ self.addEventListener('message', async (e) => {
   if (data.type === 'INIT') {
     try {
       await ensureInit();
+      // Pre-warm clang package from the Wasmer registry to surface any CORS/COEP issues early
+      clangPkg = await Wasmer.fromRegistry("clang/clang");
       self.postMessage({ type: 'READY' });
     } catch (err) {
       self.postMessage({ type: 'ERROR', error: String(err && err.message || err) });
@@ -30,7 +33,7 @@ self.addEventListener('message', async (e) => {
     try {
       await ensureInit();
 
-      const clang = await Wasmer.fromRegistry("clang/clang");
+      const clang = clangPkg || await Wasmer.fromRegistry("clang/clang");
       const project = new Directory();
 
       const filename = lang === 'cpp' ? 'main.cpp' : 'main.c';

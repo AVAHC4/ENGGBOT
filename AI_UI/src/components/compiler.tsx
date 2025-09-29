@@ -60,11 +60,15 @@ export function Compiler() {
     bundlerRef.current = new Bundler({
       [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
     });
-    // Pre-warm Python executor to avoid first-run delay perception
+    // Pre-warm Python, C/C++, and Java executors to avoid first-run delay perception
     (async () => {
       try {
         setPythonBooting(true);
         await pythonExecutor.init();
+        // Warm C/C++ executor (loads Wasmer SDK & clang in worker)
+        try { await cExecutor.init(); } catch (e) { console.warn('[Compiler] C/C++ init failed:', e); }
+        // Warm Java executor (loads CheerpJ runtime)
+        try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
       } catch (e) {
         console.warn('[Compiler] Python init failed:', e);
       } finally {

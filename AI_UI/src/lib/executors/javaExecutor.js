@@ -82,15 +82,14 @@ export async function execute(code, stdin = '', onInputRequest) {
 
       const runnerSource = `import java.io.*;\npublic class ${runnerClass} {\n  public static void main(String[] args) {\n    try {\n      PrintStream out = new PrintStream(new FileOutputStream("${stdoutFile}"));\n      PrintStream err = new PrintStream(new FileOutputStream("${stderrFile}"));\n      PrintStream origOut = System.out;\n      PrintStream origErr = System.err;\n      System.setOut(out);\n      System.setErr(err);\n      try {\n        Class<?> cls = Class.forName("${className}");\n        java.lang.reflect.Method m = cls.getMethod("main", String[].class);\n        String[] a = new String[0];\n        m.invoke(null, (Object)a);\n      } catch (Throwable t) {\n        t.printStackTrace();\n      } finally {\n        System.out.flush();\n        System.err.flush();\n        System.setOut(origOut);\n        System.setErr(origErr);\n        out.close();\n        err.close();\n      }\n    } catch (Exception e) {\n      e.printStackTrace();\n    }\n  }\n}`;
 
+
       // Write sources into /str/ (read-only from Java; populated by JS)
       // @ts-ignore
       window.cheerpOSAddStringFile(userFile, String(code));
       // @ts-ignore
       window.cheerpOSAddStringFile(runnerFile, runnerSource);
 
-      // Compile both sources into /files/bin using javac
-      // Use com.sun.tools.javac.Main via cheerpjRunMain.
-      // classPath: pass '/app' (mount of current origin). Tools are part of CheerpJ runtime.
+      // Compile sources with javac (com.sun.tools.javac.Main) into /files/bin
       // @ts-ignore
       const compileExit = await window.cheerpjRunMain(
         'com.sun.tools.javac.Main',
@@ -101,12 +100,19 @@ export async function execute(code, stdin = '', onInputRequest) {
       );
       if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
       if (compileExit !== 0) {
-        return resolve({ output: '', error: `Java compilation failed (exit code ${compileExit}). Check browser console for diagnostics.` });
+        return resolve({ output: '', error: `Java compilation failed (exit code ${compileExit}).` });
       }
 
-      // Run the Runner class from /files/bin
-      // @ts-ignore
-      const runExit = await window.cheerpjRunMain(runnerClass, outDir);
+      // Run the compiled Runner class from /files/bin with timeout
+      const execPromise = (async () => {
+        // @ts-ignore
+        const exitCode = await window.cheerpjRunMain(runnerClass, outDir);
+        return exitCode;
+      })();
+      const runExit = await Promise.race([
+        execPromise,
+        new Promise((res) => setTimeout(() => res(124), 45000)),
+      ]);
       if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
       // Read stdout/stderr files back
       // @ts-ignore
@@ -114,7 +120,10 @@ export async function execute(code, stdin = '', onInputRequest) {
       // @ts-ignore
       const errBlob = await window.cjFileBlob(stderrFile).catch(() => null);
       const output = outBlob ? await outBlob.text() : '';
-      const error = errBlob ? await errBlob.text() : (runExit === 0 ? '' : `Program exited with code ${runExit}`);
+      let error = errBlob ? await errBlob.text() : '';
+      if (!error && runExit !== 0) {
+        error = runExit === 124 ? 'Java execution timeout' : `Program exited with code ${runExit}`;
+      }
       return resolve({ output, error });
     } catch (e) {
       return resolve({ output: '', error: String(e && e.message || e) });
