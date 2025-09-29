@@ -72,7 +72,18 @@ export async function execute(code, stdin = '', onInputRequest) {
   return new Promise(async (resolve) => {
     currentResolve = resolve;
     try {
-      const className = ensureJavaLikeClassName('MainUser');
+      // Determine class name; if user didn't provide a class, wrap into MainUser
+      let userSource = String(code || '');
+      let detected = null;
+      try {
+        const m = userSource.match(/public\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
+        if (m) detected = ensureJavaLikeClassName(m[1]);
+      } catch {}
+      let className = detected || 'MainUser';
+      if (!detected) {
+        // Auto-wrap snippet into a minimal class with main()
+        userSource = `public class ${className} {\n  public static void main(String[] args) throws Exception {\n    ${userSource}\n  }\n}`;
+      }
       const userFile = `/str/${className}.java`;
       const runnerClass = 'Runner';
       const runnerFile = `/str/${runnerClass}.java`;
@@ -85,22 +96,27 @@ export async function execute(code, stdin = '', onInputRequest) {
 
       // Write sources into /str/ (read-only from Java; populated by JS)
       // @ts-ignore
-      window.cheerpOSAddStringFile(userFile, String(code));
+      window.cheerpOSAddStringFile(userFile, userSource);
       // @ts-ignore
       window.cheerpOSAddStringFile(runnerFile, runnerSource);
 
       // Compile sources with javac (com.sun.tools.javac.Main) into /files/bin
       // @ts-ignore
-      const compileExit = await window.cheerpjRunMain(
-        'com.sun.tools.javac.Main',
-        '/app',
-        '-d', outDir,
-        runnerFile,
-        userFile
-      );
+      const compileExit = await Promise.race([
+        // @ts-ignore
+        window.cheerpjRunMain(
+          'com.sun.tools.javac.Main',
+          '/app',
+          '-d', outDir,
+          runnerFile,
+          userFile
+        ),
+        new Promise((res) => setTimeout(() => res(124), 45000)),
+      ]);
       if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
       if (compileExit !== 0) {
-        return resolve({ output: '', error: `Java compilation failed (exit code ${compileExit}).` });
+        const errMsg = compileExit === 124 ? 'Java compilation timeout' : `Java compilation failed (exit code ${compileExit}).`;
+        return resolve({ output: '', error: errMsg });
       }
 
       // Run the compiled Runner class from /files/bin with timeout
