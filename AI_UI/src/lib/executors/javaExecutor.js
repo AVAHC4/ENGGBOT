@@ -70,6 +70,64 @@ async function sha256(text) {
   return arr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// --- Lightweight transpiler to Java 8/15-compatible subset ---
+function escapeNonAsciiWhole(text) {
+  let out = '';
+  for (const ch of text) {
+    const code = ch.codePointAt(0);
+    if (code && code > 0x7f) {
+      if (code <= 0xffff) {
+        out += `\\u${code.toString(16).padStart(4, '0')}`;
+      } else {
+        // surrogate pair
+        const high = Math.floor((code - 0x10000) / 0x400) + 0xd800;
+        const low = ((code - 0x10000) % 0x400) + 0xdc00;
+        out += `\\u${high.toString(16)}\\u${low.toString(16)}`;
+      }
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+function transpilePatternMatching(src) {
+  // if (expr instanceof Type var) { -> if (expr instanceof Type) { Type var = (Type) expr;
+  return src.replace(/if\s*\(\s*([^\)]+?)\s+instanceof\s+([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{/g,
+    (m, expr, type, varname) => `if (${expr} instanceof ${type}) { ${type} ${varname} = (${type}) ${expr};`);
+}
+
+function transpileRecords(src) {
+  // Supports simple 'record Name(type1 f1, type2 f2) { }' => final class
+  return src.replace(/\brecord\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*\{[^}]*\}/g, (m, name, params) => {
+    const fields = params.split(',').map(s => s.trim()).filter(Boolean);
+    const decls = fields.map(f => {
+      const parts = f.split(/\s+/);
+      const varName = parts.pop();
+      const type = parts.join(' ');
+      return { type, name: varName };
+    });
+    const fieldDecls = decls.map(d => `  private final ${d.type} ${d.name};`).join('\n');
+    const ctorParams = decls.map(d => `${d.type} ${d.name}`).join(', ');
+    const assigns = decls.map(d => `    this.${d.name} = ${d.name};`).join('\n');
+    const accessors = decls.map(d => `  public ${d.type} ${d.name}() { return this.${d.name}; }`).join('\n');
+    const toStr = `  @Override public String toString() { return "${name}[" + ${decls.map(d => d.name).join(' + ", " + ')} + "]"; }`;
+    return `final class ${name} {\n${fieldDecls}\n  public ${name}(${ctorParams}) {\n${assigns}\n  }\n${accessors}\n${toStr}\n}`;
+  });
+}
+
+function transpileForCompat(source) {
+  let src = String(source || '');
+  // Replace common unicode identifier pi
+  src = src.replace(/\u03C0/g, 'pi'); // π -> pi
+  // Downlevel preview features
+  src = transpilePatternMatching(src);
+  src = transpileRecords(src);
+  // Escape any remaining non-ASCII chars to \uXXXX to avoid encoding issues in javac
+  src = escapeNonAsciiWhole(src);
+  return src;
+}
+
 function loadCheerpJScript() {
   if (scriptLoaded) return Promise.resolve();
   if (loadingPromise) return loadingPromise;
@@ -128,35 +186,37 @@ function ensureJavaLikeClassName(name) {
 }
 
 async function executePiston(code, stdin = '') {
-  try {
-    const response = await fetch('https://emkc.org/api/v2/piston/execute', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language: 'java',
-        version: '15.0.2',
-        files: [{ name: 'Main.java', content: code }],
-        stdin: stdin || '',
-        compile_options: [
-          '--enable-preview',
-          '--release', '15',
-          '-encoding', 'UTF-8'
-        ],
-        run_options: ['--enable-preview']
-      }),
-      signal: AbortSignal.timeout(10000), // 10s timeout
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (!data.run) return null;
-    return {
-      output: data.run.stdout || '',
-      error: data.run.stderr || (data.run.code !== 0 ? data.run.output : ''),
-    };
-  } catch (e) {
-    console.warn('[JavaExecutor] Piston failed:', e);
-    return null;
+  const versions = ['17.0.1', '17.0.0', '16.0.1', '15.0.2'];
+  for (const v of versions) {
+    try {
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language: 'java',
+          version: v,
+          files: [{ name: 'Main', content: code, encoding: 'utf8' }],
+          stdin: stdin || '',
+          // Prefer short timeouts; we fall back to CheerpJ if needed
+          run_timeout: 8000,
+          compile_timeout: 8000,
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (!data.run) continue;
+      return {
+        output: data.run.stdout || '',
+        error: data.run.stderr || (data.run.code !== 0 ? data.run.output : ''),
+      };
+    } catch (e) {
+      // try next version or fall back to CheerpJ
+      console.warn(`[JavaExecutor] Piston attempt with Java ${v} failed:`, e);
+      continue;
+    }
   }
+  return null;
 }
 
 export async function execute(code, stdin = '', onInputRequest) {
@@ -164,7 +224,8 @@ export async function execute(code, stdin = '', onInputRequest) {
   
   // Try Piston API first for speed
   if (usePistonFirst) {
-    const pistonResult = await executePiston(code, stdin);
+    const transpiled = transpileForCompat(code);
+    const pistonResult = await executePiston(transpiled, stdin);
     if (pistonResult) {
       return pistonResult;
     }
@@ -180,7 +241,7 @@ export async function execute(code, stdin = '', onInputRequest) {
     currentResolve = resolve;
     try {
       // Determine class name; if user didn't provide a class, wrap into MainUser
-      let userSource = String(code || '');
+      let userSource = String(transpileForCompat(code) || '');
       let detected = null;
       try {
         const m = userSource.match(/public\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
