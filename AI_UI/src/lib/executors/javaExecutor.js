@@ -1,16 +1,16 @@
 /**
- * Java Code Executor using CheerpJ (OpenJDK in WASM/JS) with aggressive caching.
+ * Java Code Executor with hybrid approach:
+ * - Primary: Fast Piston API for instant execution
+ * - Fallback: CheerpJ if offline or API fails
  *
  * Strategy:
- * - Load CheerpJ loader from CDN (cached via Service Worker).
- * - Cache compiled bytecode in IndexedDB by source hash.
- * - Write user source to /str/ and Runner.java for stdout/stderr capture.
- * - Compile with javac, run, and read output files back.
+ * 1. Try Piston API first (< 2s, free, no hosting)
+ * 2. On failure/offline: use CheerpJ with caching
  *
  * Performance:
- * - First run: 3-5s (downloads CheerpJ assets, cached by SW)
- * - Cached subsequent runs: < 500ms (bytecode from IndexedDB)
- * - New code after warm: 1-2s (compile only, runtime cached)
+ * - Piston API: 500ms - 2s (always fast)
+ * - CheerpJ first: 5-10s (downloads, cached after)
+ * - CheerpJ cached: < 500ms
  */
 
 let isInitialized = false;
@@ -19,6 +19,7 @@ let loadingPromise = null;
 let currentResolve = null;
 let cancelled = false;
 let dbPromise = null;
+let usePistonFirst = true; // Try Piston API first for speed
 
 // IndexedDB for bytecode cache
 function openDB() {
@@ -126,8 +127,45 @@ function ensureJavaLikeClassName(name) {
   return (name || 'MainUser').replace(/[^A-Za-z0-9_]/g, '_');
 }
 
+async function executePiston(code, stdin = '') {
+  try {
+    const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: 'java',
+        version: '15.0.2',
+        files: [{ content: code }],
+        stdin: stdin || '',
+      }),
+      signal: AbortSignal.timeout(10000), // 10s timeout
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data.run) return null;
+    return {
+      output: data.run.stdout || '',
+      error: data.run.stderr || (data.run.code !== 0 ? data.run.output : ''),
+    };
+  } catch (e) {
+    console.warn('[JavaExecutor] Piston failed:', e);
+    return null;
+  }
+}
+
 export async function execute(code, stdin = '', onInputRequest) {
   cancelled = false;
+  
+  // Try Piston API first for speed
+  if (usePistonFirst) {
+    const pistonResult = await executePiston(code, stdin);
+    if (pistonResult) {
+      return pistonResult;
+    }
+    // Piston failed, fall back to CheerpJ
+    console.log('[JavaExecutor] Falling back to CheerpJ');
+  }
+  
   if (!isInitialized) {
     await init();
   }
@@ -181,11 +219,11 @@ export async function execute(code, stdin = '', onInputRequest) {
             runnerFile,
             userFile
           ),
-          new Promise((res) => setTimeout(() => res(124), 45000)),
+          new Promise((res) => setTimeout(() => res(124), 90000)), // 90s for first-time CheerpJ download
         ]);
         if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
         if (compileExit !== 0) {
-          const errMsg = compileExit === 124 ? 'Java compilation timeout' : `Java compilation failed (exit code ${compileExit}).`;
+          const errMsg = compileExit === 124 ? 'Java compilation timeout (CheerpJ may be downloading assets on first run)' : `Java compilation failed (exit code ${compileExit}).`;
           return resolve({ output: '', error: errMsg });
         }
         // Cache compiled bytecode (simplified: just cache success)

@@ -116,7 +116,7 @@ export function Compiler() {
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
         setConsoleOutput(prev => [...prev, '[C/C++] Initializing toolchain (first run can take a few seconds)...']);
       } else if (selectedLanguage.id === 'java') {
-        setConsoleOutput(prev => [...prev, '[Java] Initializing runtime (first run can take a few seconds)...']);
+        setConsoleOutput(prev => [...prev, '[Java] Compiling and executing...']);
       }
 
       const result = await executor.execute(
