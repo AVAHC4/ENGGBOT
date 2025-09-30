@@ -189,6 +189,21 @@ function analyzeInputPrompts(originalSource) {
   return prompts;
 }
 
+function stripProgramPrompts(text, prompts) {
+  try {
+    let out = String(text || '');
+    for (const p of prompts || []) {
+      if (!p) continue;
+      // Remove exact prompt occurrences (with optional trailing spaces)
+      const re = new RegExp(p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'g');
+      out = out.replace(re, '');
+    }
+    return out.trimStart();
+  } catch {
+    return text;
+  }
+}
+
 function loadCheerpJScript() {
   if (scriptLoaded) return Promise.resolve();
   if (loadingPromise) return loadingPromise;
@@ -295,7 +310,8 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
       if (ans == null) break;
       lines.push(String(ans));
     }
-    return lines.join('\n');
+    // Ensure each answer ends with a newline so Scanner tokenization is correct
+    return lines.map(l => l + '\n').join('');
   }
   // Fallback: collect until empty line, but limit to 10
   for (let i = 0; i < 10; i++) {
@@ -305,7 +321,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
     if (t === '') break;
     lines.push(t);
   }
-  return lines.join('\n');
+  return lines.map(l => l + '\n').join('');
 }
 
 export async function execute(code, stdin = '', onInputRequest) {
@@ -314,9 +330,13 @@ export async function execute(code, stdin = '', onInputRequest) {
   // Try Piston API first for speed
   if (usePistonFirst) {
     const transpiled = transpileForCompat(code);
+    const prompts = analyzeInputPrompts(code);
     const collected = await collectStdinIfNeeded(code, stdin, onInputRequest);
     const pistonResult = await executePiston(transpiled, collected);
     if (pistonResult) {
+      if (prompts && prompts.length) {
+        pistonResult.output = stripProgramPrompts(pistonResult.output, prompts);
+      }
       return pistonResult;
     }
     // Piston failed, fall back to CheerpJ
@@ -410,8 +430,15 @@ export async function execute(code, stdin = '', onInputRequest) {
       const outBlob = await window.cjFileBlob(stdoutFile).catch(() => null);
       // @ts-ignore
       const errBlob = await window.cjFileBlob(stderrFile).catch(() => null);
-      const output = outBlob ? await outBlob.text() : '';
+      let output = outBlob ? await outBlob.text() : '';
       let error = errBlob ? await errBlob.text() : '';
+      // Remove duplicated prompts if we pre-collected input based on them
+      try {
+        const prompts = analyzeInputPrompts(code);
+        if (prompts && prompts.length) {
+          output = stripProgramPrompts(output, prompts);
+        }
+      } catch {}
       if (!error && runExit !== 0) {
         error = runExit === 124 ? 'Java execution timeout' : `Program exited with code ${runExit}`;
       }
