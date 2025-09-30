@@ -135,6 +135,60 @@ function needsStdin(src) {
   } catch { return false; }
 }
 
+// Basic source pre-processing
+function stripComments(code) {
+  let s = String(code || '');
+  // remove block comments
+  s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+  // remove line comments
+  s = s.replace(/(^|[^:])\/\/.*$/gm, '$1');
+  return s;
+}
+
+function findScannerVars(code) {
+  const vars = new Set();
+  const re = /Scanner\s+([A-Za-z_]\w*)\s*=\s*new\s+Scanner\s*\(\s*System\.in\s*\)/g;
+  for (const m of code.matchAll(re)) vars.add(m[1]);
+  return Array.from(vars);
+}
+
+function findInputCalls(code, scannerVars) {
+  const calls = [];
+  const methods = '(nextLine|next|nextInt|nextDouble|nextFloat|nextLong|nextShort|nextByte)';
+  for (const v of scannerVars) {
+    const re = new RegExp(`${v}\\s*\\.\\s*${methods}\\s*\\(`, 'g');
+    for (const m of code.matchAll(re)) {
+      calls.push({ idx: m.index || 0, method: m[1], var: v });
+    }
+  }
+  // System.console().readLine(
+  for (const m of code.matchAll(/System\.console\(\)\.readLine\s*\(/g))
+    calls.push({ idx: m.index || 0, method: 'readLine', var: 'console' });
+  // BufferedReader ... readLine(
+  for (const m of code.matchAll(/\.readLine\s*\(/g))
+    calls.push({ idx: m.index || 0, method: 'readLine', var: 'reader' });
+  calls.sort((a,b)=>a.idx-b.idx);
+  return calls;
+}
+
+function findPromptBefore(code, pos) {
+  const windowSize = 400; // look back 400 chars
+  const start = Math.max(0, pos - windowSize);
+  const snippet = code.slice(start, pos);
+  const matches = [...snippet.matchAll(/System\.out\.(println|print)\s*\(\s*("(?:[^"\\]|\\.)*")/g)];
+  if (!matches.length) return '';
+  const last = matches[matches.length - 1][2];
+  try { return JSON.parse(last); } catch { return last.replace(/^"|"$/g,''); }
+}
+
+function analyzeInputPrompts(originalSource) {
+  const clean = stripComments(String(originalSource||''));
+  const scannerVars = findScannerVars(clean);
+  const calls = findInputCalls(clean, scannerVars);
+  const prompts = calls.map(c => findPromptBefore(clean, c.idx) || 'Enter value:');
+  return prompts;
+}
+
 function loadCheerpJScript() {
   if (scriptLoaded) return Promise.resolve();
   if (loadingPromise) return loadingPromise;
@@ -226,17 +280,28 @@ async function executePiston(code, stdin = '') {
   return null;
 }
 
-async function collectStdinIfNeeded(source, stdin, onInputRequest) {
+async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
   let provided = String(stdin || '');
   if (provided) return provided;
   if (!onInputRequest) return '';
-  if (!needsStdin(source)) return '';
+  if (!needsStdin(sourceForAnalysis)) return '';
+  // Try to detect exact number of inputs and prompts
+  const prompts = analyzeInputPrompts(sourceForAnalysis);
   const lines = [];
-  // Ask user to provide lines until they submit an empty line
-  for (let i = 0; i < 64; i++) { // hard cap
-    const line = await onInputRequest(`Java program is waiting for input. Enter line ${i + 1} (empty line to run):`);
-    if (line == null) break;
-    const t = String(line);
+  if (prompts.length > 0) {
+    for (let i = 0; i < prompts.length; i++) {
+      const p = prompts[i] || `Enter value ${i+1}:`;
+      const ans = await onInputRequest(p);
+      if (ans == null) break;
+      lines.push(String(ans));
+    }
+    return lines.join('\n');
+  }
+  // Fallback: collect until empty line, but limit to 10
+  for (let i = 0; i < 10; i++) {
+    const ans = await onInputRequest(`Enter line ${i+1} (leave empty to run):`);
+    if (ans == null) break;
+    const t = String(ans);
     if (t === '') break;
     lines.push(t);
   }
@@ -249,7 +314,7 @@ export async function execute(code, stdin = '', onInputRequest) {
   // Try Piston API first for speed
   if (usePistonFirst) {
     const transpiled = transpileForCompat(code);
-    const collected = await collectStdinIfNeeded(transpiled, stdin, onInputRequest);
+    const collected = await collectStdinIfNeeded(code, stdin, onInputRequest);
     const pistonResult = await executePiston(transpiled, collected);
     if (pistonResult) {
       return pistonResult;
@@ -299,7 +364,7 @@ export async function execute(code, stdin = '', onInputRequest) {
       window.cheerpOSAddStringFile(runnerFile, runnerSource);
 
       // If stdin is expected, pre-populate /files/stdin.txt so Scanner(System.in) reads it
-      const preStdin = await collectStdinIfNeeded(userSource, stdin, onInputRequest);
+      const preStdin = await collectStdinIfNeeded(code, stdin, onInputRequest);
       if (preStdin) {
         // @ts-ignore
         window.cheerpOSAddStringFile('/files/stdin.txt', preStdin + "\n");
