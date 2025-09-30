@@ -135,8 +135,14 @@ async function executePiston(code, stdin = '') {
       body: JSON.stringify({
         language: 'java',
         version: '15.0.2',
-        files: [{ content: code }],
+        files: [{ name: 'Main.java', content: code }],
         stdin: stdin || '',
+        compile_options: [
+          '--enable-preview',
+          '--release', '15',
+          '-encoding', 'UTF-8'
+        ],
+        run_options: ['--enable-preview']
       }),
       signal: AbortSignal.timeout(10000), // 10s timeout
     });
