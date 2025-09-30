@@ -128,6 +128,13 @@ function transpileForCompat(source) {
   return src;
 }
 
+function needsStdin(src) {
+  try {
+    const s = String(src || '');
+    return /new\s+Scanner\s*\(\s*System\.in\s*\)|System\.console\(\)\.readLine\(|new\s+BufferedReader\s*\(\s*new\s+InputStreamReader\s*\(\s*System\.in\s*\)/.test(s);
+  } catch { return false; }
+}
+
 function loadCheerpJScript() {
   if (scriptLoaded) return Promise.resolve();
   if (loadingPromise) return loadingPromise;
@@ -219,13 +226,31 @@ async function executePiston(code, stdin = '') {
   return null;
 }
 
+async function collectStdinIfNeeded(source, stdin, onInputRequest) {
+  let provided = String(stdin || '');
+  if (provided) return provided;
+  if (!onInputRequest) return '';
+  if (!needsStdin(source)) return '';
+  const lines = [];
+  // Ask user to provide lines until they submit an empty line
+  for (let i = 0; i < 64; i++) { // hard cap
+    const line = await onInputRequest(`Java program is waiting for input. Enter line ${i + 1} (empty line to run):`);
+    if (line == null) break;
+    const t = String(line);
+    if (t === '') break;
+    lines.push(t);
+  }
+  return lines.join('\n');
+}
+
 export async function execute(code, stdin = '', onInputRequest) {
   cancelled = false;
   
   // Try Piston API first for speed
   if (usePistonFirst) {
     const transpiled = transpileForCompat(code);
-    const pistonResult = await executePiston(transpiled, stdin);
+    const collected = await collectStdinIfNeeded(transpiled, stdin, onInputRequest);
+    const pistonResult = await executePiston(transpiled, collected);
     if (pistonResult) {
       return pistonResult;
     }
@@ -264,7 +289,7 @@ export async function execute(code, stdin = '', onInputRequest) {
       const stdoutFile = '/files/stdout.txt';
       const stderrFile = '/files/stderr.txt';
 
-      const runnerSource = `import java.io.*;\npublic class ${runnerClass} {\n  public static void main(String[] args) {\n    try {\n      PrintStream out = new PrintStream(new FileOutputStream("${stdoutFile}"));\n      PrintStream err = new PrintStream(new FileOutputStream("${stderrFile}"));\n      PrintStream origOut = System.out;\n      PrintStream origErr = System.err;\n      System.setOut(out);\n      System.setErr(err);\n      try {\n        Class<?> cls = Class.forName("${className}");\n        java.lang.reflect.Method m = cls.getMethod("main", String[].class);\n        String[] a = new String[0];\n        m.invoke(null, (Object)a);\n      } catch (Throwable t) {\n        t.printStackTrace();\n      } finally {\n        System.out.flush();\n        System.err.flush();\n        System.setOut(origOut);\n        System.setErr(origErr);\n        out.close();\n        err.close();\n      }\n    } catch (Exception e) {\n      e.printStackTrace();\n    }\n  }\n}`;
+      const runnerSource = `import java.io.*;\npublic class ${runnerClass} {\n  public static void main(String[] args) {\n    try {\n      PrintStream out = new PrintStream(new FileOutputStream("${stdoutFile}"));\n      PrintStream err = new PrintStream(new FileOutputStream("${stderrFile}"));\n      PrintStream origOut = System.out;\n      PrintStream origErr = System.err;\n      InputStream origIn = System.in;\n      System.setOut(out);\n      System.setErr(err);\n      try {\n        // Feed System.in from pre-populated file to support Scanner input\n        try { System.setIn(new FileInputStream("/files/stdin.txt")); } catch (Throwable __e) { /* ignore if no stdin */ }\n        Class<?> cls = Class.forName("${className}");\n        java.lang.reflect.Method m = cls.getMethod("main", String[].class);\n        String[] a = new String[0];\n        m.invoke(null, (Object)a);\n      } catch (Throwable t) {\n        t.printStackTrace();\n      } finally {\n        System.out.flush();\n        System.err.flush();\n        try { System.setIn(origIn); } catch (Throwable __e2) {}\n        System.setOut(origOut);\n        System.setErr(origErr);\n        out.close();\n        err.close();\n      }\n    } catch (Exception e) {\n      e.printStackTrace();\n    }\n  }\n}`;
 
 
       // Write sources into /str/ (read-only from Java; populated by JS)
@@ -272,6 +297,13 @@ export async function execute(code, stdin = '', onInputRequest) {
       window.cheerpOSAddStringFile(userFile, userSource);
       // @ts-ignore
       window.cheerpOSAddStringFile(runnerFile, runnerSource);
+
+      // If stdin is expected, pre-populate /files/stdin.txt so Scanner(System.in) reads it
+      const preStdin = await collectStdinIfNeeded(userSource, stdin, onInputRequest);
+      if (preStdin) {
+        // @ts-ignore
+        window.cheerpOSAddStringFile('/files/stdin.txt', preStdin + "\n");
+      }
 
       let compileExit = 0;
       if (!cached) {
