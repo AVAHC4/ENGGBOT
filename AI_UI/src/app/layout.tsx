@@ -43,9 +43,9 @@ export default function RootLayout({
             <BackgroundRenderer />
             <ChatProvider>
               <SidebarWrapper defaultOpen={true}>
-                <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr] sidebar-container border-none">
+                <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
                   <AppSidebar className="hidden lg:block border-none" />
-                  <main className="transition-all duration-300 w-full border-none">{children}</main>
+                  <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
                 </div>
                 <ProfileVisibilityFixer />
               </SidebarWrapper>

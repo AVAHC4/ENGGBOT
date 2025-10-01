@@ -4,7 +4,7 @@ import ClientCompiler from '../../components/client-compiler';
 
 export default function CompilerPage() {
   return (
-    <div className="h-screen w-full">
+    <div className="compiler-page h-screen w-full">
       <ClientCompiler />
     </div>
   );

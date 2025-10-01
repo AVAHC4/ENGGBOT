@@ -88,4 +88,27 @@ div[style*="background:rgb(0,0,0"] {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
-} 
+}
+
+/* ======================================================================
+   Compiler page & global main layout gap fixes
+   Remove any space between the sidebar and the main content area
+   ====================================================================== */
+
+/* Ensure the grid between sidebar and main has zero gap */
+.sidebar-container {
+  gap: 0 !important;
+  column-gap: 0 !important;
+}
+
+/* Remove any left padding/margin on main */
+.sidebar-container > main {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* When the compiler page is present, also force full-bleed content */
+.sidebar-container > main:has(.compiler-page) {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
