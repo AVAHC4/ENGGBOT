@@ -11,7 +11,7 @@ export default function ClientCompiler() {
   }, []);
   
   if (!isMounted) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-[#1e1e1e] text-white">Loading compiler...</div>;
+    return <div className="h-screen w-full flex items-start justify-start bg-[#1e1e1e] text-white p-4">Loading compiler...</div>;
   }
   
   return <Compiler />;
