@@ -307,23 +307,7 @@ export function Compiler() {
         </div>
       </div>
 
-      {/* Fixed Run button at top right */}
-      <div className="absolute top-4 right-4 z-10 flex space-x-2">
-        <button 
-          className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 shadow-lg"
-          onClick={runCode}
-          disabled={isRunning}
-        >
-          {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
-        </button>
-        <button 
-          className="px-4 py-2 text-sm font-medium bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 shadow-lg"
-          onClick={stopExecution}
-          disabled={!isRunning}
-        >
-          Stop
-        </button>
-      </div>
+      {/* Floating Run/Stop removed to avoid duplication; use header buttons above */}
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
