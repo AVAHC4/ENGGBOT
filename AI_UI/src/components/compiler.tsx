@@ -276,7 +276,7 @@ export function Compiler() {
   return (
     <div className="flex flex-col h-screen bg-[#1e1e1e] text-white">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
+      <div className="relative flex items-center px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium">Online Compiler</span>
           <select 
@@ -289,7 +289,7 @@ export function Compiler() {
             ))}
           </select>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2">
           <button 
             className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
