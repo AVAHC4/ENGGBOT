@@ -22,10 +22,11 @@ interface Team {
 interface TeamsSidebarProps {
   selectedTeamId: string | null
   onTeamSelect: (teamId: string) => void
+  onCreateTeam?: () => void
   teams: Team[]
 }
 
-export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSidebarProps) {
+export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
 
@@ -44,7 +45,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>New Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onCreateTeam && onCreateTeam()}>New Team</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>

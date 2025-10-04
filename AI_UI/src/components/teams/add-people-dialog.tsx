@@ -76,11 +76,22 @@ export function AddPeopleDialog({ open, onOpenChange, teamId, teamName }: AddPeo
 
   const handleSendInvite = () => {
     if (!inviteEmail.trim()) return
-    // Here you would typically send the invite to your backend
-    console.log("[v0] Sending invite to:", inviteEmail, "with role:", inviteRole)
-    setInviteEmail("")
-    setInviteMessage("")
-    onOpenChange(false)
+    // Call backend to add member to team
+    fetch(`/api/teams/${teamId}/members`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text())
+        setInviteEmail("")
+        setInviteMessage("")
+        onOpenChange(false)
+      })
+      .catch((e) => {
+        console.error('Failed to add member', e)
+        alert('Failed to send invite')
+      })
   }
 
   const isValidEmail = (email: string) => {

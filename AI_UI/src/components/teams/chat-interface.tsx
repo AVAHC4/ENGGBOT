@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,6 +10,8 @@ import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
+import { getCurrentUser } from "@/lib/user"
+import { fetchMessages, sendMessage } from "@/lib/teams-api"
 
 interface Message {
   id: string
@@ -37,67 +39,7 @@ interface ChatInterfaceProps {
   onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void // Added avatar update prop
 }
 
-const sampleMessages: Record<string, Message[]> = {
-  "1": [
-    {
-      id: "1",
-      sender: "Sarah Johnson",
-      content:
-        "Hey everyone! I've just uploaded the new mockups to Figma. Could you all take a look and share your thoughts?",
-      timestamp: "2:30 PM",
-      isOwn: false,
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: "2",
-      sender: "You",
-      content: "Great work Sarah! The new color scheme looks much better. I especially like the updated navigation.",
-      timestamp: "2:32 PM",
-      isOwn: true,
-    },
-    {
-      id: "3",
-      sender: "Mike Chen",
-      content: "Agreed! The user flow is much cleaner now. Should we schedule a review meeting for tomorrow?",
-      timestamp: "2:33 PM",
-      isOwn: false,
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: "4",
-      sender: "Sarah Johnson",
-      content: "Perfect! I'll send out a calendar invite for 2 PM tomorrow. Thanks for the quick feedback everyone!",
-      timestamp: "2:34 PM",
-      isOwn: false,
-      avatar: "/placeholder.svg",
-    },
-  ],
-  "2": [
-    {
-      id: "1",
-      sender: "Mike Chen",
-      content: "The latest deployment to staging went smoothly. All tests are passing!",
-      timestamp: "1:40 PM",
-      isOwn: false,
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: "2",
-      sender: "Alex Rodriguez",
-      content: "Excellent! I'll start the QA process now. Should have results by end of day.",
-      timestamp: "1:42 PM",
-      isOwn: false,
-      avatar: "/placeholder.svg",
-    },
-    {
-      id: "3",
-      sender: "You",
-      content: "Thanks team! Let me know if you need any help with the testing.",
-      timestamp: "1:45 PM",
-      isOwn: true,
-    },
-  ],
-}
+// Messages are now loaded from the backend
 
 const getTeamMembers = (teamId: string) => {
   const memberCounts: Record<string, number> = {
@@ -117,21 +59,101 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
 
-  const currentMessages = selectedTeamId ? sampleMessages[selectedTeamId] || [] : []
+  const sseRef = useRef<EventSource | null>(null)
 
-  const handleSendMessage = () => {
-    if (!message.trim() || !selectedTeamId) return
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender: "You",
-      content: message,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      isOwn: true,
+  // Load messages when team changes
+  useEffect(() => {
+    if (!selectedTeamId) {
+      setMessages([])
+      if (sseRef.current) {
+        sseRef.current.close()
+        sseRef.current = null
+      }
+      return
     }
 
-    setMessages((prev) => [...prev, newMessage])
+    let cancelled = false
+    const load = async () => {
+      try {
+        const u = getCurrentUser()
+        const data = await fetchMessages(selectedTeamId)
+        if (cancelled) return
+        const mapped: Message[] = data.map((m) => ({
+          id: m.id,
+          sender: m.sender_name || m.sender_email,
+          content: m.content,
+          timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
+        }))
+        setMessages(mapped)
+      } catch (e) {
+        console.error('Failed to fetch messages', e)
+      }
+    }
+    load()
+
+    // Setup SSE stream for realtime updates
+    if (sseRef.current) {
+      try { sseRef.current.close() } catch {}
+      sseRef.current = null
+    }
+    const es = new EventSource(`/api/teams/${selectedTeamId}/stream`)
+    sseRef.current = es
+    es.onmessage = (evt) => {
+      try {
+        const u = getCurrentUser()
+        const m = JSON.parse(evt.data)
+        setMessages((prev) => {
+          if (prev.some((p) => p.id === m.id)) return prev
+          const msg: Message = {
+            id: m.id,
+            sender: m.sender_name || m.sender_email,
+            content: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
+          }
+          return [...prev, msg]
+        })
+      } catch {}
+    }
+    es.onerror = () => {
+      // keep silent; browser will auto-reconnect
+    }
+
+    return () => {
+      cancelled = true
+      if (sseRef.current) {
+        try { sseRef.current.close() } catch {}
+        sseRef.current = null
+      }
+    }
+  }, [selectedTeamId])
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !selectedTeamId) return
+    const u = getCurrentUser()
+    const content = message
     setMessage("")
+    try {
+      const saved = await sendMessage(selectedTeamId, content, u.email, u.name)
+      // Append if SSE didn't arrive yet
+      setMessages((prev) => {
+        if (prev.some((p) => p.id === saved.id)) return prev
+        return [
+          ...prev,
+          {
+            id: saved.id,
+            sender: saved.sender_name || saved.sender_email,
+            content: saved.content,
+            timestamp: new Date(saved.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isOwn: true,
+          },
+        ]
+      })
+    } catch (e) {
+      console.error('Failed to send message', e)
+      alert('Failed to send message')
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -157,7 +179,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   const team = teams.find((t) => t.id === selectedTeamId)
   const teamMembers = selectedTeamId ? getTeamMembers(selectedTeamId) : 0
-  const allMessages = [...currentMessages, ...messages]
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -214,7 +235,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent">
-        {allMessages.length === 0 ? (
+        {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center border border-border">
@@ -225,7 +246,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             </div>
           </div>
         ) : (
-          allMessages.map((msg) => (
+          messages.map((msg) => (
             <div key={msg.id} className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}>
               {!msg.isOwn && (
                 <Avatar className="h-8 w-8 mt-1">
