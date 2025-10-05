@@ -12,6 +12,7 @@ import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
 import { fetchMessages, sendMessage } from "@/lib/teams-api"
+import { supabaseClient } from "@/lib/supabase-client"
 
 interface Message {
   id: string
@@ -99,7 +100,38 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
     load()
 
-    // Setup SSE stream for realtime updates
+    // Prefer client-side Supabase realtime for near-zero latency
+    let channel: ReturnType<NonNullable<typeof supabaseClient>["channel"]> | null = null
+    if (supabaseClient) {
+      try {
+        channel = supabaseClient
+          .channel(`messages-client-${selectedTeamId}`)
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'messages', filter: `team_id=eq.${selectedTeamId}` },
+            (payload) => {
+              try {
+                const row: any = payload.new
+                const u = getCurrentUser()
+                const msg: Message = {
+                  id: row.id,
+                  sender: row.sender_name || row.sender_email,
+                  content: row.content,
+                  timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  isOwn: row.sender_email?.toLowerCase() === u.email.toLowerCase(),
+                }
+                setMessages((prev) => (prev.some((p) => p.id === msg.id) ? prev : [...prev, msg]))
+                lastRefreshRef.current = Date.now()
+              } catch {}
+            }
+          )
+          .subscribe()
+      } catch {
+        // fall back to SSE
+      }
+    }
+
+    // Setup SSE stream for realtime updates (fallback / older browsers / cross-tab)
     if (sseRef.current) {
       try { sseRef.current.close() } catch {}
       sseRef.current = null
@@ -148,6 +180,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
     return () => {
       cancelled = true
+      if (channel && supabaseClient) {
+        try { supabaseClient.removeChannel(channel) } catch {}
+        channel = null
+      }
       if (sseRef.current) {
         try { sseRef.current.close() } catch {}
         sseRef.current = null
