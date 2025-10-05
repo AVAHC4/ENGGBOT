@@ -26,6 +26,12 @@ export type Invite = {
   created_at: string
 }
 
+export type TeamMember = {
+  member_email: string
+  role: string
+  joined_at: string
+}
+
 export async function listTeams(email: string): Promise<Team[]> {
   const url = `/api/teams?email=${encodeURIComponent(email)}`
   const res = await fetch(url, { cache: 'no-store' })
@@ -85,4 +91,11 @@ export async function acceptInvite(inviteId: string, email: string): Promise<{ t
 export async function declineInvite(inviteId: string): Promise<void> {
   const res = await fetch(`/api/invites/${inviteId}/decline`, { method: 'POST' })
   if (!res.ok) throw new Error(await res.text())
+}
+
+export async function listTeamMembers(teamId: string): Promise<TeamMember[]> {
+  const res = await fetch(`/api/teams/${teamId}/members`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(await res.text())
+  const json = await res.json()
+  return (json.members || []) as TeamMember[]
 }

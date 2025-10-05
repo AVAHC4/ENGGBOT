@@ -14,9 +14,11 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Crown, Shield, User, UserMinus, Settings, Archive, Edit3, Save, X, Camera } from "lucide-react"
+import { listTeamMembers, type TeamMember as ApiTeamMember } from "@/lib/teams-api"
+import { supabaseClient } from "@/lib/supabase-client"
 import { ImageCropDialog } from "@/components/teams/image-crop-dialog"
 
-interface TeamMember {
+interface TeamMemberUI {
   id: string
   name: string
   email: string
@@ -56,7 +58,70 @@ export function TeamManagementDialog({
   const [notifications, setNotifications] = useState(true)
   const [allowMemberInvites, setAllowMemberInvites] = useState(false)
 
-  const members = sampleMembers[teamId] || []
+  const [members, setMembers] = useState<TeamMemberUI[]>([])
+
+  const mapMembers = (rows: ApiTeamMember[]): TeamMemberUI[] => {
+    return rows.map((m) => {
+      const email = m.member_email
+      const name = email
+      return {
+        id: email,
+        name,
+        email,
+        role: (m.role as any) || "member",
+        isOnline: false,
+      }
+    })
+  }
+
+  useEffect(() => {
+    if (!open || !teamId) return
+
+    let cancelled = false
+    let channel: ReturnType<NonNullable<typeof supabaseClient>["channel"]> | null = null
+    let poll: ReturnType<typeof setInterval> | null = null
+
+    const load = async () => {
+      try {
+        const rows = await listTeamMembers(teamId)
+        if (cancelled) return
+        setMembers(mapMembers(rows))
+      } catch (e) {
+        // best effort
+        console.error("Failed to load team members", e)
+      }
+    }
+
+    load()
+
+    if (supabaseClient) {
+      try {
+        channel = supabaseClient
+          .channel(`team-members-${teamId}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members', filter: `team_id=eq.${teamId}` }, () => {
+            load()
+          })
+          .subscribe()
+      } catch {
+        // fall back to poll
+      }
+    }
+
+    // Light polling fallback while dialog open (helps if realtime blocked)
+    poll = setInterval(load, 2000)
+
+    return () => {
+      cancelled = true
+      if (channel && supabaseClient) {
+        try { supabaseClient.removeChannel(channel) } catch {}
+        channel = null
+      }
+      if (poll) {
+        clearInterval(poll)
+        poll = null
+      }
+    }
+  }, [open, teamId])
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -321,7 +386,7 @@ export function TeamManagementDialog({
   )
 }
 
-const sampleMembers: Record<string, TeamMember[]> = {
+const sampleMembers: Record<string, TeamMemberUI[]> = {
   "1": [
     {
       id: "1",
