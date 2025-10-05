@@ -44,9 +44,24 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onCreateTeam && onCreateTeam()}>New Team</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+            <DropdownMenuContent
+              align="end"
+              className="bg-popover/90 backdrop-blur-md border-border/60 shadow-lg"
+            >
+              <DropdownMenuItem
+                onSelect={() => {
+                  onCreateTeam?.()
+                }}
+              >
+                New Team
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setShowAddPeople(true)
+                }}
+              >
+                Add People
+              </DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
