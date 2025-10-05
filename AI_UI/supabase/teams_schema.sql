@@ -33,6 +33,104 @@ create table if not exists public.messages (
   created_at timestamptz not null default now()
 );
 
+-- Backfill schema differences if an older messages table already exists
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'messages'
+  ) then
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'messages' and column_name = 'team_id'
+    ) then
+      alter table public.messages add column team_id uuid;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'messages' and column_name = 'sender_email'
+    ) then
+      alter table public.messages add column sender_email text;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'messages' and column_name = 'sender_name'
+    ) then
+      alter table public.messages add column sender_name text;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'messages' and column_name = 'content'
+    ) then
+      alter table public.messages add column content text;
+    end if;
+
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'messages' and column_name = 'created_at'
+    ) then
+      alter table public.messages add column created_at timestamptz;
+    end if;
+  end if;
+end
+$$;
+
+-- Ensure constraints/defaults on messages for legacy tables
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'messages' and column_name = 'created_at'
+  ) then
+    execute 'alter table public.messages alter column created_at set default now()';
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'messages' and column_name = 'team_id'
+  ) then
+    if exists (select 1 from public.messages where team_id is null) then
+      raise notice 'public.messages.team_id is null for some rows; populate before setting NOT NULL.';
+    else
+      execute 'alter table public.messages alter column team_id set not null';
+    end if;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'messages' and column_name = 'sender_email'
+  ) then
+    if exists (select 1 from public.messages where sender_email is null) then
+      raise notice 'public.messages.sender_email has NULL values; populate before enforcing NOT NULL.';
+    else
+      execute 'alter table public.messages alter column sender_email set not null';
+    end if;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'messages' and column_name = 'content'
+  ) then
+    if exists (select 1 from public.messages where content is null) then
+      raise notice 'public.messages.content has NULL values; populate before enforcing NOT NULL.';
+    else
+      execute 'alter table public.messages alter column content set not null';
+    end if;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'messages_team_id_fkey'
+      and conrelid = 'public.messages'::regclass
+  ) then
+    execute 'alter table public.messages add constraint messages_team_id_fkey foreign key (team_id) references public.teams(id) on delete cascade';
+  end if;
+end
+$$;
+
 create index if not exists idx_messages_team_created on public.messages(team_id, created_at);
 
 -- Enable RLS and restrict by default (API uses service role)
