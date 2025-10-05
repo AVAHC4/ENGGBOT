@@ -14,6 +14,18 @@ export type Message = {
   created_at: string
 }
 
+export type Invite = {
+  id: string
+  team_id: string
+  team_name?: string
+  invitee_email: string
+  role: string
+  message?: string | null
+  invited_by_email?: string | null
+  status: 'pending' | 'accepted' | 'declined' | 'revoked'
+  created_at: string
+}
+
 export async function listTeams(email: string): Promise<Team[]> {
   const url = `/api/teams?email=${encodeURIComponent(email)}`
   const res = await fetch(url, { cache: 'no-store' })
@@ -49,4 +61,26 @@ export async function sendMessage(teamId: string, content: string, senderEmail: 
   if (!res.ok) throw new Error(await res.text())
   const json = await res.json()
   return json.message as Message
+}
+
+export async function listInvites(email: string): Promise<Invite[]> {
+  const res = await fetch(`/api/invites?email=${encodeURIComponent(email)}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(await res.text())
+  const json = await res.json()
+  return (json.invites || []) as Invite[]
+}
+
+export async function acceptInvite(inviteId: string, email: string): Promise<{ team_id: string }> {
+  const res = await fetch(`/api/invites/${inviteId}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return (await res.json()) as { team_id: string }
+}
+
+export async function declineInvite(inviteId: string): Promise<void> {
+  const res = await fetch(`/api/invites/${inviteId}/decline`, { method: 'POST' })
+  if (!res.ok) throw new Error(await res.text())
 }

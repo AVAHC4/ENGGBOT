@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Search, UserPlus, Mail, Check } from "lucide-react"
+import { getCurrentUser } from "@/lib/user"
 
 interface Person {
   id: string
@@ -76,20 +77,27 @@ export function AddPeopleDialog({ open, onOpenChange, teamId, teamName }: AddPeo
 
   const handleSendInvite = () => {
     if (!inviteEmail.trim()) return
-    // Call backend to add member to team
-    fetch(`/api/teams/${teamId}/members`, {
+    const inviter = getCurrentUser()
+    fetch(`/api/teams/${teamId}/invites`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+      body: JSON.stringify({
+        inviteeEmail: inviteEmail,
+        role: inviteRole,
+        message: inviteMessage,
+        invitedByEmail: inviter.email,
+      }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(await res.text())
         setInviteEmail("")
         setInviteMessage("")
         onOpenChange(false)
+        // Optionally signal UI
+        window.dispatchEvent(new CustomEvent('teams:invites:sent'))
       })
       .catch((e) => {
-        console.error('Failed to add member', e)
+        console.error('Failed to send invite', e)
         alert('Failed to send invite')
       })
   }

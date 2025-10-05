@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
 import { getCurrentUser } from "@/lib/user"
@@ -23,7 +23,7 @@ export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
 
-  useEffect(() => {
+  const loadTeams = useCallback(() => {
     const user = getCurrentUser()
     apiListTeams(user.email)
       .then((list) => {
@@ -34,12 +34,24 @@ export function DesktopTeamsLayout() {
           timestamp: "",
         }))
         setTeams(mapped)
-        if (mapped.length > 0) setSelectedTeamId(mapped[0].id)
+        if (mapped.length > 0) {
+          // Keep current selection if still present; otherwise select first
+          setSelectedTeamId((prev) => (prev && mapped.some((t) => t.id === prev) ? prev : mapped[0].id))
+        } else {
+          setSelectedTeamId(null)
+        }
       })
       .catch((e) => {
         console.error("Failed to load teams:", e)
       })
   }, [])
+
+  useEffect(() => {
+    loadTeams()
+    const onRefresh = () => loadTeams()
+    window.addEventListener('teams:refresh', onRefresh)
+    return () => window.removeEventListener('teams:refresh', onRefresh)
+  }, [loadTeams])
 
   const handleTeamSelect = (teamId: string) => {
     setSelectedTeamId(teamId)

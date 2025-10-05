@@ -1,13 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, MoreVertical } from "lucide-react"
+import { Search, MoreVertical, Mail } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { getCurrentUser } from "@/lib/user"
+import { acceptInvite, declineInvite, listInvites, type Invite } from "@/lib/teams-api"
 
 interface Team {
   id: string
@@ -29,8 +32,58 @@ interface TeamsSidebarProps {
 export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
+  const [showInvites, setShowInvites] = useState(false)
+  const [invites, setInvites] = useState<Invite[]>([])
+  const [loadingInvites, setLoadingInvites] = useState(false)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const refreshInvites = async () => {
+    try {
+      setLoadingInvites(true)
+      const user = getCurrentUser()
+      const list = await listInvites(user.email)
+      setInvites(list)
+    } catch (e) {
+      console.error("Failed to load invites:", e)
+    } finally {
+      setLoadingInvites(false)
+    }
+  }
+
+  useEffect(() => {
+    // Load invites on mount and when dialog opens
+    refreshInvites()
+    const onSent = () => refreshInvites()
+    window.addEventListener('teams:invites:sent', onSent as any)
+    return () => window.removeEventListener('teams:invites:sent', onSent as any)
+  }, [])
+
+  const handleAccept = async (inviteId: string) => {
+    try {
+      const user = getCurrentUser()
+      const res = await acceptInvite(inviteId, user.email)
+      await refreshInvites()
+      // Ask parent to refresh teams list via global event
+      window.dispatchEvent(new CustomEvent('teams:refresh'))
+      // Select the accepted team
+      if (res?.team_id) onTeamSelect(res.team_id)
+      setShowInvites(false)
+    } catch (e) {
+      console.error('Failed to accept invite', e)
+      alert('Failed to accept invite')
+    }
+  }
+
+  const handleDecline = async (inviteId: string) => {
+    try {
+      await declineInvite(inviteId)
+      await refreshInvites()
+    } catch (e) {
+      console.error('Failed to decline invite', e)
+      alert('Failed to decline invite')
+    }
+  }
 
   return (
     <div className="flex flex-col h-full bg-transparent">
@@ -38,6 +91,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
       <div className="flex items-center justify-between px-0 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" aria-label="View invitations" onClick={() => { setShowInvites(true); refreshInvites(); }}>
+            <Mail className="h-4 w-4" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -123,6 +179,35 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
         teamId={selectedTeamId || "1"}
         teamName={selectedTeamId ? teams.find((t) => t.id === selectedTeamId)?.name || "Team" : "Team"}
       />
+
+      {/* Invites Dialog */}
+      <Dialog open={showInvites} onOpenChange={setShowInvites}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pending Invitations</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {loadingInvites && <div className="text-sm text-muted-foreground">Loading invites…</div>}
+            {!loadingInvites && invites.length === 0 && (
+              <div className="text-sm text-muted-foreground">No pending invitations</div>
+            )}
+            {invites.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{inv.team_name || 'Team'}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {inv.invited_by_email ? `Invited by ${inv.invited_by_email}` : 'Team invitation'}
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button size="sm" onClick={() => handleAccept(inv.id)}>Accept</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleDecline(inv.id)}>Decline</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

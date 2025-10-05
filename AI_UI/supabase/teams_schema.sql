@@ -133,10 +133,28 @@ $$;
 
 create index if not exists idx_messages_team_created on public.messages(team_id, created_at);
 
+-- Team invites
+create table if not exists public.team_invites (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  invitee_email text not null,
+  role text not null default 'member',
+  message text,
+  invited_by_email text,
+  status text not null default 'pending', -- pending|accepted|declined|revoked
+  token text,
+  created_at timestamptz not null default now(),
+  acted_at timestamptz
+);
+
+create index if not exists idx_team_invites_email on public.team_invites(invitee_email);
+create index if not exists idx_team_invites_team on public.team_invites(team_id);
+
 -- Enable RLS and restrict by default (API uses service role)
 alter table public.teams enable row level security;
 alter table public.team_members enable row level security;
 alter table public.messages enable row level security;
+alter table public.team_invites enable row level security;
 
 -- Allow service role full access
 -- Note: PostgreSQL does not support CREATE POLICY IF NOT EXISTS.
@@ -151,6 +169,10 @@ create policy "service-role full access" on public.team_members
  
 drop policy if exists "service-role full access" on public.messages;
 create policy "service-role full access" on public.messages
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+drop policy if exists "service-role full access" on public.team_invites;
+create policy "service-role full access" on public.team_invites
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 -- Realtime: enable replication for messages (UI: Database -> Replication -> Configure -> Select messages)
