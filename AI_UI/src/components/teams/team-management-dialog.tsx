@@ -249,7 +249,6 @@ export function TeamManagementDialog({
                     </Button>
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">{members.length} members</p>
               </div>
             </DialogTitle>
           </DialogHeader>
