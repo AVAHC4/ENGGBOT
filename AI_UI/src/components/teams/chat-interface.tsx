@@ -21,6 +21,7 @@ interface Message {
   timestamp: string
   isOwn: boolean
   avatar?: string
+  serverTs?: string
 }
 
 interface Team {
@@ -63,6 +64,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const sseRef = useRef<EventSource | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastRefreshRef = useRef<number>(0)
+  const lastServerTsRef = useRef<string | null>(null)
 
   // Load messages when team changes
   useEffect(() => {
@@ -91,9 +93,13 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           content: m.content,
           timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
+          serverTs: m.created_at,
         }))
         setMessages(mapped)
         lastRefreshRef.current = Date.now()
+        if (data.length > 0) {
+          lastServerTsRef.current = data[data.length - 1].created_at
+        }
       } catch (e) {
         console.error('Failed to fetch messages', e)
       }
@@ -119,9 +125,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                   content: row.content,
                   timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                   isOwn: row.sender_email?.toLowerCase() === u.email.toLowerCase(),
+                  serverTs: row.created_at,
                 }
                 setMessages((prev) => (prev.some((p) => p.id === msg.id) ? prev : [...prev, msg]))
                 lastRefreshRef.current = Date.now()
+                lastServerTsRef.current = row.created_at
               } catch {}
             }
           )
@@ -165,18 +173,44 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       // console.warn('[SSE] error')
     }
 
-    // Lightweight polling fallback (handles Safari/background issues)
+    // Ultra-low-latency polling fallback (works even if WS/SSE blocked by extensions)
     if (pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
     }
-    pollRef.current = setInterval(() => {
-      // If we haven't received anything for a while, refresh
-      const now = Date.now()
-      if (now - lastRefreshRef.current > 15000) {
-        load()
-      }
-    }, 8000)
+    pollRef.current = setInterval(async () => {
+      try {
+        const now = Date.now()
+        // If no realtime push recently, fetch deltas (aggressive fallback)
+        if (now - lastRefreshRef.current > 400) {
+          const since = lastServerTsRef.current || undefined
+          const u = getCurrentUser()
+          const data = await fetchMessages(selectedTeamId, 200, since)
+          if (!data || data.length === 0) return
+          const mapped: Message[] = data.map((m) => ({
+            id: m.id,
+            sender: m.sender_name || m.sender_email,
+            content: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
+            serverTs: m.created_at,
+          }))
+          setMessages((prev) => {
+            const seen = new Set(prev.map((p) => p.id))
+            const added = mapped.filter((m) => !seen.has(m.id))
+            return added.length ? [...prev, ...added] : prev
+          })
+          lastRefreshRef.current = Date.now()
+          lastServerTsRef.current = data[data.length - 1].created_at
+        }
+      } catch {}
+    }, 300)
+
+    // When tab regains focus or becomes visible, refresh immediately
+    const onFocus = () => load()
+    const onVis = () => { if (!document.hidden) load() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVis)
 
     return () => {
       cancelled = true
@@ -192,6 +226,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         clearInterval(pollRef.current)
         pollRef.current = null
       }
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVis)
     }
   }, [selectedTeamId])
 
@@ -213,9 +249,12 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             content: saved.content,
             timestamp: new Date(saved.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isOwn: true,
+            serverTs: saved.created_at,
           },
         ]
       })
+      lastRefreshRef.current = Date.now()
+      lastServerTsRef.current = saved.created_at
     } catch (e) {
       console.error('Failed to send message', e)
       alert('Failed to send message')

@@ -9,17 +9,23 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const teamId = params.id
     const { searchParams } = new URL(req.url)
     const limit = Number(searchParams.get('limit') || '200')
+    const since = searchParams.get('since')
 
     if (!teamId) {
       return NextResponse.json({ error: 'Missing team id' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('messages')
       .select('id, team_id, sender_email, sender_name, content, created_at')
       .eq('team_id', teamId)
       .order('created_at', { ascending: true })
-      .limit(limit)
+
+    if (since) {
+      query = query.gt('created_at', since)
+    }
+
+    const { data, error } = await query.limit(limit)
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })

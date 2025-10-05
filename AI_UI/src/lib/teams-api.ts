@@ -45,8 +45,10 @@ export async function createTeam(name: string, creatorEmail: string, creatorName
   return json.team as Team
 }
 
-export async function fetchMessages(teamId: string, limit = 200) {
-  const res = await fetch(`/api/teams/${teamId}/messages?limit=${limit}`, { cache: 'no-store' })
+export async function fetchMessages(teamId: string, limit = 200, since?: string) {
+  const qs = new URLSearchParams({ limit: String(limit) })
+  if (since) qs.set('since', since)
+  const res = await fetch(`/api/teams/${teamId}/messages?${qs.toString()}`, { cache: 'no-store' })
   if (!res.ok) throw new Error(`Failed to load messages: ${res.status}`)
   const json = await res.json()
   return (json.messages || []) as Message[]
