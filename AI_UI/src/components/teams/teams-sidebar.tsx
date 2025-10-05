@@ -48,20 +48,8 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
               align="end"
               className="bg-popover/90 backdrop-blur-md border-border/60 shadow-lg"
             >
-              <DropdownMenuItem
-                onSelect={() => {
-                  onCreateTeam?.()
-                }}
-              >
-                New Team
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setShowAddPeople(true)
-                }}
-              >
-                Add People
-              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onCreateTeam?.()}>New Team</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
