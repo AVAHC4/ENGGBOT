@@ -1,5 +1,17 @@
+"use client"
+
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
+import { MoreVertical } from "lucide-react"
 
 interface Team {
   id: string
@@ -60,58 +72,81 @@ const teams: Team[] = [
 ]
 
 export function TeamsSection() {
-  return (
-    <div className="max-w-md mx-auto bg-transparent border-x border-border min-h-screen">
-      {/* Header */}
-      <div className="sticky top-0 bg-transparent border-b border-border px-4 py-3">
-        <h1 className="text-xl font-semibold text-foreground">Teams</h1>
-      </div>
+  const [showAddPeople, setShowAddPeople] = useState(false)
 
-      {/* Teams List */}
-      <div className="divide-y divide-border">
-        {teams.map((team) => (
-          <div
-            key={team.id}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
-          >
-            {/* Avatar */}
-            <div className="relative">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
-                <AvatarFallback className="bg-muted text-muted-foreground font-medium">
-                  {team.name
-                    .split(" ")
-                    .map((word) => word[0])
-                    .join("")
-                    .slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              {team.isOnline && (
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+  return (
+    <>
+      <div className="max-w-md mx-auto bg-transparent border-x border-border min-h-screen">
+        {/* Header */}
+        <div className="sticky top-0 bg-transparent border-b border-border px-4 py-3 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-foreground">Teams</h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Teams actions">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>New Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Archive</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Teams List */}
+        <div className="divide-y divide-border">
+          {teams.map((team) => (
+            <div
+              key={team.id}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
+            >
+              {/* Avatar */}
+              <div className="relative">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
+                  <AvatarFallback className="bg-muted text-muted-foreground font-medium">
+                    {team.name
+                      .split(" ")
+                      .map((word) => word[0])
+                      .join("")
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                {team.isOnline && (
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-medium text-foreground truncate">{team.name}</h3>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">{team.timestamp}</span>
+                </div>
+                <p className="text-sm text-muted-foreground truncate">{team.lastMessage}</p>
+              </div>
+
+              {/* Unread Badge */}
+              {team.unreadCount && (
+                <Badge
+                  variant="default"
+                  className="bg-foreground text-background hover:bg-foreground/90 h-5 min-w-5 text-xs px-1.5 rounded-full"
+                >
+                  {team.unreadCount}
+                </Badge>
               )}
             </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-medium text-foreground truncate">{team.name}</h3>
-                <span className="text-xs text-muted-foreground flex-shrink-0">{team.timestamp}</span>
-              </div>
-              <p className="text-sm text-muted-foreground truncate">{team.lastMessage}</p>
-            </div>
-
-            {/* Unread Badge */}
-            {team.unreadCount && (
-              <Badge
-                variant="default"
-                className="bg-foreground text-background hover:bg-foreground/90 h-5 min-w-5 text-xs px-1.5 rounded-full"
-              >
-                {team.unreadCount}
-              </Badge>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+      <AddPeopleDialog
+        open={showAddPeople}
+        onOpenChange={setShowAddPeople}
+        teamId="1"
+        teamName="Team"
+      />
+    </>
   )
 }
