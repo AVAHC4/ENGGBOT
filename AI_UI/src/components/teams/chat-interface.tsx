@@ -60,6 +60,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [showAddPeople, setShowAddPeople] = useState(false)
 
   const sseRef = useRef<EventSource | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastRefreshRef = useRef<number>(0)
 
   // Load messages when team changes
   useEffect(() => {
@@ -68,6 +70,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       if (sseRef.current) {
         sseRef.current.close()
         sseRef.current = null
+      }
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
       }
       return
     }
@@ -86,6 +92,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
         }))
         setMessages(mapped)
+        lastRefreshRef.current = Date.now()
       } catch (e) {
         console.error('Failed to fetch messages', e)
       }
@@ -99,6 +106,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
     const es = new EventSource(`/api/teams/${selectedTeamId}/stream`)
     sseRef.current = es
+    es.onopen = () => {
+      // Connection established
+      // console.log('[SSE] open')
+    }
     es.onmessage = (evt) => {
       try {
         const u = getCurrentUser()
@@ -114,17 +125,36 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           }
           return [...prev, msg]
         })
+        lastRefreshRef.current = Date.now()
       } catch {}
     }
     es.onerror = () => {
-      // keep silent; browser will auto-reconnect
+      // keep silent; browser will auto-reconnect; fallback poll handles gaps
+      // console.warn('[SSE] error')
     }
+
+    // Lightweight polling fallback (handles Safari/background issues)
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+    pollRef.current = setInterval(() => {
+      // If we haven't received anything for a while, refresh
+      const now = Date.now()
+      if (now - lastRefreshRef.current > 15000) {
+        load()
+      }
+    }, 8000)
 
     return () => {
       cancelled = true
       if (sseRef.current) {
         try { sseRef.current.close() } catch {}
         sseRef.current = null
+      }
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
       }
     }
   }, [selectedTeamId])
