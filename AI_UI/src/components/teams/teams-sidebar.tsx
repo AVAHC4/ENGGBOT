@@ -33,9 +33,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-0 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -44,12 +44,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="bg-popover/90 backdrop-blur-md border-border/60 shadow-lg"
-            >
-              <DropdownMenuItem onSelect={() => onCreateTeam?.()}>New Team</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onCreateTeam && onCreateTeam()}>New Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Archive</DropdownMenuItem>
             </DropdownMenuContent>
@@ -58,7 +55,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
       </div>
 
       {/* Search */}
-      <div className="px-4 py-3 border-b border-border">
+      <div className="px-0 py-3 border-b border-border">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -76,7 +73,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
           <div
             key={team.id}
             onClick={() => onTeamSelect(team.id)}
-            className={`flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
+            className={`flex items-center gap-3 pl-0 pr-3 py-3 hover:bg-muted/50 cursor-pointer transition-colors ${
               selectedTeamId === team.id ? "bg-muted" : ""
             }`}
           >
