@@ -40,13 +40,45 @@ alter table public.teams enable row level security;
 alter table public.team_members enable row level security;
 alter table public.messages enable row level security;
 
--- Allow service role full access
-create policy if not exists "service-role full access" on public.teams
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
-create policy if not exists "service-role full access" on public.team_members
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
-create policy if not exists "service-role full access" on public.messages
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+-- Allow service role full access (idempotent)
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'teams'
+      and policyname = 'service-role full access'
+  ) then
+    create policy "service-role full access" on public.teams
+      for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'team_members'
+      and policyname = 'service-role full access'
+  ) then
+    create policy "service-role full access" on public.team_members
+      for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'messages'
+      and policyname = 'service-role full access'
+  ) then
+    create policy "service-role full access" on public.messages
+      for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+  end if;
+end $$;
 
 -- Realtime: enable replication for messages (UI: Database -> Replication -> Configure -> Select messages)
 -- This comment is a reminder; configure in Supabase dashboard.
