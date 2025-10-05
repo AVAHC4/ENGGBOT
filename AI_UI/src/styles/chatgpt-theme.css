@@ -460,14 +460,36 @@
 /* --- Inline Code Styling --- */
 .inline-code {
   font-family: monospace;
-  background-color: #1E1E1E;
+  background-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
   padding: 0.2em 0.4em;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 85%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
 }
 
 .dark .inline-code {
-  background-color: #1E1E1E;
+  background-color: #1e1e1e;
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.markdown-content :not(pre) > code,
+.message-content :not(pre) > code {
+  font-family: monospace;
+  background-color: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 85%;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.dark .markdown-content :not(pre) > code,
+.dark .message-content :not(pre) > code {
+  background-color: #1e1e1e;
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.2);
 }
 
 /* --- Attachments Styling --- */
