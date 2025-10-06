@@ -96,6 +96,8 @@ export function checkExternalAuth(): boolean {
     localStorage.setItem('ai_ui_authenticated', 'true');
     // Notify listeners that auth state has been updated
     try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
+    // Initialize single-session enforcement after auth
+    try { initSingleSessionEnforcement(); } catch {}
     
     // Clean up external auth markers
     if (hasAuthCookie) {
@@ -123,6 +125,91 @@ export function checkExternalAuth(): boolean {
   return localStorage.getItem('ai_ui_authenticated') === 'true';
 }
 
+// ================= Single-session enforcement =================
+let singleSessionInterval: number | null = null;
+
+function getUserEmailFromStorage(): string | null {
+  try {
+    const userDataRaw = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null;
+    if (userDataRaw) {
+      const parsed = JSON.parse(userDataRaw);
+      if (parsed && parsed.email) return String(parsed.email).trim().toLowerCase();
+    }
+    const email = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
+    return email ? String(email).trim().toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
+function ensureLocalSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let sid = localStorage.getItem('ai_ui_session_id');
+  if (!sid) {
+    try {
+      sid = crypto.randomUUID();
+    } catch {
+      sid = `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    }
+    localStorage.setItem('ai_ui_session_id', sid);
+  }
+  return sid;
+}
+
+async function claimServerSession(email: string, sessionId: string): Promise<void> {
+  try {
+    await fetch('/api/user/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, sessionId })
+    });
+  } catch {}
+}
+
+async function fetchServerSessionId(email: string): Promise<string | null> {
+  try {
+    const res = await fetch(`/api/user/session?email=${encodeURIComponent(email)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.sessionId || null;
+  } catch {
+    return null;
+  }
+}
+
+export function initSingleSessionEnforcement(): void {
+  if (typeof window === 'undefined') return;
+  const email = getUserEmailFromStorage();
+  if (!email) return;
+  const localSid = ensureLocalSessionId();
+  // Claim ownership (this invalidates other sessions)
+  claimServerSession(email, localSid);
+  // Start watcher
+  if (singleSessionInterval) {
+    window.clearInterval(singleSessionInterval);
+    singleSessionInterval = null;
+  }
+  singleSessionInterval = window.setInterval(async () => {
+    try {
+      const currentSid = localStorage.getItem('ai_ui_session_id');
+      if (!currentSid) return;
+      const serverSid = await fetchServerSessionId(email);
+      if (serverSid && serverSid !== currentSid) {
+        // Another session took over; logout this one
+        logout();
+      }
+    } catch {}
+  }, 5000);
+}
+
+export function stopSingleSessionEnforcement(): void {
+  if (typeof window === 'undefined') return;
+  if (singleSessionInterval) {
+    window.clearInterval(singleSessionInterval);
+    singleSessionInterval = null;
+  }
+}
+
 export function setAuthenticated(value: boolean): void {
   if (typeof window === 'undefined') {
     return;
@@ -130,6 +217,7 @@ export function setAuthenticated(value: boolean): void {
   
   if (value) {
     localStorage.setItem('ai_ui_authenticated', 'true');
+    try { initSingleSessionEnforcement(); } catch {}
   } else {
     localStorage.removeItem('ai_ui_authenticated');
   }
@@ -147,6 +235,10 @@ export function logout(): void {
   localStorage.removeItem('redirectToChat');
   localStorage.removeItem('activeConversation');
   
+  // Stop single-session watcher and clear local session id
+  try { stopSingleSessionEnforcement(); } catch {}
+  localStorage.removeItem('ai_ui_session_id');
+
   // Clear main app authentication state
   localStorage.removeItem('user');
   localStorage.removeItem('user_info');
