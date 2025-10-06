@@ -37,6 +37,9 @@ export function checkExternalAuth(): boolean {
       if (decodedUserData.name) localStorage.setItem('user_name', decodedUserData.name);
       if (decodedUserData.email) localStorage.setItem('user_email', decodedUserData.email);
       if (decodedUserData.avatar) localStorage.setItem('user_avatar', decodedUserData.avatar);
+
+      // Notify listeners that auth/user context has been updated
+      try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
     } catch (e) {
       console.error("Failed to parse user data from URL:", e);
     }
@@ -61,6 +64,8 @@ export function checkExternalAuth(): boolean {
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
     // Store auth in local format
     localStorage.setItem('ai_ui_authenticated', 'true');
+    // Notify listeners that auth state has been updated
+    try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
     
     // Clean up external auth markers
     if (hasAuthCookie) {
@@ -132,12 +137,15 @@ export function logout(): void {
   
   // Clear all conversation data too
   try {
-    // Get all localStorage keys
+    // Preserve conversation data across logouts so it loads after fresh login
+    // Only clear transient auth flags beyond the explicit removals above
     const keys = Object.keys(localStorage);
-    
-    // Remove all conversation-related items
     for (const key of keys) {
-      if (key.includes('conversation') || key.includes('user_') || key.includes('auth')) {
+      // Do NOT remove any keys that store conversations or their metadata
+      if (key.includes('conversation')) continue;
+
+      // Optionally clear extra auth-related flags
+      if (key.includes('ai_ui_authenticated') || key.startsWith('auth_')) {
         localStorage.removeItem(key);
       }
     }
