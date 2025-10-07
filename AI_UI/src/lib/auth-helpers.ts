@@ -39,6 +39,11 @@ export function checkExternalAuth(): boolean {
       if (decodedUserData.avatar) localStorage.setItem('user_avatar', decodedUserData.avatar);
 
       try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
+      // Treat this as an explicit login for session priority purposes
+      try {
+        localStorage.setItem('ai_ui_just_logged_in', 'true');
+        localStorage.setItem('ai_ui_login_priority_until', String(Date.now() + 15000));
+      } catch {}
     } catch (e) {
       console.error("Failed to parse user data from URL:", e);
     }
@@ -92,9 +97,13 @@ export function checkExternalAuth(): boolean {
   
   // If auth is found, store it in our own format
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
+    const wasAuthed = localStorage.getItem('ai_ui_authenticated') === 'true';
     // Mark that this session just performed an explicit login (used to prioritize claiming)
-    if (hasAuthCookie || hasAuthParam) {
-      try { localStorage.setItem('ai_ui_just_logged_in', 'true'); } catch {}
+    if (hasAuthCookie || hasAuthParam || !wasAuthed) {
+      try {
+        localStorage.setItem('ai_ui_just_logged_in', 'true');
+        localStorage.setItem('ai_ui_login_priority_until', String(Date.now() + 15000));
+      } catch {}
     }
     // Store auth in local format
     localStorage.setItem('ai_ui_authenticated', 'true');
@@ -174,14 +183,17 @@ async function claimServerSession(email: string, sessionId: string): Promise<voi
   } catch {}
 }
 
-async function fetchServerSessionId(email: string): Promise<string | null> {
+type ServerSessionInfo = { sessionId: string | null; updatedAt: number | null };
+async function fetchServerSession(email: string): Promise<ServerSessionInfo> {
   try {
     const res = await fetch(`/api/user/session?email=${encodeURIComponent(email)}`);
-    if (!res.ok) return null;
+    if (!res.ok) return { sessionId: null, updatedAt: null };
     const data = await res.json();
-    return data?.sessionId || null;
+    const sid = data?.sessionId ?? null;
+    const updatedAt = data?.updatedAt ? Date.parse(data.updatedAt) : null;
+    return { sessionId: sid, updatedAt: isNaN(updatedAt as any) ? null : updatedAt };
   } catch {
-    return null;
+    return { sessionId: null, updatedAt: null };
   }
 }
 
@@ -197,15 +209,19 @@ export function initSingleSessionEnforcement(): void {
       claimServerSession(email, localSid);
       try { localStorage.removeItem('ai_ui_just_logged_in'); } catch {}
     } else {
-      // Resumed session: do not steal from a newer session. Check server owner first.
-      // If someone else owns it, logout immediately; if no owner or same owner, claim to refresh lock.
+      // Resumed session: never steal from a newer session
       (async () => {
-        const serverSid = await fetchServerSessionId(email);
+        const { sessionId: serverSid } = await fetchServerSession(email);
         if (serverSid && serverSid !== localSid) {
+          // Another owner exists; logout this session
           logout();
           return;
         }
-        claimServerSession(email, localSid);
+        if (serverSid === localSid) {
+          // We are still the owner; refresh the lock
+          claimServerSession(email, localSid);
+        }
+        // If serverSid is null, do nothing to avoid stealing during stale reads
       })();
     }
     // Start watcher
@@ -217,14 +233,21 @@ export function initSingleSessionEnforcement(): void {
       try {
         const currentSid = localStorage.getItem('ai_ui_session_id');
         if (!currentSid) return;
-        const serverSid = await fetchServerSessionId(email);
+        const { sessionId: serverSid, updatedAt } = await fetchServerSession(email);
         if (serverSid && serverSid !== currentSid) {
-          // Grace period after our own claim to avoid self-logout due to eventual consistency
           const claimedAt = Number(localStorage.getItem('ai_ui_session_claimed_at') || '0');
-          if (Date.now() - claimedAt < 5000) {
+          const priorityUntil = Number(localStorage.getItem('ai_ui_login_priority_until') || '0');
+          // If we are within the priority window (new login), do not logout; assert claim
+          if (priorityUntil && Date.now() < priorityUntil) {
+            claimServerSession(email, currentSid);
             return;
           }
-          // Another session took over; logout this one
+          // If server's update is older than our claim, do not logout; re-assert claim instead
+          if (updatedAt !== null && claimedAt && updatedAt < claimedAt + 10000) {
+            claimServerSession(email, currentSid);
+            return;
+          }
+          // Server has a newer owner; logout this one
           logout();
         }
       } catch {}
@@ -235,9 +258,9 @@ export function initSingleSessionEnforcement(): void {
       const em = getUserEmailFromStorage();
       const sid = localStorage.getItem('ai_ui_session_id');
       if (!em || !sid) return;
-      const serverSid = await fetchServerSessionId(em);
-      // Only reclaim if we already are the owner (or no owner). Do not steal from a newer session.
-      if (!serverSid || serverSid === sid) {
+      const { sessionId: serverSid } = await fetchServerSession(em);
+      // Only reclaim if we already are the owner. Do not steal if server is null or owned by another.
+      if (serverSid === sid) {
         claimServerSession(em, sid);
       }
     };
@@ -275,7 +298,15 @@ export function setAuthenticated(value: boolean): void {
   }
   
   if (value) {
+    const wasAuthed = localStorage.getItem('ai_ui_authenticated') === 'true';
     localStorage.setItem('ai_ui_authenticated', 'true');
+    // If we were previously unauthenticated, treat this as a new login
+    if (!wasAuthed) {
+      try {
+        localStorage.setItem('ai_ui_just_logged_in', 'true');
+        localStorage.setItem('ai_ui_login_priority_until', String(Date.now() + 15000));
+      } catch {}
+    }
     try { initSingleSessionEnforcement(); } catch {}
   } else {
     localStorage.removeItem('ai_ui_authenticated');
