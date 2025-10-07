@@ -92,6 +92,10 @@ export function checkExternalAuth(): boolean {
   
   // If auth is found, store it in our own format
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
+    // Mark that this session just performed an explicit login (used to prioritize claiming)
+    if (hasAuthCookie || hasAuthParam) {
+      try { localStorage.setItem('ai_ui_just_logged_in', 'true'); } catch {}
+    }
     // Store auth in local format
     localStorage.setItem('ai_ui_authenticated', 'true');
     // Notify listeners that auth state has been updated
@@ -187,8 +191,23 @@ export function initSingleSessionEnforcement(): void {
     const email = getUserEmailFromStorage();
     if (!email) return false;
     const localSid = ensureLocalSessionId();
-    // Claim ownership (this invalidates other sessions)
-    claimServerSession(email, localSid);
+    const justLoggedIn = localStorage.getItem('ai_ui_just_logged_in') === 'true';
+    if (justLoggedIn) {
+      // New login takes precedence: claim immediately and clear the flag
+      claimServerSession(email, localSid);
+      try { localStorage.removeItem('ai_ui_just_logged_in'); } catch {}
+    } else {
+      // Resumed session: do not steal from a newer session. Check server owner first.
+      // If someone else owns it, logout immediately; if no owner or same owner, claim to refresh lock.
+      (async () => {
+        const serverSid = await fetchServerSessionId(email);
+        if (serverSid && serverSid !== localSid) {
+          logout();
+          return;
+        }
+        claimServerSession(email, localSid);
+      })();
+    }
     // Start watcher
     if (singleSessionInterval) {
       window.clearInterval(singleSessionInterval);
