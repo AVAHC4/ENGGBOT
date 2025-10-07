@@ -127,6 +127,8 @@ export function checkExternalAuth(): boolean {
 
 // ================= Single-session enforcement =================
 let singleSessionInterval: number | null = null;
+let reclaimHandler: (() => void) | null = null;
+let visibilityHandler: (() => void) | null = null;
 
 function getUserEmailFromStorage(): string | null {
   try {
@@ -158,6 +160,8 @@ function ensureLocalSessionId(): string {
 
 async function claimServerSession(email: string, sessionId: string): Promise<void> {
   try {
+    // Record local claim time to ignore stale server reads briefly
+    try { localStorage.setItem('ai_ui_session_claimed_at', String(Date.now())); } catch {}
     await fetch('/api/user/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -196,6 +200,11 @@ export function initSingleSessionEnforcement(): void {
         if (!currentSid) return;
         const serverSid = await fetchServerSessionId(email);
         if (serverSid && serverSid !== currentSid) {
+          // Grace period after our own claim to avoid self-logout due to eventual consistency
+          const claimedAt = Number(localStorage.getItem('ai_ui_session_claimed_at') || '0');
+          if (Date.now() - claimedAt < 5000) {
+            return;
+          }
           // Another session took over; logout this one
           logout();
         }
@@ -203,13 +212,19 @@ export function initSingleSessionEnforcement(): void {
     }, 1000);
 
     // Re-claim lock on focus/visibility regain for instant precedence
-    const reclaim = () => {
+    reclaimHandler = async () => {
       const em = getUserEmailFromStorage();
       const sid = localStorage.getItem('ai_ui_session_id');
-      if (em && sid) claimServerSession(em, sid);
+      if (!em || !sid) return;
+      const serverSid = await fetchServerSessionId(em);
+      // Only reclaim if we already are the owner (or no owner). Do not steal from a newer session.
+      if (!serverSid || serverSid === sid) {
+        claimServerSession(em, sid);
+      }
     };
-    window.addEventListener('focus', reclaim);
-    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reclaim(); });
+    visibilityHandler = () => { if (document.visibilityState === 'visible' && reclaimHandler) reclaimHandler(); };
+    window.addEventListener('focus', reclaimHandler);
+    window.addEventListener('visibilitychange', visibilityHandler);
     return true;
   };
 
@@ -224,6 +239,14 @@ export function stopSingleSessionEnforcement(): void {
   if (singleSessionInterval) {
     window.clearInterval(singleSessionInterval);
     singleSessionInterval = null;
+  }
+  if (reclaimHandler) {
+    window.removeEventListener('focus', reclaimHandler);
+    reclaimHandler = null;
+  }
+  if (visibilityHandler) {
+    window.removeEventListener('visibilitychange', visibilityHandler);
+    visibilityHandler = null;
   }
 }
 
