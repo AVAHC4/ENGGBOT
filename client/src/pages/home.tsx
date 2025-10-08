@@ -11,14 +11,21 @@ export default function Home() {
   useEffect(() => {
     // Skip auto-redirect if we just logged out or explicitly forced the main page
     const urlParams = new URLSearchParams(window.location.search);
+    const forceMainParam = urlParams.has("force_main");
     const forcedMain = localStorage.getItem("forceMainPage") === "true";
     const forcedLogout = localStorage.getItem("forceLogout") === "true";
     const hasLogoutParams = urlParams.has("logout") || urlParams.has("force_logout");
 
-    if (forcedMain || forcedLogout || hasLogoutParams) {
+    if (forcedMain || forcedLogout || hasLogoutParams || forceMainParam) {
       // Clear the flags so future visits behave normally
       localStorage.removeItem("forceMainPage");
       localStorage.removeItem("forceLogout");
+      try { localStorage.removeItem("redirectToChat"); } catch {}
+      if (forceMainParam) {
+        urlParams.delete("force_main");
+        const newUrl = window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : "");
+        window.history.replaceState({}, "", newUrl);
+      }
       return;
     }
 

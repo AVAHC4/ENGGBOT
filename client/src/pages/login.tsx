@@ -159,7 +159,11 @@ export default function LoginPage() {
       {/* Home Button */}
       <div className="absolute top-6 left-6 z-20">
         <button
-          onClick={() => (window.location.href = mainLandingUrl)}
+          onClick={() => {
+            try { localStorage.setItem('forceMainPage', 'true'); } catch {}
+            const sep = mainLandingUrl.includes('?') ? '&' : '?';
+            window.location.href = `${mainLandingUrl}${sep}force_main=1`;
+          }}
           className="px-4 py-2 rounded-md bg-white dark:bg-zinc-800 text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800"
         >
           Home
@@ -181,7 +185,11 @@ export default function LoginPage() {
                 <button
                   aria-label="go home"
                   className="mx-auto block w-fit"
-                  onClick={() => (window.location.href = mainLandingUrl)}
+                  onClick={() => {
+                    try { localStorage.setItem('forceMainPage', 'true'); } catch {}
+                    const sep = mainLandingUrl.includes('?') ? '&' : '?';
+                    window.location.href = `${mainLandingUrl}${sep}force_main=1`;
+                  }}
                 >
                   <div className="flex items-center space-x-2">
                     <Logo />
