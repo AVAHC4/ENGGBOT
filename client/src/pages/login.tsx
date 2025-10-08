@@ -54,6 +54,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [fastAuth, setFastAuth] = React.useState(false);
+  // Central landing URL for cross-app navigation
+  const mainLandingUrl = (import.meta.env.VITE_MAIN_LANDING_URL as string) || "/";
   
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
@@ -155,11 +157,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-black">
       {/* Home Button */}
-      <Link href="/" className="absolute top-6 left-6 z-20">
-        <button className="px-4 py-2 rounded-md bg-white dark:bg-zinc-800 text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
+      <div className="absolute top-6 left-6 z-20">
+        <button
+          onClick={() => (window.location.href = mainLandingUrl)}
+          className="px-4 py-2 rounded-md bg-white dark:bg-zinc-800 text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800"
+        >
           Home
         </button>
-      </Link>
+      </div>
 
       {/* Theme Toggle Button */}
       <div className="absolute top-6 right-6 z-20">
@@ -173,12 +178,16 @@ export default function LoginPage() {
           >
             <div className="bg-card -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
-                <Link href="/" aria-label="go home" className="mx-auto block w-fit">
+                <button
+                  aria-label="go home"
+                  className="mx-auto block w-fit"
+                  onClick={() => (window.location.href = mainLandingUrl)}
+                >
                   <div className="flex items-center space-x-2">
                     <Logo />
                     <span className="text-2xl font-bold">ENGGBOT</span>
                   </div>
-                </Link>
+                </button>
                 <TextEffect
                   preset="fade-in-blur"
                   speedSegment={0.3}
