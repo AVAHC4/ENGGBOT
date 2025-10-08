@@ -66,7 +66,7 @@ function ProtectedChatDashboard() {
   React.useEffect(() => {
     // Only check API auth status if local auth check failed and API call completed
     if (!localAuth && !isLoading && (!authStatus?.authenticated || !authStatus?.user)) {
-      setLocation("/login");
+      setLocation("/");
     }
   }, [authStatus, isLoading, localAuth, setLocation]);
 

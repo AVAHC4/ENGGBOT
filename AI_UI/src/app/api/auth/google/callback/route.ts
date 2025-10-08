@@ -52,22 +52,22 @@ export async function GET(req: NextRequest) {
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
     if (error) {
-      return NextResponse.redirect(`${baseOrigin}/login?error=${encodeURIComponent(error)}`);
+      return NextResponse.redirect(`${baseOrigin}/?error=${encodeURIComponent(error)}`);
     }
     if (!code) {
-      return NextResponse.redirect(`${baseOrigin}/login?error=no_code`);
+      return NextResponse.redirect(`${baseOrigin}/?error=no_code`);
     }
 
     // Validate state to mitigate CSRF
     const stateCookie = cookies().get('oauth_state');
     if (!stateCookie || stateCookie.value !== stateFromQuery) {
-      return NextResponse.redirect(`${baseOrigin}/login?error=invalid_state`);
+      return NextResponse.redirect(`${baseOrigin}/?error=invalid_state`);
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
-      return NextResponse.redirect(`${baseOrigin}/login?error=server_config`);
+      return NextResponse.redirect(`${baseOrigin}/?error=server_config`);
     }
 
     const redirectUri = `${baseOrigin}/api/auth/google/callback`;
@@ -96,6 +96,6 @@ export async function GET(req: NextRequest) {
     const configuredEnv = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const origin = configuredEnv ? new URL(configuredEnv).origin : req.nextUrl.origin;
     const message = encodeURIComponent(err?.message || 'oauth_failed');
-    return NextResponse.redirect(`${origin}/login?error=${message}`);
+    return NextResponse.redirect(`${origin}/?error=${message}`);
   }
 }

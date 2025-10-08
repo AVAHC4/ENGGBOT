@@ -192,18 +192,18 @@ export const initGoogleAuth = (app: any) => {
           console.error("OAuth state mismatch - possible CSRF attack");
           console.error("Expected:", req.session.oauthState);
           console.error("Received:", req.query.state);
-          return res.redirect('/login?error=invalid_state');
+          return res.redirect('/?error=invalid_state');
         }
       }
       
       if (req.query.error) {
         console.error("Error in Google callback:", req.query.error);
-        return res.redirect('/login?error=auth_failed');
+        return res.redirect('/?error=auth_failed');
       }
       
       if (!req.query.code) {
         console.error("No authorization code received from Google");
-        return res.redirect('/login?error=no_code');
+        return res.redirect('/?error=no_code');
       }
       
       // Log critical values for debugging
@@ -245,12 +245,12 @@ export const initGoogleAuth = (app: any) => {
               </html>
             `);
           }
-          return res.redirect('/login?error=auth_error');
+          return res.redirect('/?error=auth_error');
         }
         
         if (!user) {
           console.error("No user returned from authentication");
-          return res.redirect('/login?error=no_user');
+          return res.redirect('/?error=no_user');
         }
         
         // Log successful authentication
@@ -260,7 +260,7 @@ export const initGoogleAuth = (app: any) => {
         req.login(user, (loginErr) => {
           if (loginErr) {
             console.error("Session login error:", loginErr);
-            return res.redirect('/login?error=session_error');
+            return res.redirect('/?error=session_error');
           }
           console.log("User logged in; proceeding to redirect");
           return next();

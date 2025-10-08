@@ -380,16 +380,16 @@ export function logout(): void {
   }
   
   // Compute the public landing base from env (preferred) or current origin
-  // NEXT_PUBLIC_MAIN_APP_URL is expected like: https://www.enggbot.me/login
+  // NEXT_PUBLIC_MAIN_APP_URL may be like: https://www.enggbot.me/ (path is ignored; we always send to site root)
   const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL || process.env.NEXT_PUBLIC_VITE_APP_URL;
   let baseOrigin = '';
-  let loginPath = '/login';
+  let redirectPath = '/';
   try {
     if (configured) {
       const u = new URL(configured);
       baseOrigin = u.origin;
-      // If the env points directly to /login, keep that path; otherwise default to /login
-      loginPath = u.pathname && u.pathname !== '/' ? u.pathname : '/login';
+      // Always route to the site root regardless of configured pathname
+      redirectPath = '/';
     } else {
       baseOrigin = window.location.origin;
       // For local dev convenience: if running on localhost:3000 and no env, prefer Vite at 5173
@@ -403,7 +403,7 @@ export function logout(): void {
   } catch {
     baseOrigin = window.location.origin;
   }
-  const mainAppUrl = `${baseOrigin}${loginPath}?logout=true&no_redirect=true&force_logout=true`;
+  const mainAppUrl = `${baseOrigin}${redirectPath}?logout=true&no_redirect=true&force_logout=true`;
   
   // Use a combination of methods for maximum browser compatibility
   // Navigate immediately; provide a minimal fallback
