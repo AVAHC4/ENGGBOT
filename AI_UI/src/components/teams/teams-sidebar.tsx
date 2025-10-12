@@ -187,9 +187,13 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>New Team</DropdownMenuItem>
-                  </DialogTrigger>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setShowNewTeamDialog(true)
+                    }}
+                  >
+                    New Team
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
                   <DropdownMenuItem>Settings</DropdownMenuItem>
                   <DropdownMenuItem>Archive</DropdownMenuItem>
