@@ -179,45 +179,47 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
             <Mail className="h-4 w-4" />
           </Button>
           <Dialog open={showNewTeamDialog} onOpenChange={handleNewTeamDialogOpenChange}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(event) => event.preventDefault()}>New Team</DropdownMenuItem>
-                </DialogTrigger>
-                <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Archive</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <form onSubmit={handleCreateTeamSubmit}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>New Team</DropdownMenuItem>
+                  </DialogTrigger>
+                  <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Archive</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Create a new team</DialogTitle>
-                <DialogDescription>Give your team a name. You can invite people after it&apos;s created.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateTeamSubmit} className="grid gap-4">
-                <div className="grid gap-3">
-                  <Label htmlFor="new-team-name">Team name</Label>
-                  <Input
-                    id="new-team-name"
-                    name="team-name"
-                    placeholder="Acme Design"
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                    autoFocus
-                    disabled={creatingTeam}
-                  />
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create a new team</DialogTitle>
+                  <DialogDescription>Give your team a name. You can invite people after it&apos;s created.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4">
+                  <div className="grid gap-3">
+                    <Label htmlFor="new-team-name">Team name</Label>
+                    <Input
+                      id="new-team-name"
+                      name="team-name"
+                      placeholder="Acme Design"
+                      value={newTeamName}
+                      onChange={(e) => setNewTeamName(e.target.value)}
+                      autoFocus
+                      disabled={creatingTeam}
+                    />
+                  </div>
+                  {createTeamError && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {createTeamError}
+                    </p>
+                  )}
                 </div>
-                {createTeamError && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {createTeamError}
-                  </p>
-                )}
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button variant="outline" type="button" disabled={creatingTeam}>
@@ -228,8 +230,8 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                     {creatingTeam ? "Creating…" : "Create team"}
                   </Button>
                 </DialogFooter>
-              </form>
-            </DialogContent>
+              </DialogContent>
+            </form>
           </Dialog>
         </div>
       </div>
