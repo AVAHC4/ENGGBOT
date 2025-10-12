@@ -38,16 +38,17 @@ export function checkExternalAuth(): boolean {
       if (decodedUserData.email) localStorage.setItem('user_email', decodedUserData.email);
       if (decodedUserData.avatar) localStorage.setItem('user_avatar', decodedUserData.avatar);
 
+      // Notify listeners that auth/user context has been updated
       try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
     } catch (e) {
       console.error("Failed to parse user data from URL:", e);
     }
   }
-
+  
   if (userName) localStorage.setItem('user_name', userName);
   if (userEmail) localStorage.setItem('user_email', userEmail);
   if (userAvatar) localStorage.setItem('user_avatar', userAvatar);
-
+  
   // Create a user_data object if we have the necessary components
   if (userName || userEmail || userAvatar) {
     const userData = {
@@ -57,37 +58,6 @@ export function checkExternalAuth(): boolean {
     };
     
     localStorage.setItem('user_data', JSON.stringify(userData));
-    try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
-  }
-
-  // Fallback: attempt to derive user_data from known keys used by the main app
-  if (!localStorage.getItem('user_data')) {
-    const possibleKeys = ['currentUser', 'user', 'user_info'];
-    for (const key of possibleKeys) {
-      try {
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        if (parsed) {
-          const email = parsed.email || parsed.user?.email || parsed.profile?.email || parsed.userEmail;
-          const name = parsed.name || parsed.user?.name || parsed.profile?.name || parsed.userName;
-          const avatar = parsed.avatar || parsed.avatar_url || parsed.picture || parsed.user?.avatar_url || parsed.profile?.avatar_url;
-          if (email || name || avatar) {
-            const userData = {
-              name: name || localStorage.getItem('user_name') || 'User',
-              email: email || localStorage.getItem('user_email') || 'user@example.com',
-              avatar: avatar || localStorage.getItem('user_avatar') || '',
-            };
-            localStorage.setItem('user_data', JSON.stringify(userData));
-            if (userData.name) localStorage.setItem('user_name', userData.name);
-            if (userData.email) localStorage.setItem('user_email', userData.email);
-            if (userData.avatar) localStorage.setItem('user_avatar', userData.avatar);
-            try { window.dispatchEvent(new CustomEvent('ai_ui_auth_updated')); } catch {}
-            break;
-          }
-        }
-      } catch {}
-    }
   }
   
   // If auth is found, store it in our own format
@@ -144,6 +114,10 @@ export function logout(): void {
   // Clear all auth-related localStorage items
   localStorage.removeItem('ai_ui_authenticated');
   localStorage.removeItem('authenticated');
+  localStorage.removeItem('user_data');
+  localStorage.removeItem('user_name');
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('user_avatar');
   localStorage.removeItem('redirectToChat');
   localStorage.removeItem('activeConversation');
   
@@ -161,7 +135,7 @@ export function logout(): void {
   localStorage.setItem('forceMainPage', 'true');
   localStorage.setItem('forceLogout', 'true');
   
-  // Avoid clearing conversation data or user identity to preserve per-user history across sessions
+  // Clear all conversation data too
   try {
     // Preserve conversation data across logouts so it loads after fresh login
     // Only clear transient auth flags beyond the explicit removals above

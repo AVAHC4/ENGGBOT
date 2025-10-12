@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
-import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList, migrateDefaultNamespaceToUser, migrateUserNamespaceEmailCase } from "@/lib/storage";
+import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
 
 export interface Attachment {
   id: string;
@@ -741,10 +741,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const onAuthUpdated = () => {
       if (isPrivateMode) return;
       try {
-        // Migrate any pre-auth conversations from the default namespace to the user namespace
-        try { migrateDefaultNamespaceToUser(); } catch {}
-        // Migrate any prior user-namespace that used non-normalized email
-        try { migrateUserNamespaceEmailCase(); } catch {}
         const userPrefix = getUserPrefix();
         const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
         if (storedId) {

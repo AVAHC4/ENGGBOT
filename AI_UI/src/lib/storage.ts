@@ -7,78 +7,6 @@ function isServer(): boolean {
   return typeof window === 'undefined';
 }
 
-// Migrate conversations from an old (case-variant) email-based prefix to the normalized prefix
-export function migrateUserNamespaceEmailCase(): boolean {
-  if (isServer()) return false;
-  try {
-    // Compute new normalized prefix
-    const newPrefix = getCurrentUserId();
-    if (newPrefix === 'default') return false;
-
-    // Derive a possible old (non-normalized) prefix from stored user email fields
-    const userDataRaw = localStorage.getItem('user_data');
-    let oldEmail: string | null = null;
-    if (userDataRaw) {
-      try {
-        const parsed = JSON.parse(userDataRaw);
-        if (parsed && parsed.email) oldEmail = String(parsed.email);
-      } catch {}
-    }
-    if (!oldEmail) {
-      const userEmail = localStorage.getItem('user_email');
-      if (userEmail) oldEmail = String(userEmail);
-    }
-    if (!oldEmail) return false;
-
-    const oldPrefix = btoa(encodeURIComponent(oldEmail)).replace(/[^a-z0-9]/gi, '_');
-    if (oldPrefix === newPrefix) return false;
-
-    const oldListRaw = localStorage.getItem(`${oldPrefix}-conversations`);
-    if (!oldListRaw) return false;
-
-    const oldList: string[] = JSON.parse(oldListRaw) || [];
-    const existingNewList = new Set<string>(
-      JSON.parse(localStorage.getItem(`${newPrefix}-conversations`) || '[]')
-    );
-
-    let changed = false;
-    for (const id of oldList) {
-      const oldConvKey = `${oldPrefix}-conversation-${id}`;
-      const oldMetaKey = `${oldPrefix}-conversation-meta-${id}`;
-      const newConvKey = `${newPrefix}-conversation-${id}`;
-      const newMetaKey = `${newPrefix}-conversation-meta-${id}`;
-
-      const payload = localStorage.getItem(oldConvKey);
-      if (payload && !localStorage.getItem(newConvKey)) {
-        localStorage.setItem(newConvKey, payload);
-        changed = true;
-      }
-
-      const meta = localStorage.getItem(oldMetaKey);
-      if (meta && !localStorage.getItem(newMetaKey)) {
-        localStorage.setItem(newMetaKey, meta);
-        changed = true;
-      }
-
-      if (payload || meta) existingNewList.add(id);
-    }
-
-    localStorage.setItem(`${newPrefix}-conversations`, JSON.stringify(Array.from(existingNewList)));
-
-    const oldActive = localStorage.getItem(`${oldPrefix}-activeConversation`);
-    const newActiveKey = `${newPrefix}-activeConversation`;
-    if (oldActive && !localStorage.getItem(newActiveKey)) {
-      localStorage.setItem(newActiveKey, oldActive);
-      changed = true;
-    }
-
-    return changed;
-  } catch (e) {
-    console.error('Error migrating case-variant user namespace:', e);
-    return false;
-  }
-}
-
 // Helper to get user email prefix consistently
 export function getUserPrefix(): string {
   if (isServer()) {
@@ -89,16 +17,14 @@ export function getUserPrefix(): string {
     // Get user email as the identifier, since it's unique per Google account
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
     if (userData && userData.email) {
-      // Normalize email to avoid namespace drift due to case/whitespace
-      const normalized = String(userData.email).trim().toLowerCase();
-      return btoa(encodeURIComponent(normalized)).replace(/[^a-z0-9]/gi, '_');
+      // Return a hash of the email to use as prefix, safely encode non-ASCII characters
+      return btoa(encodeURIComponent(userData.email)).replace(/[^a-z0-9]/gi, '_');
     }
     
     // Fallback to the email stored directly
     const email = localStorage.getItem('user_email');
     if (email) {
-      const normalized = String(email).trim().toLowerCase();
-      return btoa(encodeURIComponent(normalized)).replace(/[^a-z0-9]/gi, '_');
+      return btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_');
     }
     
     // If no user data available, use a default namespace
@@ -239,57 +165,4 @@ export function clearAllConversations() {
   localStorage.removeItem(`${userId}-conversations`);
   
   return [];
-}
-
-// Migrate any conversations stored under the 'default' namespace into the current user's namespace
-// Call this right after a user becomes authenticated and a non-default user prefix is available
-export function migrateDefaultNamespaceToUser(): boolean {
-  if (isServer()) return false;
-  const userId = getCurrentUserId();
-  if (userId === 'default') return false;
-
-  let changed = false;
-  try {
-    const defaultListRaw = localStorage.getItem(`default-conversations`);
-    const defaultList: string[] = defaultListRaw ? JSON.parse(defaultListRaw) : [];
-    const existingUserList = new Set<string>(getConversationList());
-
-    // Copy conversation payloads and metadata
-    for (const id of defaultList) {
-      const defaultConvKey = `default-conversation-${id}`;
-      const defaultMetaKey = `default-conversation-meta-${id}`;
-      const userConvKey = `${userId}-conversation-${id}`;
-      const userMetaKey = `${userId}-conversation-meta-${id}`;
-
-      const payload = localStorage.getItem(defaultConvKey);
-      if (payload && !localStorage.getItem(userConvKey)) {
-        localStorage.setItem(userConvKey, payload);
-        changed = true;
-      }
-
-      const meta = localStorage.getItem(defaultMetaKey);
-      if (meta && !localStorage.getItem(userMetaKey)) {
-        localStorage.setItem(userMetaKey, meta);
-        changed = true;
-      }
-
-      if (payload || meta) existingUserList.add(id);
-    }
-
-    // Merge and write the conversations list for the user
-    localStorage.setItem(`${userId}-conversations`, JSON.stringify(Array.from(existingUserList)));
-
-    // Copy active conversation pointer if the user doesn't have one
-    const defaultActive = localStorage.getItem(`default-activeConversation`);
-    const userActiveKey = `${userId}-activeConversation`;
-    if (defaultActive && !localStorage.getItem(userActiveKey)) {
-      localStorage.setItem(userActiveKey, defaultActive);
-      changed = true;
-    }
-
-    return changed;
-  } catch (e) {
-    console.error('Error migrating default conversations:', e);
-    return changed;
-  }
-}
+} 
