@@ -89,6 +89,11 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
   const handleCreateTeamSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!onCreateTeam) return
+    await submitNewTeam()
+  }
+
+  const submitNewTeam = async () => {
+    if (!onCreateTeam) return
     const trimmed = newTeamName.trim()
     if (!trimmed) {
       setCreateTeamError("Team name is required")
