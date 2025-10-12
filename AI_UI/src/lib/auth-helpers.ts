@@ -179,44 +179,27 @@ async function fetchServerSessionId(email: string): Promise<string | null> {
 
 export function initSingleSessionEnforcement(): void {
   if (typeof window === 'undefined') return;
-  const tryStart = () => {
-    const email = getUserEmailFromStorage();
-    if (!email) return false;
-    const localSid = ensureLocalSessionId();
-    // Claim ownership (this invalidates other sessions)
-    claimServerSession(email, localSid);
-    // Start watcher
-    if (singleSessionInterval) {
-      window.clearInterval(singleSessionInterval);
-      singleSessionInterval = null;
-    }
-    singleSessionInterval = window.setInterval(async () => {
-      try {
-        const currentSid = localStorage.getItem('ai_ui_session_id');
-        if (!currentSid) return;
-        const serverSid = await fetchServerSessionId(email);
-        if (serverSid && serverSid !== currentSid) {
-          // Another session took over; logout this one
-          logout();
-        }
-      } catch {}
-    }, 1000);
-
-    // Re-claim lock on focus/visibility regain for instant precedence
-    const reclaim = () => {
-      const em = getUserEmailFromStorage();
-      const sid = localStorage.getItem('ai_ui_session_id');
-      if (em && sid) claimServerSession(em, sid);
-    };
-    window.addEventListener('focus', reclaim);
-    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reclaim(); });
-    return true;
-  };
-
-  // If email isn't available yet, try again shortly
-  if (!tryStart()) {
-    setTimeout(() => { tryStart(); }, 500);
+  const email = getUserEmailFromStorage();
+  if (!email) return;
+  const localSid = ensureLocalSessionId();
+  // Claim ownership (this invalidates other sessions)
+  claimServerSession(email, localSid);
+  // Start watcher
+  if (singleSessionInterval) {
+    window.clearInterval(singleSessionInterval);
+    singleSessionInterval = null;
   }
+  singleSessionInterval = window.setInterval(async () => {
+    try {
+      const currentSid = localStorage.getItem('ai_ui_session_id');
+      if (!currentSid) return;
+      const serverSid = await fetchServerSessionId(email);
+      if (serverSid && serverSid !== currentSid) {
+        // Another session took over; logout this one
+        logout();
+      }
+    } catch {}
+  }, 5000);
 }
 
 export function stopSingleSessionEnforcement(): void {
