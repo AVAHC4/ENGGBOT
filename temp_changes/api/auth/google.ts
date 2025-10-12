@@ -184,7 +184,7 @@ export const initGoogleAuth = (app: any) => {
       
       if (!req.query.code) {
         console.error("No authorization code received from Google");
-        return res.redirect('/login?error=no_code');
+        eturn res.redirect('/login?error=no_code');
       }
       
       // Log critical values for debugging
