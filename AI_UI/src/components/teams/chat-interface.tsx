@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
@@ -308,35 +300,13 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 .slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-left cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors">
-                <h2 className="font-semibold text-foreground flex items-center gap-2">
-                  {team?.name}
-                  <span className="text-xs font-normal text-muted-foreground">▼</span>
-                </h2>
-                <p className="text-sm text-muted-foreground">{teamMembers} members</p>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="start">
-              <DropdownMenuLabel>{team?.name}</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
-                Team Info
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>
-                Add Members
-                <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>
-                Edit Team
-                <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Archive Team
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div
+            className="cursor-pointer hover:bg-muted/50 rounded-md p-2 -m-2 transition-colors"
+            onClick={() => setShowTeamManagement(true)}
+          >
+            <h2 className="font-semibold text-foreground">{team?.name}</h2>
+            <p className="text-sm text-muted-foreground">{teamMembers} members</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
