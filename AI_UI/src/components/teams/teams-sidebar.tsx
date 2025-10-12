@@ -107,6 +107,21 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
     }
   }
 
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete || !onDeleteTeam) return
+    setIsDeleting(true)
+    setDeleteError(null)
+    try {
+      await onDeleteTeam(pendingDelete.teamId)
+      setPendingDelete(null)
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : "Failed to delete team"
+      setDeleteError(message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const refreshInvites = async () => {
     try {
       setLoadingInvites(true)
@@ -243,6 +258,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                 className={`w-full flex items-center gap-3 pl-0 pr-3 py-3 text-left transition-colors ${
                   selectedTeamId === team.id ? "bg-muted" : "hover:bg-muted/50"
                 }`}
+                onClick={() => onTeamSelect(team.id)}
               >
                 {/* Avatar */}
                 <div className="relative">
@@ -316,6 +332,17 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Settings</DropdownMenuItem>
               <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Archive</DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={(event) => {
+                  event.preventDefault()
+                  setDeleteError(null)
+                  setPendingDelete({ teamId: team.id, teamName: team.name })
+                }}
+              >
+                Delete team
+                <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ))}
@@ -355,6 +382,42 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
               </div>
             ))}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDelete(null)
+            setDeleteError(null)
+            setIsDeleting(false)
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete team</DialogTitle>
+            <DialogDescription>
+              This will permanently remove <span className="font-semibold">{pendingDelete?.teamName}</span> and all of its
+              data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <p className="text-sm text-destructive" role="alert">
+              {deleteError}
+            </p>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isDeleting}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="button" variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting || !onDeleteTeam}>
+              {isDeleting ? "Deleting…" : "Delete team"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
