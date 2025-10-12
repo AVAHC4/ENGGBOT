@@ -20,16 +20,9 @@ export default function Home() {
     setIsAuthenticated(authenticated);
     setIsLoading(false);
     
-    // If not authenticated, redirect to the main app's site root
+    // If not authenticated, redirect to the main app's login page
     if (!authenticated) {
-      const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
-      try {
-        const u = configured ? new URL(configured) : null;
-        const target = (u ? u.origin : 'http://localhost:3000') + '/';
-        window.location.href = target;
-      } catch {
-        window.location.href = 'http://localhost:3000/';
-      }
+      window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
     }
   }, []);
 

@@ -42,8 +42,8 @@ export default function ChatDashboard() {
         
         if (!response.ok) {
           if (response.status === 401) {
-            console.log("User not authenticated, redirecting to root");
-            setLocation("/");
+            console.log("User not authenticated, redirecting to login");
+            setLocation("/login");
             return null;
           }
           console.error("Failed to fetch user data:", response.status, response.statusText);
@@ -115,8 +115,8 @@ export default function ChatDashboard() {
   // Handle authentication check
   useEffect(() => {
     if (!isLoading && (!user || error)) {
-      console.log("Not authenticated in ChatDashboard, redirecting to root");
-      setLocation("/");
+      console.log("Not authenticated in ChatDashboard, redirecting to login");
+      setLocation("/login");
     }
   }, [user, isLoading, error, setLocation]);
 

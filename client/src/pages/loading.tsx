@@ -17,12 +17,12 @@ export default function LoadingPage() {
           // If authenticated, redirect to chat page instead of welcome page
           setLocation("/chat");
         } else {
-          // If not authenticated, redirect to site root
-          setLocation("/?error=auth_failed");
+          // If not authenticated, redirect to login page
+          setLocation("/login?error=auth_failed");
         }
       } catch (error) {
         console.error("Error checking authentication:", error);
-        setLocation("/?error=server_error");
+        setLocation("/login?error=server_error");
       }
     };
     
