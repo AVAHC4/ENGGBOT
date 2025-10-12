@@ -35,6 +35,11 @@ import { Label } from "@/components/ui/label"
 import { getCurrentUser } from "@/lib/user"
 import { acceptInvite, declineInvite, listInvites, type Invite } from "@/lib/teams-api"
 
+type PendingDeleteState = {
+  teamId: string
+  teamName: string
+} | null
+
 interface Team {
   id: string
   name: string
@@ -49,10 +54,11 @@ interface TeamsSidebarProps {
   selectedTeamId: string | null
   onTeamSelect: (teamId: string) => void
   onCreateTeam?: (name: string) => Promise<void>
+  onDeleteTeam?: (teamId: string) => Promise<void>
   teams: Team[]
 }
 
-export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams }: TeamsSidebarProps) {
+export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDeleteTeam, teams }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [showInvites, setShowInvites] = useState(false)
@@ -62,6 +68,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
   const [newTeamName, setNewTeamName] = useState("")
   const [creatingTeam, setCreatingTeam] = useState(false)
   const [createTeamError, setCreateTeamError] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<PendingDeleteState>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 

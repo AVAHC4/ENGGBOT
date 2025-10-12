@@ -99,3 +99,10 @@ export async function listTeamMembers(teamId: string): Promise<TeamMember[]> {
   const json = await res.json()
   return (json.members || []) as TeamMember[]
 }
+
+export async function deleteTeam(teamId: string): Promise<void> {
+  const res = await fetch(`/api/teams/${teamId}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}

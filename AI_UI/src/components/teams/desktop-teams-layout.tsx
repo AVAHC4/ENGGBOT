@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
 import { getCurrentUser } from "@/lib/user"
-import { listTeams as apiListTeams, createTeam as apiCreateTeam } from "@/lib/teams-api"
+import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam } from "@/lib/teams-api"
 
 interface Team {
   id: string
@@ -86,6 +86,25 @@ export function DesktopTeamsLayout() {
     }
   }
 
+  const handleDeleteTeam = async (teamId: string) => {
+    try {
+      await apiDeleteTeam(teamId)
+      setTeams((prev) => {
+        const updated = prev.filter((team) => team.id !== teamId)
+        setSelectedTeamId((current) => {
+          if (current === teamId) {
+            return updated.length > 0 ? updated[0].id : null
+          }
+          return current
+        })
+        return updated
+      })
+    } catch (e) {
+      console.error("Failed to delete team:", e)
+      throw e
+    }
+  }
+
   return (
     <div className="flex h-screen bg-transparent">
       {/* Teams Sidebar */}
@@ -94,6 +113,7 @@ export function DesktopTeamsLayout() {
           selectedTeamId={selectedTeamId}
           onTeamSelect={handleTeamSelect}
           onCreateTeam={handleCreateTeam}
+          onDeleteTeam={handleDeleteTeam}
           teams={teams}
         />
       </div>
