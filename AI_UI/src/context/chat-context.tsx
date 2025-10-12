@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
-import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList, migrateDefaultNamespaceToUser, migrateUserNamespaceEmailCase, saveConversationMetadata } from "@/lib/storage";
+import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList, migrateDefaultNamespaceToUser, migrateUserNamespaceEmailCase } from "@/lib/storage";
 
 export interface Attachment {
   id: string;
@@ -74,56 +74,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
-  const syncTimerRef = useRef<number | null>(null);
-
-  // Helper: get current user email from storage
-  const getUserEmail = useCallback((): string | null => {
-    try {
-      const userDataRaw = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null;
-      if (userDataRaw) {
-        const parsed = JSON.parse(userDataRaw);
-        if (parsed && parsed.email) return String(parsed.email).trim().toLowerCase();
-      }
-      const email = typeof window !== 'undefined' ? localStorage.getItem('user_email') : null;
-      return email ? String(email).trim().toLowerCase() : null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  // Cloud sync: push a conversation to server storage (Supabase via our API)
-  const syncConversationToServer = useCallback(async (activeId: string, msgs: ExtendedChatMessage[]) => {
-    if (isPrivateMode) return;
-    const email = getUserEmail();
-    if (!email) return;
-    try {
-      await fetch('/api/user/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          id: activeId,
-          messages: msgs,
-          metadata: undefined,
-          activeConversation: activeId,
-        })
-      });
-    } catch (e) {
-      console.error('Remote sync failed:', e);
-    }
-  }, [getUserEmail, isPrivateMode]);
-
-  // Debounce sync to avoid excessive requests during streaming
-  const scheduleSyncToServer = useCallback((activeId: string, msgs: ExtendedChatMessage[]) => {
-    if (typeof window === 'undefined') return;
-    if (syncTimerRef.current) {
-      window.clearTimeout(syncTimerRef.current);
-      syncTimerRef.current = null;
-    }
-    syncTimerRef.current = window.setTimeout(() => {
-      syncConversationToServer(activeId, msgs);
-    }, 900);
-  }, [syncConversationToServer]);
 
   // Set isMounted flag on client-side
   useEffect(() => {
@@ -179,10 +129,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isMounted && messages.length > 0 && !isPrivateMode) {
       saveConversation(conversationId, messages);
-      // Also schedule cloud sync
-      scheduleSyncToServer(conversationId, messages);
     }
-  }, [messages, conversationId, isMounted, isPrivateMode, scheduleSyncToServer]);
+  }, [messages, conversationId, isMounted, isPrivateMode]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
@@ -797,78 +745,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         try { migrateDefaultNamespaceToUser(); } catch {}
         // Migrate any prior user-namespace that used non-normalized email
         try { migrateUserNamespaceEmailCase(); } catch {}
-        // Load remote conversations for this user and merge locally
-        const email = getUserEmail();
-        if (email) {
-          fetch(`/api/user/conversations?email=${encodeURIComponent(email)}`)
-            .then(res => res.ok ? res.json() : null)
-            .then((data) => {
-              if (!data || !data.conversations) return;
-              const userPrefix = getUserPrefix();
-              // Upsert all remote conversations into local storage
-              Object.entries(data.conversations as Record<string, any>).forEach(([id, payload]) => {
-                const msgs = Array.isArray(payload?.messages) ? payload.messages : [];
-                saveConversation(id, msgs);
-                if (payload?.metadata) {
-                  try { saveConversationMetadata(id, payload.metadata); } catch {}
-                }
-              });
-
-              // Set active conversation from remote if present
-              const remoteActive = data.activeConversation;
-              if (remoteActive) {
-                localStorage.setItem(`${userPrefix}-activeConversation`, remoteActive);
-                setConversationId(remoteActive);
-                const loaded = loadConversation(remoteActive);
-                if (loaded) setMessages(loaded);
-                return;
-              }
-
-              // If remote is empty, seed it from local storage
-              const localList = getConversationList();
-              if ((!data.conversations || Object.keys(data.conversations).length === 0) && localList && localList.length > 0) {
-                const localActive = localStorage.getItem(`${userPrefix}-activeConversation`);
-                // Push each local conversation to remote
-                localList.forEach((id: string) => {
-                  const msgs = loadConversation(id) || [];
-                  if (!Array.isArray(msgs)) return;
-                  fetch('/api/user/conversations', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email,
-                      id,
-                      messages: msgs,
-                      metadata: undefined,
-                      activeConversation: localActive && id === localActive ? localActive : undefined,
-                    })
-                  }).catch(() => {});
-                });
-
-                // Reflect the local active selection in UI
-                if (localActive) {
-                  setConversationId(localActive);
-                  const loaded = loadConversation(localActive);
-                  if (loaded) setMessages(loaded);
-                  return;
-                }
-                setConversationId(localList[0]);
-                const loaded = loadConversation(localList[0]);
-                if (loaded) setMessages(loaded);
-                return;
-              }
-
-              // Otherwise, if we imported conversations, pick the first
-              const list = getConversationList();
-              if (list && list.length > 0) {
-                localStorage.setItem(`${userPrefix}-activeConversation`, list[0]);
-                setConversationId(list[0]);
-                const loaded = loadConversation(list[0]);
-                if (loaded) setMessages(loaded);
-              }
-            })
-            .catch(() => {});
-        }
         const userPrefix = getUserPrefix();
         const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
         if (storedId) {
