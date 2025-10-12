@@ -179,7 +179,6 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
             <Mail className="h-4 w-4" />
           </Button>
           <Dialog open={showNewTeamDialog} onOpenChange={handleNewTeamDialogOpenChange}>
-            <form onSubmit={handleCreateTeamSubmit}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -201,41 +200,42 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
               </DropdownMenu>
 
               <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Create a new team</DialogTitle>
-                  <DialogDescription>Give your team a name. You can invite people after it&apos;s created.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4">
-                  <div className="grid gap-3">
-                    <Label htmlFor="new-team-name">Team name</Label>
-                    <Input
-                      id="new-team-name"
-                      name="team-name"
-                      placeholder="Acme Design"
-                      value={newTeamName}
-                      onChange={(e) => setNewTeamName(e.target.value)}
-                      autoFocus
-                      disabled={creatingTeam}
-                    />
+                <form onSubmit={handleCreateTeamSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Create a new team</DialogTitle>
+                    <DialogDescription>Give your team a name. You can invite people after it&apos;s created.</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4">
+                    <div className="grid gap-3">
+                      <Label htmlFor="new-team-name">Team name</Label>
+                      <Input
+                        id="new-team-name"
+                        name="team-name"
+                        placeholder="Acme Design"
+                        value={newTeamName}
+                        onChange={(e) => setNewTeamName(e.target.value)}
+                        autoFocus
+                        disabled={creatingTeam}
+                      />
+                    </div>
+                    {createTeamError && (
+                      <p className="text-sm text-destructive" role="alert">
+                        {createTeamError}
+                      </p>
+                    )}
                   </div>
-                  {createTeamError && (
-                    <p className="text-sm text-destructive" role="alert">
-                      {createTeamError}
-                    </p>
-                  )}
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button" disabled={creatingTeam}>
-                      Cancel
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline" type="button" disabled={creatingTeam}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={creatingTeam}>
+                      {creatingTeam ? "Creating…" : "Create team"}
                     </Button>
-                  </DialogClose>
-                  <Button type="submit" disabled={creatingTeam}>
-                    {creatingTeam ? "Creating…" : "Create team"}
-                  </Button>
-                </DialogFooter>
+                  </DialogFooter>
+                </form>
               </DialogContent>
-            </form>
           </Dialog>
         </div>
       </div>
