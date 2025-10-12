@@ -92,10 +92,6 @@ export function checkExternalAuth(): boolean {
   
   // If auth is found, store it in our own format
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
-    // Mark that this session just performed an explicit login (used to prioritize claiming)
-    if (hasAuthCookie || hasAuthParam) {
-      try { localStorage.setItem('ai_ui_just_logged_in', 'true'); } catch {}
-    }
     // Store auth in local format
     localStorage.setItem('ai_ui_authenticated', 'true');
     // Notify listeners that auth state has been updated
@@ -131,8 +127,6 @@ export function checkExternalAuth(): boolean {
 
 // ================= Single-session enforcement =================
 let singleSessionInterval: number | null = null;
-let reclaimHandler: (() => void) | null = null;
-let visibilityHandler: (() => void) | null = null;
 
 function getUserEmailFromStorage(): string | null {
   try {
@@ -164,8 +158,6 @@ function ensureLocalSessionId(): string {
 
 async function claimServerSession(email: string, sessionId: string): Promise<void> {
   try {
-    // Record local claim time to ignore stale server reads briefly
-    try { localStorage.setItem('ai_ui_session_claimed_at', String(Date.now())); } catch {}
     await fetch('/api/user/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -191,23 +183,8 @@ export function initSingleSessionEnforcement(): void {
     const email = getUserEmailFromStorage();
     if (!email) return false;
     const localSid = ensureLocalSessionId();
-    const justLoggedIn = localStorage.getItem('ai_ui_just_logged_in') === 'true';
-    if (justLoggedIn) {
-      // New login takes precedence: claim immediately and clear the flag
-      claimServerSession(email, localSid);
-      try { localStorage.removeItem('ai_ui_just_logged_in'); } catch {}
-    } else {
-      // Resumed session: do not steal from a newer session. Check server owner first.
-      // If someone else owns it, logout immediately; if no owner or same owner, claim to refresh lock.
-      (async () => {
-        const serverSid = await fetchServerSessionId(email);
-        if (serverSid && serverSid !== localSid) {
-          logout();
-          return;
-        }
-        claimServerSession(email, localSid);
-      })();
-    }
+    // Claim ownership (this invalidates other sessions)
+    claimServerSession(email, localSid);
     // Start watcher
     if (singleSessionInterval) {
       window.clearInterval(singleSessionInterval);
@@ -219,11 +196,6 @@ export function initSingleSessionEnforcement(): void {
         if (!currentSid) return;
         const serverSid = await fetchServerSessionId(email);
         if (serverSid && serverSid !== currentSid) {
-          // Grace period after our own claim to avoid self-logout due to eventual consistency
-          const claimedAt = Number(localStorage.getItem('ai_ui_session_claimed_at') || '0');
-          if (Date.now() - claimedAt < 5000) {
-            return;
-          }
           // Another session took over; logout this one
           logout();
         }
@@ -231,19 +203,13 @@ export function initSingleSessionEnforcement(): void {
     }, 1000);
 
     // Re-claim lock on focus/visibility regain for instant precedence
-    reclaimHandler = async () => {
+    const reclaim = () => {
       const em = getUserEmailFromStorage();
       const sid = localStorage.getItem('ai_ui_session_id');
-      if (!em || !sid) return;
-      const serverSid = await fetchServerSessionId(em);
-      // Only reclaim if we already are the owner (or no owner). Do not steal from a newer session.
-      if (!serverSid || serverSid === sid) {
-        claimServerSession(em, sid);
-      }
+      if (em && sid) claimServerSession(em, sid);
     };
-    visibilityHandler = () => { if (document.visibilityState === 'visible' && reclaimHandler) reclaimHandler(); };
-    window.addEventListener('focus', reclaimHandler);
-    window.addEventListener('visibilitychange', visibilityHandler);
+    window.addEventListener('focus', reclaim);
+    window.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reclaim(); });
     return true;
   };
 
@@ -258,14 +224,6 @@ export function stopSingleSessionEnforcement(): void {
   if (singleSessionInterval) {
     window.clearInterval(singleSessionInterval);
     singleSessionInterval = null;
-  }
-  if (reclaimHandler) {
-    window.removeEventListener('focus', reclaimHandler);
-    reclaimHandler = null;
-  }
-  if (visibilityHandler) {
-    window.removeEventListener('visibilitychange', visibilityHandler);
-    visibilityHandler = null;
   }
 }
 
