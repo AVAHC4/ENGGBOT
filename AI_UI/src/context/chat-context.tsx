@@ -90,19 +90,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
       if (storedId) {
         setConversationId(storedId);
-      } else {
-        // If no active id stored, attempt to use the most recent existing conversation for this user
-        const list = getConversationList();
-        if (list && list.length > 0) {
-          setConversationId(list[0]);
-          localStorage.setItem(`${userPrefix}-activeConversation`, list[0]);
-        } else {
-          // Create and persist a fresh conversation for this user
-          const newId = crypto.randomUUID();
-          setConversationId(newId);
-          localStorage.setItem(`${userPrefix}-activeConversation`, newId);
-          saveConversation(newId, []);
-        }
       }
     }
   }, [isMounted]);
@@ -734,31 +721,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Nothing to clean up with the fetch-based approach
     };
   }, []);
-
-  // Re-evaluate active conversation when auth/user context becomes available post-mount
-  useEffect(() => {
-    if (!isMounted) return;
-    const onAuthUpdated = () => {
-      if (isPrivateMode) return;
-      try {
-        const userPrefix = getUserPrefix();
-        const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
-        if (storedId) {
-          setConversationId(storedId);
-          return;
-        }
-        const list = getConversationList();
-        if (list && list.length > 0) {
-          setConversationId(list[0]);
-          localStorage.setItem(`${userPrefix}-activeConversation`, list[0]);
-        }
-      } catch (e) {
-        console.error('Error updating conversation after auth:', e);
-      }
-    };
-    window.addEventListener('ai_ui_auth_updated', onAuthUpdated);
-    return () => window.removeEventListener('ai_ui_auth_updated', onAuthUpdated);
-  }, [isMounted, isPrivateMode]);
 
   // Return context value
   const value = {
