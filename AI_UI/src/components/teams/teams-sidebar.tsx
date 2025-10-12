@@ -7,19 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, MoreVertical, Mail } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { getCurrentUser } from "@/lib/user"
 import { acceptInvite, declineInvite, listInvites, type Invite } from "@/lib/teams-api"
 
@@ -36,7 +35,7 @@ interface Team {
 interface TeamsSidebarProps {
   selectedTeamId: string | null
   onTeamSelect: (teamId: string) => void
-  onCreateTeam?: () => void
+  onCreateTeam?: (name: string) => Promise<void>
   teams: Team[]
 }
 
@@ -46,8 +45,45 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
   const [showInvites, setShowInvites] = useState(false)
   const [invites, setInvites] = useState<Invite[]>([])
   const [loadingInvites, setLoadingInvites] = useState(false)
+  const [showNewTeamDialog, setShowNewTeamDialog] = useState(false)
+  const [newTeamName, setNewTeamName] = useState("")
+  const [creatingTeam, setCreatingTeam] = useState(false)
+  const [createTeamError, setCreateTeamError] = useState<string | null>(null)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const resetNewTeamDialog = () => {
+    setCreateTeamError(null)
+    setNewTeamName("")
+  }
+
+  const handleNewTeamDialogOpenChange = (open: boolean) => {
+    setShowNewTeamDialog(open)
+    if (!open) {
+      resetNewTeamDialog()
+    }
+  }
+
+  const handleCreateTeamSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!onCreateTeam) return
+    const trimmed = newTeamName.trim()
+    if (!trimmed) {
+      setCreateTeamError("Team name is required")
+      return
+    }
+    setCreateTeamError(null)
+    setCreatingTeam(true)
+    try {
+      await onCreateTeam(trimmed)
+      setShowNewTeamDialog(false)
+    } catch (err) {
+      const message = err instanceof Error && err.message ? err.message : "Failed to create team"
+      setCreateTeamError(message)
+    } finally {
+      setCreatingTeam(false)
+    }
+  }
 
   const refreshInvites = async () => {
     try {
@@ -105,35 +141,61 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, teams
           <Button variant="ghost" size="icon" aria-label="View invitations" onClick={() => { setShowInvites(true); refreshInvites(); }}>
             <Mail className="h-4 w-4" />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>New Team</DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will create a new team. You can rename it and add people afterwards.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onCreateTeam && onCreateTeam()}>Continue</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Archive</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Dialog open={showNewTeamDialog} onOpenChange={handleNewTeamDialogOpenChange}>
+            <form onSubmit={handleCreateTeamSubmit}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>New Team</DropdownMenuItem>
+                  </DialogTrigger>
+                  <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Archive</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Create a new team</DialogTitle>
+                  <DialogDescription>Give your team a name. You can invite people after it&apos;s created.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4">
+                  <div className="grid gap-3">
+                    <Label htmlFor="new-team-name">Team name</Label>
+                    <Input
+                      id="new-team-name"
+                      name="team-name"
+                      placeholder="Acme Design"
+                      value={newTeamName}
+                      onChange={(e) => setNewTeamName(e.target.value)}
+                      autoFocus
+                      disabled={creatingTeam}
+                    />
+                  </div>
+                  {createTeamError && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {createTeamError}
+                    </p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline" type="button" disabled={creatingTeam}>
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={creatingTeam}>
+                    {creatingTeam ? "Creating…" : "Create team"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </form>
+          </Dialog>
         </div>
       </div>
 

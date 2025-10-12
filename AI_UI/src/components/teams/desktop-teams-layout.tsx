@@ -5,10 +5,6 @@ import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
 import { getCurrentUser } from "@/lib/user"
 import { listTeams as apiListTeams, createTeam as apiCreateTeam } from "@/lib/teams-api"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 interface Team {
   id: string
@@ -26,10 +22,6 @@ interface Team {
 export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [newTeamName, setNewTeamName] = useState("")
-  const [creatingTeam, setCreatingTeam] = useState(false)
-  const [createError, setCreateError] = useState<string | null>(null)
 
   const loadTeams = useCallback(() => {
     const user = getCurrentUser()
@@ -74,35 +66,12 @@ export function DesktopTeamsLayout() {
     setTeams((prevTeams) => prevTeams.map((team) => (team.id === teamId ? { ...team, avatar: newAvatar } : team)))
   }
 
-  const handleCreateTeam = () => {
-    setNewTeamName("")
-    setCreateError(null)
-    setShowCreateDialog(true)
-  }
-
-  const handleCreateDialogClose = (open: boolean) => {
-    if (!open) {
-      setShowCreateDialog(false)
-      setNewTeamName("")
-      setCreateError(null)
-      setCreatingTeam(false)
-    } else {
-      setShowCreateDialog(true)
-    }
-  }
-
-  const handleCreateDialogSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const name = newTeamName.trim()
-    if (!name) {
-      setCreateError("Team name is required")
-      return
-    }
+  const handleCreateTeam = async (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) throw new Error("Team name is required")
     try {
-      setCreatingTeam(true)
-      setCreateError(null)
       const user = getCurrentUser()
-      const created = await apiCreateTeam(name, user.email, user.name)
+      const created = await apiCreateTeam(trimmed, user.email, user.name)
       const uiTeam: Team = {
         id: created.id,
         name: created.name,
@@ -111,13 +80,9 @@ export function DesktopTeamsLayout() {
       }
       setTeams((prev) => [uiTeam, ...prev])
       setSelectedTeamId(created.id)
-      setShowCreateDialog(false)
-      setNewTeamName("")
     } catch (e) {
       console.error("Failed to create team:", e)
-      setCreateError("Failed to create team. Please try again.")
-    } finally {
-      setCreatingTeam(false)
+      throw e
     }
   }
 
@@ -142,44 +107,6 @@ export function DesktopTeamsLayout() {
           onTeamAvatarUpdate={updateTeamAvatar}
         />
       </div>
-
-      <Dialog open={showCreateDialog} onOpenChange={handleCreateDialogClose}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleCreateDialogSubmit} className="space-y-6">
-            <DialogHeader>
-              <DialogTitle>Create a new team</DialogTitle>
-              <DialogDescription>
-                Give your team a name. You can customize details and invite members after creating it.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <Label htmlFor="team-name">Team name</Label>
-              <Input
-                id="team-name"
-                name="team-name"
-                autoFocus
-                value={newTeamName}
-                onChange={(e) => {
-                  setNewTeamName(e.target.value)
-                  if (createError) setCreateError(null)
-                }}
-                placeholder="Enter team name"
-              />
-              {createError && <p className="text-sm text-destructive">{createError}</p>}
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={creatingTeam}>
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={creatingTeam || !newTeamName.trim()}>
-                {creatingTeam ? "Creating..." : "Create Team"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
