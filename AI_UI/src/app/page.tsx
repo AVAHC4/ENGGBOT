@@ -20,7 +20,7 @@ export default function Home() {
     setIsAuthenticated(authenticated);
     setIsLoading(false);
     
-    // If not authenticated, redirect to the main app's login page.
+    // If not authenticated, redirect to the main app's login page
     if (!authenticated) {
       window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
     }
