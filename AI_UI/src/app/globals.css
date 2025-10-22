@@ -163,7 +163,7 @@
     overflow: hidden;
   }
   
-  /* Add cursor pointer to all interactive elements */
+
   button,
   a,
   [role="button"],
@@ -182,8 +182,6 @@
   [data-interactive] {
     cursor: pointer;
   }
-  
-  /* Make form controls show the right cursor */
   input[type="text"],
   input[type="email"],
   input[type="tel"],
