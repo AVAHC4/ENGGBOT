@@ -15,9 +15,10 @@ import {
 
 export function CalendarDemo() {
   const [date, setDate] = React.useState<Date | undefined>(new Date())
+  const [open, setOpen] = React.useState(false)
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -34,7 +35,10 @@ export function CalendarDemo() {
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          onSelect={(newDate) => {
+            setDate(newDate)
+            setOpen(false)
+          }}
           className="rounded-md border shadow-sm"
           captionLayout="dropdown"
           initialFocus
