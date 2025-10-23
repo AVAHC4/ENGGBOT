@@ -121,7 +121,7 @@ export function AccountForm() {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-[280px] pl-3 text-left font-normal",
+                        "w-[240px] pl-3 text-left font-normal",
                         !field.value && "text-muted-foreground"
                       )}
                     >
@@ -134,7 +134,7 @@ export function AccountForm() {
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700" align="start">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={field.value}
