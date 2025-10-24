@@ -23,11 +23,12 @@ const PopoverContent = React.forwardRef<
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        "z-[9999] max-h-[var(--radix-popover-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-lg shadow-black/5 outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-[9999] min-w-[8rem] rounded-lg border-4 border-red-500 bg-zinc-800 p-4 text-white shadow-[0_0_50px_rgba(255,0,0,0.5)] outline-none [&[data-state=open]]:block",
         className,
       )}
       {...props}
     >
+      <div className="bg-red-500 p-2 text-white font-bold mb-2">POPOVER IS HERE!</div>
       {props.children}
       {showArrow && (
         <PopoverPrimitive.Arrow className="-my-px fill-popover drop-shadow-[0_1px_0_hsl(var(--border))]" />
