@@ -17,7 +17,7 @@ export default function Home() {
   useEffect(() => {
     // Check for authentication from the main app
     const authenticated = checkExternalAuth();
-    setIsAuthenticate(authenticated);
+    setIsAuthenticated(authenticated);
     setIsLoading(false);
 
     if (!authenticated) {
