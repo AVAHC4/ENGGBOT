@@ -10,23 +10,21 @@ import { useRouter } from "next/navigation";
 
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, seIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     // Check for authentication from the main app
     const authenticated = checkExternalAuth();
-    setIsAuthenticated(authenticated);
+    setIsAuthenticate(authenticated);
     setIsLoading(false);
-    
-    // If not authenticated, redirect to the main app's login page
+
     if (!authenticated) {
       window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
     }
   }, []);
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
