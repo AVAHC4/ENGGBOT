@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 
 
 export default function Home() {
-  const [isAuthenticated, seIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
