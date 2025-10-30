@@ -9,7 +9,7 @@ ENGGBOT is a modern web application featuring an animated landing page connected
 - **Main Application**
   - Built with Next.js 14 and TypeScript
   - Uses Vite as the build tool
-  - Styling with Tailwind CSS
+  - Styling with Tailwind 
   - Animations using Framer Motion
   - Component-based architecture
   
