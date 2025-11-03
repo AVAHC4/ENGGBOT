@@ -4,7 +4,7 @@ import { configDefaults, defineConfig } from "vitest/config"
 export default defineConfig({
   test: {
     exclude: [
-      ...configDefaults.xclude,
+      ...configDefaults.exclude,
       "**/node_modules/**",
       "**/fixtures/**",
       "**/templates/**",
