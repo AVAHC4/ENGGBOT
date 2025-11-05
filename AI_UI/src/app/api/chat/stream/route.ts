@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS, ChutesClient } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
-import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 
 // Simple stream processor to transform OpenRouter stream into an event stream
 function processChutesStream(
@@ -134,10 +133,15 @@ export async function POST(request: Request) {
       });
     }
 
-    // Ensure the client is initialized before use
-    if (!isClientInitialized()) {
-      await initializeAIClient();
+    // Instantiate server-side client with secure API key
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Server misconfiguration: OPENROUTER_API_KEY is not set' },
+        { status: 500 }
+      );
     }
+    const chutesClient = new ChutesClient({ apiKey });
     
     // Always use DeepSeek V3.1 (free) model
     const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
