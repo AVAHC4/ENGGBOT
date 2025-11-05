@@ -3,9 +3,15 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
 
-// Configure Google Strategy - always register the strategy
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
+// Configure Google Strategy - require env vars (no hardcoded fallbacks)
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  throw new Error(
+    "Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your environment."
+  );
+}
 
 // Update the way we handle the callback and include the BASE_URL
 const BASE_URL = process.env.NODE_ENV === 'production' 
