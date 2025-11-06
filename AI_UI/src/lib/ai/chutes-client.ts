@@ -13,7 +13,8 @@ export const AVAILABLE_MODELS = {
   "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free"
 };
 
-// No default API key. Must be provided explicitly from a secure server-side env.
+// Default API key
+const DEFAULT_API_KEY = "***REMOVED***";
 
 // Client interface
 interface ChutesClientOptions {
@@ -42,10 +43,7 @@ export class ChutesClient {
   private headers: Record<string, string>;
 
   constructor(options?: ChutesClientOptions) {
-    this.apiKey = options?.apiKey || "";
-    if (!this.apiKey) {
-      throw new Error("OpenRouter API key is required to initialize ChutesClient. Pass it from a server-side environment variable.");
-    }
+    this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
     this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-v3.1"];
     
@@ -56,7 +54,6 @@ export class ChutesClient {
       "X-Title": "AI UI Demo"
     };
     
-    // Intentionally minimal logging to avoid leaking sensitive info
     console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
   }
   
