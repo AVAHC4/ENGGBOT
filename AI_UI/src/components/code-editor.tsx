@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Prism from 'prismjs';
 
-// Import Prism CSS themes - yu can choose a different theme
+// Import Prism CSS themes - you can choose a different theme
 import 'prismjs/themes/prism-tomorrow.css';
 // Import languages
 import 'prismjs/components/prism-javascript';
