@@ -160,7 +160,7 @@
   }
   body {
     @apply bg-transparent text-foreground;
-    overflow: hden;
+    overflow: hidden;
   }
   
 
