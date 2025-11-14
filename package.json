@@ -64,7 +64,7 @@
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "docx": "^9.5.1",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "drizzle-orm": "^0.39.1",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.3.0",

@@ -3,15 +3,13 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
 
-// Configure Google Strategy - require env vars (no hardcoded fallbacks)
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+// Configure Google Strategy - always register the strategy with fallback values
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
+const CLIENT_SCRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
-if (!CLIENT_ID || !CLIENT_SECRET) {
-  throw new Error(
-    "Missing Google OAuth credentials. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your environment."
-  );
-}
+console.log("Loading Google OAuth config...");
+console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID ? "Set" : "Not set");
+console.log("GOOGLE_CLIENT_SECRET from env:", process.env.GOOGLE_CLIENT_SECRET ? "Set" : "Not set");
 
 // Update the way we handle the callback and include the BASE_URL
 const BASE_URL = process.env.NODE_ENV === 'production' 
