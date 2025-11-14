@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase.js";
 
 // Configure Google Strategy - always register the strategy with fallback values
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
-const CLIENT_SCRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
 
 console.log("Loading Google OAuth config...");
 console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID ? "Set" : "Not set");
