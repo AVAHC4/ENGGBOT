@@ -71,6 +71,15 @@ export async function sendMessage(teamId: string, content: string, senderEmail: 
   return json.message as Message
 }
 
+export async function deleteTeamMessage(teamId: string, messageId: string, requesterEmail: string) {
+  const res = await fetch(`/api/teams/${teamId}/messages/${messageId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requesterEmail }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
 export async function listInvites(email: string): Promise<Invite[]> {
   const res = await fetch(`/api/invites?email=${encodeURIComponent(email)}`, { cache: 'no-store' })
   if (!res.ok) throw new Error(await res.text())

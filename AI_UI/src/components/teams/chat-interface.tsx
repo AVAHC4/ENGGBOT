@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
-import { fetchMessages, sendMessage } from "@/lib/teams-api"
+import { deleteTeamMessage, fetchMessages, sendMessage } from "@/lib/teams-api"
 import { supabaseClient } from "@/lib/supabase-client"
 
 interface Message {
@@ -55,16 +55,82 @@ const getTeamMembers = (teamId: string) => {
   return memberCounts[teamId] || 5
 }
 
+const encodeKeyPart = (value: string) => {
+  try {
+    return btoa(encodeURIComponent(value.toLowerCase()))
+  } catch {
+    return value.toLowerCase()
+  }
+}
+
+const getHiddenStorageKey = (teamId: string, email: string) => {
+  return `teams-hidden-${teamId}-${encodeKeyPart(email)}`
+}
+
+const loadHiddenMessages = (teamId: string, email: string) => {
+  try {
+    const stored = localStorage.getItem(getHiddenStorageKey(teamId, email))
+    if (!stored) return new Set<string>()
+    const parsed = JSON.parse(stored)
+    if (Array.isArray(parsed)) {
+      return new Set<string>(parsed)
+    }
+    return new Set<string>()
+  } catch {
+    return new Set<string>()
+  }
+}
+
+const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) => {
+  try {
+    localStorage.setItem(getHiddenStorageKey(teamId, email), JSON.stringify(Array.from(ids)))
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate }: ChatInterfaceProps) {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message } | null>(null)
 
   const sseRef = useRef<EventSource | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastRefreshRef = useRef<number>(0)
   const lastServerTsRef = useRef<string | null>(null)
+  const hiddenMessageIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    hiddenMessageIdsRef.current = hiddenMessageIds
+  }, [hiddenMessageIds])
+
+  useEffect(() => {
+    if (!selectedTeamId) {
+      const empty = new Set<string>()
+      setHiddenMessageIds(empty)
+      hiddenMessageIdsRef.current = empty
+      return
+    }
+    const user = getCurrentUser()
+    const loaded = loadHiddenMessages(selectedTeamId, user.email)
+    hiddenMessageIdsRef.current = loaded
+    setHiddenMessageIds(loaded)
+  }, [selectedTeamId])
+
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null)
+    window.addEventListener('click', closeMenu)
+    window.addEventListener('scroll', closeMenu, true)
+    window.addEventListener('resize', closeMenu)
+    return () => {
+      window.removeEventListener('click', closeMenu)
+      window.removeEventListener('scroll', closeMenu, true)
+      window.removeEventListener('resize', closeMenu)
+    }
+  }, [])
 
   // Load messages when team changes
   useEffect(() => {
@@ -95,7 +161,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
           serverTs: m.created_at,
         }))
-        setMessages(mapped)
+        const visible = mapped.filter((m) => !hiddenMessageIdsRef.current.has(m.id))
+        setMessages(visible)
         lastRefreshRef.current = Date.now()
         if (data.length > 0) {
           lastServerTsRef.current = data[data.length - 1].created_at
@@ -127,6 +194,9 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                   isOwn: row.sender_email?.toLowerCase() === u.email.toLowerCase(),
                   serverTs: row.created_at,
                 }
+                if (hiddenMessageIdsRef.current.has(msg.id)) {
+                  return
+                }
                 setMessages((prev) => (prev.some((p) => p.id === msg.id) ? prev : [...prev, msg]))
                 lastRefreshRef.current = Date.now()
                 lastServerTsRef.current = row.created_at
@@ -154,6 +224,9 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       try {
         const u = getCurrentUser()
         const m = JSON.parse(evt.data)
+        if (hiddenMessageIdsRef.current.has(m.id)) {
+          return
+        }
         setMessages((prev) => {
           if (prev.some((p) => p.id === m.id)) return prev
           const msg: Message = {
@@ -195,9 +268,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             isOwn: m.sender_email?.toLowerCase() === u.email.toLowerCase(),
             serverTs: m.created_at,
           }))
+          const filtered = mapped.filter((m) => !hiddenMessageIdsRef.current.has(m.id))
           setMessages((prev) => {
             const seen = new Set(prev.map((p) => p.id))
-            const added = mapped.filter((m) => !seen.has(m.id))
+            const added = filtered.filter((m) => !seen.has(m.id))
             return added.length ? [...prev, ...added] : prev
           })
           lastRefreshRef.current = Date.now()
@@ -265,6 +339,55 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
+    }
+  }
+
+  const handleContextMenu = (event: React.MouseEvent, msg: Message) => {
+    event.preventDefault()
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      message: msg,
+    })
+  }
+
+  const handleDeleteForMe = (msg: Message) => {
+    if (!selectedTeamId) return
+    const confirmDelete = typeof window !== 'undefined'
+      ? window.confirm('This will hide this message for you. Continue?')
+      : true
+    if (!confirmDelete) {
+      setContextMenu(null)
+      return
+    }
+    const u = getCurrentUser()
+    const next = new Set(hiddenMessageIdsRef.current)
+    next.add(msg.id)
+    hiddenMessageIdsRef.current = next
+    setHiddenMessageIds(next)
+    persistHiddenMessages(selectedTeamId, u.email, next)
+    setMessages((prev) => prev.filter((m) => m.id !== msg.id))
+    setContextMenu(null)
+  }
+
+  const handleDeleteForEveryone = async (msg: Message) => {
+    if (!selectedTeamId) return
+    const confirmDelete = typeof window !== 'undefined'
+      ? window.confirm('This will delete this message for everyone in the team. This cannot be undone. Continue?')
+      : true
+    if (!confirmDelete) {
+      setContextMenu(null)
+      return
+    }
+    const u = getCurrentUser()
+    try {
+      await deleteTeamMessage(selectedTeamId, msg.id, u.email)
+      setMessages((prev) => prev.filter((m) => m.id !== msg.id))
+    } catch (error) {
+      console.error('Failed to delete message', error)
+      alert('Unable to delete message for everyone')
+    } finally {
+      setContextMenu(null)
     }
   }
 
@@ -352,7 +475,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </div>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}>
+            <div
+              key={msg.id}
+              className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}
+              onContextMenu={(event) => handleContextMenu(event, msg)}
+            >
               {!msg.isOwn && (
                 <Avatar className="h-8 w-8 mt-1">
                   <AvatarImage src={msg.avatar || "/placeholder.svg"} alt={msg.sender} />
@@ -382,6 +509,26 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           ))
         )}
       </div>
+
+      {contextMenu && (
+        <div
+          className="fixed z-50 min-w-[180px] rounded-md border border-border bg-popover text-popover-foreground shadow-lg"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+        >
+          <button
+            className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
+            onClick={() => handleDeleteForMe(contextMenu.message)}
+          >
+            Delete for me
+          </button>
+          <button
+            className="w-full px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+            onClick={() => handleDeleteForEveryone(contextMenu.message)}
+          >
+            Delete for everyone
+          </button>
+        </div>
+      )}
 
       <div className="border-t border-border p-4 bg-transparent">
         <div className="flex items-end gap-2">
