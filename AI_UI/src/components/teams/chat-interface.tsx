@@ -342,24 +342,19 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }
 
-  const handleContextMenu = (event: React.MouseEvent, msg: Message) => {
+  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>, msg: Message) => {
     event.preventDefault()
+    const target = event.currentTarget
+    const rect = target.getBoundingClientRect()
     setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
+      x: rect.left,
+      y: rect.top + rect.height / 2,
       message: msg,
     })
   }
 
   const handleDeleteForMe = (msg: Message) => {
     if (!selectedTeamId) return
-    const confirmDelete = typeof window !== 'undefined'
-      ? window.confirm('This will hide this message for you. Continue?')
-      : true
-    if (!confirmDelete) {
-      setContextMenu(null)
-      return
-    }
     const u = getCurrentUser()
     const next = new Set(hiddenMessageIdsRef.current)
     next.add(msg.id)
@@ -372,13 +367,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   const handleDeleteForEveryone = async (msg: Message) => {
     if (!selectedTeamId) return
-    const confirmDelete = typeof window !== 'undefined'
-      ? window.confirm('This will delete this message for everyone in the team. This cannot be undone. Continue?')
-      : true
-    if (!confirmDelete) {
-      setContextMenu(null)
-      return
-    }
     const u = getCurrentUser()
     try {
       await deleteTeamMessage(selectedTeamId, msg.id, u.email)
@@ -513,7 +501,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       {contextMenu && (
         <div
           className="fixed z-50 min-w-[180px] rounded-md border border-border bg-popover text-popover-foreground shadow-lg"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x - 8,
+            transform: 'translate(-100%, -50%)',
+          }}
         >
           <button
             className="w-full px-3 py-2 text-left text-sm hover:bg-muted"
