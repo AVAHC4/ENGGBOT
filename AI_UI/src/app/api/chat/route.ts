@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS, ChutesClient } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
-import { chutesClient, isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
+import { isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 import crypto from 'crypto';
 
 // Simple interface for chat messages
@@ -58,6 +58,16 @@ export async function POST(request: Request) {
     if (!isClientInitialized()) {
       await initializeAIClient();
     }
+    
+    // Instantiate server-side client with secure API key
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'Server misconfiguration: OPENROUTER_API_KEY is not set' },
+        { status: 500 }
+      );
+    }
+    const chutesClient = new ChutesClient({ apiKey });
     
     // Format messages for the API
     const formattedMessages = formatConversationHistory(conversationHistory);
