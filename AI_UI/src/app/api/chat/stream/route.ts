@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { AVAILABLE_MODELS, ChutesClient } from '@/lib/ai/chutes-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 
+export const runtime = 'nodejs';
+
 // Simple stream processor to transform OpenRouter stream into an event stream
 function processChutesStream(
   stream: ReadableStream,
@@ -134,7 +136,9 @@ export async function POST(request: Request) {
     }
 
     // Instantiate server-side client with secure API key
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = typeof process !== 'undefined'
+      ? process.env.OPENROUTER_API_KEY
+      : undefined;
     if (!apiKey) {
       return NextResponse.json(
         { error: 'Server misconfiguration: OPENROUTER_API_KEY is not set' },
