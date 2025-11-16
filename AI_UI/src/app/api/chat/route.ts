@@ -5,6 +5,8 @@ import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentity
 import { isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 import crypto from 'crypto';
 
+export const runtime = 'nodejs';
+
 // Simple interface for chat messages
 export interface ChatMessage {
   id: string;
@@ -59,15 +61,16 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
     
-    // Instantiate server-side client with secure API key
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    // Instantiate server-side client with secure API key (fallback to default when unset)
+    const apiKey = typeof process !== 'undefined'
+      ? process.env.OPENROUTER_API_KEY
+      : undefined;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Server misconfiguration: OPENROUTER_API_KEY is not set' },
-        { status: 500 }
-      );
+      console.warn("OPENROUTER_API_KEY is not set. Falling back to default key. Configure this env var in production.");
     }
-    const chutesClient = new ChutesClient({ apiKey });
+    const chutesClient = apiKey
+      ? new ChutesClient({ apiKey })
+      : new ChutesClient();
     
     // Format messages for the API
     const formattedMessages = formatConversationHistory(conversationHistory);

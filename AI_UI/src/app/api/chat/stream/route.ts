@@ -135,17 +135,16 @@ export async function POST(request: Request) {
       });
     }
 
-    // Instantiate server-side client with secure API key
+    // Instantiate server-side client with secure API key (fallback to default when unset)
     const apiKey = typeof process !== 'undefined'
       ? process.env.OPENROUTER_API_KEY
       : undefined;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Server misconfiguration: OPENROUTER_API_KEY is not set' },
-        { status: 500 }
-      );
+      console.warn("OPENROUTER_API_KEY is not set. Falling back to default key. Configure this env var in production.");
     }
-    const chutesClient = new ChutesClient({ apiKey });
+    const chutesClient = apiKey
+      ? new ChutesClient({ apiKey })
+      : new ChutesClient();
     
     // Always use DeepSeek V3.1 (free) model
     const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
