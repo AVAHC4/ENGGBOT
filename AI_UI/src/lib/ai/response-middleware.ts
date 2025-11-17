@@ -48,7 +48,7 @@ const IDENTITY_PATTERNS = [
 const SENSITIVE_KEYWORDS = [
   'deepseek', 'deep seek', 'chinese', 'china', 'llm provider', 'model provider', 
   'ai provider', 'provider', 'open source', 'foundation model', 'base model',
-  'language model', 'developer', 'creator', 'built by', 'made by'
+  'language model'
 ];
 
 // Check if a message is asking about the AI's identity

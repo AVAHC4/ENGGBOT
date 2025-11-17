@@ -246,6 +246,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             },
             body: JSON.stringify({
               message: contentForAPI,
+              rawMessage: content,
               hasAttachments: files.length > 0,
               model: currentModel,
               thinkingMode: thinkingMode,
@@ -497,6 +498,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({
           message: lastUserMessage.content,
+          rawMessage: lastUserMessage.content,
           hasAttachments: !!lastUserMessage.attachments,
           model: currentModel,
           thinkingMode: thinkingMode,

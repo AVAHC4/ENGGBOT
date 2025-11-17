@@ -374,9 +374,11 @@ function buildHighlights(files: ProcessedFile[]) {
 export async function POST(request: Request) {
   try {
     const form = await request.formData();
-    const files = Array.from(form.entries())
-      .filter(([, value]) => value instanceof File)
-      .map(([, value]) => value as File);
+    const files = Array.from(form.values()).filter((value): value is File => {
+      if (!value) return false;
+      const candidate = value as any;
+      return typeof candidate === 'object' && typeof candidate.name === 'string' && typeof candidate.arrayBuffer === 'function';
+    });
 
     if (!files.length) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 });

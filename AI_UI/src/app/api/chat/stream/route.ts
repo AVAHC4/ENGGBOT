@@ -99,6 +99,7 @@ export async function POST(request: Request) {
   try {
     const { 
       message, 
+      rawMessage,
       hasAttachments = false,
       model = "deepseek/deepseek-chat-v3.1:free", 
       thinkingMode = true,
@@ -112,8 +113,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const identityProbeText = typeof rawMessage === 'string' && rawMessage.trim().length > 0 ? rawMessage : message;
+
     // Short-circuit identity/origin questions with exact mandated reply
-    if (isIdentityQuestion(message)) {
+    if (isIdentityQuestion(identityProbeText)) {
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         start(controller) {
@@ -187,7 +190,7 @@ export async function POST(request: Request) {
       });
       
       // Process the stream
-      const processedStream = processChutesStream(stream, message);
+      const processedStream = processChutesStream(stream, identityProbeText);
       
       // Return the streaming response with required headers for proper streaming
       return new Response(processedStream, {

@@ -65,6 +65,9 @@ export function ChatInput({
       onSend(message, attachments, replyToMessage?.id);
       setMessage("");
       setAttachments([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       // Clear reply state after sending
       setReplyToMessage(null);
     }
@@ -90,9 +93,11 @@ export function ChatInput({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(Array.from(e.target.files));
-    }
+    if (!e.target.files || e.target.files.length === 0) return;
+    const newFiles = Array.from(e.target.files);
+    setAttachments(prev => [...prev, ...newFiles]);
+    // Allow re-selecting the same file again
+    e.target.value = "";
   };
 
   // Transcribe an audio Blob via our Next.js API -> Bytez
@@ -265,21 +270,24 @@ export function ChatInput({
         
         <div className="flex items-end gap-1.5 md:gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1.5 md:px-2 py-1">
           {/* File attachment button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="sr-only"
+            onChange={handleFileChange}
+            disabled={disabled || awaitingResponse}
+          />
           <Button 
             variant="ghost" 
             size="icon" 
             className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full" 
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (disabled || awaitingResponse) return;
+              fileInputRef.current?.click();
+            }}
             disabled={disabled || awaitingResponse}
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={disabled || awaitingResponse}
-            />
             <Paperclip className="h-5 w-5" />
           </Button>
           
