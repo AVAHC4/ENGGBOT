@@ -62,10 +62,21 @@ function truncateText(input: string, limit: number) {
   return input.slice(0, headKeep) + '\n\n...\n\n' + input.slice(-Math.floor(limit * 0.3));
 }
 
+let pdfParserPromise: Promise<any> | null = null;
+
 async function extractFromPDF(buffer: Buffer): Promise<string> {
   try {
-    const mod = await import('pdf-parse');
-    const parser = (mod as any).default || mod;
+    if (!pdfParserPromise) {
+      pdfParserPromise = (async () => {
+        const mod = await import('pdf-parse/lib/pdf-parse.js');
+        return (mod as any).default || mod;
+      })().catch((error) => {
+        pdfParserPromise = null;
+        throw error;
+      });
+    }
+
+    const parser = await pdfParserPromise;
     const data = await parser(buffer);
     return data?.text || '';
   } catch (error) {
