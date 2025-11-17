@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, stagger, useAnimate } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -134,11 +134,8 @@ export const TextGenerateEffect = ({
   const [scope, animate] = useAnimate();
   const [isAnimationComplete, setIsAnimationComplete] = useState(false);
   
-  // Process text to identify links
-  const segments = processTextWithLinks(words);
-  
-  // Convert segments to elements for animation
-  const elements = segmentsToElements(segments);
+  const segments = useMemo(() => processTextWithLinks(words), [words]);
+  const elements = useMemo(() => segmentsToElements(segments), [segments]);
   
   useEffect(() => {
     const controls = animate(
@@ -157,7 +154,7 @@ export const TextGenerateEffect = ({
     );
     
     return () => controls.stop();
-  }, [scope.current, animate, filter, duration]);
+  }, [animate, filter, duration, elements]);
 
   return (
     <div className={cn("font-normal", className)}>

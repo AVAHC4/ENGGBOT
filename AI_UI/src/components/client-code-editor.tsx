@@ -43,7 +43,7 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     if (value !== editorValue) {
       setEditorValue(value);
     }
-  }, [value]);
+  }, [value, editorValue]);
 
   // Handle editor change
   const handleEditorChange = (newValue: string | undefined) => {

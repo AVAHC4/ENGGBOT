@@ -27,7 +27,7 @@ export default function TermsPage() {
         <section className="space-y-4 pb-10">
           <h2 className="text-xl font-semibold">1. Acceptance of Terms</h2>
           <p>
-            By accessing or using the Service ("Service"), you agree to these Terms and our Privacy Policy. If you do not agree,
+            By accessing or using the Service (&quot;Service&quot;), you agree to these Terms and our Privacy Policy. If you do not agree,
             do not use the Service.
           </p>
           <p>
@@ -65,7 +65,7 @@ export default function TermsPage() {
         <section className="space-y-4 pb-10">
           <h2 className="text-xl font-semibold">4. User Content</h2>
           <p>
-            You retain ownership of content you submit ("User Content"). You grant us a worldwide, non-exclusive, royalty-free
+            You retain ownership of content you submit (&quot;User Content&quot;). You grant us a worldwide, non-exclusive, royalty-free
             license to host, process, and display User Content solely to operate and improve the Service. You represent you have
             necessary rights and that your User Content complies with law and does not infringe third-party rights.
           </p>
@@ -154,7 +154,7 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold">11. Availability and Changes</h2>
           <p>
             We may modify, suspend, or discontinue the Service or any feature at any time. Beta or experimental features are
-            provided "as is" and may change without notice.
+            provided &quot;as is&quot; and may change without notice.
           </p>
           <p>
             The Service may experience occasional outages for maintenance or updates. We may impose usage or storage limits to
@@ -165,7 +165,7 @@ export default function TermsPage() {
         <section className="space-y-4 pb-10">
           <h2 className="text-xl font-semibold">12. Disclaimer of Warranties</h2>
           <p>
-            The Service is provided "as is" and "as available," without warranties of any kind, whether express or implied,
+            The Service is provided &quot;as is&quot; and &quot;as available,&quot; without warranties of any kind, whether express or implied,
             including merchantability, fitness for a particular purpose, and non-infringement. We do not warrant uninterrupted or
             error-free operation or the accuracy of generated outputs.
           </p>
@@ -193,7 +193,7 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold">14. Indemnification</h2>
           <p>
             You agree to indemnify and hold us harmless from claims, damages, losses, liabilities, costs, and expenses (including
-            reasonable attorneys' fees) arising from your use of the Service, your User Content, or your violation of these Terms
+            reasonable attorneys&rsquo; fees) arising from your use of the Service, your User Content, or your violation of these Terms
             or applicable law.
           </p>
           <p>
@@ -230,7 +230,7 @@ export default function TermsPage() {
         <section className="space-y-4 pb-10">
           <h2 className="text-xl font-semibold">17. Changes to Terms</h2>
           <p>
-            We may update these Terms by posting a revised version with a new "Last Updated" date. Your continued use of the
+            We may update these Terms by posting a revised version with a new &quot;Last Updated&quot; date. Your continued use of the
             Service after changes become effective constitutes acceptance.
           </p>
           <p>

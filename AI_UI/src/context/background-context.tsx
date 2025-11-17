@@ -52,7 +52,7 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
 
   const value: BackgroundContextValue = useMemo(
     () => ({ background, setBackground, options }),
-    [background],
+    [background, options],
   );
 
   return <BackgroundContext.Provider value={value}>{children}</BackgroundContext.Provider>;

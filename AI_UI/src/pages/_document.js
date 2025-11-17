@@ -7,8 +7,9 @@ export default function Document() {
       <body>
         <Main />
         <NextScript />
-        {/* Hide Vercel badge specifically */}
-        <style jsx global>{`
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           /* Hide Vercel deployment badge (N logo) */
           .vercel-badge {
             display: none !important;
@@ -23,8 +24,10 @@ export default function Document() {
           div[style*="z-index:9999"] {
             display: none !important;
           }
-        `}</style>
+        `,
+          }}
+        />
       </body>
     </Html>
   )
-} 
+}

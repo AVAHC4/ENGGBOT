@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react';
+import Image from "next/image";
 import { SidebarMenu, SidebarGroupLabel } from '@/components/blocks/sidebar';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
@@ -29,9 +30,12 @@ export function TeamMemberAvatar({ member }: { member: TeamMember }) {
           member.isOnline ? "bg-green-500/20 animate-pulse" : ""
         } transition-all duration-300`} />
         {member.avatar ? (
-          <img 
-            src={member.avatar} 
+          <Image 
+            src={member.avatar}
             alt={member.name}
+            width={24}
+            height={24}
+            unoptimized
             className="relative z-10 h-6 w-6 rounded-full object-cover border border-border"
           />
         ) : (

@@ -182,7 +182,7 @@ function ConversationItem({
                onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-2">Are you sure?</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              This will permanently delete the conversation "{title}".
+              This will permanently delete the conversation &ldquo;{title}&rdquo;.
               This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-2">

@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export const Component = () => {
   return (
@@ -50,9 +51,12 @@ export const Component = () => {
         <div className="w-full max-w-md">
           <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-lg dark:shadow-2xl dark:shadow-black/80 overflow-hidden hover-scale mx-4">
             <div className="relative overflow-hidden image-container">
-              <img 
+              <Image 
                 src="https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg"
                 alt="Profile" 
+                width={800}
+                height={800}
+                unoptimized
                 className="w-full aspect-square object-cover image-scale"
               />
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/30 dark:from-black/60 to-transparent pointer-events-none"></div>
@@ -64,9 +68,12 @@ export const Component = () => {
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full overflow-hidden hover-scale-sm ring-2 ring-gray-200 dark:ring-zinc-700">
-                  <img 
+                  <Image 
                     src="https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg"
                     alt="Avatar" 
+                    width={32}
+                    height={32}
+                    unoptimized
                     className="w-full h-full object-cover"
                   />
                 </div>

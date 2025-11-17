@@ -36,6 +36,7 @@ export function Compiler() {
   
   // Default to JavaScript (index 2)
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
+  const initialLanguageRef = useRef(LANGUAGES[2]);
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
   const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -57,8 +58,9 @@ export function Compiler() {
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
     isMounted.current = true;
+    const initialLanguage = initialLanguageRef.current;
     bundlerRef.current = new Bundler({
-      [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
+      [`/main${initialLanguage.extension}`]: initialLanguage.defaultCode
     });
     // Pre-warm Python, C/C++, and Java executors to avoid first-run delay perception
     (async () => {

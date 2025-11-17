@@ -1,10 +1,13 @@
+/* eslint-disable @next/next/no-img-element */
+// We intentionally use native <img> tags for markdown content to preserve default browser behaviors (right-click/save, blob URLs).
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 
-import { User, File, Image, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw } from "lucide-react";
+import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
+import NextImage from "next/image";
 
 import { BOT_CONFIG } from "@/lib/ai/response-middleware";
 import ReactMarkdown from 'react-markdown';
@@ -79,7 +82,7 @@ export function ChatMessage({
   
   // Function to determine the appropriate icon based on file type
   const getFileIcon = (type: string) => {
-    if (type.startsWith("image/")) return <Image className="h-4 w-4" />;
+    if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
     if (type.startsWith("audio/")) return <FileAudio className="h-4 w-4" />;
     if (type.startsWith("video/")) return <FileVideo className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
@@ -98,9 +101,12 @@ export function ChatMessage({
           >
             {attachment.type.startsWith("image/") ? (
               <div className="image-attachment">
-                <img 
-                  src={attachment.url} 
-                  alt={attachment.name}
+                <NextImage 
+                  src={attachment.url}
+                  alt={attachment.name || "Attachment"}
+                  width={240}
+                  height={200}
+                  unoptimized
                   className="attachment-image"
                 />
               </div>
@@ -302,9 +308,10 @@ export function ChatMessage({
                   />
                 ),
                 // Handle images in markdown content
-                img: ({ node, ...props }) => (
+                img: ({ node, alt, ...props }) => (
                   <img 
                     {...props} 
+                    alt={alt || 'Embedded image'}
                     className="max-w-full h-auto rounded-lg my-2 shadow-sm"
                     loading="lazy"
                     onError={(e) => {
