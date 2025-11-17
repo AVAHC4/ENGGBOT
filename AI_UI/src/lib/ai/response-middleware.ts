@@ -137,6 +137,10 @@ function sanitizeResponse(text: string): string {
   
   // Replace only identity-related terms, don't modify the formatting or style
   let sanitized = text
+    // Strip spurious special tokens the model sometimes emits
+    .replace(/<\uFF5Cbegin▁of▁sentence\uFF5C>/g, '')
+    .replace(/<\|begin▁of▁sentence\|>/g, '')
+    .replace(/<\|begin_of_sentence\|>/gi, '')
     // Specific provider/model mentions
     .replace(/DeepSeek/gi, NAME)
     .replace(/Deep Seek/gi, NAME)
