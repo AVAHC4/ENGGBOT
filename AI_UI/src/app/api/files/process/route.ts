@@ -122,7 +122,7 @@ async function extractFromImage(buffer: Buffer): Promise<string> {
   try {
     if (!ocrWorkerPromise) {
       ocrWorkerPromise = (async () => {
-        const mod = await import('tesseract.js');
+        const mod = await import('tesseract.js/node');
         const { createWorker } = mod as any;
         const worker = await createWorker();
         await worker.loadLanguage('eng');
