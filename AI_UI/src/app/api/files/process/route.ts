@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 export const runtime = 'nodejs';
 
@@ -54,6 +56,9 @@ interface ProcessedFile {
 }
 
 let ocrWorkerPromise: Promise<any> | null = null;
+const workerResolvedPath = fileURLToPath(new URL('../../../../../node_modules/tesseract.js/src/worker/node/index.js', import.meta.url));
+const langResolvedPath = path.join(process.cwd(), 'node_modules/tesseract.js/src/lang-data');
+const coreResolvedPath = fileURLToPath(new URL('../../../../../node_modules/tesseract.js-core/tesseract-core.wasm.js', import.meta.url));
 
 function truncateText(input: string, limit: number) {
   if (!input) return '';
@@ -122,9 +127,13 @@ async function extractFromImage(buffer: Buffer): Promise<string> {
   try {
     if (!ocrWorkerPromise) {
       ocrWorkerPromise = (async () => {
-        const mod = await import('tesseract.js/node');
+        const mod = await import('tesseract.js');
         const { createWorker } = mod as any;
-        const worker = await createWorker();
+        const worker = await createWorker(undefined, undefined, {
+          workerPath: workerResolvedPath,
+          langPath: langResolvedPath,
+          corePath: coreResolvedPath
+        });
         await worker.loadLanguage('eng');
         await worker.initialize('eng');
         return worker;

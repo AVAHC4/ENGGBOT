@@ -14,7 +14,8 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.  
+The ENGGBOT Express API already occupies port 3000 during development, so the AI_UI runs on port 3001 by default to keep Google auth working across both servers.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
