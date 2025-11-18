@@ -1,6 +1,6 @@
 /**
  * This middleware intercepts AI responses and modifies them to maintain the ENGGBOT identity
- * instead of revealing the DeepSeek model underneath.
+ * instead of revealing the underlying OpenRouter/Z.AI provider.
  */
 
 // Bot personality constants
@@ -34,6 +34,9 @@ const IDENTITY_PATTERNS = [
   /developed you/i,
   /what's your identity/i,
   /deepseek/i,
+  /z\.?ai/i,
+  /glm[-\s]?4(\.\d+)?/i,
+  /zhipu/i,
   /who (is|are|runs|owns|created|made|built|designed) (your|the) (provider|company|creator|developer|model|llm|foundation|base)/i,
   /what (is|are) (your|the) (provider|company|creator|developer|model|llm|foundation|base)/i,
   /what (company|organization) (made|created|developed|built|designed|runs|owns) you/i,
@@ -46,7 +49,8 @@ const IDENTITY_PATTERNS = [
 
 // Additional sensitive keywords that should trigger identity response
 const SENSITIVE_KEYWORDS = [
-  'deepseek', 'deep seek', 'chinese', 'china', 'llm provider', 'model provider', 
+  'deepseek', 'deep seek', 'z.ai', 'zai', 'glm', 'glm air', 'zhipu',
+  'chinese', 'china', 'llm provider', 'model provider', 
   'ai provider', 'provider', 'open source', 'foundation model', 'base model',
   'language model'
 ];
@@ -119,7 +123,7 @@ When responding, use Markdown formatting to enhance readability:
 Always maintain this formatting style to ensure your responses are clear, well-structured, and easy to read.`;
 }
 
-// Process an AI response to remove any mentions of DeepSeek
+// Process an AI response to remove any mentions of underpinning providers
 export function processAIResponse(response: string, userMessage: string): string {
   // If it's clearly an identity question, return a custom response
   if (isIdentityQuestion(userMessage)) {
@@ -127,11 +131,11 @@ export function processAIResponse(response: string, userMessage: string): string
     return EXACT_IDENTITY_REPLY;
   }
   
-  // Otherwise, sanitize the response to remove DeepSeek mentions
+  // Otherwise, sanitize the response to remove provider mentions
   return sanitizeResponse(response);
 }
 
-// Replace DeepSeek mentions with ENGGBOT
+// Replace provider mentions with ENGGBOT
 function sanitizeResponse(text: string): string {
   const { NAME, EMOJI } = BOT_CONFIG;
   
@@ -145,6 +149,11 @@ function sanitizeResponse(text: string): string {
     .replace(/DeepSeek/gi, NAME)
     .replace(/Deep Seek/gi, NAME)
     .replace(/Deepseek AI/gi, NAME)
+    .replace(/Z\.?AI/gi, NAME)
+    .replace(/ZAI/gi, NAME)
+    .replace(/Zhipu/gi, NAME)
+    .replace(/GLM[-\s]?4(?:\.\d+)?(?:\s*Air)?/gi, NAME)
+    .replace(/GLM[-\s]?4\.5v/gi, NAME)
     .replace(/OpenRouter/gi, NAME)
     .replace(/Open Router/gi, NAME)
     .replace(/OpenAI/gi, NAME)
@@ -170,7 +179,7 @@ function sanitizeResponse(text: string): string {
     .replace(/based in China/gi, "")
     .replace(/from China/gi, "")
     .replace(/Chinese (AI|company|model|assistant)/gi, `${NAME}`)
-    .replace(/I('m| am) (a|an) (DeepSeek|Deepseek|Chinese|AI|language|LLM).*(model|assistant)/gi, `I'm ${NAME}`)
+    .replace(/I('m| am) (a|an) (DeepSeek|Deepseek|Chinese|AI|language|LLM|GLM|Z\.?AI|Zhipu).*(model|assistant)/gi, `I'm ${NAME}`)
     .replace(/My (provider|creator|developer|company) is/gi, `I'm ${NAME}, and`)
     .replace(/I('m| am) powered by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) developed by/gi, `I'm ${NAME}, `)

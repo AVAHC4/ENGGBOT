@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const { 
       message, 
       hasAttachments = false,
-      model = "deepseek/deepseek-chat-v3.1:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       conversationHistory = [] 
     } = await request.json();
@@ -94,8 +94,8 @@ export async function POST(request: Request) {
         : message
     });
     
-    // Always use DeepSeek V3.1 (free) model
-    const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
+    // Always use Z.AI GLM 4.5 Air (free) model
+    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air-free"];
     
     try {
       // Generate response from the AI

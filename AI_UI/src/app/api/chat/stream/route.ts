@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       message, 
       rawMessage,
       hasAttachments = false,
-      model = "deepseek/deepseek-chat-v3.1:free", 
+      model = "z-ai/glm-4.5-air:free", 
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
@@ -149,8 +149,8 @@ export async function POST(request: Request) {
       ? new ChutesClient({ apiKey })
       : new ChutesClient();
     
-    // Always use DeepSeek V3.1 (free) model
-    const modelName = AVAILABLE_MODELS["deepseek-v3.1"];
+    // Always use the Z.AI GLM 4.5 Air (free) model
+    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air-free"];
     
     // Format messages for the API
     const messages = [];

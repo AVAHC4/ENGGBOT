@@ -1,16 +1,20 @@
 /**
- * DeepSeek AI Client via OpenRouter
+ * OpenRouter client with Z.AI GLM defaults
  * 
  * TypeScript adaptation for web use
  */
 
-// Model definitions - include R1 and V3/V3.1 (free tiers where available)
+// Model definitions – prioritize the GLM 4.5 Air free tier with nearby fallbacks.
+// Legacy DeepSeek keys are kept as aliases so previously compiled code paths keep working.
 export const AVAILABLE_MODELS = {
-  "deepseek-r1": "deepseek/deepseek-r1-0528:free",
-  // OpenRouter identifiers for DeepSeek V3 variants (free tiers). If a specific
-  // model is unavailable on your account, the API will fall back based on route.
-  "deepseek-v3": "deepseek/deepseek-chat:free",
-  "deepseek-v3.1": "deepseek/deepseek-chat-v3.1:free"
+  "zai-glm-4.5-air-free": "z-ai/glm-4.5-air:free",
+  "zai-glm-4.5-air": "z-ai/glm-4.5-air",
+  "zai-glm-4.5": "z-ai/glm-4.5",
+  "zai-glm-4.5v": "z-ai/glm-4.5v",
+  // Legacy aliases
+  "deepseek-v3.1": "z-ai/glm-4.5-air:free",
+  "deepseek-v3": "z-ai/glm-4.5",
+  "deepseek-r1": "z-ai/glm-4.5v"
 };
 
 // Default API key
@@ -34,7 +38,7 @@ interface GenerateOptions {
 }
 
 /**
- * Client for interacting with DeepSeek models via OpenRouter
+ * Client for interacting with OpenRouter models (defaulting to Z.AI GLM 4.5 Air)
  */
 export class ChutesClient {
   private apiKey: string;
@@ -45,7 +49,7 @@ export class ChutesClient {
   constructor(options?: ChutesClientOptions) {
     this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-v3.1"];
+    this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["zai-glm-4.5-air-free"];
     
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
@@ -68,8 +72,9 @@ export class ChutesClient {
       const modelName = model || this.defaultModel;
       const fallbacks: string[] = [
         modelName,
-        AVAILABLE_MODELS["deepseek-v3.1"],
-        AVAILABLE_MODELS["deepseek-r1"],
+        AVAILABLE_MODELS["zai-glm-4.5-air"],
+        AVAILABLE_MODELS["zai-glm-4.5"],
+        AVAILABLE_MODELS["zai-glm-4.5v"],
       ].filter(Boolean) as string[];
       
       // Determine whether to use messages array or prompt
@@ -158,8 +163,9 @@ export class ChutesClient {
     const modelName = model || this.defaultModel;
     const fallbacks: string[] = [
       modelName,
-      AVAILABLE_MODELS["deepseek-v3.1"],
-      AVAILABLE_MODELS["deepseek-r1"],
+      AVAILABLE_MODELS["zai-glm-4.5-air"],
+      AVAILABLE_MODELS["zai-glm-4.5"],
+      AVAILABLE_MODELS["zai-glm-4.5v"],
     ].filter(Boolean) as string[];
     
     // Determine whether to use messages array or prompt
