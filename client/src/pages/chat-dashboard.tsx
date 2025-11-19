@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { Link } from "wouter";
-import { 
-  getUserData, 
-  storeUserData, 
+import {
+  getUserData,
+  storeUserData,
   setRedirectToChat,
   clearAuthData
 } from "@/lib/auth-storage";
@@ -32,14 +32,14 @@ export default function ChatDashboard() {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
         console.log("Fetching user data from:", apiUrl);
-        
+
         const response = await fetch(`${apiUrl}/api/user`, {
           credentials: "include",
           headers: {
             "Accept": "application/json",
           }
         });
-        
+
         if (!response.ok) {
           if (response.status === 401) {
             console.log("User not authenticated, redirecting to login");
@@ -49,13 +49,13 @@ export default function ChatDashboard() {
           console.error("Failed to fetch user data:", response.status, response.statusText);
           throw new Error("Failed to fetch user data");
         }
-        
+
         const data = await response.json();
         console.log("Received user data:", data);
-        
+
         // Store user data using the new helper
         storeUserData(data);
-        
+
         return data as UserData;
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -70,10 +70,10 @@ export default function ChatDashboard() {
 
   // Type guard for user data
   const isUserData = (data: any): data is UserData => {
-    return data && typeof data === 'object' && 
-           'name' in data && 
-           'email' in data && 
-           'avatar' in data;
+    return data && typeof data === 'object' &&
+      'name' in data &&
+      'email' in data &&
+      'avatar' in data;
   };
 
   const userData = isUserData(user) ? user : null;
@@ -84,7 +84,7 @@ export default function ChatDashboard() {
     const checkCookies = () => {
       const authSuccess = document.cookie.includes('auth_success=true');
       const authAttempt = document.cookie.includes('auth_attempt=true');
-      
+
       if (authSuccess) {
         console.log("Found auth success cookie in ChatDashboard");
         // Clear the cookies
@@ -97,17 +97,17 @@ export default function ChatDashboard() {
         document.cookie = 'auth_attempt=; max-age=0; path=/';
       }
     };
-    
+
     // Check immediately on mount
     checkCookies();
-    
+
     // Also check for cookies when window gets focus
     // This helps when returning from the OAuth provider
     const handleFocus = () => {
       console.log("Window received focus - checking auth cookies");
       checkCookies();
     };
-    
+
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [queryClient]);
@@ -129,20 +129,20 @@ export default function ChatDashboard() {
         credentials: "include",
         method: "GET",
       });
-      
+
       // Clear auth data using the new helper
       clearAuthData();
-      
+
       // Clear auth-related query cache
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.setQueryData(["user"], null);
-      
+
       // Close the profile card
       setShowProfileCard(false);
-      
+
       // Redirect to home page
       setLocation("/");
-      
+
       // Reload the page to ensure all state is cleared
       window.location.reload();
     } catch (error) {
@@ -174,18 +174,20 @@ export default function ChatDashboard() {
 
   // Force redirect to the AI_UI app immediately when component loads
   if (typeof window !== 'undefined') {
-    console.log("Redirecting to AI_UI at http://localhost:3001");
-    
+    const aiUiUrl = import.meta.env.VITE_AI_UI_URL || '/AI_UI';
+    console.log(`Redirecting to AI_UI at ${aiUiUrl}`);
+
     // Store auth info and mark for redirection using new helpers
     setRedirectToChat(true);
-    
+
     // Create URL with user data
-    const redirectUrl = new URL('http://localhost:3001');
+    // Handle both absolute URLs and relative paths
+    const redirectUrl = new URL(aiUiUrl, window.location.origin);
     redirectUrl.searchParams.set('auth_success', 'true');
     if (userData.name) redirectUrl.searchParams.set('user_name', userData.name);
     if (userData.email) redirectUrl.searchParams.set('user_email', userData.email);
     if (userData.avatar) redirectUrl.searchParams.set('user_avatar', userData.avatar);
-    
+
     // Redirect
     window.location.replace(redirectUrl.toString());
   }
@@ -200,27 +202,27 @@ export default function ChatDashboard() {
             <Logo className="w-8 h-8" />
             <span className="font-bold text-lg">ENGGBOT AI</span>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="hidden md:block">
               <span className="text-sm text-zinc-400">Logged in as</span>
               <span className="text-sm font-medium ml-2">{userData.name}</span>
             </div>
-            
+
             <div className="relative">
-              <Button 
-                onClick={() => setShowProfileCard(!showProfileCard)} 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                onClick={() => setShowProfileCard(!showProfileCard)}
+                variant="ghost"
+                size="sm"
                 className="rounded-full"
               >
-                <img 
-                  src={userData.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"} 
-                  alt={userData.name} 
+                <img
+                  src={userData.avatar || "https://ferf1mheo22r9ira.public.blob.vercel-storage.com/avatar-02-albo9B0tWOSLXCVZh9rX9KFxXIVWMr.png"}
+                  alt={userData.name}
                   className="w-8 h-8 rounded-full ring-1 ring-emerald-500/50"
                 />
               </Button>
-              
+
               {/* Profile Card Popup */}
               {showProfileCard && (
                 <div className="absolute right-[-50px] top-12 w-80 z-50">

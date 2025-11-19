@@ -33,7 +33,7 @@ interface GenerateOptions {
   temperature?: number;
   max_tokens?: number;
   thinking_mode?: boolean;
-  messages?: Array<{role: string, content: string}>;
+  messages?: Array<{ role: string, content: string }>;
   stream?: boolean;
 }
 
@@ -50,24 +50,24 @@ export class ChutesClient {
     this.apiKey = options?.apiKey || DEFAULT_API_KEY;
     this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
     this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["zai-glm-4.5-air-free"];
-    
+
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "http://localhost:3001",
+      "HTTP-Referer": (typeof process !== 'undefined' && process.env.CLIENT_URL) || "https://enggbot.vercel.app",
       "X-Title": "AI UI Demo"
     };
-    
+
     console.log(`Initialized OpenRouter client with model: ${this.defaultModel}`);
   }
-  
+
   /**
    * Generate a response from the AI model
    */
   async generate(options: GenerateOptions): Promise<string> {
     try {
       const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages, stream = false } = options;
-      
+
       // Use model or default
       const modelName = model || this.defaultModel;
       const fallbacks: string[] = [
@@ -76,7 +76,7 @@ export class ChutesClient {
         AVAILABLE_MODELS["zai-glm-4.5"],
         AVAILABLE_MODELS["zai-glm-4.5v"],
       ].filter(Boolean) as string[];
-      
+
       // Determine whether to use messages array or prompt
       let messagePayload;
       if (messages && messages.length > 0) {
@@ -92,11 +92,11 @@ export class ChutesClient {
             actualPrompt = prompt + " Please think step by step and explain your thought process.";
           }
         }
-        
+
         // Use single message with prompt
-        messagePayload = [{"role": "user", "content": actualPrompt}];
+        messagePayload = [{ "role": "user", "content": actualPrompt }];
       }
-      
+
       // Try primary + fallback models
       let lastError: any = null;
       for (const attemptModel of fallbacks) {
@@ -158,7 +158,7 @@ export class ChutesClient {
    */
   async generateStream(options: GenerateOptions): Promise<ReadableStream> {
     const { prompt, model, temperature = 0.5, max_tokens = 8000, thinking_mode = false, messages } = options;
-    
+
     // Use model or default
     const modelName = model || this.defaultModel;
     const fallbacks: string[] = [
@@ -167,7 +167,7 @@ export class ChutesClient {
       AVAILABLE_MODELS["zai-glm-4.5"],
       AVAILABLE_MODELS["zai-glm-4.5v"],
     ].filter(Boolean) as string[];
-    
+
     // Determine whether to use messages array or prompt
     let messagePayload;
     if (messages && messages.length > 0) {
@@ -183,11 +183,11 @@ export class ChutesClient {
           actualPrompt = prompt + " Please think step by step and explain your thought process.";
         }
       }
-      
+
       // Use single message with prompt
-      messagePayload = [{"role": "user", "content": actualPrompt}];
+      messagePayload = [{ "role": "user", "content": actualPrompt }];
     }
-    
+
     // Try primary + fallback models for streaming
     let lastError: any = null;
     for (const attemptModel of fallbacks) {
@@ -232,7 +232,7 @@ export class ChutesClient {
     // All attempts failed
     throw lastError || new Error("All model attempts failed");
   }
-  
+
   /**
    * Switch to a different model
    */
@@ -246,7 +246,7 @@ export class ChutesClient {
       return false;
     }
   }
-  
+
   /**
    * Get a list of available models
    */
