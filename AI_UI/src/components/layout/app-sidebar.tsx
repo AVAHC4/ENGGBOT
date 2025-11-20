@@ -80,11 +80,11 @@ function getUserData() {
       avatar: "",
     };
   }
-  
+
   try {
     // Try to get user data from localStorage - this would be set during Google auth
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-    
+
     // If we have user data, use it; otherwise return default
     if (userData && userData.name) {
       return {
@@ -93,7 +93,7 @@ function getUserData() {
         avatar: userData.avatar || "",
       };
     }
-    
+
     // Fallback to auth info if available
     if (localStorage.getItem('authenticated') === 'true') {
       // Get user initials from URL if available
@@ -101,14 +101,14 @@ function getUserData() {
       const userName = urlParams.get('user_name') || localStorage.getItem('user_name') || "User";
       const userEmail = urlParams.get('user_email') || localStorage.getItem('user_email') || "user@example.com";
       const userAvatar = urlParams.get('user_avatar') || localStorage.getItem('user_avatar') || "";
-      
+
       return {
         name: userName,
         email: userEmail,
         avatar: userAvatar,
       };
     }
-    
+
     // Default fallback
     return {
       name: "User",
@@ -154,7 +154,7 @@ const data = {
     },
     {
       title: "Projects",
-      url: "#",
+      url: "/projects",
       icon: Folder,
     }
   ],
@@ -253,25 +253,25 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [activePath, setActivePath] = React.useState('');
   const pathname = usePathname();
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
-  
+
   // Use default empty values for initial server-side rendering
   const [userData, setUserData] = React.useState({
     name: "User",
     email: "user@example.com",
     avatar: "",
   });
-  
+
   // Flag to track if component is mounted (client-side only)
   const [isMounted, setIsMounted] = React.useState(false);
-  
+
   // Add state for editing conversation title
   const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
   const [newConversationTitle, setNewConversationTitle] = React.useState("");
-  
+
   // Simple modal state instead of AlertDialog
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
-  const [conversationToDelete, setConversationToDelete] = React.useState<{id: string, title: string} | null>(null);
-  
+  const [conversationToDelete, setConversationToDelete] = React.useState<{ id: string, title: string } | null>(null);
+
   // Function to toggle sidebar collapse state
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -294,17 +294,17 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       const refreshUserData = () => {
         setUserData(getUserData());
       };
-      
+
       // Refresh on mount
       refreshUserData();
-      
+
       // Set up event listener to refresh user data when authentication changes
       window.addEventListener('storage', (event) => {
-        if (event.key === 'authenticated' || 
-            event.key === 'user_data' || 
-            event.key === 'user_name' || 
-            event.key === 'user_email' || 
-            event.key === 'user_avatar') {
+        if (event.key === 'authenticated' ||
+          event.key === 'user_data' ||
+          event.key === 'user_name' ||
+          event.key === 'user_email' ||
+          event.key === 'user_avatar') {
           refreshUserData();
         }
       });
@@ -318,12 +318,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         const allConversations = getAllConversationsMetadata();
         setConversations(allConversations);
       };
-      
+
       loadConversations();
-      
+
       // Refresh conversations every 5 seconds
       const intervalId = setInterval(loadConversations, 5000);
-      
+
       return () => clearInterval(intervalId);
     }
   }, [conversationId, isMounted]);
@@ -489,13 +489,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       }
     `;
     document.head.appendChild(styleEl);
-    
+
     return () => {
       document.head.removeChild(styleEl);
       document.body.classList.remove('sidebar-collapsed');
     };
   }, []);
-  
+
   // Function to add a new friend
   const handleAddFriend = () => {
     if (newFriendName.trim()) {
@@ -509,12 +509,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       setShowAddFriend(false);
     }
   };
-  
+
   // Function to remove a friend
   const handleRemoveFriend = (id: string) => {
     setFriends(friends.filter(friend => friend.id !== id));
   };
-  
+
   // Save friends to localStorage whenever they change
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -525,20 +525,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       }
     }
   }, [friends]);
-  
+
   // Function to handle conversation rename
   const handleRenameConversation = (id: string, newTitle: string) => {
     if (!newTitle.trim()) {
       setEditingConversationId(null);
       return;
     }
-    
+
     // Get all conversations from storage
     const allConversations = getAllConversationsMetadata();
-    
+
     // Find the conversation that needs to be renamed
-    const conversationToUpdate = allConversations.find((c: {id: string}) => c.id === id);
-    
+    const conversationToUpdate = allConversations.find((c: { id: string }) => c.id === id);
+
     if (conversationToUpdate) {
       // Get existing metadata
       const existingMeta = getConversationMetadata(id) || {
@@ -546,26 +546,26 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         created: new Date().toISOString(),
         updated: new Date().toISOString()
       };
-      
+
       // Update metadata with new title and timestamp
       const updatedMeta = {
         ...existingMeta,
         title: newTitle,
         updated: new Date().toISOString()
       };
-      
+
       // Save updated metadata
       saveConversationMetadata(id, updatedMeta);
-      
+
       // Force update conversations list to reflect the change
       const updatedConversations = getAllConversationsMetadata();
       setConversations(updatedConversations);
     }
-    
+
     // Reset editing state
     setEditingConversationId(null);
   };
-  
+
   // Function to handle conversation share
   const handleShareConversation = (id: string) => {
     // Copy conversation link/id to clipboard
@@ -577,14 +577,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         console.error('Failed to copy: ', err);
       });
   };
-  
+
   // Function to handle delete request
   const handleDeleteRequest = (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation();
-    setConversationToDelete({id, title});
+    setConversationToDelete({ id, title });
     setShowDeleteModal(true);
   };
-  
+
   // Function to confirm deletion
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
@@ -598,13 +598,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setShowDeleteModal(false);
     setConversationToDelete(null);
   };
-  
+
   // Function to cancel deletion
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setConversationToDelete(null);
   };
-  
+
   return (
     <>
       <div
@@ -615,10 +615,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           { "sidebar-collapsed": sidebarCollapsed }
         )}
       >
-        <Sidebar 
-          collapsible={sidebarCollapsed ? "none" : "offcanvas"} 
+        <Sidebar
+          collapsible={sidebarCollapsed ? "none" : "offcanvas"}
           className={cn(
-            "transition-all duration-300 border-none", 
+            "transition-all duration-300 border-none",
             sidebarCollapsed ? "opacity-0 invisible" : "opacity-100 visible",
             className
           )}
@@ -647,18 +647,18 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
               <SidebarMenu>
                 {data.navMain.map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.url === activePath || 
+                  const isActive = item.url === activePath ||
                     (item.url === '/' && activePath === '/') ||
                     (item.url !== '/' && activePath.startsWith(item.url));
-                  
+
                   return (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         data-active={isActive}
                       >
-                        <Link 
-                          href={item.url} 
+                        <Link
+                          href={item.url}
                           className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                           onClick={(e) => {
                             // Update active path for all nav items, not just chat
@@ -672,7 +672,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     </SidebarMenuItem>
                   );
                 })}
-                
+
                 {/* Conversations Menu */}
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -689,7 +689,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       <ChevronRight className="h-4 w-4" />
                     )}
                   </SidebarMenuButton>
-                  
+
                   {conversationsExpanded && (
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
@@ -698,14 +698,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           <span className="font-medium text-primary">New Conversation</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      
+
                       {conversations.length > 0 ? (
                         conversations.map((convo) => (
                           <SidebarMenuSubItem key={convo.id}>
-                            <SidebarMenuSubButton 
+                            <SidebarMenuSubButton
                               onClick={() => switchConversation(convo.id)}
                               className={cn(
-                                "w-full justify-between group pr-1", 
+                                "w-full justify-between group pr-1",
                                 convo.id === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
@@ -742,7 +742,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                   </>
                                 )}
                               </div>
-                              
+
                               {/* Replace direct delete button with dropdown menu */}
                               {!editingConversationId && convo.id === conversationId && (
                                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
@@ -753,7 +753,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                       </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" side="right">
-                                      <DropdownMenuItem 
+                                      <DropdownMenuItem
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setEditingConversationId(convo.id);
@@ -763,7 +763,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                         <Pencil className="h-3 w-3 mr-2" />
                                         Rename
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem 
+                                      <DropdownMenuItem
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleShareConversation(convo.id);
@@ -772,7 +772,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                         <Share2 className="h-3 w-3 mr-2" />
                                         Share
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem 
+                                      <DropdownMenuItem
                                         onClick={(e) => handleDeleteRequest(e, convo.id, convo.title)}
                                         className="text-destructive focus:text-destructive"
                                       >
@@ -800,8 +800,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             </div>
             <NavSecondary items={data.navSecondary} className="mt-auto" />
           </SidebarContent>
-          <SidebarFooter 
-            className="relative z-30 border-t border-border bg-transparent" 
+          <SidebarFooter
+            className="relative z-30 border-t border-border bg-transparent"
             style={{
               position: 'relative',
               zIndex: 30,
@@ -818,9 +818,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         </Sidebar>
 
         {/* Standalone toggle button that will remain visible */}
-        <Button 
-          variant="outline" 
-          size="icon" 
+        <Button
+          variant="outline"
+          size="icon"
           className="sidebar-toggle-btn h-8 w-8 rounded-full hover:bg-accent hover:text-accent-foreground"
           onClick={toggleSidebar}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -832,13 +832,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           )}
         </Button>
       </div>
-      
+
       {/* Simple custom modal instead of AlertDialog */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
-             onClick={handleCancelDelete}>
+          onClick={handleCancelDelete}>
           <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto"
-               onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-2">Are you sure?</h2>
             <p className="text-sm text-muted-foreground mb-6">
               This conversation will be permanently deleted.
