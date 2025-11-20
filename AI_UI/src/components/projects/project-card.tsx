@@ -44,12 +44,11 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
     return (
         <div
             className={cn(
-                "group relative flex items-center gap-3 rounded-lg p-3 cursor-pointer transition-all",
+                "group relative flex items-center gap-3 rounded-lg p-3 transition-all",
                 "hover:bg-accent border-l-4",
                 "min-h-[60px]"
             )}
             style={{ borderLeftColor: project.color || '#3b82f6' }}
-            onClick={() => onOpen?.(project)}
         >
             {/* Emoji and Content */}
             <div className="text-xl flex-shrink-0">{project.emoji}</div>
