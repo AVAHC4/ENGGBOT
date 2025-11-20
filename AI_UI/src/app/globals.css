@@ -313,8 +313,7 @@
 
 /* Target any fixed positioned elements in the bottom right corner that might be the badge */
 div[style*="position:fixed"][style*="bottom:0"][style*="right:0"],
-div[style*="position:fixed"][style*="z-index:2147483647"],
-div[style*="position:fixed"][style*="z-index:9999"] {
+div[style*="position:fixed"][style*="z-index:2147483647"] {
   display: none !important;
 }
 
