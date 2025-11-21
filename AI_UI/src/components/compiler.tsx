@@ -33,7 +33,7 @@ const EXECUTORS: Record<string, any> = {
 export function Compiler() {
   // Use a ref to track if component is mounted to prevent hydration issues
   const isMounted = useRef(false);
-  
+
   // Default to JavaScript (index 2)
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
   const initialLanguageRef = useRef(LANGUAGES[2]);
@@ -54,7 +54,7 @@ export function Compiler() {
   // Track prompts and user inputs to merge into final stdout
   const echoPromptsRef = useRef<string[]>([]);
   const echoInputsRef = useRef<string[]>([]);
-  
+
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
     isMounted.current = true;
@@ -77,12 +77,12 @@ export function Compiler() {
         setPythonBooting(false);
       }
     })();
-    
+
     return () => {
       isMounted.current = false;
     };
   }, []);
-  
+
   // Update bundler when language changes
   useEffect(() => {
     if (isMounted.current && bundlerRef.current) {
@@ -96,14 +96,14 @@ export function Compiler() {
   // Function to run the code
   const runCode = async () => {
     if (!bundlerRef.current) return;
-    
+
     setIsRunning(true);
     setIsCompiling(true);
     setConsoleOutput([]);
     setIsWaitingForInput(false);
-    
+
     // Do not print extra compilation/runtime logs
-    
+
     try {
       setIsCompiling(false);
       // Do not print extra runtime logs
@@ -116,7 +116,7 @@ export function Compiler() {
 
       // Show a status hint for heavy toolchains on first run
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
-        setConsoleOutput(prev => [...prev, '[C/C++] Initializing toolchain (first run can take a few seconds)...']);
+        setConsoleOutput(prev => [...prev, '[C/C++] First run can take a few seconds please wait...']);
       } else if (selectedLanguage.id === 'java') {
         setConsoleOutput(prev => [...prev, '[Java] Compiling and executing...']);
       }
@@ -180,13 +180,13 @@ export function Compiler() {
       // Reset echo trackers for next run
       echoPromptsRef.current = [];
       echoInputsRef.current = [];
-      
+
       // Scroll to bottom of console
       if (consoleRef.current) {
         consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
       }
     }
-    
+
     // Scroll to bottom of console
     if (consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
@@ -281,7 +281,7 @@ export function Compiler() {
       <div className="relative flex items-center px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium">Online Compiler</span>
-          <select 
+          <select
             value={selectedLanguage.id}
             onChange={handleLanguageChange}
             className="bg-[#333333] text-white text-sm rounded px-2 py-1 border border-[#3c3c3c] focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -292,7 +292,7 @@ export function Compiler() {
           </select>
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2">
-          <button 
+          <button
             className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
             disabled={isRunning}
@@ -315,7 +315,7 @@ export function Compiler() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Code editor */}
         <div className="flex-1 overflow-auto">
-          <ClientCodeEditor 
+          <ClientCodeEditor
             value={code}
             onChange={setCode}
             language={getLanguageFromExtension(selectedLanguage.extension)}
@@ -327,16 +327,16 @@ export function Compiler() {
         <div className="h-1/3 bg-black border-t border-[#3c3c3c] flex flex-col">
           <div className="flex items-center justify-between px-4 py-1 bg-[#252526] border-b border-[#3c3c3c]">
             <span className="text-xs font-medium">Console</span>
-            <button 
+            <button
               className="text-xs text-gray-400 hover:text-white"
               onClick={() => setConsoleOutput([])}
             >
               Clear
             </button>
           </div>
-          
 
-          <div 
+
+          <div
             ref={consoleRef}
             className="flex-1 overflow-auto p-2 font-mono text-sm outline-none"
             tabIndex={0}
@@ -362,7 +362,7 @@ export function Compiler() {
               <div className="text-gray-500 italic">Run your code to see output here</div>
             )}
           </div>
-          
+
           {/* No separate input box; typing happens inline in the console */}
         </div>
       </div>
