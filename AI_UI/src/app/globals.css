@@ -10,12 +10,14 @@
 }
 
 .chat-messages-container::-webkit-scrollbar-thumb {
-  background-color: #555; /* A medium grey */
+  background-color: #555;
+  /* A medium grey */
   border-radius: 4px;
 }
 
 .chat-messages-container::-webkit-scrollbar-thumb:hover {
-  background-color: #777; /* Lighter grey on hover */
+  background-color: #777;
+  /* Lighter grey on hover */
 }
 
 @import "tw-animate-css";
@@ -61,7 +63,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   /* Scrollbar custom variables */
   --scrollbar-size: 6px;
   --scrollbar-track: transparent;
@@ -136,7 +138,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: transparent;
   --sidebar-ring: transparent;
-  
+
   /* Dark mode scrollbar colors */
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
@@ -158,11 +160,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-transparent text-foreground;
     overflow: hidden;
   }
-  
+
 
   button,
   a,
@@ -182,6 +185,7 @@
   [data-interactive] {
     cursor: pointer;
   }
+
   input[type="text"],
   input[type="email"],
   input[type="tel"],
@@ -211,7 +215,7 @@
   li {
     cursor: default;
   }
-  
+
   /* Main page scrollbar styles */
   html::-webkit-scrollbar,
   body::-webkit-scrollbar {
@@ -219,31 +223,32 @@
     position: absolute;
     right: 0;
   }
-  
+
   html::-webkit-scrollbar-track,
   body::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
   }
-  
+
   html::-webkit-scrollbar-thumb,
   body::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 10px;
   }
-  
+
   html::-webkit-scrollbar-thumb:hover,
   body::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
   }
-  
+
   /* Firefox scrollbar for the main page */
-  html, body {
+  html,
+  body {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
-  
 
-  
+
+
   /* Adjust pages for collapsed sidebar */
 
   /* Adjust chat container position based on sidebar state (desktop only) */
@@ -277,7 +282,7 @@
 }
 
 .sidebar-container,
-.sidebar-container > div {
+.sidebar-container>div {
   border: none !important;
   outline: none !important;
 }
@@ -324,7 +329,8 @@ a[href*="vercel.app"] {
 }
 
 /* Add styles for markdown headings */
-h1, .heading-1 {
+h1,
+.heading-1 {
   font-size: 1.75rem !important;
   font-weight: 700 !important;
   margin-top: 1.5rem !important;
@@ -332,7 +338,8 @@ h1, .heading-1 {
   line-height: 1.2 !important;
 }
 
-h2, .heading-2 {
+h2,
+.heading-2 {
   font-size: 1.5rem !important;
   font-weight: 700 !important;
   margin-top: 1.25rem !important;
@@ -340,7 +347,8 @@ h2, .heading-2 {
   line-height: 1.3 !important;
 }
 
-h3, .heading-3 {
+h3,
+.heading-3 {
   font-size: 1.25rem !important;
   font-weight: 600 !important;
   margin-top: 1rem !important;
@@ -372,7 +380,10 @@ h3, .heading-3 {
 }
 
 /* Force scrolling to work properly */
-html, body, #__next, main {
+html,
+body,
+#__next,
+main {
   height: 100%;
 }
 
@@ -390,4 +401,87 @@ html, body, #__next, main {
 .bg-muted.font-mono.text-sm.rounded-md.p-4.min-h-\[500px\].border.overflow-auto {
   max-height: 500px;
   overflow-y: auto !important;
+}
+
+/* Chat Message Alignment Styles */
+/* User messages on the right, AI messages on the left (ChatGPT style) */
+.message-container {
+  display: flex;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+/* User messages aligned to the right */
+.message-container.user-message {
+  justify-content: flex-end;
+  padding-left: 15%;
+}
+
+.message-container.user-message .message-wrapper {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 65%;
+}
+
+.message-container.user-message .message-content {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+/* AI messages aligned to the left */
+.message-container.assistant-message {
+  justify-content: flex-start;
+  padding-left: 5%;
+}
+
+.message-container.assistant-message .message-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 90%;
+}
+
+.message-container.assistant-message .message-content {
+  flex: 1;
+}
+
+/* Avatar styles */
+.message-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  background: rgba(59, 130, 246, 0.8);
+  color: white;
+}
+
+.assistant-avatar {
+  background: rgba(139, 92, 246, 0.8);
+  color: white;
+}
+
+/* Message body */
+.message-body {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+
+  .message-container.user-message .message-wrapper,
+  .message-container.assistant-message .message-wrapper {
+    max-width: 90%;
+  }
 }
