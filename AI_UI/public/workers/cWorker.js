@@ -40,7 +40,7 @@ self.addEventListener('message', async (e) => {
   }
 
   if (data.type === 'EXECUTE') {
-    const { code = '', lang = 'c' } = data;
+    const { code = '', lang = 'c', stdin = '' } = data;
     try {
       await ensureInit();
 
@@ -85,7 +85,10 @@ self.addEventListener('message', async (e) => {
         wasmCache.set(key, wasmBytes);
       }
       const program = await Wasmer.fromFile(wasmBytes);
-      const run = await program.entrypoint.run();
+      // Pass stdin to the program
+      const run = await program.entrypoint.run({
+        stdin: stdin || ''
+      });
       const runResult = await promiseWithTimeout(12000, run.wait(), { stdout: '', stderr: 'Program timeout', ok: false, code: 124 });
 
       const stdout = runResult.stdout || '';

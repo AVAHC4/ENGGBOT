@@ -6,7 +6,7 @@ import { Bundler } from '@/lib/bundler';
 import { ClientCodeEditor } from './client-code-editor';
 import * as pythonExecutor from '@/lib/executors/pythonExecutor';
 import * as javascriptExecutor from '@/lib/executors/javascriptExecutor';
-import * as cExecutor from '@/lib/executors/cExecutor';
+import * as cExecutorInteractive from '@/lib/executors/cExecutorInteractive';
 import * as rustExecutor from '@/lib/executors/rustExecutor';
 import * as javaExecutor from '@/lib/executors/javaExecutor';
 
@@ -23,8 +23,8 @@ const LANGUAGES = [
 const EXECUTORS: Record<string, any> = {
   javascript: javascriptExecutor,
   python: pythonExecutor,
-  c: cExecutor,
-  cpp: cExecutor,
+  c: cExecutorInteractive,
+  cpp: cExecutorInteractive,
   java: javaExecutor,
   rust: rustExecutor,
 };
@@ -67,8 +67,8 @@ export function Compiler() {
       try {
         setPythonBooting(true);
         await pythonExecutor.init();
-        // Warm C/C++ executor (loads Wasmer SDK & clang in worker)
-        try { await cExecutor.init(); } catch (e) { console.warn('[Compiler] C/C++ init failed:', e); }
+        // Warm C/C++ executor (loads JSCPP interpreter in worker)
+        try { await cExecutorInteractive.init(); } catch (e) { console.warn('[Compiler] C/C++ init failed:', e); }
         // Warm Java executor (loads CheerpJ runtime)
         try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
       } catch (e) {

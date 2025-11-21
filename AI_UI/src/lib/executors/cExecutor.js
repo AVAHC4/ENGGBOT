@@ -43,14 +43,14 @@ export async function init() {
             colno: ev?.colno,
             error: ev?.error,
           });
-        } catch {}
+        } catch { }
         cleanup();
         reject(new Error('C worker failed to start'));
       };
 
       function cleanup() {
-        try { worker?.removeEventListener('message', onMessage); } catch {}
-        try { worker?.removeEventListener('error', onError); } catch {}
+        try { worker?.removeEventListener('message', onMessage); } catch { }
+        try { worker?.removeEventListener('error', onError); } catch { }
         if (initTimeout) clearTimeout(initTimeout);
       }
 
@@ -74,8 +74,8 @@ export async function init() {
 /**
  * Execute C or C++ code and capture output
  * @param {string} code
- * @param {string} stdin - unused for now (no interactive input support)
- * @param {(prompt: string) => Promise<string>} onInputRequest - unused
+ * @param {string} stdin - standard input for the program
+ * @param {(prompt: string) => Promise<string>} onInputRequest - callback for interactive input
  * @param {string} langId - 'c' | 'cpp'
  * @returns {Promise<{output: string, error: string}>}
  */
@@ -84,11 +84,29 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
     await init();
   }
 
+  // WASM programs cannot pause for interactive input mid-execution
+  // Detect if code uses input functions and prompt upfront if needed
+  let inputData = stdin || '';
+
+  if (!inputData && onInputRequest) {
+    // Check if code likely needs input
+    const needsInput = /\b(scanf|cin|getchar|gets|fgets|getline)\b/.test(code);
+    if (needsInput) {
+      try {
+        // Prompt for input before running (WASM limitation)
+        inputData = await onInputRequest('');
+      } catch (e) {
+        // User cancelled
+        inputData = '';
+      }
+    }
+  }
+
   return new Promise((resolve) => {
     const handler = (e) => {
       const msg = e.data || {};
       if (msg.type === 'EXECUTION_RESULT') {
-        try { worker?.removeEventListener('message', handler); } catch {}
+        try { worker?.removeEventListener('message', handler); } catch { }
         if (currentTimeoutId) { clearTimeout(currentTimeoutId); currentTimeoutId = null; }
         currentHandler = null;
         const res = { output: msg.output || '', error: msg.error || '' };
@@ -99,12 +117,17 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
     currentHandler = handler;
     currentResolve = resolve;
 
-    worker.postMessage({ type: 'EXECUTE', code: String(code), lang: langId === 'cpp' ? 'cpp' : 'c' });
+    worker.postMessage({
+      type: 'EXECUTE',
+      code: String(code),
+      lang: langId === 'cpp' ? 'cpp' : 'c',
+      stdin: inputData
+    });
 
     // Execution timeout (60s)
     currentTimeoutId = setTimeout(() => {
-      try { worker?.removeEventListener('message', handler); } catch {}
-      try { worker?.terminate(); } catch {}
+      try { worker?.removeEventListener('message', handler); } catch { }
+      try { worker?.terminate(); } catch { }
       isInitialized = false;
       worker = null;
       initPromise = null;
@@ -129,10 +152,10 @@ export function getInfo() {
 export async function cancel() {
   try {
     if (worker && currentHandler) {
-      try { worker.removeEventListener('message', currentHandler); } catch {}
+      try { worker.removeEventListener('message', currentHandler); } catch { }
     }
     if (worker) {
-      try { worker.terminate(); } catch {}
+      try { worker.terminate(); } catch { }
     }
   } finally {
     if (currentTimeoutId) { clearTimeout(currentTimeoutId); currentTimeoutId = null; }
