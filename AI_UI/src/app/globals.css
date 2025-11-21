@@ -402,3 +402,29 @@ main {
   max-height: 500px;
   overflow-y: auto !important;
 }
+
+/* Align user messages to the right */
+.user-message {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-left: 25% !important;
+  max-width: 70% !important;
+}
+
+.user-message .message-wrapper {
+  flex-direction: row-reverse !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+}
+
+.assistant-message {
+  display: flex !important;
+  justify-content: flex-start !important;
+  margin-right: auto !important;
+  max-width: 85% !important;
+}
+
+.assistant-message .message-wrapper {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
