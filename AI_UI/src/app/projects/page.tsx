@@ -95,23 +95,6 @@ export default function ProjectsPage() {
                                 className="pl-10"
                             />
                         </div>
-
-                        <div className="flex gap-1 border rounded-md p-1">
-                            <Button
-                                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('grid')}
-                            >
-                                <Grid3x3 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setViewMode('list')}
-                            >
-                                <List className="h-4 w-4" />
-                            </Button>
-                        </div>
                     </div>
                 </div>
 
