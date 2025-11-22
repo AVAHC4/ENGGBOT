@@ -127,8 +127,14 @@ export function Compiler() {
         async (prompt: string) => {
           // Show prompt as a console line and capture keystrokes inline
           const p = String(prompt || '');
+
+          // For C programs, the prompt already comes from the code
+          // Add it to console output so it appears before input request
+          if (p) {
+            setConsoleOutput(prev => [...prev, p.replace(/\n$/, '')]);
+          }
+
           echoPromptsRef.current.push(p);
-          setConsoleOutput(prev => [...prev, p]);
           setInlineInput('');
           setInputPrompt(p);
           setIsWaitingForInput(true);
@@ -152,7 +158,8 @@ export function Compiler() {
         setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
       } else {
         if (out.trim().length > 0) {
-          let lines = out.split('\n').filter((l: string) => l !== '');
+          // Don't filter empty lines - they're important for formatting
+          let lines = out.split('\n');
           // Merge echoed inputs into their prompts so it looks like a terminal
           if (echoPromptsRef.current.length > 0) {
             const merged: string[] = [];
@@ -351,7 +358,7 @@ export function Compiler() {
                   (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
                 return (
                   <div key={i} className={cls}>
-                    {display}
+                    {display || '\u00A0'}
                     {isPromptLine && (
                       <span className="relative inline-block ml-1 w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]" />
                     )}
