@@ -158,22 +158,22 @@ export function Compiler() {
         setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
       } else {
         if (out.trim().length > 0) {
-          // Don't filter empty lines - they're important for formatting
           let lines = out.split('\n');
 
-          // For C programs, remove prompts that we already showed during input
+          // For C programs, remove prompts that were already shown during input
           if (echoPromptsRef.current.length > 0) {
-            lines = lines.filter(line => {
-              // Check if this line is one of the prompts we already displayed
-              return !echoPromptsRef.current.some(prompt =>
-                line === prompt.replace(/\n$/, '') || line === prompt
-              );
-            });
+            lines = lines.map((line: string) => {
+              let cleanedLine = line;
+              // Strip each prompt from the line
+              for (const prompt of echoPromptsRef.current) {
+                const cleanPrompt = prompt.replace(/\n$/, '');
+                if (cleanedLine.startsWith(cleanPrompt)) {
+                  cleanedLine = cleanedLine.substring(cleanPrompt.length);
+                }
+              }
+              return cleanedLine;
+            }).filter((line: string) => line.trim().length > 0); // Remove empty lines after stripping prompts
           }
-
-          // Remove any remaining empty lines at start/end
-          while (lines.length > 0 && lines[0].trim() === '') lines.shift();
-          while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
 
           setConsoleOutput(prev => [...prev, ...lines]);
         } else {
