@@ -160,19 +160,40 @@ export function Compiler() {
         if (out.trim().length > 0) {
           let lines = out.split('\n');
 
-          // For C programs, remove prompts that were already shown during input
+          // Split lines that have concatenated outputs (WASM fgets doesn't capture newlines properly)
+          // Pattern: "Name: valueGender: M" should become two lines
+          lines = lines.flatMap((line: string) => {
+            // Match pattern: text ends with a lowercase/digit, then immediately starts with uppercase letter + colon
+            // This catches "jkjGender:" or "valueWord:"
+            const pattern = /([a-z0-9])([A-Z][a-z]*:)/g;
+            if (pattern.test(line)) {
+              // Split at the boundary
+              const parts = line.split(/(?=[A-Z][a-z]*:\s)/);
+              return parts;
+            }
+            return [line];
+          });
+
+          // For C programs, only remove lines that are EXACTLY one of the prompts we showed
           if (echoPromptsRef.current.length > 0) {
-            lines = lines.map((line: string) => {
-              let cleanedLine = line;
-              // Strip each prompt from the line
-              for (const prompt of echoPromptsRef.current) {
-                const cleanPrompt = prompt.replace(/\n$/, '');
-                if (cleanedLine.startsWith(cleanPrompt)) {
-                  cleanedLine = cleanedLine.substring(cleanPrompt.length);
-                }
+            const promptSet = new Set(echoPromptsRef.current.map((p: string) => p.trim()));
+
+            lines = lines.filter((line: string) => {
+              const trimmed = line.trim();
+
+              // Keep empty lines - they're important for formatting
+              if (trimmed === '') {
+                return true;
               }
-              return cleanedLine;
-            }).filter((line: string) => line.trim().length > 0); // Remove empty lines after stripping prompts
+
+              // Remove if it's exactly a prompt we displayed
+              if (promptSet.has(trimmed)) {
+                return false;
+              }
+
+              // Keep everything else
+              return true;
+            });
           }
 
           setConsoleOutput(prev => [...prev, ...lines]);
