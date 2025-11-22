@@ -160,21 +160,22 @@ export function Compiler() {
         if (out.trim().length > 0) {
           // Don't filter empty lines - they're important for formatting
           let lines = out.split('\n');
-          // Merge echoed inputs into their prompts so it looks like a terminal
+
+          // For C programs, remove prompts that we already showed during input
           if (echoPromptsRef.current.length > 0) {
-            const merged: string[] = [];
-            let idx = 0;
-            for (const line of lines) {
-              if (idx < echoPromptsRef.current.length && line === echoPromptsRef.current[idx]) {
-                merged.push(line + (echoInputsRef.current[idx] ?? ''));
-                idx++;
-              } else {
-                merged.push(line);
-              }
-            }
-            lines = merged;
+            lines = lines.filter(line => {
+              // Check if this line is one of the prompts we already displayed
+              return !echoPromptsRef.current.some(prompt =>
+                line === prompt.replace(/\n$/, '') || line === prompt
+              );
+            });
           }
-          setConsoleOutput(lines);
+
+          // Remove any remaining empty lines at start/end
+          while (lines.length > 0 && lines[0].trim() === '') lines.shift();
+          while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop();
+
+          setConsoleOutput(prev => [...prev, ...lines]);
         } else {
           setConsoleOutput(prev => [...prev, `[No output]`]);
         }
