@@ -69,7 +69,9 @@ export function ChatInterface() {
     conversationId,
     addMessage,
     isPrivateMode,
-    togglePrivateMode
+    togglePrivateMode,
+    engineeringMode,
+    toggleEngineeringMode
   } = useChat();
 
   // Add local loading state to ensure animation shows immediately
@@ -339,7 +341,9 @@ export function ChatInterface() {
               onToggleThinking={toggleThinkingMode}
               webSearchMode={webSearchMode}
               onToggleWebSearch={toggleWebSearchMode}
-              placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
+              engineeringMode={engineeringMode}
+              onToggleEngineering={toggleEngineeringMode}
+              placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${engineeringMode ? ' (engineering mode enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
               isAwaitingResponse={isLoading || isGenerating}
               onStopGeneration={stopGeneration}
             />

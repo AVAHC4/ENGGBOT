@@ -198,8 +198,17 @@ export function Compiler() {
 
           setConsoleOutput(prev => [...prev, ...lines]);
         } else {
-          setConsoleOutput(prev => [...prev, `[No output]`]);
+          if (!result.plots || result.plots.length === 0) {
+            setConsoleOutput(prev => [...prev, `[No output]`]);
+          }
         }
+
+        // Handle plots
+        if (result.plots && result.plots.length > 0) {
+          const plotImages = result.plots.map((p: string) => `data:image/png;base64,${p}`);
+          setConsoleOutput(prev => [...prev, ...plotImages]);
+        }
+
         setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
       }
     } catch (error) {
@@ -378,6 +387,13 @@ export function Compiler() {
                 const display = isPromptLine ? (line + inlineInput) : line;
                 const cls = line.startsWith('Error') ? 'text-red-400' :
                   (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
+                if (line.startsWith('data:image/png;base64,')) {
+                  return (
+                    <div key={i} className="py-2">
+                      <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
+                    </div>
+                  );
+                }
                 return (
                   <div key={i} className={cls}>
                     {display || '\u00A0'}

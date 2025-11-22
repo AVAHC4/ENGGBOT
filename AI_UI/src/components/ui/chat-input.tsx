@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe } from "lucide-react";
+import { Send, Mic, Paperclip, X, Lightbulb, Square, CornerUpLeft, Globe, Wrench } from "lucide-react";
 import { VoiceInputModal } from "@/components/ui/voice-input-modal";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ interface ChatInputProps {
   onToggleWebSearch?: () => void;
   isPrivateMode?: boolean;
   togglePrivateMode?: () => void;
+  engineeringMode?: boolean;
+  onToggleEngineering?: () => void;
 }
 
 export function ChatInput({
@@ -31,7 +33,9 @@ export function ChatInput({
   onStopGeneration,
   webSearchMode = false,
   onToggleWebSearch,
-  
+  engineeringMode = false,
+  onToggleEngineering,
+
 }: ChatInputProps) {
   const { replyToMessage, setReplyToMessage } = useChat();
   const [message, setMessage] = useState("");
@@ -182,13 +186,13 @@ export function ChatInput({
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
           mediaRecorderRef.current.stop();
         }
-      } catch {}
+      } catch { }
     };
   }, []);
 
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);
-    
+
     // Focus the textarea and adjust its height after adding transcription
     setTimeout(() => {
       if (textareaRef.current) {
@@ -238,27 +242,27 @@ export function ChatInput({
                 </div>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
               onClick={cancelReply}
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
         )}
-      
+
         {/* Attachment preview */}
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
             {attachments.map((file, index) => (
               <div key={index} className="flex items-center bg-muted rounded-full pl-3 pr-1 py-1 text-xs dark:bg-gray-800">
                 <span className="max-w-[140px] truncate">{file.name}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 ml-1" 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 ml-1"
                   onClick={() => removeAttachment(index)}
                 >
                   <X className="h-3 w-3" />
@@ -267,7 +271,7 @@ export function ChatInput({
             ))}
           </div>
         )}
-        
+
         <div className="flex items-end gap-1.5 md:gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1.5 md:px-2 py-1">
           {/* File attachment button */}
           <input
@@ -278,10 +282,10 @@ export function ChatInput({
             onChange={handleFileChange}
             disabled={disabled || awaitingResponse}
           />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full"
             onClick={() => {
               if (disabled || awaitingResponse) return;
               fileInputRef.current?.click();
@@ -290,12 +294,12 @@ export function ChatInput({
           >
             <Paperclip className="h-5 w-5" />
           </Button>
-          
+
           {/* Voice input button (Bytez transcription) */}
-          <Button 
+          <Button
             variant={isRecording ? "default" : "ghost"}
-            size="icon" 
-            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full" 
+            size="icon"
+            className="h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full"
             onClick={toggleRecording}
             disabled={disabled || awaitingResponse || isTranscribing}
             aria-label={isRecording ? "Stop recording" : "Start recording"}
@@ -303,14 +307,14 @@ export function ChatInput({
           >
             {isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
           </Button>
-          
+
           {/* Web search mode toggle button */}
           {onToggleWebSearch && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className={cn(
                     "h-8 w-8 md:h-9 md:w-9 rounded-full dark:hover:bg-gray-800",
                     webSearchMode && "text-green-500 dark:text-green-400"
@@ -328,15 +332,15 @@ export function ChatInput({
               </TooltipContent>
             </Tooltip>
           )}
-          
+
           {/* Thinking mode toggle button */}
           {onToggleThinking && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   className={cn(
                     "h-8 w-8 md:h-9 md:w-9 rounded-full dark:hover:bg-gray-800",
                     thinkingMode && "text-blue-500 dark:text-blue-400"
@@ -350,6 +354,32 @@ export function ChatInput({
               <TooltipContent side="top">
                 <p className="text-xs">
                   {thinkingMode ? "Thinking mode enabled" : "Enable thinking mode"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Engineering mode toggle button */}
+          {onToggleEngineering && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 md:h-9 md:w-9 rounded-full dark:hover:bg-gray-800",
+                    engineeringMode && "text-orange-500 dark:text-orange-400"
+                  )}
+                  onClick={onToggleEngineering}
+                  disabled={awaitingResponse}
+                >
+                  <Wrench className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p className="text-xs">
+                  {engineeringMode ? "Engineering mode enabled" : "Enable engineering mode"}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -372,25 +402,25 @@ export function ChatInput({
             disabled={disabled || awaitingResponse || isTranscribing}
             rows={1}
           />
-          
+
           {/* Conditionally render either Send or Stop button */}
           {awaitingResponse ? (
-            <Button 
-              onClick={handleStopGeneration} 
-              size="icon" 
+            <Button
+              onClick={handleStopGeneration}
+              size="icon"
               variant="ghost"
               className="rounded-full h-8 w-8 md:h-9 md:w-9 dark:hover:bg-gray-800/30"
             >
               <Square className="h-4 w-4" />
             </Button>
           ) : (
-            <Button 
-              variant={message.trim() || attachments.length > 0 ? "default" : "ghost"} 
-              size="icon" 
+            <Button
+              variant={message.trim() || attachments.length > 0 ? "default" : "ghost"}
+              size="icon"
               className={cn(
                 "h-8 w-8 md:h-9 md:w-9 shrink-0 rounded-full",
-                message.trim() || attachments.length > 0 
-                  ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                message.trim() || attachments.length > 0
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                   : "text-muted-foreground"
               )}
               onClick={handleSend}
@@ -403,8 +433,8 @@ export function ChatInput({
       </div>
 
       {/* Voice input modal */}
-      <VoiceInputModal 
-        isOpen={isVoiceModalOpen} 
+      <VoiceInputModal
+        isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
         onTranscription={handleVoiceTranscription}
       />

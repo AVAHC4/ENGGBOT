@@ -55,9 +55,9 @@ export async function init() {
             colno: ev?.colno,
             error: ev?.error,
           });
-        } catch {}
-        try { worker.removeEventListener('message', onMessage); } catch {}
-        try { worker.removeEventListener('error', onError); } catch {}
+        } catch { }
+        try { worker.removeEventListener('message', onMessage); } catch { }
+        try { worker.removeEventListener('error', onError); } catch { }
         clearTimeout(initTimeout);
         initPromise = null;
         reject(new Error('Python worker failed to start'));
@@ -65,8 +65,8 @@ export async function init() {
       worker.addEventListener('error', onError);
 
       const initTimeout = setTimeout(() => {
-        try { worker.removeEventListener('message', onMessage); } catch {}
-        try { worker.removeEventListener('error', onError); } catch {}
+        try { worker.removeEventListener('message', onMessage); } catch { }
+        try { worker.removeEventListener('error', onError); } catch { }
         initPromise = null;
         reject(new Error('Python worker initialization timed out'));
       }, 10000);
@@ -136,7 +136,7 @@ export async function execute(code, stdin = '', onInputRequest) {
           try {
             worker.removeEventListener('message', handler);
             worker.terminate();
-          } catch {}
+          } catch { }
           isInitialized = false;
           worker = null;
           initPromise = null;
@@ -156,7 +156,7 @@ export async function execute(code, stdin = '', onInputRequest) {
         currentExecTimeoutId = null;
         currentInputWaitTimeoutId = null;
         currentMsgHandler = null;
-        const res = { output: msg.output || '', error: msg.error || '' };
+        const res = { output: msg.output || '', error: msg.error || '', plots: msg.plots || [] };
         if (currentResolve) { currentResolve(res); }
         currentResolve = null;
       }
@@ -182,7 +182,7 @@ export async function execute(code, stdin = '', onInputRequest) {
         try {
           worker.removeEventListener('message', handler);
           worker.terminate();
-        } catch {}
+        } catch { }
         isInitialized = false;
         worker = null;
         initPromise = null;
@@ -198,7 +198,7 @@ export async function execute(code, stdin = '', onInputRequest) {
         try {
           worker.removeEventListener('message', handler);
           worker.terminate();
-        } catch {}
+        } catch { }
         isInitialized = false;
         worker = null;
         initPromise = null;
@@ -244,10 +244,10 @@ export async function cancel() {
   // Terminate running execution and resolve pending promise
   try {
     if (worker && currentMsgHandler) {
-      try { worker.removeEventListener('message', currentMsgHandler); } catch {}
+      try { worker.removeEventListener('message', currentMsgHandler); } catch { }
     }
     if (worker) {
-      try { worker.terminate(); } catch {}
+      try { worker.terminate(); } catch { }
     }
   } finally {
     if (currentExecTimeoutId) { clearTimeout(currentExecTimeoutId); currentExecTimeoutId = null; }

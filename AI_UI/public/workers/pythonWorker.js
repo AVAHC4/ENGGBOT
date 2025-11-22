@@ -14,20 +14,42 @@ self.onmessage = async (e) => {
       self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js');
       pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
 
-      // Prepare stdout/stderr capture helpers
+      // Load scientific packages
+      await pyodide.loadPackage(['micropip', 'numpy', 'pandas', 'scipy', 'matplotlib', 'sympy']);
+
+      // Prepare stdout/stderr capture helpers and matplotlib hook
       await pyodide.runPython(`
-import sys, io
+import sys, io, base64
 from contextlib import redirect_stdout, redirect_stderr
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 _stdout_buffer = io.StringIO()
 _stderr_buffer = io.StringIO()
+_plots_buffer = []
 
 def get_output():
     return _stdout_buffer.getvalue(), _stderr_buffer.getvalue()
 
+def get_plots():
+    return list(_plots_buffer)
+
 def clear_output():
-    global _stdout_buffer, _stderr_buffer
+    global _stdout_buffer, _stderr_buffer, _plots_buffer
     _stdout_buffer = io.StringIO()
     _stderr_buffer = io.StringIO()
+    _plots_buffer = []
+
+def _show_hook(*args, **kwargs):
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    img_str = base64.b64encode(buf.read()).decode('utf-8')
+    _plots_buffer.append(img_str)
+    plt.close()
+
+plt.show = _show_hook
 `);
 
       isReady = true;
@@ -119,20 +141,22 @@ finally:
     if _orig_input is not None:
         builtins.input = _orig_input
 stdout_content, stderr_content = get_output()
-json.dumps({'stdout': stdout_content, 'stderr': stderr_content})
+plots_content = get_plots()
+json.dumps({'stdout': stdout_content, 'stderr': stderr_content, 'plots': plots_content})
 `;
 
       const jsonResult = await pyodide.runPython(py);
-      let stdout = '', stderr = '';
+      let stdout = '', stderr = '', plots = [];
       try {
         const parsed = JSON.parse(jsonResult);
         stdout = parsed.stdout || '';
         stderr = parsed.stderr || '';
+        plots = parsed.plots || [];
       } catch (e) {
         stderr = 'Failed to parse Python output: ' + (e && e.message || String(e));
       }
 
-      self.postMessage({ type: 'EXECUTION_RESULT', output: stdout, error: stderr });
+      self.postMessage({ type: 'EXECUTION_RESULT', output: stdout, error: stderr, plots: plots });
     } catch (err) {
       self.postMessage({ type: 'EXECUTION_RESULT', output: '', error: String(err && err.message || err) });
     }
