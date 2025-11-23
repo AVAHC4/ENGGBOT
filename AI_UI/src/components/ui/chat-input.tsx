@@ -353,7 +353,7 @@ export function ChatInput({
               </TooltipTrigger>
               <TooltipContent side="top">
                 <p className="text-xs">
-                  {thinkingMode ? "Thinking mode enabled" : "Enable thinking mode"}
+                  {thinkingMode ? "Deep Think enabled" : "Enable Deep Think"}
                 </p>
               </TooltipContent>
             </Tooltip>

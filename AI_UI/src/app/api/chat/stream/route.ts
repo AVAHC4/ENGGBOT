@@ -141,19 +141,17 @@ export async function POST(request: Request) {
       });
     }
 
-    // Instantiate server-side client with secure API key (fallback to default when unset)
+    // Instantiate server-side client with secure API key
     const apiKey = typeof process !== 'undefined'
-      ? process.env.OPENROUTER_API_KEY
+      ? (process.env.CHUTES_API_TOKEN || process.env.CHUTES_API_KEY)
       : undefined;
     if (!apiKey) {
-      console.warn("OPENROUTER_API_KEY is not set. Falling back to default key. Configure this env var in production.");
+      console.warn("CHUTES_API_TOKEN is not set. Configure this env var in production.");
     }
-    const chutesClient = apiKey
-      ? new ChutesClient({ apiKey })
-      : new ChutesClient();
+    const chutesClient = new ChutesClient({ apiKey });
 
-    // Always use the Z.AI GLM 4.5 Air (free) model
-    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air-free"];
+    // Always use the Z.AI GLM 4.5 Air model
+    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air"];
 
     // Format messages for the API
     const messages = [];
@@ -187,7 +185,7 @@ export async function POST(request: Request) {
         model: modelName,
         messages: messages,
         temperature: 0.7,
-        max_tokens: 8000,
+        max_tokens: 1024,
         thinking_mode: thinkingMode,
         stream: true
       });

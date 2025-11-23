@@ -61,16 +61,14 @@ export async function POST(request: Request) {
       await initializeAIClient();
     }
 
-    // Instantiate server-side client with secure API key (fallback to default when unset)
+    // Instantiate server-side client with secure API key
     const apiKey = typeof process !== 'undefined'
-      ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_KEY)
+      ? (process.env.CHUTES_API_TOKEN || process.env.CHUTES_API_KEY)
       : undefined;
     if (!apiKey) {
-      console.warn("Neither OPENROUTER_API_KEY nor CHUTES_API_KEY is set. Falling back to default key. Configure this env var in production.");
+      console.warn("CHUTES_API_TOKEN is not set. Configure this env var in production.");
     }
-    const chutesClient = apiKey
-      ? new ChutesClient({ apiKey })
-      : new ChutesClient();
+    const chutesClient = new ChutesClient({ apiKey });
 
     // Format messages for the API
     const formattedMessages = formatConversationHistory(conversationHistory);
@@ -94,16 +92,16 @@ export async function POST(request: Request) {
         : message
     });
 
-    // Always use Z.AI GLM 4.5 Air (free) model
-    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air-free"];
+    // Always use Z.AI GLM 4.5 Air model
+    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air"];
 
     try {
       // Generate response from the AI
       const response = await chutesClient.generate({
         prompt: message,
         model: modelName,
-        temperature: 0.5,
-        max_tokens: 8000, // Increased max tokens for much longer responses
+        temperature: 0.7,
+        max_tokens: 1024,
         thinking_mode: thinkingMode,
         messages: messages
       });

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import dynamic from 'next/dynamic';
 
-import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play } from "lucide-react";
+import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play, ChevronDown, ChevronRight, Brain } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import NextImage from "next/image";
@@ -34,6 +34,38 @@ export interface ChatMessageProps {
   messageData: ExtendedChatMessage;
 }
 
+function ThinkingBlock({ content }: { content: string }) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  return (
+    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/20 overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center w-full px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 transition-colors"
+      >
+        <Brain className="w-3 h-3 mr-2" />
+        <span>Thinking Process</span>
+        <div className="ml-auto">
+          {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="px-3 py-2 text-xs text-gray-600 dark:text-gray-400 border-t border-blue-200 dark:border-blue-900/50 bg-white/50 dark:bg-transparent">
+          <div className="prose prose-xs dark:prose-invert max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatMessage({
   message,
   isUser,
@@ -57,7 +89,26 @@ export function ChatMessage({
   // Determine if this message is currently streaming
   const isStreaming = messageData.isStreaming === true;
 
+  // Extract thinking content if present
+  let thinkingContent = null;
+  let mainContent = message;
 
+  // Regex to find <think> block at the start
+  // Handles both complete <think>...</think> and incomplete <think>... (streaming)
+  const thinkMatch = /^(<think>)([\s\S]*?)(?:<\/think>|$)/.exec(message);
+
+  if (thinkMatch && !isUser) {
+    thinkingContent = thinkMatch[2];
+    // If the tag is closed, the main content is everything after </think>
+    // If not closed (streaming), main content is empty or we might want to show nothing yet
+    if (message.includes('</think>')) {
+      mainContent = message.split('</think>')[1] || '';
+      // Trim leading newlines from main content
+      mainContent = mainContent.replace(/^\n+/, '');
+    } else {
+      mainContent = ''; // Still thinking
+    }
+  }
 
   // Function to copy message content to clipboard
   const handleCopy = () => {
@@ -108,7 +159,7 @@ export function ChatMessage({
     let match;
     let index = 0;
 
-    while ((match = codeBlockRegex.exec(message)) !== null) {
+    while ((match = codeBlockRegex.exec(mainContent)) !== null) {
       const language = match[1] || 'text';
       const code = match[2];
       const codeKey = `${messageData.id}-${index}`;
@@ -141,7 +192,7 @@ export function ChatMessage({
 
       index++;
     }
-  }, [message, messageData.id, isUser, codeExecutionResults, executingCode]);
+  }, [mainContent, messageData.id, isUser, codeExecutionResults, executingCode]);
 
 
   // Render attachments based on type
@@ -530,7 +581,8 @@ export function ChatMessage({
           {renderReplyQuote()}
 
           <div className="message-body">
-            {renderMessageContent(message)}
+            {thinkingContent && <ThinkingBlock content={thinkingContent} />}
+            {renderMessageContent(mainContent)}
             {renderAttachments()}
             {renderStreamingIndicator()}
           </div>
