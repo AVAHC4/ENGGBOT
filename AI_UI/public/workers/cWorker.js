@@ -97,7 +97,7 @@ self.addEventListener('message', async (e) => {
   }
 });
 
-// Auto-init notification like other workers
+
 self.postMessage({ type: 'BOOT' });
 
 async function sha256(text) {
