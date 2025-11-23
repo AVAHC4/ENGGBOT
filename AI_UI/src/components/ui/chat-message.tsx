@@ -22,8 +22,7 @@ import { EnggBotLogo } from './enggbot-logo';
 import AITextLoading from '@/components/ui/ai-text-loading';
 import * as pythonExecutor from '@/lib/executors/pythonExecutor';
 
-// Dynamically import Plotly
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
+
 
 export interface ChatMessageProps {
   message: string;
@@ -164,7 +163,7 @@ export function ChatMessage({
       const code = match[2];
       const codeKey = `${messageData.id}-${index}`;
       const isPython = language === 'python';
-      const hasVisualization = isPython && (code.includes('show_plotly') || code.includes('plt.show'));
+      const hasVisualization = isPython && (code.includes('plt.show'));
       const alreadyExecuted = codeExecutionResults.has(codeKey);
       const currentlyExecuting = executingCode.has(codeKey);
 
@@ -334,7 +333,7 @@ export function ChatMessage({
         const isThisBlockCopied = codeCopied === `${index}`;
         const codeKey = `${messageData.id}-${index}`;
         const isPython = part.language === 'python';
-        const hasVisualization = isPython && (part.content.includes('show_plotly') || part.content.includes('plt.show'));
+        const hasVisualization = isPython && (part.content.includes('plt.show'));
         const executionResult = codeExecutionResults.get(codeKey);
         const isExecuting = executingCode.has(codeKey);
 
@@ -429,10 +428,7 @@ export function ChatMessage({
                 hasOutput: !!executionResult.output,
                 hasError: !!executionResult.error,
                 hasPlots: !!executionResult.plots,
-                plotsLength: executionResult.plots?.length || 0,
-                hasPlotly: !!executionResult.plotly,
-                plotlyLength: executionResult.plotly?.length || 0,
-                plotlyData: executionResult.plotly
+                plotsLength: executionResult.plots?.length || 0
               });
               return null;
             })()}
@@ -451,36 +447,6 @@ export function ChatMessage({
                 {executionResult.plots && executionResult.plots.map((plot: string, i: number) => (
                   <img key={i} src={`data:image/png;base64,${plot}`} alt="Plot" className="max-w-full h-auto my-2 rounded" />
                 ))}
-                {executionResult.plotly && executionResult.plotly.length > 0 ? (
-                  executionResult.plotly.map((json: string, i: number) => {
-                    console.log('[ChatMessage] Rendering Plotly chart', i, 'JSON length:', json.length);
-                    try {
-                      const plotData = JSON.parse(json);
-                      console.log('[ChatMessage] Parsed Plotly data:', plotData);
-                      return (
-                        <div key={i} className="w-full h-[400px] bg-white my-2 rounded overflow-hidden">
-                          <Plot
-                            data={plotData.data}
-                            layout={{
-                              ...plotData.layout,
-                              autosize: true,
-                              margin: { t: 30, r: 20, l: 40, b: 40 },
-                              font: { color: '#000' }
-                            }}
-                            config={{ responsive: true }}
-                            style={{ width: '100%', height: '100%' }}
-                            useResizeHandler={true}
-                          />
-                        </div>
-                      );
-                    } catch (e) {
-                      console.error('[ChatMessage] Error parsing/rendering Plotly:', e);
-                      return <div key={i} className="text-red-400">Error rendering plot: {String(e)}</div>;
-                    }
-                  })
-                ) : (
-                  executionResult.plotly && console.log('[ChatMessage] plotly array is empty')
-                )}
               </div>
             )}
           </div>
