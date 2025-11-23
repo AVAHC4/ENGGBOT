@@ -1,12 +1,9 @@
-// Module Worker: C/C++ compile & run via Wasmer JS SDK (clang)
-// Requires COOP/COEP on the top-level page and this worker path.
-// Headers are already configured in next.config.js and root vercel.json.
 
 import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
 
 let initialized = false;
 let clangPkg = null;
-const wasmCache = new Map(); // key: sha256(lang+"|"+code) => Uint8Array wasm
+const wasmCache = new Map();
 async function ensureInit() {
   if (!initialized) {
     await init();
