@@ -12,6 +12,9 @@ import NextImage from "next/image";
 import { BOT_CONFIG } from "@/lib/ai/response-middleware";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { EnggBotLogo } from './enggbot-logo';
@@ -26,9 +29,9 @@ export interface ChatMessageProps {
   messageData: ExtendedChatMessage;
 }
 
-export function ChatMessage({ 
-  message, 
-  isUser, 
+export function ChatMessage({
+  message,
+  isUser,
   timestamp,
   attachments = [],
   skipGeneration = false,
@@ -38,17 +41,17 @@ export function ChatMessage({
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  
+
   // Get the message being replied to if replyToId exists
-  const replyToMessage = messageData.replyToId 
-    ? messages.find(msg => msg.id === messageData.replyToId) 
+  const replyToMessage = messageData.replyToId
+    ? messages.find(msg => msg.id === messageData.replyToId)
     : null;
 
   // Determine if this message is currently streaming
   const isStreaming = messageData.isStreaming === true;
 
 
-  
+
   // Function to copy message content to clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(message).then(() => {
@@ -56,7 +59,7 @@ export function ChatMessage({
       setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
     });
   };
-  
+
   // Function to copy code block content
   const handleCopyCode = (code: string, blockId: number) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -64,7 +67,7 @@ export function ChatMessage({
       setTimeout(() => setCodeCopied(null), 2000); // Reset after 2 seconds
     });
   };
-  
+
   // Function to open code in compiler
   const handleOpenInCompiler = (code: string, language: string) => {
     // Replace '/compiler' with the actual path to your compiler page
@@ -72,14 +75,14 @@ export function ChatMessage({
     const compilerUrl = `/compiler?code=${encodeURIComponent(code)}&language=${encodeURIComponent(language)}`;
     window.open(compilerUrl, '_blank');
   };
-  
+
   // Function to handle regeneration of AI response
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     await regenerateLastResponse();
     setIsRegenerating(false);
   };
-  
+
   // Function to determine the appropriate icon based on file type
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
@@ -91,17 +94,17 @@ export function ChatMessage({
   // Render attachments based on type
   const renderAttachments = () => {
     if (!attachments.length) return null;
-    
+
     return (
       <div className="attachments-container">
         {attachments.map((attachment) => (
-          <div 
+          <div
             key={attachment.id}
             className="attachment-item"
           >
             {attachment.type.startsWith("image/") ? (
               <div className="image-attachment">
-                <NextImage 
+                <NextImage
                   src={attachment.url}
                   alt={attachment.name || "Attachment"}
                   width={240}
@@ -116,8 +119,8 @@ export function ChatMessage({
                   {getFileIcon(attachment.type)}
                   <span className="file-name">{attachment.name}</span>
                 </div>
-                <a 
-                  href={attachment.url} 
+                <a
+                  href={attachment.url}
                   download={attachment.name}
                   className="download-button"
                 >
@@ -130,7 +133,7 @@ export function ChatMessage({
       </div>
     );
   };
-  
+
   // Truncate reply preview text to a reasonable length
   const truncateReplyText = (text: string, maxLength = 50) => {
     if (text.length <= maxLength) return text;
@@ -140,7 +143,7 @@ export function ChatMessage({
   // Render the reply quote if there's a replyToId
   const renderReplyQuote = () => {
     if (!replyToMessage) return null;
-    
+
     return (
       <div className={cn(
         "reply-quote",
@@ -158,25 +161,25 @@ export function ChatMessage({
       </div>
     );
   };
-  
+
   // Render streaming indicator if message is being streamed
   const renderStreamingIndicator = () => {
     if (!isStreaming) return null;
-    
+
     return (
       <div className="typing-indicator">
         <AITextLoading />
       </div>
     );
   };
-  
+
   // Detect and process code blocks and headings in the message
   const processMessageContent = (content: string) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
-    
+
     // First process code blocks
     while ((match = codeBlockRegex.exec(content)) !== null) {
       // Add text before the code block
@@ -186,7 +189,7 @@ export function ChatMessage({
           content: content.substring(lastIndex, match.index)
         });
       }
-      
+
       // Add the code block
       const language = match[1] || 'text';
       const code = match[2];
@@ -195,10 +198,10 @@ export function ChatMessage({
         language,
         content: code
       });
-      
+
       lastIndex = match.index + match[0].length;
     }
-    
+
     // Add remaining text after the last code block
     if (lastIndex < content.length) {
       parts.push({
@@ -206,7 +209,7 @@ export function ChatMessage({
         content: content.substring(lastIndex)
       });
     }
-    
+
     // If no code blocks were found, return the entire message as text
     if (parts.length === 0) {
       return [{
@@ -214,14 +217,14 @@ export function ChatMessage({
         content
       }];
     }
-    
+
     return parts;
   };
 
   // Render the message content with code blocks
   const renderMessageContent = (content: string, skipAnim = skipGeneration || isUser) => {
     const parts = processMessageContent(content);
-    
+
     return parts.map((part, index) => {
       if (part.type === 'code') {
         const isThisBlockCopied = codeCopied === index.toString();
@@ -231,13 +234,13 @@ export function ChatMessage({
               <div className="code-header">
                 <span className="code-language">{part.language}</span>
                 <div className="code-actions">
-                  <button 
+                  <button
                     onClick={() => handleOpenInCompiler(part.content, part.language || 'text')}
                     className="code-action-button"
                     aria-label="Open in Compiler"
                   >
                     <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
-                      <path d="M8.5,8.64L13.5,12L8.5,15.36V8.64M6.5,5V19L17.5,12"/>
+                      <path d="M8.5,8.64L13.5,12L8.5,15.36V8.64M6.5,5V19L17.5,12" />
                     </svg>
                     <span>Open in Compiler</span>
                   </button>
@@ -275,20 +278,21 @@ export function ChatMessage({
       } else {
         // Use streaming effect for AI messages that aren't being skipped or streaming
         const shouldUseStreamingEffect = !skipAnim && !isUser && !isStreaming;
-        
+
         return shouldUseStreamingEffect ? (
           <div key={index} className="markdown-content">
             <TextGenerateEffect words={part.content} />
           </div>
         ) : (
           <div key={index} className="markdown-content">
-            <ReactMarkdown 
-              remarkPlugins={[remarkGfm]}
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
               components={{
                 code: ({ className, children, ...props }) => {
                   const match = /language-(\w+)/.exec(className || '');
                   const inline = !match && children;
-                  
+
                   if (inline) {
                     return (
                       <code className="inline-code" {...props}>
@@ -296,12 +300,12 @@ export function ChatMessage({
                       </code>
                     );
                   }
-                  
+
                   return null; // Non-inline code blocks are handled separately
                 },
                 a: ({ node, ...props }) => (
-                  <a 
-                    {...props} 
+                  <a
+                    {...props}
                     className="text-blue-600 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -309,8 +313,8 @@ export function ChatMessage({
                 ),
                 // Handle images in markdown content
                 img: ({ node, alt, ...props }) => (
-                  <img 
-                    {...props} 
+                  <img
+                    {...props}
                     alt={alt || 'Embedded image'}
                     className="max-w-full h-auto rounded-lg my-2 shadow-sm"
                     loading="lazy"
@@ -362,17 +366,17 @@ export function ChatMessage({
         )}>
           {isUser ? <User size={20} /> : <EnggBotLogo />}
         </div>
-        
+
         <div className="message-content">
           {renderReplyQuote()}
-          
+
           <div className="message-body">
             {renderMessageContent(message)}
             {renderAttachments()}
             {renderStreamingIndicator()}
           </div>
           {timestamp && <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>}
-          
+
           {/* Action buttons (visible on hover) */}
           <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
             {!isUser && (
@@ -386,7 +390,7 @@ export function ChatMessage({
                   {copied ? <Check className="action-icon h-4 w-4 mr-1" /> : <Copy className="action-icon h-4 w-4 mr-1" />}
                   <span>{copied ? "Copied!" : "Copy"}</span>
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="sm"
