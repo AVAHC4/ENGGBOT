@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Loader2, Play, Square, Trash2, Terminal, Maximize2, Minimize2, Code2, Settings, Keyboard } from "lucide-react";
+import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamically import Plotly to avoid SSR issues
@@ -38,6 +39,7 @@ const EXECUTORS: Record<string, any> = {
 export function Compiler() {
   // Use a ref to track if component is mounted to prevent hydration issues
   const isMounted = useRef(false);
+  const shouldIgnoreLanguageChange = useRef(false);
 
   // Default to JavaScript (index 2)
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
@@ -63,37 +65,141 @@ export function Compiler() {
   const echoPromptsRef = useRef<string[]>([]);
   const echoInputsRef = useRef<string[]>([]);
 
+  const searchParams = useSearchParams();
+
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
     isMounted.current = true;
-    const initialLanguage = initialLanguageRef.current;
+
+    // Check for pending code/language in localStorage
+    const pendingCode = localStorage.getItem('compiler_pending_code');
+    const pendingLanguage = localStorage.getItem('compiler_pending_language');
+
+    // Clear localStorage immediately to avoid re-using old code on refresh if not desired
+    // But keeping it might be better for refresh. Let's keep it for now or clear it?
+    // If we clear it, refreshing the page will lose the code.
+    // Let's clear it to avoid "stuck" code if the user opens the compiler manually later.
+    // Actually, let's NOT clear it immediately, so refresh works.
+    // But we should probably clear it when the component unmounts? No, because we might want to come back.
+    // Let's leave it.
+
+    let initialLanguage = initialLanguageRef.current;
+    let initialCode = initialLanguage.defaultCode;
+
+    if (pendingLanguage) {
+      const foundLang = LANGUAGES.find(l => l.id === pendingLanguage || l.name.toLowerCase() === pendingLanguage.toLowerCase());
+      if (foundLang) {
+        initialLanguage = foundLang;
+        setSelectedLanguage(foundLang);
+        initialCode = foundLang.defaultCode;
+        shouldIgnoreLanguageChange.current = true;
+      }
+    }
+
+    if (pendingCode) {
+      initialCode = pendingCode;
+      setCode(initialCode);
+    } else {
+      setCode(initialCode);
+    }
+
     bundlerRef.current = new Bundler({
-      [`/main${initialLanguage.extension}`]: initialLanguage.defaultCode
+      [`/main${initialLanguage.extension}`]: initialCode
     });
-    // Pre-warm Python, C/C++, and Java executors to avoid first-run delay perception
+
+    // Pre-warm ONLY the selected language executor to speed up initial load
+    // Lazy load others later or on demand
     (async () => {
       try {
-        setPythonBooting(true);
-        await pythonExecutor.init();
-        // Warm C/C++ executor (loads Wasmer SDK & clang in worker)
-        try { await cExecutor.init(); } catch (e) { console.warn('[Compiler] C/C++ init failed:', e); }
-        // Warm Java executor (loads CheerpJ runtime)
-        try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
+        if (initialLanguage.id === 'python') {
+          setPythonBooting(true);
+          await pythonExecutor.init();
+          setPythonBooting(false);
+        } else if (initialLanguage.id === 'c' || initialLanguage.id === 'cpp') {
+          try { await cExecutor.init(); } catch (e) { console.warn('[Compiler] C/C++ init failed:', e); }
+        } else if (initialLanguage.id === 'java') {
+          try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
+        }
+
+        // We can optionally warm up others in the background after a delay
+        // but for "fast as hell", let's skip aggressive pre-warming of unused languages
       } catch (e) {
-        console.warn('[Compiler] Python init failed:', e);
-      } finally {
-        setPythonBooting(false);
+        console.warn('[Compiler] Executor init failed:', e);
       }
     })();
 
     return () => {
       isMounted.current = false;
     };
-  }, []);
+  }, []); // Run once on mount
 
   // Update bundler when language changes
   useEffect(() => {
     if (isMounted.current && bundlerRef.current) {
+      // If we just set the language from localStorage during init, don't reset the code
+      if (shouldIgnoreLanguageChange.current) {
+        shouldIgnoreLanguageChange.current = false;
+        return;
+      }
+
+      // Check if we have pending code for this language in localStorage
+      // This handles the case where we might have switched languages and want to see if there's code waiting
+      // But primarily, we just want to set the default code if it's a manual switch
+
+      const pendingCode = localStorage.getItem('compiler_pending_code');
+      const pendingLanguage = localStorage.getItem('compiler_pending_language');
+
+      // If the selected language matches the pending language, use the pending code
+      if (pendingLanguage && pendingCode &&
+        (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase())) {
+
+        // Only use pending code if we haven't already modified the code? 
+        // Or just assume if we switched back to this language we want the pending code?
+        // Let's be safe: if the current code is the default for the language, replace it.
+        // Or just always replace it?
+
+        // Actually, simpler: just set the file in bundler.
+        // But we need to update the editor content (code state) too.
+
+        // If code state is already pendingCode, we are good.
+        if (code === pendingCode) {
+          bundlerRef.current.setFiles({
+            [`/main${selectedLanguage.extension}`]: code
+          });
+          return;
+        }
+      }
+
+      // Default behavior: reset to template on language switch
+      // UNLESS we are in the initial load phase which is handled by the first useEffect.
+      // But this effect runs on mount too if selectedLanguage changes?
+      // No, initial state is set. If we call setSelectedLanguage in the first useEffect, this runs.
+
+      // We need to avoid overwriting the code we just set in the first useEffect.
+      // The first useEffect runs, sets selectedLanguage (triggering this effect), AND sets code.
+      // This effect runs. We need to know if we should reset.
+
+      // If we just mounted, we shouldn't reset.
+      // But we can't easily detect "just mounted" inside this effect vs "user changed dropdown".
+
+      // Let's use a ref to skip the first run if it was triggered by mount?
+      // Or just check if the code matches the default code.
+
+      // Actually, if we set code in the first useEffect, `code` state will be updated.
+      // In this effect, `code` will be the new value.
+      // So if we reset it here, we undo the first useEffect.
+
+      // Fix: Don't reset code here if it already matches pendingCode for this language.
+      if (pendingLanguage && pendingCode &&
+        (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase()) &&
+        code === pendingCode) {
+
+        bundlerRef.current.setFiles({
+          [`/main${selectedLanguage.extension}`]: code
+        });
+        return;
+      }
+
       setCode(selectedLanguage.defaultCode);
       bundlerRef.current.setFiles({
         [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode

@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 // We intentionally use native <img> tags for markdown content to preserve default browser behaviors (right-click/save, blob URLs).
 import React, { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, openInCompiler } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import dynamic from 'next/dynamic';
 
@@ -375,16 +375,7 @@ export function ChatMessage({
                   </Button>
                 )}
                 <button
-                  onClick={() => {
-                    // Open code in compiler
-                    const event = new CustomEvent('openInCompiler', {
-                      detail: {
-                        code: part.content,
-                        language: part.language || 'javascript'
-                      }
-                    });
-                    window.dispatchEvent(event);
-                  }}
+                  onClick={() => openInCompiler(part.content, part.language || 'javascript')}
                   className="action-button"
                   aria-label="Open in Compiler"
                 >
