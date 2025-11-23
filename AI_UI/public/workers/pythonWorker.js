@@ -70,7 +70,7 @@ def show_plotly(fig):
         # Convert to JSON string
         json_str = fig.to_json()
         _plotly_buffer.append(json_str)
-        print(f"[Plotly] Captured chart, JSON length: {len(json_str)}")
+        # print(f"[Plotly] Captured chart, JSON length: {len(json_str)}")
     except Exception as e:
         print(f"[Plotly] Error converting figure: {e}")
         import traceback
