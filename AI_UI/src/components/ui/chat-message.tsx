@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import dynamic from 'next/dynamic';
 
-import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw } from "lucide-react";
+import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import NextImage from "next/image";
@@ -19,6 +20,10 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { EnggBotLogo } from './enggbot-logo';
 import AITextLoading from '@/components/ui/ai-text-loading';
+import * as pythonExecutor from '@/lib/executors/pythonExecutor';
+
+// Dynamically import Plotly
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 
 export interface ChatMessageProps {
   message: string;
@@ -41,6 +46,8 @@ export function ChatMessage({
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [codeExecutionResults, setCodeExecutionResults] = useState<Map<string, any>>(new Map());
+  const [executingCode, setExecutingCode] = useState<Set<string>>(new Set());
 
   // Get the message being replied to if replyToId exists
   const replyToMessage = messageData.replyToId
@@ -90,6 +97,52 @@ export function ChatMessage({
     if (type.startsWith("video/")) return <FileVideo className="h-4 w-4" />;
     return <File className="h-4 w-4" />;
   };
+
+
+  // Auto-execute Python visualization code when message loads
+  useEffect(() => {
+    if (isUser) return; // Don't auto-execute user messages
+
+    // Parse code blocks directly
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    let match;
+    let index = 0;
+
+    while ((match = codeBlockRegex.exec(message)) !== null) {
+      const language = match[1] || 'text';
+      const code = match[2];
+      const codeKey = `${messageData.id}-${index}`;
+      const isPython = language === 'python';
+      const hasVisualization = isPython && (code.includes('show_plotly') || code.includes('plt.show'));
+      const alreadyExecuted = codeExecutionResults.has(codeKey);
+      const currentlyExecuting = executingCode.has(codeKey);
+
+      if (hasVisualization && !alreadyExecuted && !currentlyExecuting) {
+        // Execute the code
+        const executeCode = async () => {
+          setExecutingCode(prev => new Set(prev).add(codeKey));
+          try {
+            await pythonExecutor.init();
+            const result = await pythonExecutor.execute(code, '', async () => '');
+            setCodeExecutionResults(prev => new Map(prev).set(codeKey, result));
+          } catch (error) {
+            console.error('[ChatMessage] Python Execution Error:', error);
+            setCodeExecutionResults(prev => new Map(prev).set(codeKey, { error: String(error) }));
+          } finally {
+            setExecutingCode(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(codeKey);
+              return newSet;
+            });
+          }
+        };
+        executeCode();
+      }
+
+      index++;
+    }
+  }, [message, messageData.id, isUser, codeExecutionResults, executingCode]);
+
 
   // Render attachments based on type
   const renderAttachments = () => {
@@ -227,52 +280,158 @@ export function ChatMessage({
 
     return parts.map((part, index) => {
       if (part.type === 'code') {
-        const isThisBlockCopied = codeCopied === index.toString();
+        const isThisBlockCopied = codeCopied === `${index}`;
+        const codeKey = `${messageData.id}-${index}`;
+        const isPython = part.language === 'python';
+        const hasVisualization = isPython && (part.content.includes('show_plotly') || part.content.includes('plt.show'));
+        const executionResult = codeExecutionResults.get(codeKey);
+        const isExecuting = executingCode.has(codeKey);
+
+        const executeCode = async (code: string, key: string) => {
+          setExecutingCode(prev => new Set(prev).add(key));
+          try {
+            await pythonExecutor.init();
+            const result = await pythonExecutor.execute(code, '', async () => '');
+            setCodeExecutionResults(prev => new Map(prev).set(key, result));
+          } catch (error) {
+            setCodeExecutionResults(prev => new Map(prev).set(key, { error: String(error) }));
+          } finally {
+            setExecutingCode(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(key);
+              return newSet;
+            });
+          }
+        };
+
         return (
-          <div key={index} className="code-block-wrapper">
-            <div className="code-block">
-              <div className="code-header">
-                <span className="code-language">{part.language}</span>
-                <div className="code-actions">
-                  <button
-                    onClick={() => handleOpenInCompiler(part.content, part.language || 'text')}
-                    className="code-action-button"
-                    aria-label="Open in Compiler"
-                  >
-                    <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
-                      <path d="M8.5,8.64L13.5,12L8.5,15.36V8.64M6.5,5V19L17.5,12" />
-                    </svg>
-                    <span>Open in Compiler</span>
-                  </button>
+          <div key={index} className="code-block-container my-3">
+            <div className="code-header">
+              <div className="language-label">
+                {part.language || 'text'}
+              </div>
+              <div className="code-actions">
+                {isPython && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleCopyCode(part.content, index)}
+                    onClick={() => executeCode(part.content, codeKey)}
+                    disabled={isExecuting}
                     className="action-button"
-                    aria-label="Copy code"
+                    aria-label="Run code"
                   >
-                    {isThisBlockCopied ? (
-                      <>
-                        <Check className="action-icon h-4 w-4 mr-1" />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="action-icon h-4 w-4 mr-1" />
-                        <span>Copy</span>
-                      </>
-                    )}
+                    <Play className="action-icon h-4 w-4 mr-1" />
+                    <span>{isExecuting ? 'Running...' : 'Run'}</span>
                   </Button>
-                </div>
+                )}
+                <button
+                  onClick={() => {
+                    // Open code in compiler
+                    const event = new CustomEvent('openInCompiler', {
+                      detail: {
+                        code: part.content,
+                        language: part.language || 'javascript'
+                      }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  className="action-button"
+                  aria-label="Open in Compiler"
+                >
+                  <svg fill="currentColor" width="14" height="14" viewBox="0 0 24 24">
+                    <path d="M8.5,8.64L13.5,12L8.5,15.36V8.64M6.5,5V19L17.5,12" />
+                  </svg>
+                  <span>Open in Compiler</span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleCopyCode(part.content, index)}
+                  className="action-button"
+                  aria-label="Copy code"
+                >
+                  {isThisBlockCopied ? (
+                    <>
+                      <Check className="action-icon h-4 w-4 mr-1" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="action-icon h-4 w-4 mr-1" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </Button>
               </div>
-              <SyntaxHighlighter
-                language={part.language}
-                style={vscDarkPlus}
-                className="code-content"
-              >
-                {part.content}
-              </SyntaxHighlighter>
             </div>
+            <SyntaxHighlighter
+              language={part.language}
+              style={vscDarkPlus}
+              className="code-content"
+            >
+              {part.content}
+            </SyntaxHighlighter>
+
+            {/* Render execution results */}
+            {executionResult && (() => {
+              console.log('[ChatMessage] Execution Result:', {
+                hasOutput: !!executionResult.output,
+                hasError: !!executionResult.error,
+                hasPlots: !!executionResult.plots,
+                plotsLength: executionResult.plots?.length || 0,
+                hasPlotly: !!executionResult.plotly,
+                plotlyLength: executionResult.plotly?.length || 0,
+                plotlyData: executionResult.plotly
+              });
+              return null;
+            })()}
+            {executionResult && (
+              <div className="mt-2 p-3 bg-black rounded border border-gray-700">
+                {executionResult.output && (
+                  <pre className="text-sm text-green-400 whitespace-pre-wrap font-mono">
+                    {executionResult.output}
+                  </pre>
+                )}
+                {executionResult.error && (
+                  <pre className="text-sm text-red-400 whitespace-pre-wrap font-mono">
+                    {executionResult.error}
+                  </pre>
+                )}
+                {executionResult.plots && executionResult.plots.map((plot: string, i: number) => (
+                  <img key={i} src={`data:image/png;base64,${plot}`} alt="Plot" className="max-w-full h-auto my-2 rounded" />
+                ))}
+                {executionResult.plotly && executionResult.plotly.length > 0 ? (
+                  executionResult.plotly.map((json: string, i: number) => {
+                    console.log('[ChatMessage] Rendering Plotly chart', i, 'JSON length:', json.length);
+                    try {
+                      const plotData = JSON.parse(json);
+                      console.log('[ChatMessage] Parsed Plotly data:', plotData);
+                      return (
+                        <div key={i} className="w-full h-[400px] bg-white my-2 rounded overflow-hidden">
+                          <Plot
+                            data={plotData.data}
+                            layout={{
+                              ...plotData.layout,
+                              autosize: true,
+                              margin: { t: 30, r: 20, l: 40, b: 40 },
+                              font: { color: '#000' }
+                            }}
+                            config={{ responsive: true }}
+                            style={{ width: '100%', height: '100%' }}
+                            useResizeHandler={true}
+                          />
+                        </div>
+                      );
+                    } catch (e) {
+                      console.error('[ChatMessage] Error parsing/rendering Plotly:', e);
+                      return <div key={i} className="text-red-400">Error rendering plot: {String(e)}</div>;
+                    }
+                  })
+                ) : (
+                  executionResult.plotly && console.log('[ChatMessage] plotly array is empty')
+                )}
+              </div>
+            )}
           </div>
         );
       } else {

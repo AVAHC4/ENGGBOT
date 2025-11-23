@@ -23,9 +23,6 @@ function processChutesStream(
           const { done, value } = await reader.read();
 
           if (done) {
-            // Send done event
-            const doneEvent = `data: [DONE]\n\n`;
-            controller.enqueue(encoder.encode(doneEvent));
             break;
           }
 
@@ -72,6 +69,10 @@ function processChutesStream(
             }
           }
         }
+
+        // Send final done event after loop completes
+        const doneEvent = `data: [DONE]\n\n`;
+        controller.enqueue(encoder.encode(doneEvent));
       } catch (error) {
         console.error("Stream processing error:", error);
         controller.error(error);

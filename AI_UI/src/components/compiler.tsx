@@ -2,6 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { Loader2, Play, Square, Trash2, Terminal, Maximize2, Minimize2, Code2, Settings, Keyboard } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+// Dynamically import Plotly to avoid SSR issues
+const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 import { Bundler } from '@/lib/bundler';
 import { ClientCodeEditor } from './client-code-editor';
 import * as pythonExecutor from '@/lib/executors/pythonExecutor';
@@ -38,7 +43,10 @@ export function Compiler() {
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
   const initialLanguageRef = useRef(LANGUAGES[2]);
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
-  const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
+
+  type ConsoleLine = string | { type: 'plotly', data: string };
+  const [consoleOutput, setConsoleOutput] = useState<ConsoleLine[]>([]);
+
   const [userInput, setUserInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
@@ -209,6 +217,11 @@ export function Compiler() {
           setConsoleOutput(prev => [...prev, ...plotImages]);
         }
 
+        // Handle Plotly charts
+        if (result.plotly && result.plotly.length > 0) {
+          setConsoleOutput(prev => [...prev, ...result.plotly.map((json: string) => ({ type: 'plotly', data: json }))]);
+        }
+
         setConsoleOutput(prev => [...prev, `Program exited with code 0`]);
       }
     } catch (error) {
@@ -282,7 +295,12 @@ export function Compiler() {
       // Commit typed text to the last console line next to the prompt
       setConsoleOutput(prev => {
         const arr = [...prev];
-        if (arr.length > 0) arr[arr.length - 1] = (arr[arr.length - 1] || '') + toSend;
+        if (arr.length > 0) {
+          const lastLine = arr[arr.length - 1];
+          if (typeof lastLine === 'string') {
+            arr[arr.length - 1] = lastLine + toSend;
+          }
+        }
         return arr;
       });
       echoInputsRef.current.push(toSend);
@@ -384,24 +402,57 @@ export function Compiler() {
             {consoleOutput.length > 0 ? (
               consoleOutput.map((line, i) => {
                 const isPromptLine = isWaitingForInput && i === consoleOutput.length - 1;
-                const display = isPromptLine ? (line + inlineInput) : line;
-                const cls = line.startsWith('Error') ? 'text-red-400' :
-                  (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
-                if (line.startsWith('data:image/png;base64,')) {
+
+                if (typeof line === 'string') {
+                  const display = isPromptLine ? (line + inlineInput) : line;
+                  const cls = line.startsWith('Error') ? 'text-red-400' :
+                    (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
+
+                  if (line.startsWith('data:image/png;base64,')) {
+                    return (
+                      <div key={i} className="py-2">
+                        <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
+                      </div>
+                    );
+                  }
+
                   return (
-                    <div key={i} className="py-2">
-                      <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
+                    <div key={i} className={cls}>
+                      {display || '\u00A0'}
+                      {isPromptLine && (
+                        <span className="relative inline-block ml-1 w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]" />
+                      )}
                     </div>
                   );
                 }
-                return (
-                  <div key={i} className={cls}>
-                    {display || '\u00A0'}
-                    {isPromptLine && (
-                      <span className="relative inline-block ml-1 w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]" />
-                    )}
-                  </div>
-                );
+
+                if (typeof line === 'object' && line.type === 'plotly') {
+                  try {
+                    const plotData = JSON.parse(line.data);
+                    return (
+                      <div key={i} className="py-2 w-full h-[400px] bg-white rounded border border-gray-700 overflow-hidden">
+                        <Plot
+                          data={plotData.data}
+                          layout={{
+                            ...plotData.layout,
+                            autosize: true,
+                            margin: { t: 30, r: 20, l: 40, b: 40 },
+                            paper_bgcolor: 'rgba(0,0,0,0)',
+                            plot_bgcolor: 'rgba(0,0,0,0)',
+                            font: { color: '#fff' }
+                          }}
+                          config={{ responsive: true }}
+                          style={{ width: '100%', height: '100%' }}
+                          useResizeHandler={true}
+                        />
+                      </div>
+                    );
+                  } catch (e) {
+                    return <div key={i} className="text-red-400">Error rendering plot</div>;
+                  }
+                }
+
+                return null;
               })
             ) : (
               <div className="text-gray-500 italic">Run your code to see output here</div>

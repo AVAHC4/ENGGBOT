@@ -69,7 +69,7 @@ export async function init() {
         try { worker.removeEventListener('error', onError); } catch { }
         initPromise = null;
         reject(new Error('Python worker initialization timed out'));
-      }, 10000);
+      }, 60000); // 60 seconds to load Pyodide + all scientific packages
     } catch (err) {
       reject(err);
     }
@@ -156,7 +156,7 @@ export async function execute(code, stdin = '', onInputRequest) {
         currentExecTimeoutId = null;
         currentInputWaitTimeoutId = null;
         currentMsgHandler = null;
-        const res = { output: msg.output || '', error: msg.error || '', plots: msg.plots || [] };
+        const res = { output: msg.output || '', error: msg.error || '', plots: msg.plots || [], plotly: msg.plotly || [] };
         if (currentResolve) { currentResolve(res); }
         currentResolve = null;
       }

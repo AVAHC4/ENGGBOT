@@ -10,24 +10,32 @@ self.onmessage = async (e) => {
   const data = e.data || {};
   if (data.type === 'INIT') {
     try {
-      // Load Pyodide in worker (use credentialless-friendly COEP)
-      self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js');
-      pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
+      // Load Pyodide from jsdelivr (stable version)
+      self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
+      pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' });
 
-      // Load scientific packages
-      await pyodide.loadPackage(['micropip', 'numpy', 'pandas', 'scipy', 'matplotlib', 'sympy']);
+      // Load only essential packages - matplotlib and numpy
+      await pyodide.loadPackage(['numpy', 'matplotlib', 'micropip']);
+
+      // Install plotly via micropip  
+      const micropip = pyodide.pyimport('micropip');
+      await micropip.install('plotly');
+
+      console.log('[PythonWorker] Pyodide and packages loaded successfully');
 
       // Prepare stdout/stderr capture helpers and matplotlib hook
       await pyodide.runPython(`
-import sys, io, base64
+import sys, io, base64, json
 from contextlib import redirect_stdout, redirect_stderr
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import plotly
 
 _stdout_buffer = io.StringIO()
 _stderr_buffer = io.StringIO()
 _plots_buffer = []
+_plotly_buffer = []
 
 def get_output():
     return _stdout_buffer.getvalue(), _stderr_buffer.getvalue()
@@ -35,11 +43,15 @@ def get_output():
 def get_plots():
     return list(_plots_buffer)
 
+def get_plotly_charts():
+    return list(_plotly_buffer)
+
 def clear_output():
-    global _stdout_buffer, _stderr_buffer, _plots_buffer
+    global _stdout_buffer, _stderr_buffer, _plots_buffer, _plotly_buffer
     _stdout_buffer = io.StringIO()
     _stderr_buffer = io.StringIO()
     _plots_buffer = []
+    _plotly_buffer = []
 
 def _show_hook(*args, **kwargs):
     buf = io.BytesIO()
@@ -49,7 +61,26 @@ def _show_hook(*args, **kwargs):
     _plots_buffer.append(img_str)
     plt.close()
 
+def show_plotly(fig):
+    """
+    Convert a Plotly figure to JSON and store it for the frontend.
+    Usage: show_plotly(fig) where fig is a plotly figure object
+    """
+    try:
+        # Convert to JSON string
+        json_str = fig.to_json()
+        _plotly_buffer.append(json_str)
+        print(f"[Plotly] Captured chart, JSON length: {len(json_str)}")
+    except Exception as e:
+        print(f"[Plotly] Error converting figure: {e}")
+        import traceback
+        traceback.print_exc()
+
 plt.show = _show_hook
+
+# Make show_plotly available globally
+import builtins
+builtins.show_plotly = show_plotly
 `);
 
       isReady = true;
@@ -142,21 +173,23 @@ finally:
         builtins.input = _orig_input
 stdout_content, stderr_content = get_output()
 plots_content = get_plots()
-json.dumps({'stdout': stdout_content, 'stderr': stderr_content, 'plots': plots_content})
+plotly_content = get_plotly_charts()
+json.dumps({'stdout': stdout_content, 'stderr': stderr_content, 'plots': plots_content, 'plotly': plotly_content})
 `;
 
       const jsonResult = await pyodide.runPython(py);
-      let stdout = '', stderr = '', plots = [];
+      let stdout = '', stderr = '', plots = [], plotly = [];
       try {
         const parsed = JSON.parse(jsonResult);
         stdout = parsed.stdout || '';
         stderr = parsed.stderr || '';
         plots = parsed.plots || [];
+        plotly = parsed.plotly || [];
       } catch (e) {
         stderr = 'Failed to parse Python output: ' + (e && e.message || String(e));
       }
 
-      self.postMessage({ type: 'EXECUTION_RESULT', output: stdout, error: stderr, plots: plots });
+      self.postMessage({ type: 'EXECUTION_RESULT', output: stdout, error: stderr, plots: plots, plotly: plotly });
     } catch (err) {
       self.postMessage({ type: 'EXECUTION_RESULT', output: '', error: String(err && err.message || err) });
     }
