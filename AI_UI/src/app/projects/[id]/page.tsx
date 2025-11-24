@@ -16,13 +16,13 @@ export default function ProjectPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (params.id) {
+        if (params && params.id) {
             const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
             const foundProject = getProject(projectId);
             setProject(foundProject);
             setLoading(false);
         }
-    }, [params.id]);
+    }, [params]);
 
     if (loading) {
         return (
