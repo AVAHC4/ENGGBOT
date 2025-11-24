@@ -3,6 +3,7 @@
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
+import { addConversationToProject, removeConversationFromProject } from "@/lib/projects/storage";
 
 export interface Attachment {
   id: string;
@@ -56,7 +57,7 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children }: { children: ReactNode }) {
+export function ChatProvider({ children, projectId }: { children: ReactNode; projectId?: string }) {
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -89,13 +90,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Get user-specific prefix
       const userPrefix = getUserPrefix();
 
+      // Determine the storage key based on whether we're in a project or global
+      const storageKey = projectId
+        ? `${userPrefix}-project-${projectId}-activeConversation`
+        : `${userPrefix}-activeConversation`;
+
       // Get the stored conversation ID or generate a new one
-      const storedId = localStorage.getItem(`${userPrefix}-activeConversation`);
+      const storedId = localStorage.getItem(storageKey);
       if (storedId) {
         setConversationId(storedId);
+      } else if (projectId) {
+        // If in a project but no active conversation, start a new one
+        const newId = crypto.randomUUID();
+        setConversationId(newId);
+        localStorage.setItem(storageKey, newId);
+        addConversationToProject(projectId, newId);
+        saveConversation(newId, []);
       }
     }
-  }, [isMounted]);
+  }, [isMounted, projectId]);
 
   // Load conversation on startup or when switching conversations
   useEffect(() => {
@@ -111,9 +124,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const userPrefix = getUserPrefix();
 
       // Save active conversation ID with user-specific key
-      localStorage.setItem(`${userPrefix}-activeConversation`, conversationId);
+      const storageKey = projectId
+        ? `${userPrefix}-project-${projectId}-activeConversation`
+        : `${userPrefix}-activeConversation`;
+
+      localStorage.setItem(storageKey, conversationId);
     }
-  }, [conversationId, isMounted, isPrivateMode]);
+  }, [conversationId, isMounted, isPrivateMode, projectId]);
 
   // Save messages when they change
   useEffect(() => {
@@ -666,10 +683,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     if (isMounted) {
       const userPrefix = getUserPrefix();
-      localStorage.setItem(`${userPrefix}-activeConversation`, newId);
+      const storageKey = projectId
+        ? `${userPrefix}-project-${projectId}-activeConversation`
+        : `${userPrefix}-activeConversation`;
+
+      localStorage.setItem(storageKey, newId);
       saveConversation(newId, []);
+
+      // If we are in a project, link this new conversation to the project
+      if (projectId) {
+        addConversationToProject(projectId, newId);
+      }
     }
-  }, [isGenerating, isLoading, stopGeneration, isMounted]);
+  }, [isGenerating, isLoading, stopGeneration, isMounted, projectId]);
 
   // Delete the current conversation
   const deleteCurrentConversation = useCallback(() => {
@@ -679,6 +705,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       // Delete current conversation
       deleteConversation(conversationId);
+
+      // If in a project, remove the link
+      if (projectId) {
+        removeConversationFromProject(projectId, conversationId);
+      }
 
       // If there are other conversations, switch to the most recent one
       // Otherwise, create a new conversation

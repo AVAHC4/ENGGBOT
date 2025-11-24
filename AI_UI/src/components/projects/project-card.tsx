@@ -43,8 +43,9 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
 
     return (
         <div
+            onClick={() => onOpen?.(project)}
             className={cn(
-                "group relative flex items-center gap-3 rounded-lg p-3 transition-all",
+                "group relative flex items-center gap-3 rounded-lg p-3 transition-all cursor-pointer",
                 "hover:bg-accent border-l-4",
                 "min-h-[60px]"
             )}

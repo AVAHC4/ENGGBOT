@@ -53,7 +53,12 @@ function ThinkingAnimation() {
 
 // Removed the Initializing AI indicator overlay for cleaner UX
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  className?: string;
+  customHeader?: React.ReactNode;
+}
+
+export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
   const {
     messages,
     isLoading,
@@ -249,115 +254,119 @@ export function ChatInterface() {
     <div
       className={cn(
         "chatgpt-container fixed top-0 bottom-0 right-0 left-0 overflow-hidden transition-all duration-300 ease-in-out",
-        isSidebarCollapsed ? "lg:left-[80px]" : "lg:left-[280px]"
+        isSidebarCollapsed ? "lg:left-[80px]" : "lg:left-[280px]",
+        className
       )}
     >
-      <div className="relative grid h-full grid-rows-[auto_1fr_auto] bg-transparent">
-        <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
-          <div className="header-actions">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
-                  <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
-                  <span className="hidden md:inline">Clear chat</span>
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action will permanently delete all messages in the current conversation. This cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={clearMessages} className="bg-red-600 hover:bg-red-700 text-white">
-                    Clear Chat
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+      <div className="flex flex-col h-full bg-transparent">
+        {customHeader}
+        <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
+          <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
+            <div className="header-actions">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
+                    <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
+                    <span className="hidden md:inline">Clear chat</span>
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will permanently delete all messages in the current conversation. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={clearMessages} className="bg-red-600 hover:bg-red-700 text-white">
+                      Clear Chat
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-            {/* Private Mode Toggle Button in Header */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "ml-2 h-8 w-8 rounded-full",
-                    isPrivateMode && "text-red-500 dark:text-red-400"
-                  )}
-                  onClick={togglePrivateMode}
-                >
-                  <EyeOff className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="text-xs">
-                  {isPrivateMode ? "Private mode enabled" : "Enable private mode"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
+              {/* Private Mode Toggle Button in Header */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "ml-2 h-8 w-8 rounded-full",
+                      isPrivateMode && "text-red-500 dark:text-red-400"
+                    )}
+                    onClick={togglePrivateMode}
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">
+                    {isPrivateMode ? "Private mode enabled" : "Enable private mode"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
-        </div>
 
-        <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
-          <ChatMessageListCompact
-            className="message-list relative z-10 pb-24 md:pb-28 lg:pb-32"
-            smooth={false}
-          >
-            {messages.length === 0 ? (
-              <div className="empty-chat">
-                <p>Send a message to start the conversation</p>
-              </div>
-            ) : (
-              <>
-                {messages.map((msg) => (
-                  <ChatMessage
-                    key={msg.id}
-                    message={msg.content}
-                    isUser={msg.isUser}
-                    timestamp={formatTime(msg.timestamp)}
-                    attachments={msg.attachments}
-                    skipGeneration={msg.isUser || displayedMessageIds.has(msg.id) || (!isGenerating && !isLoading)}
-                    messageData={msg}
-                  />
-                ))}
+          <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
+            <ChatMessageListCompact
+              className="message-list relative z-10 pb-24 md:pb-28 lg:pb-32"
+              smooth={false}
+            >
+              {messages.length === 0 ? (
+                <div className="empty-chat">
+                  <p>Send a message to start the conversation</p>
+                </div>
+              ) : (
+                <>
+                  {messages.map((msg) => (
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg.content}
+                      isUser={msg.isUser}
+                      timestamp={formatTime(msg.timestamp)}
+                      attachments={msg.attachments}
+                      skipGeneration={msg.isUser || displayedMessageIds.has(msg.id) || (!isGenerating && !isLoading)}
+                      messageData={msg}
+                    />
+                  ))}
 
-                {/* Show thinking animation when waiting for AI response */}
-                {shouldShowThinking() && <ThinkingAnimation />}
-              </>
-            )}
-          </ChatMessageListCompact>
-        </div>
-
-        <div className="chatgpt-input-container p-2 md:p-4 lg:p-6">
-          <div className="chatgpt-input-wrapper">
-            <ChatInput
-              onSend={handleSendMessage}
-              disabled={isLoading && !isGenerating}
-              thinkingMode={thinkingMode}
-              onToggleThinking={toggleThinkingMode}
-              webSearchMode={webSearchMode}
-              onToggleWebSearch={toggleWebSearchMode}
-              engineeringMode={engineeringMode}
-              onToggleEngineering={toggleEngineeringMode}
-              placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${engineeringMode ? ' (engineering mode enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
-              isAwaitingResponse={isLoading || isGenerating}
-              onStopGeneration={stopGeneration}
-            />
+                  {/* Show thinking animation when waiting for AI response */}
+                  {shouldShowThinking() && <ThinkingAnimation />}
+                </>
+              )}
+            </ChatMessageListCompact>
           </div>
-        </div>
 
-        {/* Removed AI initializing indicator */}
-
-        {/* Show private mode indicator */}
-        {isPrivateMode && (
-          <div className="private-mode-indicator">
-            <span className="private-mode-text">Private Mode</span>
+          <div className="chatgpt-input-container p-2 md:p-4 lg:p-6">
+            <div className="chatgpt-input-wrapper">
+              <ChatInput
+                onSend={handleSendMessage}
+                disabled={isLoading && !isGenerating}
+                thinkingMode={thinkingMode}
+                onToggleThinking={toggleThinkingMode}
+                webSearchMode={webSearchMode}
+                onToggleWebSearch={toggleWebSearchMode}
+                engineeringMode={engineeringMode}
+                onToggleEngineering={toggleEngineeringMode}
+                placeholder={`Message ${BOT_CONFIG.NAME}${thinkingMode ? ' (thinking mode enabled)' : ''}${webSearchMode ? ' (web search enabled)' : ''}${engineeringMode ? ' (engineering mode enabled)' : ''}${isPrivateMode ? ' (private mode enabled)' : ''}...`}
+                isAwaitingResponse={isLoading || isGenerating}
+                onStopGeneration={stopGeneration}
+              />
+            </div>
           </div>
-        )}
+
+          {/* Removed AI initializing indicator */}
+
+          {/* Show private mode indicator */}
+          {isPrivateMode && (
+            <div className="private-mode-indicator">
+              <span className="private-mode-text">Private Mode</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
