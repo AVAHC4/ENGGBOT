@@ -41,7 +41,7 @@ import {
   Code
 } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import {
   DropdownMenu,
@@ -253,6 +253,24 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [activePath, setActivePath] = React.useState('');
   const pathname = usePathname();
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
+  const router = useRouter();
+
+  // Handle conversation switching with navigation
+  const handleSwitchConversation = (id: string) => {
+    switchConversation(id);
+
+    // If not on the main chat page, navigate to it
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
+
+  const handleStartNewConversation = () => {
+    startNewConversation();
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
 
   // Use default empty values for initial server-side rendering
   const [userData, setUserData] = React.useState({
@@ -693,7 +711,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   {conversationsExpanded && (
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <SidebarMenuSubButton onClick={startNewConversation} className="w-full flex items-center">
+                        <SidebarMenuSubButton onClick={handleStartNewConversation} className="w-full flex items-center">
                           <PlusCircle className="h-3.5 w-3.5 mr-2" />
                           <span className="font-medium text-primary">New Conversation</span>
                         </SidebarMenuSubButton>
@@ -703,7 +721,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         conversations.map((convo) => (
                           <SidebarMenuSubItem key={convo.id}>
                             <SidebarMenuSubButton
-                              onClick={() => switchConversation(convo.id)}
+                              onClick={() => handleSwitchConversation(convo.id)}
                               className={cn(
                                 "w-full justify-between group pr-1",
                                 convo.id === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"

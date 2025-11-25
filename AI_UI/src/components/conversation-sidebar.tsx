@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useChat } from '@/context/chat-context';
-import { 
-  getAllConversationsMetadata, 
+import {
+  getAllConversationsMetadata,
   ConversationMetadata,
   getConversationMetadata,
   saveConversationMetadata
 } from '@/lib/storage';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Search, 
-  PlusCircle, 
-  MessageCircle, 
-  MoreVertical, 
+import {
+  Search,
+  PlusCircle,
+  MessageCircle,
+  MoreVertical,
   Trash2,
   Pencil,
   Share2,
@@ -42,24 +42,24 @@ interface ConversationItemProps {
   onShare?: (id: string) => void;
 }
 
-function ConversationItem({ 
-  id, 
-  title, 
-  updated, 
-  isActive, 
-  onSwitch, 
-  onDelete, 
+function ConversationItem({
+  id,
+  title,
+  updated,
+  isActive,
+  onSwitch,
+  onDelete,
   onRename,
   onShare
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  
+
   const formatTime = (timestamp: string) => {
     return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
   };
-  
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onRename(id, newTitle);
@@ -69,12 +69,12 @@ function ConversationItem({
       setIsEditing(false);
     }
   };
-  
+
   const handleBlur = () => {
     onRename(id, newTitle);
     setIsEditing(false);
   };
-  
+
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onShare) {
@@ -104,14 +104,14 @@ function ConversationItem({
     }
     setShowDeleteModal(false);
   };
-  
+
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
   };
-  
+
   return (
     <>
-      <div 
+      <div
         className={cn(
           "flex items-center justify-between p-2 rounded-md hover:bg-primary/5 transition-all cursor-pointer group",
           isActive && "bg-primary/10 hover:bg-primary/10"
@@ -137,13 +137,13 @@ function ConversationItem({
             </div>
           )}
         </div>
-        
+
         {!isEditing && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7 opacity-0 group-hover:opacity-100"
               >
                 <MoreVertical className="h-4 w-4" />
@@ -157,13 +157,13 @@ function ConversationItem({
                 <Pencil className="h-4 w-4 mr-2" />
                 Rename
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleDeleteRequest}
                 className="text-destructive focus:text-destructive"
               >
@@ -177,9 +177,9 @@ function ConversationItem({
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
-             onClick={handleCancelDelete}>
+          onClick={handleCancelDelete}>
           <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto"
-               onClick={(e) => e.stopPropagation()}>
+            onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-semibold mb-2">Are you sure?</h2>
             <p className="text-sm text-muted-foreground mb-6">
               This will permanently delete the conversation &ldquo;{title}&rdquo;.
@@ -206,17 +206,24 @@ function ConversationItem({
   );
 }
 
+import { useRouter, usePathname } from 'next/navigation';
+
+// ... existing imports ...
+
 export function ConversationSidebar() {
-  const { 
-    conversationId, 
-    switchConversation, 
-    startNewConversation, 
-    deleteCurrentConversation 
+  const {
+    conversationId,
+    switchConversation,
+    startNewConversation,
+    deleteCurrentConversation
   } = useChat();
-  
+
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [conversations, setConversations] = useState<(ConversationMetadata & { id: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Update conversations list
   useEffect(() => {
     const loadConversations = () => {
@@ -225,21 +232,21 @@ export function ConversationSidebar() {
         setConversations(allConversations);
       }
     };
-    
+
     loadConversations();
-    
+
     // Set up interval to refresh conversations
     const intervalId = setInterval(loadConversations, 5000);
-    
+
     // Clean up on unmount
     return () => clearInterval(intervalId);
   }, [conversationId]);
-  
+
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(
     (conversation) => conversation.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   // Handle conversation deletion
   const handleDelete = (id: string) => {
     if (id === conversationId) {
@@ -249,36 +256,46 @@ export function ConversationSidebar() {
       setConversations(conversations.filter(c => c.id !== id));
     }
   };
-  
+
+  // Handle conversation switching with navigation
+  const handleSwitchConversation = (id: string) => {
+    switchConversation(id);
+
+    // If not on the main chat page, navigate to it
+    if (pathname !== '/') {
+      router.push('/');
+    }
+  };
+
   // Handle conversation rename
   const handleRename = (id: string, newTitle: string) => {
     if (!newTitle.trim()) return; // Don't save empty titles
-    
+
     // Get existing metadata
     const existingMeta = getConversationMetadata(id) || {
       title: `Conversation ${id.substring(0, 6)}`,
       created: new Date().toISOString(),
       updated: new Date().toISOString()
     };
-    
+
     // Update metadata with new title and timestamp
     const updatedMeta = {
       ...existingMeta,
       title: newTitle,
       updated: new Date().toISOString()
     };
-    
+
     // Save updated metadata
     saveConversationMetadata(id, updatedMeta);
-    
+
     // Update local state to immediately reflect the change
-    setConversations(conversations.map(c => 
-      c.id === id 
-        ? { ...c, title: newTitle, updated: new Date().toISOString() } 
+    setConversations(conversations.map(c =>
+      c.id === id
+        ? { ...c, title: newTitle, updated: new Date().toISOString() }
         : c
     ));
   };
-  
+
   // Handle conversation sharing
   const handleShare = (id: string) => {
     // Copy conversation link/id to clipboard
@@ -291,7 +308,7 @@ export function ConversationSidebar() {
         console.error('Failed to copy: ', err);
       });
   };
-  
+
   return (
     <div className="flex flex-col h-full border-r border-border dark:border-gray-700 overflow-hidden">
       {/* Header */}
@@ -299,10 +316,13 @@ export function ConversationSidebar() {
         <h2 className="font-medium">Conversations</h2>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={startNewConversation}
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                startNewConversation();
+                if (pathname !== '/') router.push('/');
+              }}
               className="h-8 w-8"
             >
               <PlusCircle className="h-5 w-5" />
@@ -311,7 +331,7 @@ export function ConversationSidebar() {
           <TooltipContent>New conversation</TooltipContent>
         </Tooltip>
       </div>
-      
+
       {/* Search */}
       <div className="p-2">
         <div className="relative">
@@ -323,7 +343,7 @@ export function ConversationSidebar() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
-            <button 
+            <button
               className="absolute right-2 top-2.5"
               onClick={() => setSearchTerm('')}
             >
@@ -332,7 +352,7 @@ export function ConversationSidebar() {
           )}
         </div>
       </div>
-      
+
       {/* Conversation list */}
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 py-2">
@@ -344,7 +364,7 @@ export function ConversationSidebar() {
                 title={conversation.title}
                 updated={conversation.updated}
                 isActive={conversation.id === conversationId}
-                onSwitch={switchConversation}
+                onSwitch={handleSwitchConversation}
                 onDelete={handleDelete}
                 onRename={handleRename}
                 onShare={handleShare}
@@ -361,13 +381,16 @@ export function ConversationSidebar() {
           )}
         </div>
       </ScrollArea>
-      
+
       {/* Footer */}
       <div className="p-4 border-t border-border dark:border-gray-700">
         <Button
           variant="outline"
           className="w-full justify-start text-sm"
-          onClick={startNewConversation}
+          onClick={() => {
+            startNewConversation();
+            if (pathname !== '/') router.push('/');
+          }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           New chat
