@@ -70,6 +70,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
+import { getAllProjects } from "@/lib/projects/storage"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -334,7 +335,21 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     if (isMounted) {
       const loadConversations = () => {
         const allConversations = getAllConversationsMetadata();
-        setConversations(allConversations);
+
+        // Get all project conversations to filter them out
+        const projects = getAllProjects();
+        const projectConversationIds = new Set<string>();
+
+        projects.forEach((project: any) => {
+          if (project.conversationIds) {
+            project.conversationIds.forEach((id: string) => projectConversationIds.add(id));
+          }
+        });
+
+        // Filter out conversations that belong to projects
+        const filteredConversations = allConversations.filter((c: { id: string }) => !projectConversationIds.has(c.id));
+
+        setConversations(filteredConversations);
       };
 
       loadConversations();
