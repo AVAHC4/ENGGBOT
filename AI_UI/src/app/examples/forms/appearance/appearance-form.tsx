@@ -21,6 +21,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { useBackground } from "@/context/background-context"
+import { ProfileCard } from "@/components/ui/profile-card"
+import { compressImage } from "@/lib/image-utils"
 
 const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark"], {
@@ -48,6 +50,8 @@ export function AppearanceForm() {
   const { toast } = useToast()
   const [isMounted, setIsMounted] = React.useState(false);
   const { background, setBackground, options } = useBackground()
+  const [profileImage, setProfileImage] = React.useState<string>("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
@@ -66,6 +70,23 @@ export function AppearanceForm() {
     if (background) {
       form.setValue("background", background as AppearanceFormValues["background"])
     }
+
+    // Load profile image from localStorage
+    const savedAvatar = localStorage.getItem('user_avatar');
+    if (savedAvatar) {
+      setProfileImage(savedAvatar);
+    } else {
+      // Try to get from user_data
+      try {
+        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+        if (userData.avatar) {
+          setProfileImage(userData.avatar);
+        }
+      } catch (e) {
+        console.error("Error parsing user data", e);
+      }
+    }
+
     setIsMounted(true);
   }, [theme, background, form]);
 
@@ -77,11 +98,50 @@ export function AppearanceForm() {
   function onSubmit(data: AppearanceFormValues) {
     setTheme(data.theme)
     setBackground(data.background)
+
+    // Save profile image if changed
+    if (profileImage) {
+      localStorage.setItem('user_avatar', profileImage);
+
+      // Also update user_data object if it exists
+      try {
+        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+        userData.avatar = profileImage;
+        localStorage.setItem('user_data', JSON.stringify(userData));
+      } catch (e) {
+        console.error("Error updating user data", e);
+      }
+
+      // Dispatch storage event to update other components
+      window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
+    }
+
     toast({
       title: "Preferences updated!",
-      description: "Your theme, font, and background settings have been saved.",
+      description: "Your theme, font, background, and profile picture have been saved.",
     })
   }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      try {
+        const compressedBase64 = await compressImage(file);
+        setProfileImage(compressedBase64);
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to process image. Please try another one.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <Form {...form}>
@@ -277,6 +337,33 @@ export function AppearanceForm() {
             </FormItem>
           )}
         />
+
+        <div className="space-y-1">
+          <FormLabel>Profile Picture</FormLabel>
+          <FormDescription>
+            This is how others will see you on the site.
+          </FormDescription>
+          <div className="pt-2 space-y-4">
+            <ProfileCard showAddMember={false} imageSrc={profileImage || undefined} />
+
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={triggerFileInput}
+              >
+                Change Profile Picture
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <Button type="submit">Update preferences</Button>
       </form>
