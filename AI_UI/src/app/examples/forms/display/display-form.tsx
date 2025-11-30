@@ -17,30 +17,24 @@ import {
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
 
+import * as React from "react"
+
 const items = [
   {
-    id: "recents",
-    label: "Recents",
+    id: "chat",
+    label: "Chat",
   },
   {
-    id: "home",
-    label: "Home",
+    id: "compiler",
+    label: "Compiler",
   },
   {
-    id: "applications",
-    label: "Applications",
+    id: "teams",
+    label: "Teams",
   },
   {
-    id: "desktop",
-    label: "Desktop",
-  },
-  {
-    id: "downloads",
-    label: "Downloads",
-  },
-  {
-    id: "documents",
-    label: "Documents",
+    id: "projects",
+    label: "Projects",
   },
 ] as const
 
@@ -54,7 +48,7 @@ type DisplayFormValues = z.infer<typeof displayFormSchema>
 
 // This can come from your database or API.
 const defaultValues: Partial<DisplayFormValues> = {
-  items: ["recents", "home"],
+  items: ["chat", "compiler", "teams", "projects"],
 }
 
 export function DisplayForm() {
@@ -64,14 +58,29 @@ export function DisplayForm() {
     defaultValues,
   })
 
+  // Load saved preferences on mount
+  React.useEffect(() => {
+    const savedItems = localStorage.getItem("sidebar_preferences")
+    if (savedItems) {
+      try {
+        const parsed = JSON.parse(savedItems)
+        form.setValue("items", parsed)
+      } catch (e) {
+        console.error("Failed to parse sidebar preferences", e)
+      }
+    }
+  }, [form])
+
   function onSubmit(data: DisplayFormValues) {
+    // Save to localStorage
+    localStorage.setItem("sidebar_preferences", JSON.stringify(data.items))
+
+    // Dispatch storage event to update sidebar immediately
+    window.dispatchEvent(new Event("storage"))
+
     toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
+      title: "Display settings updated",
+      description: "Your sidebar preferences have been saved.",
     })
   }
 

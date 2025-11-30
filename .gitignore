@@ -1,35 +1,14 @@
 # Dependencies
-node_modules/
-dist/
+node_modules
+dist
 
 # Environment variables
 .env
 .env.local
 .env.*.local
-!.env.example
-AI_UI/.env.local
-AI_UI/.env.*
-!AI_UI/.env.example
-api/.env
-api/.env.*
-!api/.env.example
-server/.env
-server/.env.*
-!server/.env.example
-client/.env
-client/.env.*
-!client/.env.example
 
 # Build outputs
 .DS_Store
-.next/
-AI_UI/.next/
-out/
-build/
-.esbuild/
-.swc/
-.turbo/
-coverage/
 server/public
 vite.config.ts.*
 *.tar.gz
@@ -45,25 +24,11 @@ vite.config.ts.*
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-*.tsbuildinfo
 
 # Cache
 .cache/
 .temp/
 .vercel
-
-# Certificates and keys
-*.pem
-*.key
-*.crt
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-env/
-.ipynb_checkpoints/
 
 # Local Netlify folder
 .netlify

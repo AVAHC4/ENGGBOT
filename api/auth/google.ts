@@ -37,7 +37,7 @@ declare module 'express-session' {
   interface SessionData {
     oauthState?: string;
     authenticated?: boolean;
-    passport?: any; // Add passport session data type
+    passport?: any; 
   }
 }
 

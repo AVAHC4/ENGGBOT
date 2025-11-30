@@ -307,6 +307,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setIsMounted(true);
   }, []);
 
+  // Add state for visible items
+  const [visibleItems, setVisibleItems] = React.useState<string[]>(["chat", "compiler", "teams", "projects"]);
+
   // Refresh user data - only run on client side after component is mounted
   React.useEffect(() => {
     if (isMounted) {
@@ -314,8 +317,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         setUserData(getUserData());
       };
 
+      const loadVisibleItems = () => {
+        const savedItems = localStorage.getItem("sidebar_preferences");
+        if (savedItems) {
+          try {
+            setVisibleItems(JSON.parse(savedItems));
+          } catch (e) {
+            console.error("Failed to parse sidebar preferences", e);
+          }
+        }
+      };
+
       // Refresh on mount
       refreshUserData();
+      loadVisibleItems();
 
       // Set up event listener to refresh user data when authentication changes
       window.addEventListener('storage', (event) => {
@@ -325,6 +340,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           event.key === 'user_email' ||
           event.key === 'user_avatar') {
           refreshUserData();
+        }
+        if (event.key === 'sidebar_preferences' || event.type === 'storage') {
+          // Note: event.key is null for manually dispatched events in some browsers/contexts, 
+          // but we can just reload on any storage event to be safe, or check specific keys.
+          // For the custom dispatch in display-form, we might not get a key if we just did new Event('storage').
+          loadVisibleItems();
         }
       });
     }
@@ -678,33 +699,35 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           <SidebarContent>
             <div className="py-4">
               <SidebarMenu>
-                {data.navMain.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = item.url === activePath ||
-                    (item.url === '/' && activePath === '/') ||
-                    (item.url !== '/' && activePath.startsWith(item.url));
+                {data.navMain
+                  .filter(item => visibleItems.includes(item.title.toLowerCase()))
+                  .map((item) => {
+                    const Icon = item.icon;
+                    const isActive = item.url === activePath ||
+                      (item.url === '/' && activePath === '/') ||
+                      (item.url !== '/' && activePath.startsWith(item.url));
 
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        data-active={isActive}
-                      >
-                        <Link
-                          href={item.url}
-                          className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                          onClick={(e) => {
-                            // Update active path for all nav items, not just chat
-                            setActivePath(item.url);
-                          }}
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          data-active={isActive}
                         >
-                          <Icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                          <Link
+                            href={item.url}
+                            className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                            onClick={(e) => {
+                              // Update active path for all nav items, not just chat
+                              setActivePath(item.url);
+                            }}
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
 
                 {/* Conversations Menu */}
                 <SidebarMenuItem>
