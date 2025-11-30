@@ -73,11 +73,13 @@ const defaultValues: Partial<AccountFormValues> = {
 }
 
 import { supabase } from "@/lib/supabase"
+import { useLanguage } from "@/context/language-context"
 
 export function AccountForm() {
   const { toast } = useToast()
   const [dobPopoverOpen, setDobPopoverOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(true)
+  const { setLanguage } = useLanguage()
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
@@ -101,7 +103,11 @@ export function AccountForm() {
           if (profile && !error) {
             if (profile.full_name) form.setValue("name", profile.full_name)
             if (profile.dob) form.setValue("dob", new Date(profile.dob))
-            if (profile.language) form.setValue("language", profile.language)
+            if (profile.language) {
+              form.setValue("language", profile.language)
+              // Also set app language immediately if it differs
+              // setLanguage(profile.language as any) // Optional: sync on load? Maybe better not to force it on load to avoid jarring changes if local pref differs
+            }
             setIsLoading(false)
             return
           }
@@ -127,6 +133,9 @@ export function AccountForm() {
 
   async function onSubmit(data: AccountFormValues) {
     try {
+      // Update app language immediately
+      setLanguage(data.language as any)
+
       // 1. Save to Supabase if authenticated
       const { data: { user } } = await supabase.auth.getUser()
 

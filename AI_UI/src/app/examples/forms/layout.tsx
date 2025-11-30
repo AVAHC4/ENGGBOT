@@ -2,47 +2,50 @@ import { Metadata } from "next"
 
 import { Separator } from "@/components/ui/separator"
 import { SidebarNav } from "./components/sidebar-nav"
+import { useLanguage } from "@/context/language-context"
 
 export const metadata: Metadata = {
   title: "Forms",
   description: "Advanced form example using react-hook-form and Zod.",
 }
 
-const sidebarNavItems = [
-  {
-    title: "Profile",
-    href: "/examples/forms",
-  },
-  {
-    title: "Account",
-    href: "/examples/forms/account",
-  },
-  {
-    title: "Appearance",
-    href: "/examples/forms/appearance",
-  },
-  {
-    title: "Notifications",
-    href: "/examples/forms/notifications",
-  },
-  {
-    title: "Display",
-    href: "/examples/forms/display",
-  },
-]
-
 interface SettingsLayoutProps {
   children: React.ReactNode
 }
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
+  const { t } = useLanguage()
+
+  const sidebarNavItems = [
+    {
+      title: t('settings.profile'),
+      href: "/examples/forms",
+    },
+    {
+      title: t('settings.account'),
+      href: "/examples/forms/account",
+    },
+    {
+      title: t('settings.appearance'),
+      href: "/examples/forms/appearance",
+    },
+    {
+      title: t('settings.notifications'),
+      href: "/examples/forms/notifications",
+    },
+    {
+      title: t('settings.display'),
+      href: "/examples/forms/display",
+    },
+  ]
+
   return (
     <>
       <div className="hidden space-y-6 p-10 pb-16 md:block">
         <div className="space-y-0.5">
-          <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('settings.title')}</h2>
           <p className="text-muted-foreground">
-            Manage your account settings and set e-mail preferences.
+            {t('settings.description')}
           </p>
         </div>
         <Separator className="my-6" />

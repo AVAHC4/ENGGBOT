@@ -71,6 +71,7 @@ import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
 import { getAllProjects } from "@/lib/projects/storage"
+import { useLanguage } from "@/context/language-context"
 
 // Add this function to get user data from localStorage
 function getUserData() {
@@ -255,6 +256,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const pathname = usePathname();
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
   const router = useRouter();
+  const { t } = useLanguage();
 
   // Handle conversation switching with navigation
   const handleSwitchConversation = (id: string) => {
@@ -707,6 +709,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       (item.url === '/' && activePath === '/') ||
                       (item.url !== '/' && activePath.startsWith(item.url));
 
+                    // Map title to translation key
+                    const translationKey = `sidebar.${item.title.toLowerCase()}`;
+                    const title = t(translationKey);
+
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -722,7 +728,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             }}
                           >
                             <Icon className="h-4 w-4" />
-                            <span>{item.title}</span>
+                            <span>{title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -737,7 +743,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   >
                     <div className="flex items-center">
                       <History className="h-4 w-4 mr-2" />
-                      <span>Conversations</span>
+                      <span>{t('sidebar.conversations')}</span>
                     </div>
                     {conversationsExpanded ? (
                       <ChevronDown className="h-4 w-4" />
@@ -751,7 +757,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton onClick={handleStartNewConversation} className="w-full flex items-center">
                           <PlusCircle className="h-3.5 w-3.5 mr-2" />
-                          <span className="font-medium text-primary">New Conversation</span>
+                          <span className="font-medium text-primary">{t('sidebar.new_conversation')}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
 

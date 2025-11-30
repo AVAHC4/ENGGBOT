@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { BackgroundProvider } from "@/context/background-context";
 import { Analytics } from "@vercel/analytics/react";
 import { BackgroundRenderer } from "@/components/background/background-renderer";
+import { LanguageProvider } from "@/context/language-context";
 
 
 
@@ -38,19 +39,21 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <BackgroundProvider>
-            {/* Global background renderer driven by settings */}
-            <BackgroundRenderer />
-            <ChatProvider>
-              <SidebarWrapper defaultOpen={true}>
-                <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
-                  <AppSidebar className="hidden lg:block border-none" />
-                  <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
-                </div>
-                <ProfileVisibilityFixer />
-              </SidebarWrapper>
-            </ChatProvider>
-          </BackgroundProvider>
+          <LanguageProvider>
+            <BackgroundProvider>
+              {/* Global background renderer driven by settings */}
+              <BackgroundRenderer />
+              <ChatProvider>
+                <SidebarWrapper defaultOpen={true}>
+                  <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
+                    <AppSidebar className="hidden lg:block border-none" />
+                    <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
+                  </div>
+                  <ProfileVisibilityFixer />
+                </SidebarWrapper>
+              </ChatProvider>
+            </BackgroundProvider>
+          </LanguageProvider>
         </ThemeProvider>
         {/* <Toaster /> */} {/* Temporarily commented out due to React type compatibility issues */}
         <Analytics />
