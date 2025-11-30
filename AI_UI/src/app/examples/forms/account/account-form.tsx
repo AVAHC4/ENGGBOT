@@ -72,23 +72,119 @@ const defaultValues: Partial<AccountFormValues> = {
   // dob: new Date("2023-01-23"),
 }
 
+import { supabase } from "@/lib/supabase"
+
 export function AccountForm() {
   const { toast } = useToast()
   const [dobPopoverOpen, setDobPopoverOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
   })
 
-  function onSubmit(data: AccountFormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  // Load user data on mount (from DB or localStorage)
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        // 1. Try to get data from Supabase if authenticated
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('full_name, dob, language')
+            .eq('id', user.id)
+            .single()
+
+          if (profile && !error) {
+            if (profile.full_name) form.setValue("name", profile.full_name)
+            if (profile.dob) form.setValue("dob", new Date(profile.dob))
+            if (profile.language) form.setValue("language", profile.language)
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // 2. Fallback to localStorage if no user or DB error
+        const savedData = localStorage.getItem("user_data")
+        if (savedData) {
+          const parsed = JSON.parse(savedData)
+          if (parsed.name) form.setValue("name", parsed.name)
+          if (parsed.dob) form.setValue("dob", new Date(parsed.dob))
+          if (parsed.language) form.setValue("language", parsed.language)
+        }
+      } catch (e) {
+        console.error("Failed to load user data", e)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [form])
+
+  async function onSubmit(data: AccountFormValues) {
+    try {
+      // 1. Save to Supabase if authenticated
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            full_name: data.name,
+            dob: data.dob.toISOString(),
+            language: data.language,
+            updated_at: new Date().toISOString(),
+          })
+
+        if (error) {
+          console.error("Error saving to Supabase:", error)
+          toast({
+            title: "Error saving online",
+            description: "Could not save to database, but saved locally.",
+            variant: "destructive",
+          })
+        }
+      }
+
+      // 2. Always save to localStorage for offline access/sidebar sync
+      const savedData = localStorage.getItem("user_data")
+      let currentData = {}
+      try {
+        currentData = savedData ? JSON.parse(savedData) : {}
+      } catch (e) {
+        // Ignore error
+      }
+
+      const newData = {
+        ...currentData,
+        name: data.name,
+        dob: data.dob.toISOString(),
+        language: data.language,
+      }
+
+      localStorage.setItem("user_data", JSON.stringify(newData))
+      localStorage.setItem("user_name", data.name)
+
+      // Dispatch storage event
+      window.dispatchEvent(new Event("storage"))
+
+      toast({
+        title: "Account updated",
+        description: "Your account settings have been saved.",
+      })
+    } catch (e) {
+      console.error("Error in onSubmit:", e)
+      toast({
+        title: "Error",
+        description: "Something went wrong while saving.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
