@@ -57,9 +57,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         t
     };
 
-    if (!isLoaded) {
-        return <>{children}</>; // Render children immediately to avoid flash, or null for loading
-    }
+
 
     return (
         <LanguageContext.Provider value={value}>

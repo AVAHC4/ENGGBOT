@@ -78,6 +78,7 @@ import { useLanguage } from "@/context/language-context"
 export function AccountForm() {
   const { toast } = useToast()
   const [dobPopoverOpen, setDobPopoverOpen] = React.useState(false)
+  const [languagePopoverOpen, setLanguagePopoverOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(true)
   const { setLanguage } = useLanguage()
   const form = useForm<AccountFormValues>({
@@ -265,25 +266,23 @@ export function AccountForm() {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Language</FormLabel>
-              <Popover>
+              <Popover open={languagePopoverOpen} onOpenChange={setLanguagePopoverOpen}>
                 <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-[200px] justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value
-                        ? languages.find(
-                          (language) => language.value === field.value
-                        )?.label
-                        : "Select language"}
-                      <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      "w-[200px] justify-between",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    {field.value
+                      ? languages.find(
+                        (language) => language.value === field.value
+                      )?.label
+                      : "Select language"}
+                    <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[200px] p-0">
                   <Command>
@@ -297,6 +296,7 @@ export function AccountForm() {
                             key={language.value}
                             onSelect={() => {
                               form.setValue("language", language.value)
+                              setLanguagePopoverOpen(false)
                             }}
                           >
                             <Check
