@@ -28,7 +28,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BOT_CONFIG } from '@/lib/ai/response-middleware';
-import { initializeAIClient, isClientInitialized } from '@/lib/ai/preload-client';
 import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -89,13 +88,6 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
 
   // Previous messages count ref to detect new messages
   const previousMessagesCountRef = useRef(messages.length);
-
-  // Initialize AI client on component mount (silent, no overlay)
-  useEffect(() => {
-    if (!isClientInitialized()) {
-      initializeAIClient().catch(() => { });
-    }
-  }, []);
 
   // Keep track of displayed messages
   useEffect(() => {
