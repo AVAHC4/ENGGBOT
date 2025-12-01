@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { AVAILABLE_MODELS, ChutesClient } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS, OpenRouterClient } from '@/lib/ai/openrouter-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { isClientInitialized, initializeAIClient } from '@/lib/ai/preload-client';
 import crypto from 'crypto';
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const {
       message,
       hasAttachments = false,
-      model = "z-ai/glm-4.5-air:free",
+      model = "x-ai/grok-4.1-fast:free",
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
@@ -63,12 +63,12 @@ export async function POST(request: Request) {
 
     // Instantiate server-side client with secure API key
     const apiKey = typeof process !== 'undefined'
-      ? (process.env.CHUTES_API_TOKEN || process.env.CHUTES_API_KEY)
+      ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
       : undefined;
     if (!apiKey) {
-      console.warn("CHUTES_API_TOKEN is not set. Configure this env var in production.");
+      console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }
-    const chutesClient = new ChutesClient({ apiKey });
+    const openRouterClient = new OpenRouterClient({ apiKey });
 
     // Format messages for the API
     const formattedMessages = formatConversationHistory(conversationHistory);
@@ -92,12 +92,12 @@ export async function POST(request: Request) {
         : message
     });
 
-    // Always use Z.AI GLM 4.5 Air model
-    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air"];
+    // Always use Grok 4.1 model
+    const modelName = AVAILABLE_MODELS["grok-4.1"];
 
     try {
       // Generate response from the AI
-      const response = await chutesClient.generate({
+      const response = await openRouterClient.generate({
         prompt: message,
         model: modelName,
         temperature: 0.7,
@@ -139,4 +139,5 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
+

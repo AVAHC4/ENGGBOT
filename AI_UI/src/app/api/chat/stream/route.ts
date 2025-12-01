@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { AVAILABLE_MODELS, ChutesClient } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS, OpenRouterClient } from '@/lib/ai/openrouter-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { ENGINEERING_SYSTEM_PROMPT } from '@/lib/prompts/engineering-prompt';
 
 export const runtime = 'nodejs';
 
 // Simple stream processor to transform OpenRouter stream into an event stream
-function processChutesStream(
+function processOpenRouterStream(
   stream: ReadableStream,
   userMessage: string,
   encoder = new TextEncoder(),
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "z-ai/glm-4.5-air:free",
+      model = "x-ai/grok-4.1-fast:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []
@@ -143,15 +143,15 @@ export async function POST(request: Request) {
 
     // Instantiate server-side client with secure API key
     const apiKey = typeof process !== 'undefined'
-      ? (process.env.CHUTES_API_TOKEN || process.env.CHUTES_API_KEY)
+      ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
       : undefined;
     if (!apiKey) {
-      console.warn("CHUTES_API_TOKEN is not set. Configure this env var in production.");
+      console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }
-    const chutesClient = new ChutesClient({ apiKey });
+    const openRouterClient = new OpenRouterClient({ apiKey });
 
-    // Always use the Z.AI GLM 4.5 Air model
-    const modelName = AVAILABLE_MODELS["zai-glm-4.5-air"];
+    // Always use the Grok 4.1 model
+    const modelName = AVAILABLE_MODELS["grok-4.1"];
 
     // Format messages for the API
     const messages = [];
@@ -175,12 +175,11 @@ export async function POST(request: Request) {
       content: hasAttachments
         ? `${message} (The user has also provided some files or attachments with this message)`
         : message,
-      prompt: "",
     });
 
     try {
       // Generate streaming response from the AI
-      const stream = await chutesClient.generateStream({
+      const stream = await openRouterClient.generateStream({
         prompt: "",
         model: modelName,
         messages: messages,
@@ -191,7 +190,7 @@ export async function POST(request: Request) {
       });
 
       // Process the stream
-      const processedStream = processChutesStream(stream, identityProbeText);
+      const processedStream = processOpenRouterStream(stream, identityProbeText);
 
       // Return the streaming response with required headers for proper streaming
       return new Response(processedStream, {
@@ -220,4 +219,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
