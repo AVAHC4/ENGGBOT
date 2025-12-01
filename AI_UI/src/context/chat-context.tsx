@@ -112,9 +112,12 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
   // Load conversation on startup or when switching conversations
   useEffect(() => {
+    console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, projectId });
     if (isMounted && !isPrivateMode) {
       // Load conversation asynchronously
+      console.log('[ChatContext] Loading conversation:', conversationId);
       loadConversation(conversationId).then((savedMessages) => {
+        console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
           setMessages(savedMessages);
         } else {
