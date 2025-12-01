@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
-import { AVAILABLE_MODELS } from '@/lib/ai/chutes-client';
+import { AVAILABLE_MODELS } from '@/lib/ai/openrouter-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
 import { addConversationToProject, removeConversationFromProject } from "@/lib/projects/storage";
 
