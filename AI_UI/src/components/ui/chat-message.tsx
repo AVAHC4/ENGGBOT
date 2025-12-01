@@ -196,7 +196,7 @@ export function ChatMessage({
 
   // Render attachments based on type
   const renderAttachments = () => {
-    if (!attachments.length) return null;
+    if (!attachments || !attachments.length) return null;
 
     return (
       <div className="attachments-container">
