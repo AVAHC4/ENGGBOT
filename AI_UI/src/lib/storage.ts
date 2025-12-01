@@ -54,14 +54,20 @@ function getCurrentUserId(): string {
 // Save conversation to database
 async function saveConversationToDatabase(id: string, messages: any[], title?: string): Promise<boolean> {
   const email = getUserEmail();
-  if (!email) return false;
+  console.log('[DB Save] Attempting to save conversation:', { id: id.substring(0, 8), email, messagesCount: messages.length, title });
+  if (!email) {
+    console.warn('[DB Save] No email found, skipping database save');
+    return false;
+  }
 
   try {
     // First, ensure conversation exists
+    console.log('[DB Save] Checking if conversation exists...');
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
     if (!response.ok) {
       // Conversation doesn't exist, create it with the same ID
+      console.log('[DB Save] Conversation does not exist, creating...');
       const createResponse = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,11 +79,14 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
       });
 
       if (!createResponse.ok) {
-        console.error('Failed to create conversation in database');
+        const errorText = await createResponse.text();
+        console.error('[DB Save] Failed to create conversation:', response.status, errorText);
         return false;
       }
+      console.log('[DB Save] Conversation created successfully');
     } else if (title) {
       // Update title if provided
+      console.log('[DB Save] Updating conversation title...');
       await fetch(`/api/conversations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -86,15 +95,23 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
     }
 
     // Save messages
+    console.log('[DB Save] Saving messages to database...');
     const messagesResponse = await fetch(`/api/conversations/${id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, messages }),
     });
 
+    if (!messagesResponse.ok) {
+      const errorText = await messagesResponse.text();
+      console.error('[DB Save] Failed to save messages:', messagesResponse.status, errorText);
+      return false;
+    }
+
+    console.log('[DB Save] ✅ Successfully saved conversation and messages to database');
     return messagesResponse.ok;
   } catch (error) {
-    console.error('Error saving conversation to database:', error);
+    console.error('[DB Save] Error saving conversation to database:', error);
     return false;
   }
 }
