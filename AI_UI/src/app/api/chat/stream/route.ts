@@ -145,6 +145,11 @@ export async function POST(request: Request) {
     const apiKey = typeof process !== 'undefined'
       ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
       : undefined;
+
+    console.log("Debug: OPENROUTER_API_KEY present:", !!process.env.OPENROUTER_API_KEY);
+    console.log("Debug: CHUTES_API_TOKEN present:", !!process.env.CHUTES_API_TOKEN);
+    console.log("Debug: Using API Key starting with:", apiKey ? apiKey.substring(0, 8) + "..." : "undefined");
+
     if (!apiKey) {
       console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }

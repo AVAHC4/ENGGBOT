@@ -36,14 +36,14 @@ export class OpenRouterClient {
     private headers: Record<string, string>;
 
     constructor(options?: OpenRouterClientOptions) {
-        this.apiKey = options?.apiKey || "";
+        this.apiKey = options?.apiKey?.trim() || "";
         this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
         this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["grok-4.1"];
 
         this.headers = {
             "Authorization": `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://localhost:3000", // Update with your actual site URL
+            "HTTP-Referer": "http://localhost:3000", // Update with your actual site URL
             "X-Title": "AI UI" // Update with your actual site title
         };
 
