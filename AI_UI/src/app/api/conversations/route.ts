@@ -45,18 +45,27 @@ export async function POST(req: NextRequest) {
         const email = (body?.email || '').toLowerCase();
         const title = body?.title || 'New Conversation';
         const projectId = body?.projectId || null;
+        const id = body?.id; // Accept ID from client
 
         if (!email) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
+        // Prepare insert data
+        const insertData: any = {
+            user_email: email,
+            title,
+            project_id: projectId,
+        };
+
+        // If ID is provided, use it; otherwise let database generate one
+        if (id) {
+            insertData.id = id;
+        }
+
         const { data, error } = await supabaseAdmin
             .from('conversations')
-            .insert({
-                user_email: email,
-                title,
-                project_id: projectId,
-            })
+            .insert(insertData)
             .select('id, title, project_id, created_at, updated_at')
             .single();
 

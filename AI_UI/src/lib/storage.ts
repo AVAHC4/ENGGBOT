@@ -61,11 +61,12 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
     if (!response.ok) {
-      // Conversation doesn't exist, create it
+      // Conversation doesn't exist, create it with the same ID
       const createResponse = await fetch('/api/conversations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id, // Pass the ID to ensure consistency
           email,
           title: title || `Conversation ${id.substring(0, 6)}`,
         }),
