@@ -4,41 +4,109 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/AI_UI", "destination": "https://enggbot1.vercel.app" },
-    { "source": "/AI_UI/(.*)", "destination": "https://enggbot1.vercel.app/$1" },
-    { "source": "/_next/(.*)", "destination": "https://enggbot1.vercel.app/_next/$1" },
-    { "source": "/workers/(.*)", "destination": "https://enggbot1.vercel.app/workers/$1" },
-    { "source": "/compiler", "destination": "https://enggbot1.vercel.app/compiler" },
-    { "source": "/team", "destination": "https://enggbot1.vercel.app/team" },
-    { "source": "/terms", "destination": "https://enggbot1.vercel.app/terms" },
-    { "source": "/examples/(.*)", "destination": "https://enggbot1.vercel.app/examples/$1" },
-    { "source": "/api/auth/google/callback", "destination": "https://enggbot1.vercel.app/api/auth/google/callback" },
-    { "source": "/api/auth/google", "destination": "https://enggbot1.vercel.app/api/auth/google" },
-    { "source": "/api/auth/status", "destination": "https://enggbot1.vercel.app/api/auth/status" },
-    { "source": "/api/hello", "destination": "/api/hello.html" },
-    { "source": "/api/(.*)", "destination": "https://enggbot1.vercel.app/api/$1" },
-    { "source": "/chat", "destination": "/chat/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/AI_UI",
+      "destination": "https://enggbot1.vercel.app"
+    },
+    {
+      "source": "/AI_UI/(.*)",
+      "destination": "https://enggbot1.vercel.app/$1"
+    },
+    {
+      "source": "/_next/(.*)",
+      "destination": "https://enggbot1.vercel.app/_next/$1"
+    },
+    {
+      "source": "/workers/(.*)",
+      "destination": "https://enggbot1.vercel.app/workers/$1"
+    },
+    {
+      "source": "/compiler",
+      "destination": "https://enggbot1.vercel.app/compiler"
+    },
+    {
+      "source": "/projects",
+      "destination": "https://enggbot1.vercel.app/projects"
+    },
+    {
+      "source": "/projects/(.*)",
+      "destination": "https://enggbot1.vercel.app/projects/$1"
+    },
+    {
+      "source": "/team",
+      "destination": "https://enggbot1.vercel.app/team"
+    },
+    {
+      "source": "/terms",
+      "destination": "https://enggbot1.vercel.app/terms"
+    },
+    {
+      "source": "/examples/(.*)",
+      "destination": "https://enggbot1.vercel.app/examples/$1"
+    },
+    {
+      "source": "/api/auth/google/callback",
+      "destination": "https://enggbot1.vercel.app/api/auth/google/callback"
+    },
+    {
+      "source": "/api/auth/google",
+      "destination": "https://enggbot1.vercel.app/api/auth/google"
+    },
+    {
+      "source": "/api/auth/status",
+      "destination": "https://enggbot1.vercel.app/api/auth/status"
+    },
+    {
+      "source": "/api/hello",
+      "destination": "/api/hello.html"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "https://enggbot1.vercel.app/api/$1"
+    },
+    {
+      "source": "/chat",
+      "destination": "/chat/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/workers/(.*)",
       "headers": [
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" }
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "credentialless"
+        }
       ]
     },
     {
       "source": "/compiler",
       "headers": [
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
-        { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" }
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "credentialless"
+        }
       ]
     }
   ],
