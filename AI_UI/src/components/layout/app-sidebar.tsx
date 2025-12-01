@@ -69,7 +69,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
+import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
 import { getAllProjects } from "@/lib/projects/storage"
 import { useLanguage } from "@/context/language-context"
 

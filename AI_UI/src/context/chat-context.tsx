@@ -113,12 +113,14 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   // Load conversation on startup or when switching conversations
   useEffect(() => {
     if (isMounted && !isPrivateMode) {
-      const savedMessages = loadConversation(conversationId);
-      if (savedMessages?.length) {
-        setMessages(savedMessages);
-      } else {
-        setMessages([]);
-      }
+      // Load conversation asynchronously
+      loadConversation(conversationId).then((savedMessages) => {
+        if (savedMessages?.length) {
+          setMessages(savedMessages);
+        } else {
+          setMessages([]);
+        }
+      });
 
       // Get user-specific prefix
       const userPrefix = getUserPrefix();
@@ -722,13 +724,13 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   }, [isGenerating, isLoading, stopGeneration, isMounted, projectId]);
 
   // Delete the current conversation
-  const deleteCurrentConversation = useCallback(() => {
+  const deleteCurrentConversation = useCallback(async () => {
     if (isMounted) {
       // Get conversation list before deletion
-      const conversations = getConversationList();
+      const conversations = await getConversationList();
 
       // Delete current conversation
-      deleteConversation(conversationId);
+      await deleteConversation(conversationId);
 
       // If in a project, remove the link
       if (projectId) {
@@ -747,7 +749,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         startNewConversation();
       }
     }
-  }, [conversationId, startNewConversation, switchConversation, isMounted]);
+  }, [conversationId, startNewConversation, switchConversation, isMounted, projectId]);
 
   const toggleThinkingMode = useCallback(() => {
     setThinkingMode(prev => !prev);
@@ -767,10 +769,11 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         setMessages([]);
       } else {
         // When disabling private mode, load the saved conversation
-        const savedMessages = loadConversation(conversationId);
-        if (savedMessages?.length) {
-          setMessages(savedMessages);
-        }
+        loadConversation(conversationId).then((savedMessages) => {
+          if (savedMessages?.length) {
+            setMessages(savedMessages);
+          }
+        });
       }
 
       return newValue;

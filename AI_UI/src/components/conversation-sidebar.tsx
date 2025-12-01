@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useChat } from '@/context/chat-context';
 import {
-  getAllConversationsMetadata,
+  getAllConversationsMetadataSync as getAllConversationsMetadata,
   ConversationMetadata,
   getConversationMetadata,
   saveConversationMetadata
