@@ -115,11 +115,14 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     if (isMounted && !isPrivateMode) {
       // Load conversation asynchronously
       loadConversation(conversationId).then((savedMessages) => {
-        if (savedMessages?.length) {
+        if (savedMessages && savedMessages.length) {
           setMessages(savedMessages);
         } else {
           setMessages([]);
         }
+      }).catch((error) => {
+        console.error('Error loading conversation:', error);
+        setMessages([]);
       });
 
       // Get user-specific prefix
