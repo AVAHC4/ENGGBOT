@@ -258,19 +258,39 @@ export interface ConversationMetadata {
   updated: string;
 }
 
-// Save a conversation (use localStorage only, skip database to avoid 404 errors)
+// Save a conversation (tries database first, falls back to localStorage)
 export function saveConversation(id: string, messages: any[]) {
   if (isServer()) return;
 
-  // Save to localStorage only (database API endpoints were removed)
+  // Always save to localStorage immediately for offline support
   saveConversationToLocalStorage(id, messages);
+
+  // Try to save to database in the background
+  const metadata = getConversationMetadataFromLocalStorage(id);
+  saveConversationToDatabase(id, messages, metadata?.title).catch(err => {
+    console.log('Database save failed, using localStorage only:', err);
+  });
 }
 
-// Load a conversation (use localStorage only, skip database to avoid 404 errors)
+// Load a conversation (tries database first, falls back to localStorage)
 export async function loadConversation(id: string): Promise<any[] | null> {
   if (isServer()) return null;
 
-  // Skip database API calls (endpoints were removed), use localStorage directly
+  // Try database first
+  try {
+    const dbMessages = await loadConversationFromDatabase(id);
+    if (dbMessages !== null) {
+      // Even if empty array, cache it and return
+      if (dbMessages.length > 0) {
+        saveConversationToLocalStorage(id, dbMessages);
+      }
+      return dbMessages;
+    }
+  } catch (error) {
+    console.log('Database load failed, using localStorage:', error);
+  }
+
+  // Fall back to localStorage
   return loadConversationFromLocalStorage(id);
 }
 
@@ -292,22 +312,39 @@ export async function getConversationList(): Promise<string[]> {
   return getConversationListFromLocalStorage();
 }
 
-// Delete a conversation (use localStorage only, skip database to avoid 404 errors)
+// Delete a conversation (from both database and localStorage)
 export async function deleteConversation(id: string): Promise<string[]> {
   if (isServer()) return [];
 
-  // Delete from localStorage only (database API endpoints were removed)
+  // Delete from localStorage immediately
   deleteConversationFromLocalStorage(id);
+
+  // Try to delete from database
+  try {
+    await deleteConversationFromDatabase(id);
+  } catch (error) {
+    console.log('Database delete failed, localStorage already cleared:', error);
+  }
 
   return getConversationListFromLocalStorage();
 }
 
-// Save metadata for a conversation (use localStorage only, skip database to avoid 404 errors)
+// Save metadata for a conversation
 export function saveConversationMetadata(id: string, metadata: ConversationMetadata) {
   if (isServer()) return;
 
-  // Save to localStorage only (database API endpoints were removed)
+  // Save to localStorage
   saveConversationMetadataToLocalStorage(id, metadata);
+
+  // Update database title in background
+  const email = getUserEmail();
+  if (email) {
+    fetch(`/api/conversations/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, title: metadata.title }),
+    }).catch(err => console.log('Failed to update conversation title in database:', err));
+  }
 }
 
 // Get metadata for a conversation
@@ -315,11 +352,26 @@ export function getConversationMetadata(id: string): ConversationMetadata | null
   return getConversationMetadataFromLocalStorage(id);
 }
 
-// Get all conversation metadata (use localStorage only, skip database to avoid 404 errors)
+// Get all conversation metadata (async version that tries database first)
 export async function getAllConversationsMetadata(): Promise<any[]> {
   if (isServer()) return [];
 
-  // Skip database API calls (endpoints were removed), use localStorage directly
+  // Try database first
+  try {
+    const dbConversations = await loadConversationsFromDatabase();
+    if (dbConversations && dbConversations.length > 0) {
+      return dbConversations.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        created: c.created_at || c.createdAt,
+        updated: c.updated_at || c.updatedAt,
+      })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+    }
+  } catch (error) {
+    console.log('Database metadata load failed, using localStorage:', error);
+  }
+
+  // Fall back to localStorage
   const conversations = getConversationListFromLocalStorage();
   return conversations.map((id: string) => ({
     id,
