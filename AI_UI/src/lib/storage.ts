@@ -108,7 +108,8 @@ async function loadConversationFromDatabase(id: string): Promise<any[] | null> {
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
     if (!response.ok) {
-      return null;
+      // Conversation not found in database, return empty array (not null)
+      return [];
     }
 
     const data = await response.json();
@@ -278,9 +279,11 @@ export async function loadConversation(id: string): Promise<any[] | null> {
   // Try database first
   try {
     const dbMessages = await loadConversationFromDatabase(id);
-    if (dbMessages && dbMessages.length > 0) {
-      // Cache in localStorage
-      saveConversationToLocalStorage(id, dbMessages);
+    if (dbMessages !== null) {
+      // Even if empty array, cache it and return
+      if (dbMessages.length > 0) {
+        saveConversationToLocalStorage(id, dbMessages);
+      }
       return dbMessages;
     }
   } catch (error) {
