@@ -141,7 +141,7 @@ const data = {
   navMain: [
     {
       title: "Chat",
-      url: "/",
+      url: "/AI_UI",
       icon: MessageSquare,
     },
     {
