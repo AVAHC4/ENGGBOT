@@ -119,7 +119,7 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
 // Load conversation from database
 async function loadConversationFromDatabase(id: string): Promise<any[] | null> {
   const email = getUserEmail();
-  if (!email) return null;
+  if (!email) return [];
 
   try {
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
@@ -133,7 +133,7 @@ async function loadConversationFromDatabase(id: string): Promise<any[] | null> {
     return data.messages || [];
   } catch (error) {
     console.error('Error loading conversation from database:', error);
-    return null;
+    return []; // Return empty array instead of null to prevent .length errors
   }
 }
 
