@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
         const projectId = body?.projectId || null;
         const id = body?.id; // Accept ID from client
 
+        console.log('[API] POST /api/conversations - Creating conversation:', { email, title, projectId, id: id?.substring(0, 8) });
+
         if (!email) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
             insertData.id = id;
         }
 
+        console.log('[API] Inserting into conversations table:', insertData);
         const { data, error } = await supabaseAdmin
             .from('conversations')
             .insert(insertData)
@@ -70,11 +73,14 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (error) {
+            console.error('[API] Supabase insert error:', error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        console.log('[API] ✅ Conversation created successfully:', data?.id);
         return NextResponse.json({ conversation: data });
     } catch (e: any) {
+        console.error('[API] Exception in POST /api/conversations:', e);
         return NextResponse.json({ error: e?.message || 'Failed to create conversation' }, { status: 500 });
     }
 }
