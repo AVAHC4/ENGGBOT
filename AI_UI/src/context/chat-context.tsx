@@ -341,6 +341,30 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
               try {
                 const data = JSON.parse(eventData);
 
+                // Handle error from server
+                if (data.error) {
+                  console.error("Error from server:", data.error);
+                  setMessages(prev => {
+                    const updatedMessages = prev.map(m =>
+                      m.id === aiMessageId
+                        ? { ...m, content: `Error: ${data.error}`, isStreaming: false }
+                        : m
+                    );
+
+                    // Save conversation
+                    if (typeof window !== 'undefined' && !isPrivateMode) {
+                      saveConversation(conversationId, updatedMessages);
+                    }
+
+                    return updatedMessages;
+                  });
+
+                  // Reset states
+                  setIsLoading(false);
+                  setIsGenerating(false);
+                  continue;
+                }
+
                 // Update the streaming message
                 if (data.text) {
                   setMessages(prev => {
