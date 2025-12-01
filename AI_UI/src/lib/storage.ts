@@ -1,6 +1,6 @@
 /**
- * Hybrid storage utilities for saving and loading conversations
- * Uses database (Supabase) when available, falls back to localStorage
+ * Database-only storage utilities for saving and loading conversations
+ * Uses Supabase database exclusively - no localStorage
  */
 
 // Helper function to check if code is running on the server
@@ -8,7 +8,7 @@ function isServer(): boolean {
   return typeof window === 'undefined';
 }
 
-// Helper to get user email
+// Helper to get user email from session storage (not localStorage for data)
 export function getUserEmail(): string | null {
   if (isServer()) return null;
 
@@ -30,26 +30,7 @@ export function getUserEmail(): string | null {
   }
 }
 
-// Helper to get user email prefix consistently (for localStorage keys)
-export function getUserPrefix(): string {
-  if (isServer()) {
-    return 'default';
-  }
-
-  const email = getUserEmail();
-  if (email) {
-    return btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_');
-  }
-
-  return 'default';
-}
-
-// Helper to get current user identifier
-function getCurrentUserId(): string {
-  return getUserPrefix();
-}
-
-// ==================== Database API Helpers ====================
+// ==================== Database API Functions ====================
 
 // Save conversation to database
 async function saveConversationToDatabase(id: string, messages: any[], title?: string): Promise<boolean> {
@@ -80,7 +61,7 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
-        console.error('[DB Save] Failed to create conversation:', response.status, errorText);
+        console.error('[DB Save] Failed to create conversation:', createResponse.status, errorText);
         return false;
       }
       console.log('[DB Save] Conversation created successfully');
@@ -117,7 +98,7 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
 }
 
 // Load conversation from database
-async function loadConversationFromDatabase(id: string): Promise<any[] | null> {
+async function loadConversationFromDatabase(id: string): Promise<any[]> {
   const email = getUserEmail();
   if (!email) return [];
 
@@ -125,7 +106,7 @@ async function loadConversationFromDatabase(id: string): Promise<any[] | null> {
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
     if (!response.ok) {
-      // Conversation not found in database, return empty array (not null)
+      // Conversation not found in database, return empty array
       return [];
     }
 
@@ -174,99 +155,7 @@ async function deleteConversationFromDatabase(id: string): Promise<boolean> {
   }
 }
 
-// ==================== LocalStorage Helpers (Fallback) ====================
-
-// Save a conversation to localStorage
-function saveConversationToLocalStorage(id: string, messages: any[]) {
-  if (isServer()) return;
-
-  const userId = getCurrentUserId();
-  localStorage.setItem(`${userId}-conversation-${id}`, JSON.stringify(messages));
-
-  // Save conversation list
-  const savedConversations = getConversationListFromLocalStorage();
-  if (!savedConversations.includes(id)) {
-    localStorage.setItem(`${userId}-conversations`, JSON.stringify([...savedConversations, id]));
-  }
-
-  // Update conversation metadata
-  const metadata = getConversationMetadataFromLocalStorage(id) || {
-    title: `Conversation ${id.substring(0, 6)}`,
-    created: new Date().toISOString(),
-    updated: new Date().toISOString()
-  };
-
-  // Update timestamp
-  metadata.updated = new Date().toISOString();
-
-  // Update title based on first message if it doesn't already have a custom title
-  if (metadata.title === `Conversation ${id.substring(0, 6)}` && messages.length > 0) {
-    const firstUserMessage = messages.find(m => m.isUser)?.content;
-    if (firstUserMessage) {
-      metadata.title = firstUserMessage.substring(0, 30) + (firstUserMessage.length > 30 ? '...' : '');
-    }
-  }
-
-  saveConversationMetadataToLocalStorage(id, metadata);
-}
-
-// Load a conversation from localStorage
-function loadConversationFromLocalStorage(id: string) {
-  if (isServer()) return [];
-
-  const userId = getCurrentUserId();
-  const saved = localStorage.getItem(`${userId}-conversation-${id}`);
-  return saved ? JSON.parse(saved) : [];
-}
-
-// Get list of all saved conversations from localStorage
-function getConversationListFromLocalStorage() {
-  if (isServer()) return [];
-
-  const userId = getCurrentUserId();
-  const saved = localStorage.getItem(`${userId}-conversations`);
-  return saved ? JSON.parse(saved) : [];
-}
-
-// Delete a conversation from localStorage
-function deleteConversationFromLocalStorage(id: string) {
-  if (isServer()) return [];
-
-  const userId = getCurrentUserId();
-  // Remove from list
-  const savedConversations = getConversationListFromLocalStorage();
-  localStorage.setItem(
-    `${userId}-conversations`,
-    JSON.stringify(savedConversations.filter((cid: string) => cid !== id))
-  );
-
-  // Remove the conversation data
-  localStorage.removeItem(`${userId}-conversation-${id}`);
-
-  // Remove metadata
-  localStorage.removeItem(`${userId}-conversation-meta-${id}`);
-
-  return getConversationListFromLocalStorage();
-}
-
-// Save metadata for a conversation to localStorage
-function saveConversationMetadataToLocalStorage(id: string, metadata: ConversationMetadata) {
-  if (isServer()) return;
-
-  const userId = getCurrentUserId();
-  localStorage.setItem(`${userId}-conversation-meta-${id}`, JSON.stringify(metadata));
-}
-
-// Get metadata for a conversation from localStorage
-function getConversationMetadataFromLocalStorage(id: string): ConversationMetadata | null {
-  if (isServer()) return null;
-
-  const userId = getCurrentUserId();
-  const saved = localStorage.getItem(`${userId}-conversation-meta-${id}`);
-  return saved ? JSON.parse(saved) : null;
-}
-
-// ==================== Public API (Hybrid) ====================
+// ==================== Public API (Database Only) ====================
 
 // Interface for conversation metadata
 export interface ConversationMetadata {
@@ -275,85 +164,49 @@ export interface ConversationMetadata {
   updated: string;
 }
 
-// Save a conversation (tries database first, falls back to localStorage)
+// Save a conversation (database only)
 export function saveConversation(id: string, messages: any[]) {
   if (isServer()) return;
 
-  // Always save to localStorage immediately for offline support
-  saveConversationToLocalStorage(id, messages);
-
-  // Try to save to database in the background
-  const metadata = getConversationMetadataFromLocalStorage(id);
-  saveConversationToDatabase(id, messages, metadata?.title).catch(err => {
-    console.log('Database save failed, using localStorage only:', err);
+  // Save to database only
+  saveConversationToDatabase(id, messages).catch(err => {
+    console.error('Database save failed:', err);
   });
 }
 
-// Load a conversation (tries database first, falls back to localStorage)
-export async function loadConversation(id: string): Promise<any[] | null> {
-  if (isServer()) return null;
+// Load a conversation (database only)
+export async function loadConversation(id: string): Promise<any[]> {
+  if (isServer()) return [];
 
-  // Try database first
-  try {
-    const dbMessages = await loadConversationFromDatabase(id);
-    if (dbMessages !== null) {
-      // Even if empty array, cache it and return
-      if (dbMessages.length > 0) {
-        saveConversationToLocalStorage(id, dbMessages);
-      }
-      return dbMessages;
-    }
-  } catch (error) {
-    console.log('Database load failed, using localStorage:', error);
-  }
-
-  // Fall back to localStorage
-  return loadConversationFromLocalStorage(id);
+  // Load from database only
+  return await loadConversationFromDatabase(id);
 }
 
-// Get list of all saved conversations (tries database first)
+// Get list of all saved conversations (database only)
 export async function getConversationList(): Promise<string[]> {
   if (isServer()) return [];
 
-  // Try database first
-  try {
-    const dbConversations = await loadConversationsFromDatabase();
-    if (dbConversations && dbConversations.length > 0) {
-      return dbConversations.map((c: any) => c.id);
-    }
-  } catch (error) {
-    console.log('Database list failed, using localStorage:', error);
-  }
-
-  // Fall back to localStorage
-  return getConversationListFromLocalStorage();
+  // Load from database only
+  const dbConversations = await loadConversationsFromDatabase();
+  return dbConversations.map((c: any) => c.id);
 }
 
-// Delete a conversation (from both database and localStorage)
+// Delete a conversation (database only)
 export async function deleteConversation(id: string): Promise<string[]> {
   if (isServer()) return [];
 
-  // Delete from localStorage immediately
-  deleteConversationFromLocalStorage(id);
+  // Delete from database
+  await deleteConversationFromDatabase(id);
 
-  // Try to delete from database
-  try {
-    await deleteConversationFromDatabase(id);
-  } catch (error) {
-    console.log('Database delete failed, localStorage already cleared:', error);
-  }
-
-  return getConversationListFromLocalStorage();
+  // Return updated conversation list
+  const conversations = await loadConversationsFromDatabase();
+  return conversations.map((c: any) => c.id);
 }
 
-// Save metadata for a conversation
+// Save metadata for a conversation (title updates)
 export function saveConversationMetadata(id: string, metadata: ConversationMetadata) {
   if (isServer()) return;
 
-  // Save to localStorage
-  saveConversationMetadataToLocalStorage(id, metadata);
-
-  // Update database title in background
   const email = getUserEmail();
   if (email) {
     fetch(`/api/conversations/${id}`, {
@@ -364,64 +217,67 @@ export function saveConversationMetadata(id: string, metadata: ConversationMetad
   }
 }
 
-// Get metadata for a conversation
-export function getConversationMetadata(id: string): ConversationMetadata | null {
-  return getConversationMetadataFromLocalStorage(id);
+// Get metadata for a conversation (from database)
+export async function getConversationMetadata(id: string): Promise<ConversationMetadata | null> {
+  if (isServer()) return null;
+
+  const email = getUserEmail();
+  if (!email) return null;
+
+  try {
+    const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    return {
+      title: data.title,
+      created: data.created_at,
+      updated: data.updated_at,
+    };
+  } catch (error) {
+    console.error('Error getting conversation metadata:', error);
+    return null;
+  }
 }
 
-// Get all conversation metadata (async version that tries database first)
+// Get all conversation metadata (database only)
 export async function getAllConversationsMetadata(): Promise<any[]> {
   if (isServer()) return [];
 
-  // Try database first
+  // Load from database only
+  const dbConversations = await loadConversationsFromDatabase();
+  return dbConversations.map((c: any) => ({
+    id: c.id,
+    title: c.title,
+    created: c.created_at || c.createdAt,
+    updated: c.updated_at || c.updatedAt,
+  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+}
+
+// Sync version for backwards compatibility - loads from database
+export async function getAllConversationsMetadataSync() {
+  return await getAllConversationsMetadata();
+}
+
+// Clear all conversations from database
+export async function clearAllConversations() {
+  if (isServer()) return [];
+
+  const email = getUserEmail();
+  if (!email) return [];
+
   try {
-    const dbConversations = await loadConversationsFromDatabase();
-    if (dbConversations && dbConversations.length > 0) {
-      return dbConversations.map((c: any) => ({
-        id: c.id,
-        title: c.title,
-        created: c.created_at || c.createdAt,
-        updated: c.updated_at || c.updatedAt,
-      })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
-    }
+    // Get all conversations
+    const conversations = await loadConversationsFromDatabase();
+
+    // Delete each one
+    await Promise.all(
+      conversations.map((c: any) => deleteConversationFromDatabase(c.id))
+    );
+
+    return [];
   } catch (error) {
-    console.log('Database metadata load failed, using localStorage:', error);
+    console.error('Error clearing conversations:', error);
+    return [];
   }
-
-  // Fall back to localStorage
-  const conversations = getConversationListFromLocalStorage();
-  return conversations.map((id: string) => ({
-    id,
-    ...getConversationMetadataFromLocalStorage(id)
-  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 }
-
-// Sync version for backwards compatibility
-export function getAllConversationsMetadataSync() {
-  if (isServer()) return [];
-
-  const conversations = getConversationListFromLocalStorage();
-  return conversations.map((id: string) => ({
-    id,
-    ...getConversationMetadataFromLocalStorage(id)
-  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
-}
-
-// Clear all conversations
-export function clearAllConversations() {
-  if (isServer()) return [];
-
-  const userId = getCurrentUserId();
-  const conversations = getConversationListFromLocalStorage();
-
-  // Remove each conversation
-  conversations.forEach((id: string) => {
-    localStorage.removeItem(`${userId}-conversation-${id}`);
-    localStorage.removeItem(`${userId}-conversation-meta-${id}`);
-  });
-
-  // Clear the list
-  localStorage.removeItem(`${userId}-conversations`);
-
-  return [];
-} 
