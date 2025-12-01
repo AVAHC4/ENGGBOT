@@ -212,11 +212,11 @@ function saveConversationToLocalStorage(id: string, messages: any[]) {
 
 // Load a conversation from localStorage
 function loadConversationFromLocalStorage(id: string) {
-  if (isServer()) return null;
+  if (isServer()) return [];
 
   const userId = getCurrentUserId();
   const saved = localStorage.getItem(`${userId}-conversation-${id}`);
-  return saved ? JSON.parse(saved) : null;
+  return saved ? JSON.parse(saved) : [];
 }
 
 // Get list of all saved conversations from localStorage
