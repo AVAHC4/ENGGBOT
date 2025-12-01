@@ -44,6 +44,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: msgError.message }, { status: 500 });
         }
 
+        // Transform messages from database format (snake_case) to frontend format (camelCase)
+        const transformedMessages = (messages || []).map((msg: any) => ({
+            id: msg.id,
+            content: msg.content,
+            isUser: msg.is_user, // Transform is_user to isUser
+            timestamp: msg.timestamp,
+            attachments: msg.attachments,
+            replyToId: msg.reply_to_id, // Transform reply_to_id to replyToId
+            metadata: msg.metadata,
+            isStreaming: msg.is_streaming, // Transform is_streaming to isStreaming
+        }));
+
         return NextResponse.json({
             conversation: {
                 id: conversation.id,
@@ -52,7 +64,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 createdAt: conversation.created_at,
                 updatedAt: conversation.updated_at,
             },
-            messages: messages || [],
+            messages: transformedMessages,
         });
     } catch (e: any) {
         return NextResponse.json({ error: e?.message || 'Failed to get conversation' }, { status: 500 });
