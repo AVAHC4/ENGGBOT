@@ -263,15 +263,15 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     switchConversation(id);
 
     // If not on the main chat page, navigate to it
-    if (pathname !== '/') {
-      router.push('/');
+    if (pathname !== '/AI_UI') {
+      router.push('/AI_UI');
     }
   };
 
   const handleStartNewConversation = () => {
     startNewConversation();
-    if (pathname !== '/') {
-      router.push('/');
+    if (pathname !== '/AI_UI') {
+      router.push('/AI_UI');
     }
   };
 

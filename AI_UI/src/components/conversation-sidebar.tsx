@@ -262,8 +262,8 @@ export function ConversationSidebar() {
     switchConversation(id);
 
     // If not on the main chat page, navigate to it
-    if (pathname !== '/') {
-      router.push('/');
+    if (pathname !== '/AI_UI') {
+      router.push('/AI_UI');
     }
   };
 
@@ -321,7 +321,7 @@ export function ConversationSidebar() {
               variant="ghost"
               onClick={() => {
                 startNewConversation();
-                if (pathname !== '/') router.push('/');
+                if (pathname !== '/AI_UI') router.push('/AI_UI');
               }}
               className="h-8 w-8"
             >
@@ -389,7 +389,7 @@ export function ConversationSidebar() {
           className="w-full justify-start text-sm"
           onClick={() => {
             startNewConversation();
-            if (pathname !== '/') router.push('/');
+            if (pathname !== '/AI_UI') router.push('/AI_UI');
           }}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
