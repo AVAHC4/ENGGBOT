@@ -268,11 +268,11 @@ export function ConversationSidebar() {
   };
 
   // Handle conversation rename
-  const handleRename = (id: string, newTitle: string) => {
+  const handleRename = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) return; // Don't save empty titles
 
     // Get existing metadata
-    const existingMeta = getConversationMetadata(id) || {
+    const existingMeta = await getConversationMetadata(id) || {
       title: `Conversation ${id.substring(0, 6)}`,
       created: new Date().toISOString(),
       updated: new Date().toISOString()
