@@ -127,7 +127,7 @@ function getUserData() {
   }
 }
 
-// Add this type for team members/friends
+
 interface Friend {
   id: string;
   name: string;
