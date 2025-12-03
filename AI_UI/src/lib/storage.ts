@@ -30,6 +30,22 @@ export function getUserEmail(): string | null {
   }
 }
 
+// Helper to get user email prefix consistently (for localStorage keys)
+// Note: This is still used for localStorage keys like active conversation tracking
+export function getUserPrefix(): string {
+  if (isServer()) {
+    return 'default';
+  }
+
+  const email = getUserEmail();
+  if (email) {
+    return btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_');
+  }
+
+  return 'default';
+}
+
+
 // ==================== Database API Functions ====================
 
 // Save conversation to database
