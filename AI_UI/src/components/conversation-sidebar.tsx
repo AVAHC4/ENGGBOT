@@ -226,9 +226,9 @@ export function ConversationSidebar() {
 
   // Update conversations list
   useEffect(() => {
-    const loadConversations = () => {
+    const loadConversations = async () => {
       if (typeof window !== 'undefined') {
-        const allConversations = getAllConversationsMetadata();
+        const allConversations = await getAllConversationsMetadata();
         setConversations(allConversations);
       }
     };
