@@ -34,7 +34,6 @@ export const compressImage = (
                     reject(new Error('Failed to get canvas context'));
                     return;
                 }
-
                 ctx.drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL('image/jpeg', quality);
                 resolve(dataUrl);

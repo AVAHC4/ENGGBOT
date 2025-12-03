@@ -356,8 +356,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   // Load conversations - only on client side after mounting
   React.useEffect(() => {
     if (isMounted) {
-      const loadConversations = () => {
-        const allConversations = getAllConversationsMetadata();
+      const loadConversations = async () => {
+        const allConversations = await getAllConversationsMetadata();
 
         // Get all project conversations to filter them out
         const projects = getAllProjects();
@@ -583,21 +583,21 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   }, [friends]);
 
   // Function to handle conversation rename
-  const handleRenameConversation = (id: string, newTitle: string) => {
+  const handleRenameConversation = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) {
       setEditingConversationId(null);
       return;
     }
 
     // Get all conversations from storage
-    const allConversations = getAllConversationsMetadata();
+    const allConversations = await getAllConversationsMetadata();
 
     // Find the conversation that needs to be renamed
     const conversationToUpdate = allConversations.find((c: { id: string }) => c.id === id);
 
     if (conversationToUpdate) {
       // Get existing metadata
-      const existingMeta = getConversationMetadata(id) || {
+      const existingMeta = await getConversationMetadata(id) || {
         title: `Conversation ${id.substring(0, 6)}`,
         created: new Date().toISOString(),
         updated: new Date().toISOString()
@@ -614,7 +614,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       saveConversationMetadata(id, updatedMeta);
 
       // Force update conversations list to reflect the change
-      const updatedConversations = getAllConversationsMetadata();
+      const updatedConversations = await getAllConversationsMetadata();
       setConversations(updatedConversations);
     }
 

@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/conversations?email=user@example.com
-// List all conversations for a user
+
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const email = searchParams.get('email')?.toLowerCase();
-        const projectId = searchParams.get('projectId'); // optional filter by project
+        const projectId = searchParams.get('projectId');
 
         if (!email) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
@@ -19,7 +18,6 @@ export async function GET(req: NextRequest) {
             .eq('user_email', email)
             .order('updated_at', { ascending: false });
 
-        // Filter by project if specified
         if (projectId) {
             query = query.eq('project_id', projectId);
         }

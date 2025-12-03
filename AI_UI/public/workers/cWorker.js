@@ -97,7 +97,6 @@ self.addEventListener('message', async (e) => {
   }
 });
 
-
 self.postMessage({ type: 'BOOT' });
 
 async function sha256(text) {
