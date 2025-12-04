@@ -48,51 +48,46 @@ export function getUserPrefix(): string {
 
 // ==================== Database API Functions ====================
 
+// Cache of conversations we know exist (to avoid constant GET checks)
+const knownConversations = new Set<string>();
+
 // Save conversation to database
 async function saveConversationToDatabase(id: string, messages: any[], title?: string): Promise<boolean> {
   const email = getUserEmail();
-  console.log('[DB Save] Attempting to save conversation:', { id: id.substring(0, 8), email, messagesCount: messages.length, title });
   if (!email) {
     console.warn('[DB Save] No email found, skipping database save');
     return false;
   }
 
   try {
-    // First, ensure conversation exists
-    console.log('[DB Save] Checking if conversation exists...');
-    const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
+    // Only check if conversation exists if we haven't verified it before
+    if (!knownConversations.has(id)) {
+      const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
-    if (!response.ok) {
-      // Conversation doesn't exist, create it with the same ID
-      console.log('[DB Save] Conversation does not exist, creating...');
-      const createResponse = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id, // Pass the ID to ensure consistency
-          email,
-          title: title || `Conversation ${id.substring(0, 6)}`,
-        }),
-      });
+      if (!response.ok) {
+        // Conversation doesn't exist, create it with the same ID
+        console.log('[DB Save] Creating new conversation:', id.substring(0, 8));
+        const createResponse = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id, // Pass the ID to ensure consistency
+            email,
+            title: title || `Conversation ${id.substring(0, 6)}`,
+          }),
+        });
 
-      if (!createResponse.ok) {
-        const errorText = await createResponse.text();
-        console.error('[DB Save] Failed to create conversation:', createResponse.status, errorText);
-        return false;
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          console.error('[DB Save] Failed to create conversation:', createResponse.status, errorText);
+          return false;
+        }
       }
-      console.log('[DB Save] Conversation created successfully');
-    } else if (title) {
-      // Update title if provided
-      console.log('[DB Save] Updating conversation title...');
-      await fetch(`/api/conversations/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, title }),
-      });
+      // Mark as known to avoid future checks
+      knownConversations.add(id);
     }
 
-    // Save messages
-    console.log('[DB Save] Saving messages to database...');
+    // Save messages directly (no need to check every time)
     const messagesResponse = await fetch(`/api/conversations/${id}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -102,11 +97,14 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
     if (!messagesResponse.ok) {
       const errorText = await messagesResponse.text();
       console.error('[DB Save] Failed to save messages:', messagesResponse.status, errorText);
+      // If we get a 404, the conversation was deleted - remove from cache
+      if (messagesResponse.status === 404) {
+        knownConversations.delete(id);
+      }
       return false;
     }
 
-    console.log('[DB Save] ✅ Successfully saved conversation and messages to database');
-    return messagesResponse.ok;
+    return true;
   } catch (error) {
     console.error('[DB Save] Error saving conversation to database:', error);
     return false;
@@ -187,20 +185,38 @@ function dispatchConversationUpdated() {
   }
 }
 
-// Save a conversation (database only)
+// Debounce map to prevent excessive saves
+const saveDebounceMap = new Map<string, NodeJS.Timeout>();
+
+// Save a conversation (database only) with debouncing
 export function saveConversation(id: string, messages: any[]) {
   if (isServer()) return;
 
-  // Save to database and dispatch event on success
-  saveConversationToDatabase(id, messages)
-    .then((success) => {
-      if (success) {
-        dispatchConversationUpdated();
-      }
-    })
-    .catch(err => {
-      console.error('Database save failed:', err);
-    });
+  // Clear existing debounce timer for this conversation
+  const existingTimer = saveDebounceMap.get(id);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
+
+  // Debounce: wait 500ms after last change before saving
+  const timer = setTimeout(() => {
+    saveDebounceMap.delete(id);
+
+    // Save to database (don't dispatch event on every save to avoid loops)
+    saveConversationToDatabase(id, messages)
+      .then((success) => {
+        if (success) {
+          // Only dispatch event for new conversations or significant changes
+          // Not on every message update to prevent render loops
+          console.log('[Storage] Saved conversation:', id.substring(0, 8));
+        }
+      })
+      .catch(err => {
+        console.error('Database save failed:', err);
+      });
+  }, 500);
+
+  saveDebounceMap.set(id, timer);
 }
 
 // Load a conversation (database only)
