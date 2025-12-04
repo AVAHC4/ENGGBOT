@@ -308,22 +308,23 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
           const { done, value } = await reader.read();
 
           if (done) {
-            // Update message to mark as no longer streaming
-            setMessages(prev => prev.map(m =>
-              m.id === aiMessageId ? { ...m, isStreaming: false } : m
-            ));
+            // Update message to mark as no longer streaming AND save complete conversation
+            setMessages(prev => {
+              const finalMessages = prev.map(m =>
+                m.id === aiMessageId ? { ...m, isStreaming: false } : m
+              );
+
+              // Save the COMPLETE conversation with the full AI response
+              if (typeof window !== 'undefined' && !isPrivateMode) {
+                saveConversation(conversationId, finalMessages);
+              }
+
+              return finalMessages;
+            });
 
             // Reset states
             setIsLoading(false);
             setIsGenerating(false);
-
-            // Save conversation
-            if (typeof window !== 'undefined' && !isPrivateMode) {
-              saveConversation(
-                conversationId,
-                messages.map(m => m.id === aiMessageId ? { ...m, isStreaming: false } : m)
-              );
-            }
             break;
           }
 
@@ -373,22 +374,13 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
                   continue;
                 }
 
-                // Update the streaming message
+                // Update the streaming message (don't save yet - wait for completion)
                 if (data.text) {
-                  setMessages(prev => {
-                    const updatedMessages = prev.map(m =>
-                      m.id === aiMessageId
-                        ? { ...m, content: m.content + data.text }
-                        : m
-                    );
-
-                    // Save intermediate state periodically
-                    if (typeof window !== 'undefined' && !isPrivateMode) {
-                      saveConversation(conversationId, updatedMessages);
-                    }
-
-                    return updatedMessages;
-                  });
+                  setMessages(prev => prev.map(m =>
+                    m.id === aiMessageId
+                      ? { ...m, content: m.content + data.text }
+                      : m
+                  ));
                 }
               } catch (parseError) {
                 console.error("Error parsing JSON data:", parseError);
