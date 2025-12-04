@@ -354,6 +354,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   }, [isMounted]);
 
   // Load conversations - only on client side after mounting
+  // Uses event-driven updates instead of polling (like ChatGPT/Gemini)
   React.useEffect(() => {
     if (isMounted) {
       const loadConversations = async () => {
@@ -375,12 +376,16 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         setConversations(filteredConversations);
       };
 
+      // Load once on mount and when conversationId changes (user action)
       loadConversations();
 
-      // Refresh conversations every 5 seconds
-      const intervalId = setInterval(loadConversations, 5000);
+      // Listen for custom events when conversations are updated
+      const handleConversationUpdate = () => loadConversations();
+      window.addEventListener('conversationUpdated', handleConversationUpdate);
 
-      return () => clearInterval(intervalId);
+      return () => {
+        window.removeEventListener('conversationUpdated', handleConversationUpdate);
+      };
     }
   }, [conversationId, isMounted]);
 
@@ -412,7 +417,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [pathname]);
 
-  // Update the useEffect section with better visibility handling
+
   React.useEffect(() => {
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `

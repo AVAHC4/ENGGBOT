@@ -224,7 +224,7 @@ export function ConversationSidebar() {
   const [conversations, setConversations] = useState<(ConversationMetadata & { id: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Update conversations list
+  // Update conversations list - event-driven, not polling
   useEffect(() => {
     const loadConversations = async () => {
       if (typeof window !== 'undefined') {
@@ -233,13 +233,16 @@ export function ConversationSidebar() {
       }
     };
 
+    // Load once on mount and when conversationId changes
     loadConversations();
 
-    // Set up interval to refresh conversations
-    const intervalId = setInterval(loadConversations, 5000);
+    // Listen for custom events when conversations are updated
+    const handleConversationUpdate = () => loadConversations();
+    window.addEventListener('conversationUpdated', handleConversationUpdate);
 
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
+    return () => {
+      window.removeEventListener('conversationUpdated', handleConversationUpdate);
+    };
   }, [conversationId]);
 
   // Filter conversations based on search term

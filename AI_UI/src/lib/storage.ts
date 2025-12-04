@@ -180,14 +180,27 @@ export interface ConversationMetadata {
   updated: string;
 }
 
+// Helper to dispatch conversation update event (for event-driven UI updates)
+function dispatchConversationUpdated() {
+  if (!isServer()) {
+    window.dispatchEvent(new CustomEvent('conversationUpdated'));
+  }
+}
+
 // Save a conversation (database only)
 export function saveConversation(id: string, messages: any[]) {
   if (isServer()) return;
 
-  // Save to database only
-  saveConversationToDatabase(id, messages).catch(err => {
-    console.error('Database save failed:', err);
-  });
+  // Save to database and dispatch event on success
+  saveConversationToDatabase(id, messages)
+    .then((success) => {
+      if (success) {
+        dispatchConversationUpdated();
+      }
+    })
+    .catch(err => {
+      console.error('Database save failed:', err);
+    });
 }
 
 // Load a conversation (database only)
@@ -213,6 +226,9 @@ export async function deleteConversation(id: string): Promise<string[]> {
 
   // Delete from database
   await deleteConversationFromDatabase(id);
+
+  // Dispatch event to refresh sidebar
+  dispatchConversationUpdated();
 
   // Return updated conversation list
   const conversations = await loadConversationsFromDatabase();
