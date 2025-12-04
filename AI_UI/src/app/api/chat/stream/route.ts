@@ -207,9 +207,19 @@ export async function POST(request: Request) {
           'X-Accel-Buffering': 'no'
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating streaming response:", error);
-      return new Response(`data: ${JSON.stringify({ error: "Error generating streaming response" })}\n\ndata: [DONE]\n\n`, {
+      console.error("Error details:", {
+        message: error?.message,
+        status: error?.status,
+        statusText: error?.statusText,
+        data: error?.data,
+        stack: error?.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
+      });
+
+      const errorMessage = error?.message || error?.data?.error?.message || "Error generating streaming response";
+
+      return new Response(`data: ${JSON.stringify({ error: errorMessage })}\n\ndata: [DONE]\n\n`, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
