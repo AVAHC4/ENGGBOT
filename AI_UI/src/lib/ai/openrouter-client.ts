@@ -38,7 +38,7 @@ export class OpenRouterClient {
     constructor(options?: OpenRouterClientOptions) {
         this.apiKey = options?.apiKey?.trim() || "";
         this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-        this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["grok-4.1"];
+        this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["glm-4.5"];
 
         this.headers = {
             "Authorization": `Bearer ${this.apiKey}`,

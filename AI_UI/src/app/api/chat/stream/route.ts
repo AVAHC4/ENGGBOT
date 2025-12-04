@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     const openRouterClient = new OpenRouterClient({ apiKey });
 
     // Always use the Grok 4.1 model
-    const modelName = AVAILABLE_MODELS["grok-4.1"];
+    const modelName = AVAILABLE_MODELS["glm-4.5"];
 
     // Format messages for the API
     const messages = [];
