@@ -140,12 +140,13 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     }
   }, [conversationId, isMounted, isPrivateMode, projectId]);
 
-  // Save messages when they change
+  // Save messages when they change (but NOT while AI is generating/streaming)
   useEffect(() => {
-    if (isMounted && messages.length > 0 && !isPrivateMode) {
+    // Skip saving while AI is generating - will save when streaming completes
+    if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating) {
       saveConversation(conversationId, messages);
     }
-  }, [messages, conversationId, isMounted, isPrivateMode]);
+  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
