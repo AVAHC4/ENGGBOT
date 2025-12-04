@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "x-ai/grok-4.1-fast:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []

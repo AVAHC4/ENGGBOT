@@ -6,7 +6,7 @@
 
 // Model definitions
 export const AVAILABLE_MODELS = {
-    "grok-4.1": "x-ai/grok-4.1-fast:free",
+    "glm-4.5": "z-ai/glm-4.5-air:free",
 };
 
 // Client interface

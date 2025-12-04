@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const {
       message,
       hasAttachments = false,
-      model = "x-ai/grok-4.1-fast:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
