@@ -256,16 +256,31 @@ export async function clearConversationMessages(id: string): Promise<boolean> {
   if (isServer()) return false;
 
   const email = getUserEmail();
-  if (!email) return false;
+  console.log('[Storage] clearConversationMessages called:', { id: id.substring(0, 8), email });
+
+  if (!email) {
+    console.log('[Storage] No email found, skipping clear');
+    return false;
+  }
 
   try {
-    const response = await fetch(`/api/conversations/${id}/messages?email=${encodeURIComponent(email)}`, {
+    const url = `/api/conversations/${id}/messages?email=${encodeURIComponent(email)}`;
+    console.log('[Storage] Sending DELETE request to:', url);
+
+    const response = await fetch(url, {
       method: 'DELETE',
     });
 
+    console.log('[Storage] DELETE response:', response.status, response.ok);
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('[Storage] DELETE failed:', text);
+    }
+
     return response.ok;
   } catch (error) {
-    console.error('Error clearing conversation messages:', error);
+    console.error('[Storage] Error clearing conversation messages:', error);
     return false;
   }
 }

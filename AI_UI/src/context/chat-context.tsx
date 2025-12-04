@@ -441,10 +441,14 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   }, [conversationId, currentModel, messages, thinkingMode, engineeringMode, isPrivateMode]);
 
   const clearMessages = useCallback(() => {
+    console.log('[ChatContext] clearMessages called:', { conversationId, isPrivateMode });
     setMessages([]);
     // Clear the conversation messages from database
     if (typeof window !== 'undefined' && !isPrivateMode) {
-      clearConversationMessages(conversationId);
+      console.log('[ChatContext] Calling clearConversationMessages...');
+      clearConversationMessages(conversationId).then(success => {
+        console.log('[ChatContext] clearConversationMessages result:', success);
+      });
     }
   }, [conversationId, isPrivateMode]);
 
