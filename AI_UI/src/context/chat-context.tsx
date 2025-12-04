@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '@/lib/ai/openrouter-client';
-import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList } from "@/lib/storage";
+import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList, clearConversationMessages } from "@/lib/storage";
 import { addConversationToProject, removeConversationFromProject } from "@/lib/projects/storage";
 
 export interface Attachment {
@@ -442,9 +442,9 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
   const clearMessages = useCallback(() => {
     setMessages([]);
-    // Clear the conversation from storage
+    // Clear the conversation messages from database
     if (typeof window !== 'undefined' && !isPrivateMode) {
-      saveConversation(conversationId, []);
+      clearConversationMessages(conversationId);
     }
   }, [conversationId, isPrivateMode]);
 

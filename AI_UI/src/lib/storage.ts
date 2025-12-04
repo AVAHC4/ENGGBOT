@@ -251,6 +251,25 @@ export async function deleteConversation(id: string): Promise<string[]> {
   return conversations.map((c: any) => c.id);
 }
 
+// Clear all messages from a conversation (but keep the conversation)
+export async function clearConversationMessages(id: string): Promise<boolean> {
+  if (isServer()) return false;
+
+  const email = getUserEmail();
+  if (!email) return false;
+
+  try {
+    const response = await fetch(`/api/conversations/${id}/messages?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error clearing conversation messages:', error);
+    return false;
+  }
+}
+
 // Save metadata for a conversation (title updates)
 export function saveConversationMetadata(id: string, metadata: ConversationMetadata) {
   if (isServer()) return;

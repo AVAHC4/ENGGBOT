@@ -62,3 +62,47 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         return NextResponse.json({ error: e?.message || 'Failed to save messages' }, { status: 500 });
     }
 }
+
+// DELETE /api/conversations/[id]/messages
+// Clear all messages from a conversation
+// Query params: email
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+    try {
+        const conversationId = params.id;
+        const url = new URL(req.url);
+        const email = (url.searchParams.get('email') || '').toLowerCase();
+
+        if (!conversationId || !email) {
+            return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
+        }
+
+        // Verify ownership
+        const { data: conversation, error: checkError } = await supabaseAdmin
+            .from('conversations')
+            .select('user_email')
+            .eq('id', conversationId)
+            .single();
+
+        if (checkError || !conversation) {
+            return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+        }
+
+        if (conversation.user_email !== email) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
+
+        // Delete all messages for this conversation
+        const { error } = await supabaseAdmin
+            .from('conversation_messages')
+            .delete()
+            .eq('conversation_id', conversationId);
+
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (e: any) {
+        return NextResponse.json({ error: e?.message || 'Failed to delete messages' }, { status: 500 });
+    }
+}
