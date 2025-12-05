@@ -151,13 +151,10 @@ export async function POST(request: Request) {
     }
     const openRouterClient = new OpenRouterClient({ apiKey });
 
-    // Always use the Grok 4.1 model
     const modelName = AVAILABLE_MODELS["glm-4.5"];
 
-    // Format messages for the API
     const messages = [];
 
-    // Add a system message to help shape the assistant's identity
     messages.push({
       role: 'system',
       content: engineeringMode ? ENGINEERING_SYSTEM_PROMPT : generateMarkdownSystemPrompt()
