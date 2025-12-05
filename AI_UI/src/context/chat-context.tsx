@@ -79,6 +79,9 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
 
+  // Track the current conversation ID to prevent saving messages to wrong conversation
+  const conversationIdRef = useRef<string>(conversationId);
+
   // Set isMounted flag on client-side
   useEffect(() => {
     setIsMounted(true);
@@ -114,9 +117,22 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   useEffect(() => {
     console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, projectId });
     if (isMounted && !isPrivateMode) {
+      // Update the ref to match current conversationId
+      conversationIdRef.current = conversationId;
+
+      // Capture current ID to check for staleness after async load
+      const loadingId = conversationId;
+
       // Load conversation asynchronously
       console.log('[ChatContext] Loading conversation:', conversationId);
       loadConversation(conversationId).then((savedMessages) => {
+        // CRITICAL: Only set messages if we're still on the same conversation
+        // This prevents race conditions when user switches conversations quickly
+        if (conversationIdRef.current !== loadingId) {
+          console.log('[ChatContext] Skipping stale load for:', loadingId.substring(0, 8));
+          return;
+        }
+
         console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
           setMessages(savedMessages);
@@ -125,7 +141,10 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         }
       }).catch((error) => {
         console.error('Error loading conversation:', error);
-        setMessages([]);
+        // Only clear if still on same conversation
+        if (conversationIdRef.current === loadingId) {
+          setMessages([]);
+        }
       });
 
       // Get user-specific prefix
@@ -141,9 +160,11 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   }, [conversationId, isMounted, isPrivateMode, projectId]);
 
   // Save messages when they change (but NOT while AI is generating/streaming)
+  // CRITICAL: Only save if messages belong to the current conversation
   useEffect(() => {
     // Skip saving while AI is generating - will save when streaming completes
-    if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating) {
+    // Also skip if conversationId doesn't match ref (prevents saving old messages to new conversation)
+    if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && conversationIdRef.current === conversationId) {
       saveConversation(conversationId, messages);
     }
   }, [messages, conversationId, isMounted, isPrivateMode, isGenerating]);
@@ -696,6 +717,12 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
       stopGeneration();
     }
 
+    // Clear messages immediately BEFORE changing conversationId
+    // This prevents the save effect from saving old messages to the new conversation
+    setMessages([]);
+
+    // Update the ref BEFORE setting state to prevent race conditions
+    conversationIdRef.current = id;
     setConversationId(id);
   }, [isGenerating, isLoading, stopGeneration]);
 
@@ -707,8 +734,11 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     }
 
     const newId = crypto.randomUUID();
-    setConversationId(newId);
+
+    // Clear messages and update ref BEFORE changing conversationId
     setMessages([]);
+    conversationIdRef.current = newId;
+    setConversationId(newId);
 
     if (isMounted) {
       const userPrefix = getUserPrefix();
