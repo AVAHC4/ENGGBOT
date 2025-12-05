@@ -48,6 +48,13 @@ export function getUserPrefix(): string {
 
 // ==================== Database API Functions ====================
 
+// Helper to dispatch conversation update event (for event-driven UI updates)
+function dispatchConversationUpdated() {
+  if (!isServer()) {
+    window.dispatchEvent(new CustomEvent('conversationUpdated'));
+  }
+}
+
 // Cache of conversations we know exist (to avoid constant GET checks)
 const knownConversations = new Set<string>();
 
@@ -82,6 +89,9 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
           console.error('[DB Save] Failed to create conversation:', createResponse.status, errorText);
           return false;
         }
+
+        // Dispatch event to update sidebar for new conversation
+        dispatchConversationUpdated();
       }
       // Mark as known to avoid future checks
       knownConversations.add(id);
@@ -178,12 +188,7 @@ export interface ConversationMetadata {
   updated: string;
 }
 
-// Helper to dispatch conversation update event (for event-driven UI updates)
-function dispatchConversationUpdated() {
-  if (!isServer()) {
-    window.dispatchEvent(new CustomEvent('conversationUpdated'));
-  }
-}
+
 
 // Debounce map to prevent excessive saves
 const saveDebounceMap = new Map<string, NodeJS.Timeout>();
