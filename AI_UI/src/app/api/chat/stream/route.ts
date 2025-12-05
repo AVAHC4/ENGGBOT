@@ -5,7 +5,7 @@ import { ENGINEERING_SYSTEM_PROMPT } from '@/lib/prompts/engineering-prompt';
 
 export const runtime = 'nodejs';
 
-// Simple stream processor to transform OpenRouter stream into an event stream
+
 function processOpenRouterStream(
   stream: ReadableStream,
   userMessage: string,
@@ -69,8 +69,6 @@ function processOpenRouterStream(
             }
           }
         }
-
-        // Send final done event after loop completes
         const doneEvent = `data: [DONE]\n\n`;
         controller.enqueue(encoder.encode(doneEvent));
       } catch (error) {
@@ -140,8 +138,6 @@ export async function POST(request: Request) {
         }
       });
     }
-
-    // Instantiate server-side client with secure API key
     const apiKey = typeof process !== 'undefined'
       ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
       : undefined;
@@ -183,7 +179,7 @@ export async function POST(request: Request) {
     });
 
     try {
-      // Generate streaming response from the AI
+
       const stream = await openRouterClient.generateStream({
         prompt: "",
         model: modelName,
@@ -194,10 +190,8 @@ export async function POST(request: Request) {
         stream: true
       });
 
-      // Process the stream
       const processedStream = processOpenRouterStream(stream, identityProbeText);
 
-      // Return the streaming response with required headers for proper streaming
       return new Response(processedStream, {
         headers: {
           'Content-Type': 'text/event-stream',
