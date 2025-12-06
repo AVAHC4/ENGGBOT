@@ -40,11 +40,18 @@ export class OpenRouterClient {
         this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
         this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["glm-4.5"];
 
+        // Dynamically determine the referer URL for OpenRouter
+        const refererUrl = typeof process !== 'undefined' && process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SITE_URL
+                ? process.env.NEXT_PUBLIC_SITE_URL
+                : "https://enggbot.me");
+
         this.headers = {
             "Authorization": `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000", // Update with your actual site URL
-            "X-Title": "AI UI" // Update with your actual site title
+            "HTTP-Referer": refererUrl,
+            "X-Title": "EnggBot" // Site title for OpenRouter
         };
 
         if (!this.apiKey) {

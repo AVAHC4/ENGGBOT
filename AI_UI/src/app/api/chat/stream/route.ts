@@ -116,7 +116,6 @@ export async function POST(request: Request) {
 
     const identityProbeText = typeof rawMessage === 'string' && rawMessage.trim().length > 0 ? rawMessage : message;
 
-    // Short-circuit identity/origin questions with exact mandated reply
     if (isIdentityQuestion(identityProbeText)) {
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
@@ -160,14 +159,13 @@ export async function POST(request: Request) {
       content: engineeringMode ? ENGINEERING_SYSTEM_PROMPT : generateMarkdownSystemPrompt()
     });
 
-    // Add previous messages from conversation history
+
     if (conversationHistory && conversationHistory.length > 0) {
-      // Add all previous messages to the conversation
+
       const formattedMessages = formatConversationHistory(conversationHistory);
       messages.push(...formattedMessages);
     }
 
-    // Add current user message
     messages.push({
       role: 'user',
       content: hasAttachments

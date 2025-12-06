@@ -55,6 +55,37 @@ function dispatchConversationUpdated() {
   }
 }
 
+// Generate a meaningful title from the first user message
+function generateTitleFromMessage(messages: any[]): string {
+  // Find the first user message
+  const firstUserMessage = messages.find(m => m.isUser);
+
+  if (!firstUserMessage || !firstUserMessage.content) {
+    return 'New Conversation';
+  }
+
+  let content = firstUserMessage.content.trim();
+
+  // Remove any system context that might have been appended
+  const markers = ['\n\n[WEB SEARCH RESULTS', '\n\n[FILES CONTEXT]'];
+  for (const marker of markers) {
+    const idx = content.indexOf(marker);
+    if (idx >= 0) {
+      content = content.substring(0, idx).trim();
+    }
+  }
+
+  // Clean up the content - remove newlines and extra whitespace
+  content = content.replace(/\s+/g, ' ').trim();
+
+  // Truncate to 50 characters, adding ellipsis if needed
+  if (content.length > 50) {
+    content = content.substring(0, 47) + '...';
+  }
+
+  return content || 'New Conversation';
+}
+
 // Cache of conversations we know exist (to avoid constant GET checks)
 const knownConversations = new Set<string>();
 
@@ -73,14 +104,16 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
 
       if (!response.ok) {
         // Conversation doesn't exist, create it with the same ID
-        console.log('[DB Save] Creating new conversation:', id.substring(0, 8));
+        // Generate title from first user message instead of using generic ID
+        const generatedTitle = title || generateTitleFromMessage(messages);
+        console.log('[DB Save] Creating new conversation:', id.substring(0, 8), 'with title:', generatedTitle);
         const createResponse = await fetch('/api/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id, // Pass the ID to ensure consistency
             email,
-            title: title || `Conversation ${id.substring(0, 6)}`,
+            title: generatedTitle,
           }),
         });
 
