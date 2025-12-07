@@ -203,6 +203,11 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     // Reset states
     setIsLoading(false);
     setIsGenerating(false);
+
+    // Mark any streaming messages as complete to hide the animation
+    setMessages(prev => prev.map(m =>
+      m.isStreaming ? { ...m, isStreaming: false } : m
+    ));
   }, []);
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {

@@ -233,6 +233,8 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     return (
       // Either the context loading state or our local loading state is active
       (isLoading || localLoading) &&
+      // Generation must still be active (not stopped by user)
+      isGenerating &&
       // We have at least one message
       messages.length > 0 &&
       // Last message is from the user
