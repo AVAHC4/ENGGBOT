@@ -24,6 +24,21 @@ import { useBackground } from "@/context/background-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
 
+// Helper function to get user email from localStorage
+function getUserEmail(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const userData = localStorage.getItem('user_data')
+    if (userData) {
+      const parsed = JSON.parse(userData)
+      return parsed.email || null
+    }
+    return localStorage.getItem('user_email') || null
+  } catch {
+    return null
+  }
+}
+
 const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark"], {
     required_error: "Please select a theme.",
@@ -64,46 +79,68 @@ export function AppearanceForm() {
 
   // When the component mounts, update the form with the actual theme.
   React.useEffect(() => {
-    if (theme) {
-      form.setValue("theme", theme as "light" | "dark");
-    }
-    if (background) {
-      form.setValue("background", background as AppearanceFormValues["background"])
-    }
-
-    // Load profile image from localStorage
-    const savedAvatar = localStorage.getItem('user_avatar');
-    if (savedAvatar) {
-      setProfileImage(savedAvatar);
-    } else {
-      // Try to get from user_data
-      try {
-        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-        if (userData.avatar) {
-          setProfileImage(userData.avatar);
-        }
-      } catch (e) {
-        console.error("Error parsing user data", e);
+    const loadData = async () => {
+      if (theme) {
+        form.setValue("theme", theme as "light" | "dark");
       }
+      if (background) {
+        form.setValue("background", background as AppearanceFormValues["background"])
+      }
+
+      // Load profile image from localStorage first (for immediate display)
+      const savedAvatar = localStorage.getItem('user_avatar');
+      if (savedAvatar) {
+        setProfileImage(savedAvatar);
+      } else {
+        try {
+          const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+          if (userData.avatar) {
+            setProfileImage(userData.avatar);
+          }
+        } catch (e) {
+          console.error("Error parsing user data", e);
+        }
+      }
+
+      // Try to load from database
+      const email = getUserEmail()
+      if (email) {
+        try {
+          const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
+          if (response.ok) {
+            const { settings } = await response.json()
+            if (settings) {
+              if (settings.theme) form.setValue("theme", settings.theme)
+              if (settings.font) form.setValue("font", settings.font)
+              if (settings.background) form.setValue("background", settings.background)
+              if (settings.avatar) setProfileImage(settings.avatar)
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load appearance settings from database:", e)
+        }
+      }
+
+      setIsMounted(true);
     }
 
-    setIsMounted(true);
+    loadData()
   }, [theme, background, form]);
+
 
   // Prevent rendering the form until the component is mounted on the client
   if (!isMounted) {
     return null;
   }
 
-  function onSubmit(data: AppearanceFormValues) {
+  async function onSubmit(data: AppearanceFormValues) {
     setTheme(data.theme)
     setBackground(data.background)
 
-    // Save profile image if changed
+    // Save profile image to localStorage for immediate updates
     if (profileImage) {
       localStorage.setItem('user_avatar', profileImage);
 
-      // Also update user_data object if it exists
       try {
         const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
         userData.avatar = profileImage;
@@ -112,8 +149,31 @@ export function AppearanceForm() {
         console.error("Error updating user data", e);
       }
 
-      // Dispatch storage event to update other components
       window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
+    }
+
+    // Save to database
+    const email = getUserEmail()
+    if (email) {
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            theme: data.theme,
+            font: data.font,
+            background: data.background,
+            avatar: profileImage || null,
+          }),
+        })
+
+        if (!response.ok) {
+          console.error('Failed to save appearance settings to database')
+        }
+      } catch (e) {
+        console.error('Error saving appearance settings:', e)
+      }
     }
 
     toast({
@@ -121,6 +181,7 @@ export function AppearanceForm() {
       description: "Your theme, font, background, and profile picture have been saved.",
     })
   }
+
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

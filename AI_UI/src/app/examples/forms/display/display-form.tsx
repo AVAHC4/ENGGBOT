@@ -19,6 +19,21 @@ import { useToast } from "@/hooks/use-toast"
 
 import * as React from "react"
 
+// Helper function to get user email from localStorage
+function getUserEmail(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const userData = localStorage.getItem('user_data')
+    if (userData) {
+      const parsed = JSON.parse(userData)
+      return parsed.email || null
+    }
+    return localStorage.getItem('user_email') || null
+  } catch {
+    return null
+  }
+}
+
 const items = [
   {
     id: "chat",
@@ -60,23 +75,63 @@ export function DisplayForm() {
 
   // Load saved preferences on mount
   React.useEffect(() => {
-    const savedItems = localStorage.getItem("sidebar_preferences")
-    if (savedItems) {
-      try {
-        const parsed = JSON.parse(savedItems)
-        form.setValue("items", parsed)
-      } catch (e) {
-        console.error("Failed to parse sidebar preferences", e)
+    const loadData = async () => {
+      // Load from localStorage first for immediate display
+      const savedItems = localStorage.getItem("sidebar_preferences")
+      if (savedItems) {
+        try {
+          const parsed = JSON.parse(savedItems)
+          form.setValue("items", parsed)
+        } catch (e) {
+          console.error("Failed to parse sidebar preferences", e)
+        }
+      }
+
+      // Then try to load from database
+      const email = getUserEmail()
+      if (email) {
+        try {
+          const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
+          if (response.ok) {
+            const { settings } = await response.json()
+            if (settings && settings.sidebar_items) {
+              form.setValue("items", settings.sidebar_items)
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load display settings from database:", e)
+        }
       }
     }
+
+    loadData()
   }, [form])
 
-  function onSubmit(data: DisplayFormValues) {
-    // Save to localStorage
+  async function onSubmit(data: DisplayFormValues) {
+    // Save to localStorage for immediate sidebar updates
     localStorage.setItem("sidebar_preferences", JSON.stringify(data.items))
-
-    // Dispatch storage event to update sidebar immediately
     window.dispatchEvent(new Event("storage"))
+
+    // Save to database
+    const email = getUserEmail()
+    if (email) {
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            sidebar_items: data.items,
+          }),
+        })
+
+        if (!response.ok) {
+          console.error('Failed to save display settings to database')
+        }
+      } catch (e) {
+        console.error('Error saving display settings:', e)
+      }
+    }
 
     toast({
       title: "Display settings updated",

@@ -1,12 +1,13 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
-import { useToast, toast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -53,19 +54,33 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// This can come from your database or API.
-const defaultValues: Partial<ProfileFormValues> = {
-  bio: "I own a computer.",
-  urls: [
-    { value: "https://shadcn.com" },
-    { value: "http://twitter.com/shadcn" },
-  ],
+// Helper function to get user email from localStorage
+function getUserEmail(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const userData = localStorage.getItem('user_data')
+    if (userData) {
+      const parsed = JSON.parse(userData)
+      return parsed.email || null
+    }
+    return localStorage.getItem('user_email') || null
+  } catch {
+    return null
+  }
 }
 
 export function ProfileForm() {
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = React.useState(true)
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues,
+    defaultValues: {
+      username: "",
+      email: "",
+      bio: "I own a computer.",
+      urls: [{ value: "" }],
+    },
     mode: "onChange",
   })
 
@@ -74,15 +89,99 @@ export function ProfileForm() {
     control: form.control,
   })
 
-  function onSubmit(data: ProfileFormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  // Load data from database on mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        const email = getUserEmail()
+        if (!email) {
+          setIsLoading(false)
+          return
+        }
+
+        // Load email selector value
+        form.setValue("email", email)
+
+        // Try to load from database
+        const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
+        if (response.ok) {
+          const { settings } = await response.json()
+          if (settings) {
+            if (settings.username) form.setValue("username", settings.username)
+            if (settings.bio) form.setValue("bio", settings.bio)
+            if (settings.urls && Array.isArray(settings.urls)) {
+              form.setValue("urls", settings.urls)
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load profile data:", e)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [form])
+
+  async function onSubmit(data: ProfileFormValues) {
+    try {
+      const email = getUserEmail()
+      if (!email) {
+        toast({
+          title: "Error",
+          description: "No user email found. Please log in first.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Save to database
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          username: data.username,
+          bio: data.bio,
+          urls: data.urls,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save to database')
+      }
+
+      // Also save to localStorage for offline access
+      const savedData = localStorage.getItem("user_data")
+      let currentData: any = {}
+      try {
+        currentData = savedData ? JSON.parse(savedData) : {}
+      } catch {
+        // Ignore parse errors
+      }
+      localStorage.setItem("user_data", JSON.stringify({
+        ...currentData,
+        username: data.username,
+        bio: data.bio,
+        urls: data.urls,
+      }))
+      localStorage.setItem("user_name", data.username)
+      window.dispatchEvent(new Event("storage"))
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been saved successfully.",
+      })
+    } catch (e) {
+      console.error("Error saving profile:", e)
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -118,9 +217,7 @@ export function ProfileForm() {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="m@example.com">m@example.com</SelectItem>
-                  <SelectItem value="m@google.com">m@google.com</SelectItem>
-                  <SelectItem value="m@support.com">m@support.com</SelectItem>
+                  <SelectItem value={field.value || "m@example.com"}>{field.value || "m@example.com"}</SelectItem>
                 </SelectContent>
               </Select>
               <FormDescription>

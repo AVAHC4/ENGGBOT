@@ -20,6 +20,23 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 
+import * as React from "react"
+
+// Helper function to get user email from localStorage
+function getUserEmail(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const userData = localStorage.getItem('user_data')
+    if (userData) {
+      const parsed = JSON.parse(userData)
+      return parsed.email || null
+    }
+    return localStorage.getItem('user_email') || null
+  } catch {
+    return null
+  }
+}
+
 const notificationsFormSchema = z.object({
   type: z.enum(["all", "mentions", "none"], {
     required_error: "You need to select a notification type.",
@@ -43,20 +60,83 @@ const defaultValues: Partial<NotificationsFormValues> = {
 
 export function NotificationsForm() {
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = React.useState(true)
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsFormSchema),
     defaultValues,
   })
 
-  function onSubmit(data: NotificationsFormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    })
+  // Load data from database on mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        const email = getUserEmail()
+        if (email) {
+          const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
+          if (response.ok) {
+            const { settings } = await response.json()
+            if (settings) {
+              if (settings.notification_type) form.setValue("type", settings.notification_type)
+              if (settings.mobile_notifications !== undefined) form.setValue("mobile", settings.mobile_notifications)
+              if (settings.communication_emails !== undefined) form.setValue("communication_emails", settings.communication_emails)
+              if (settings.social_emails !== undefined) form.setValue("social_emails", settings.social_emails)
+              if (settings.marketing_emails !== undefined) form.setValue("marketing_emails", settings.marketing_emails)
+              if (settings.security_emails !== undefined) form.setValue("security_emails", settings.security_emails)
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load notification settings:", e)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [form])
+
+  async function onSubmit(data: NotificationsFormValues) {
+    const email = getUserEmail()
+    if (email) {
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            notification_type: data.type,
+            mobile_notifications: data.mobile,
+            communication_emails: data.communication_emails,
+            social_emails: data.social_emails,
+            marketing_emails: data.marketing_emails,
+            security_emails: data.security_emails,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save to database')
+        }
+
+        toast({
+          title: "Notifications updated",
+          description: "Your notification preferences have been saved.",
+        })
+      } catch (e) {
+        console.error("Error saving notification settings:", e)
+        toast({
+          title: "Error",
+          description: "Failed to save notification settings.",
+          variant: "destructive",
+        })
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "No user email found. Please log in first.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
