@@ -5,7 +5,6 @@ import { ENGINEERING_SYSTEM_PROMPT } from '@/lib/prompts/engineering-prompt';
 
 export const runtime = 'nodejs';
 
-
 function processOpenRouterStream(
   stream: ReadableStream,
   userMessage: string,
@@ -18,48 +17,37 @@ function processOpenRouterStream(
     async start(controller) {
       try {
         let buffer = '';
-
         while (true) {
           const { done, value } = await reader.read();
-
           if (done) {
             break;
           }
-
-          // Decode the chunk
           buffer += decoder.decode(value, { stream: true });
 
-          // Split by newlines and process each line
           const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // Keep the last potentially incomplete line in the buffer
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.trim() === '') continue;
             if (!line.startsWith('data:')) continue;
 
             try {
-              // Extract the JSON data from the line
-              const jsonData = line.slice(5).trim(); // Remove 'data: ' prefix
+              const jsonData = line.slice(5).trim();
               if (!jsonData) continue;
 
-              // Handle special case for [DONE]
               if (jsonData === "[DONE]") {
-                // Forward the [DONE] event
                 const doneEvent = `data: [DONE]\n\n`;
                 controller.enqueue(encoder.encode(doneEvent));
                 continue;
               }
-
-              // Parse JSON for normal dat
               const data = JSON.parse(jsonData);
 
               if (data.choices && data.choices[0]?.delta?.content) {
                 const content = data.choices[0].delta.content;
 
-                // Apply minimal processing to preserve formatting
+
                 const processedContent = processAIResponse(content, userMessage);
 
-                // Create an event with the content
                 const event = `data: ${JSON.stringify({ text: processedContent })}\n\n`;
                 controller.enqueue(encoder.encode(event));
               }
@@ -85,7 +73,6 @@ function processOpenRouterStream(
   });
 }
 
-// Format conversation history for the AI
 function formatConversationHistory(history: any[]): Array<{ role: string, content: string }> {
   if (!history || history.length === 0) return [];
 
@@ -94,7 +81,6 @@ function formatConversationHistory(history: any[]): Array<{ role: string, conten
     return { role, content: msg.content };
   });
 }
-
 export async function POST(request: Request) {
   try {
     const {
@@ -140,11 +126,9 @@ export async function POST(request: Request) {
     const apiKey = typeof process !== 'undefined'
       ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
       : undefined;
-
     console.log("Debug: OPENROUTER_API_KEY present:", !!process.env.OPENROUTER_API_KEY);
     console.log("Debug: CHUTES_API_TOKEN present:", !!process.env.CHUTES_API_TOKEN);
     console.log("Debug: Using API Key starting with:", apiKey ? apiKey.substring(0, 8) + "..." : "undefined");
-
     if (!apiKey) {
       console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }
