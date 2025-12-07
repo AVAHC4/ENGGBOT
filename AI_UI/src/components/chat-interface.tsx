@@ -229,17 +229,9 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
   };
 
   // Helper to check if showing the thinking animation is appropriate
+  // Simple: only show when actively generating AND last message is from user
   const shouldShowThinking = () => {
-    return (
-      // Either the context loading state or our local loading state is active
-      (isLoading || localLoading) &&
-      // Generation must still be active (not stopped by user)
-      isGenerating &&
-      // We have at least one message
-      messages.length > 0 &&
-      // Last message is from the user
-      messages[messages.length - 1].isUser
-    );
+    return isGenerating && messages.length > 0 && messages[messages.length - 1].isUser;
   };
 
 
