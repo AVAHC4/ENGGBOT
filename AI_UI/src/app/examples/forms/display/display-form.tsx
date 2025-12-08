@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 import * as React from "react"
 
@@ -67,7 +67,7 @@ const defaultValues: Partial<DisplayFormValues> = {
 }
 
 export function DisplayForm() {
-  const { toast } = useToast()
+  // const { toast } = useToast()
   const form = useForm<DisplayFormValues>({
     resolver: zodResolver(displayFormSchema),
     defaultValues,
@@ -133,8 +133,7 @@ export function DisplayForm() {
       }
     }
 
-    toast({
-      title: "Display settings updated",
+    toast.success("Display settings updated", {
       description: "Your sidebar preferences have been saved.",
     })
   }

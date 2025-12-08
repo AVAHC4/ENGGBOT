@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 import * as React from "react"
 
@@ -59,7 +59,7 @@ const defaultValues: Partial<NotificationsFormValues> = {
 }
 
 export function NotificationsForm() {
-  const { toast } = useToast()
+  // const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsFormSchema),
@@ -118,23 +118,18 @@ export function NotificationsForm() {
           throw new Error('Failed to save to database')
         }
 
-        toast({
-          title: "Notifications updated",
+        toast.success("Notifications updated", {
           description: "Your notification preferences have been saved.",
         })
       } catch (e) {
         console.error("Error saving notification settings:", e)
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to save notification settings.",
-          variant: "destructive",
         })
       }
     } else {
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "No user email found. Please log in first.",
-        variant: "destructive",
       })
     }
   }

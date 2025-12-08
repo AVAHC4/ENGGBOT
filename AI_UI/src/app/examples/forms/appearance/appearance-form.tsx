@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { useBackground } from "@/context/background-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
@@ -62,7 +62,7 @@ type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
 export function AppearanceForm() {
   const { theme, setTheme } = useTheme()
-  const { toast } = useToast()
+  // const { toast } = useToast()
   const [isMounted, setIsMounted] = React.useState(false);
   const { background, setBackground, options } = useBackground()
   const [profileImage, setProfileImage] = React.useState<string>("");
@@ -176,8 +176,7 @@ export function AppearanceForm() {
       }
     }
 
-    toast({
-      title: "Preferences updated!",
+    toast.success("Preferences updated!", {
       description: "Your theme, font, background, and profile picture have been saved.",
     })
   }
@@ -191,10 +190,8 @@ export function AppearanceForm() {
         setProfileImage(compressedBase64);
       } catch (error) {
         console.error("Error compressing image:", error);
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to process image. Please try another one.",
-          variant: "destructive",
         });
       }
     }

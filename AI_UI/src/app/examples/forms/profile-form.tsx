@@ -7,7 +7,7 @@ import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -70,7 +70,7 @@ function getUserEmail(): string | null {
 }
 
 export function ProfileForm() {
-  const { toast } = useToast()
+  // const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
 
   const form = useForm<ProfileFormValues>({
@@ -129,10 +129,8 @@ export function ProfileForm() {
     try {
       const email = getUserEmail()
       if (!email) {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "No user email found. Please log in first.",
-          variant: "destructive",
         })
         return
       }
@@ -170,16 +168,13 @@ export function ProfileForm() {
       localStorage.setItem("user_name", data.username)
       window.dispatchEvent(new Event("storage"))
 
-      toast({
-        title: "Profile updated",
+      toast.success("Profile updated", {
         description: "Your profile has been saved successfully.",
       })
     } catch (e) {
       console.error("Error saving profile:", e)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to save profile. Please try again.",
-        variant: "destructive",
       })
     }
   }
