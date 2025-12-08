@@ -135,7 +135,11 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
         console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
-          setMessages(savedMessages);
+          // Sort messages by timestamp to ensure correct order
+          const sortedMessages = [...savedMessages].sort((a, b) =>
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          setMessages(sortedMessages);
         } else {
           setMessages([]);
         }
@@ -226,11 +230,17 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
       // We hide [WEB SEARCH RESULTS] and [FILES CONTEXT] blocks
       const userDisplayContent = getUserDisplayContent(content);
 
+      // Ensure timestamps are monotonic
+      const now = new Date();
+      const userTimestamp = now.toISOString();
+      // Ensure AI message timestamp is strictly after user message
+      const aiTimestamp = new Date(now.getTime() + 50).toISOString();
+
       const userMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
         content: userDisplayContent, // Only show the user's original message, not the web search data
         isUser: true,
-        timestamp: new Date().toISOString(),
+        timestamp: userTimestamp,
         attachments,
         replyToId // Add the reply reference if present
       };
@@ -284,7 +294,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         id: aiMessageId,
         content: "",
         isUser: false,
-        timestamp: new Date().toISOString(),
+        timestamp: aiTimestamp, // Use the strictly ordered timestamp
         isStreaming: true
       };
 
