@@ -33,7 +33,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { toast } from "sonner"
+import { useToast } from "@/hooks/use-toast"
 
 const languages = [
   { label: "English", value: "en" },
@@ -76,7 +76,7 @@ import { supabase } from "@/lib/supabase"
 import { useLanguage } from "@/context/language-context"
 
 export function AccountForm() {
-  // const { toast } = useToast()
+  const { toast } = useToast()
   const [dobPopoverOpen, setDobPopoverOpen] = React.useState(false)
   const [languagePopoverOpen, setLanguagePopoverOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -153,8 +153,10 @@ export function AccountForm() {
 
         if (error) {
           console.error("Error saving to Supabase:", error)
-          toast.error("Error saving online", {
+          toast({
+            title: "Error saving online",
             description: "Could not save to database, but saved locally.",
+            variant: "destructive",
           })
         }
       }
@@ -181,13 +183,16 @@ export function AccountForm() {
       // Dispatch storage event
       window.dispatchEvent(new Event("storage"))
 
-      toast.success("Account updated", {
+      toast({
+        title: "Account updated",
         description: "Your account settings have been saved.",
       })
     } catch (e) {
       console.error("Error in onSubmit:", e)
-      toast.error("Error", {
+      toast({
+        title: "Error",
         description: "Something went wrong while saving.",
+        variant: "destructive",
       })
     }
   }

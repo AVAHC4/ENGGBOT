@@ -8,7 +8,7 @@ import { SidebarWrapper } from "@/components/blocks/sidebar-wrapper";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
-import { Toaster } from "@/components/ui/toaster";
+// import { Toaster } from "@/components/ui/toaster"; // Temporarily commented out due to React type compatibility issues
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
 import { BackgroundProvider } from "@/context/background-context";
@@ -55,7 +55,7 @@ export default function RootLayout({
             </BackgroundProvider>
           </LanguageProvider>
         </ThemeProvider>
-        <Toaster />
+        {/* <Toaster /> */} {/* Temporarily commented out due to React type compatibility issues */}
         <Analytics />
       </body>
     </html>
