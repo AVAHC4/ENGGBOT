@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getProject } from "@/lib/projects/storage";
+import { getProjectAsync } from "@/lib/projects/storage";
 import { Project } from "@/lib/projects/types";
 import { ChatInterface } from "@/components/chat-interface";
 import { ChatProvider } from "@/context/chat-context";
@@ -16,12 +16,15 @@ export default function ProjectPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (params && params.id) {
-            const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
-            const foundProject = getProject(projectId);
-            setProject(foundProject);
-            setLoading(false);
+        async function loadProject() {
+            if (params && params.id) {
+                const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
+                const foundProject = await getProjectAsync(projectId);
+                setProject(foundProject);
+                setLoading(false);
+            }
         }
+        loadProject();
     }, [params]);
 
     if (loading) {
