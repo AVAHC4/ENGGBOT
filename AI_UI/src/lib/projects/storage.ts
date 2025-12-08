@@ -1,211 +1,240 @@
 import { Project, ProjectFile, CreateProjectInput, UpdateProjectInput } from './types';
+import { getUserEmail } from '@/lib/storage';
 
-const PROJECTS_KEY = 'enggbot_projects';
-const PROJECT_FILES_KEY = 'enggbot_project_files';
+// API Endpoints
+const API_BASE = '/api/projects';
 
-// Generate unique ID
-function generateId(): string {
-    return `proj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-function generateFileId(): string {
-    return `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-// Get all projects
-export function getAllProjects(): Project[] {
+// Fetch all projects from API (and sync with DB)
+export async function getAllProjectsAsync(): Promise<Project[]> {
     if (typeof window === 'undefined') return [];
 
+    const email = getUserEmail();
+    if (!email) return [];
+
     try {
-        const stored = localStorage.getItem(PROJECTS_KEY);
-        if (!stored) return [];
-        return JSON.parse(stored);
+        const response = await fetch(`${API_BASE}?email=${encodeURIComponent(email)}`);
+        if (!response.ok) throw new Error('Failed to fetch projects');
+        const data = await response.json();
+        return data.projects || [];
     } catch (error) {
-        console.error('Error loading projects:', error);
+        console.error('Error loading projects from API:', error);
         return [];
     }
 }
 
-// Get a specific project
-export function getProject(id: string): Project | null {
-    const projects = getAllProjects();
-    return projects.find(p => p.id === id) || null;
+// Get all projects - Synchronous fallback (deprecated, or used for hydration if needed)
+export function getAllProjects(): Project[] {
+    // For now, we return empty or try to return cached?
+    // The original signature was synchronous. This is a breaking change for callers expecting synchronous return.
+    // However, for React components, they should use `useEffect` to load data.
+    // If we change this to async, we need to update all call sites.
+    // OPTION: We can keep it synchronous by returning what's in a cache, but trigger a fetch?
+    // Given the task, we should probably refactor to async patterns.
+    // But to minimize breakage, I will return empty array and log warning.
+    console.warn('getAllProjects (sync) called. Use getAllProjectsAsync instead.');
+    return [];
+}
+
+// Get a specific project (Async)
+export async function getProjectAsync(id: string): Promise<Project | null> {
+    const email = getUserEmail();
+    if (!email) return null;
+
+    try {
+        const response = await fetch(`${API_BASE}/${id}?email=${encodeURIComponent(email)}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.project;
+    } catch (error) {
+        console.error('Error loading project:', error);
+        return null;
+    }
 }
 
 // Create a new project
-export function createProject(input: CreateProjectInput): Project {
-    const projects = getAllProjects();
+export async function createProject(input: CreateProjectInput): Promise<Project | null> {
+    const email = getUserEmail();
+    if (!email) return null;
 
-    const newProject: Project = {
-        id: generateId(),
-        name: input.name,
-        description: input.description,
-        emoji: input.emoji || '📁',
-        customInstructions: input.customInstructions,
-        color: input.color,
-        created: new Date().toISOString(),
-        updated: new Date().toISOString(),
-        conversationIds: [],
-        fileIds: [],
-    };
+    try {
+        const response = await fetch(API_BASE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                ...input
+            })
+        });
 
-    projects.push(newProject);
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-
-    return newProject;
+        if (!response.ok) throw new Error('Failed to create project');
+        const data = await response.json();
+        return data.project;
+    } catch (error) {
+        console.error('Error creating project:', error);
+        return null;
+    }
 }
 
 // Update a project
-export function updateProject(id: string, input: UpdateProjectInput): Project | null {
-    const projects = getAllProjects();
-    const index = projects.findIndex(p => p.id === id);
+export async function updateProject(id: string, input: UpdateProjectInput): Promise<Project | null> {
+    const email = getUserEmail();
+    if (!email) return null;
 
-    if (index === -1) return null;
+    try {
+        const response = await fetch(`${API_BASE}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                ...input
+            })
+        });
 
-    projects[index] = {
-        ...projects[index],
-        ...input,
-        updated: new Date().toISOString(),
-    };
-
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-    return projects[index];
+        if (!response.ok) throw new Error('Failed to update project');
+        const data = await response.json();
+        return data.project;
+    } catch (error) {
+        console.error('Error updating project:', error);
+        return null;
+    }
 }
 
 // Delete a project
-export function deleteProject(id: string): boolean {
-    const projects = getAllProjects();
-    const filtered = projects.filter(p => p.id !== id);
+export async function deleteProject(id: string): Promise<boolean> {
+    const email = getUserEmail();
+    if (!email) return false;
 
-    if (filtered.length === projects.length) return false;
+    try {
+        const response = await fetch(`${API_BASE}/${id}?email=${encodeURIComponent(email)}`, {
+            method: 'DELETE'
+        });
 
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(filtered));
-
-    // Also delete associated files
-    const files = getAllProjectFiles();
-    const filteredFiles = files.filter(f => f.projectId !== id);
-    localStorage.setItem(PROJECT_FILES_KEY, JSON.stringify(filteredFiles));
-
-    return true;
+        return response.ok;
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        return false;
+    }
 }
 
 // Add conversation to project
-export function addConversationToProject(projectId: string, conversationId: string): boolean {
-    const project = getProject(projectId);
-    if (!project) return false;
+export async function addConversationToProject(projectId: string, conversationId: string): Promise<boolean> {
+    const email = getUserEmail();
+    if (!email) return false;
 
-    if (!project.conversationIds.includes(conversationId)) {
-        project.conversationIds.push(conversationId);
-        updateProject(projectId, { ...project });
+    // To add a conversation to a project, we essentially update the conversation's project_id.
+    // We can do this via the conversation API or a specialized endpoint.
+    // Earlier we decided to handle it by updating the conversation.
+    try {
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                projectId // This updates project_id column
+            })
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error adding conversation to project:', error);
+        return false;
     }
-
-    return true;
 }
 
 // Remove conversation from project
-export function removeConversationFromProject(projectId: string, conversationId: string): boolean {
-    const project = getProject(projectId);
-    if (!project) return false;
+export async function removeConversationFromProject(projectId: string, conversationId: string): Promise<boolean> {
+    const email = getUserEmail();
+    if (!email) return false;
 
-    project.conversationIds = project.conversationIds.filter(id => id !== conversationId);
-    updateProject(projectId, { ...project });
-
-    return true;
+    try {
+        // Set project_id to null
+        const response = await fetch(`/api/conversations/${conversationId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                projectId: null
+            })
+        });
+        return response.ok;
+    } catch (error) {
+        console.error('Error removing conversation from project:', error);
+        return false;
+    }
 }
 
 // ===== File Management =====
 
-// Get all files across all projects
-function getAllProjectFiles(): ProjectFile[] {
-    if (typeof window === 'undefined') return [];
+// Get all files for a project
+export async function getProjectFiles(projectId: string): Promise<ProjectFile[]> {
+    const email = getUserEmail();
+    if (!email) return [];
 
     try {
-        const stored = localStorage.getItem(PROJECT_FILES_KEY);
-        if (!stored) return [];
-        return JSON.parse(stored);
+        const response = await fetch(`${API_BASE}/${projectId}/files?email=${encodeURIComponent(email)}`);
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.files || [];
     } catch (error) {
         console.error('Error loading project files:', error);
         return [];
     }
 }
 
-// Get files for a specific project
-export function getProjectFiles(projectId: string): ProjectFile[] {
-    const allFiles = getAllProjectFiles();
-    return allFiles.filter(f => f.projectId === projectId);
-}
-
 // Add a file to a project
-export function addProjectFile(projectId: string, file: Omit<ProjectFile, 'id' | 'projectId' | 'uploadDate'>): ProjectFile | null {
-    const project = getProject(projectId);
-    if (!project) return null;
+export async function addProjectFile(projectId: string, file: Omit<ProjectFile, 'id' | 'projectId' | 'uploadDate'>): Promise<ProjectFile | null> {
+    const email = getUserEmail();
+    if (!email) return null;
 
-    const allFiles = getAllProjectFiles();
+    try {
+        const response = await fetch(`${API_BASE}/${projectId}/files`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email,
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                content: file.content
+            })
+        });
 
-    const newFile: ProjectFile = {
-        id: generateFileId(),
-        projectId,
-        uploadDate: new Date().toISOString(),
-        ...file,
-    };
-
-    allFiles.push(newFile);
-    localStorage.setItem(PROJECT_FILES_KEY, JSON.stringify(allFiles));
-
-    // Update project's file IDs
-    project.fileIds.push(newFile.id);
-    updateProject(projectId, { ...project });
-
-    return newFile;
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.file;
+    } catch (error) {
+        console.error('Error adding project file:', error);
+        return null;
+    }
 }
 
 // Remove a file from a project
-export function removeProjectFile(projectId: string, fileId: string): boolean {
-    const allFiles = getAllProjectFiles();
-    const filtered = allFiles.filter(f => f.id !== fileId);
+export async function removeProjectFile(projectId: string, fileId: string): Promise<boolean> {
+    const email = getUserEmail();
+    if (!email) return false;
 
-    if (filtered.length === allFiles.length) return false;
+    try {
+        const response = await fetch(`${API_BASE}/${projectId}/files/${fileId}?email=${encodeURIComponent(email)}`, {
+            method: 'DELETE'
+        });
 
-    localStorage.setItem(PROJECT_FILES_KEY, JSON.stringify(filtered));
-
-    // Update project's file IDs
-    const project = getProject(projectId);
-    if (project) {
-        project.fileIds = project.fileIds.filter(id => id !== fileId);
-        updateProject(projectId, { ...project });
+        return response.ok;
+    } catch (error) {
+        console.error('Error deleting project file:', error);
+        return false;
     }
-
-    return true;
-}
-
-// Get a specific file
-export function getProjectFile(fileId: string): ProjectFile | null {
-    const allFiles = getAllProjectFiles();
-    return allFiles.find(f => f.id === fileId) || null;
-}
-
-// Search projects by name or description
-export function searchProjects(query: string): Project[] {
-    const projects = getAllProjects();
-    const lowerQuery = query.toLowerCase();
-
-    return projects.filter(p =>
-        p.name.toLowerCase().includes(lowerQuery) ||
-        (p.description && p.description.toLowerCase().includes(lowerQuery))
-    );
 }
 
 // Get project statistics
-export function getProjectStats(projectId: string): {
+export async function getProjectStats(projectId: string): Promise<{
     conversationCount: number;
     fileCount: number;
     totalFileSize: number;
-} | null {
-    const project = getProject(projectId);
+} | null> {
+    const project = await getProjectAsync(projectId);
     if (!project) return null;
 
-    const files = getProjectFiles(projectId);
-    const totalFileSize = files.reduce((sum, file) => sum + file.size, 0);
+    const files = await getProjectFiles(projectId);
+    const totalFileSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
 
     return {
         conversationCount: project.conversationIds.length,

@@ -361,7 +361,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         const allConversations = await getAllConversationsMetadata();
 
         // Get all project conversations to filter them out
-        const projects = getAllProjects();
+        // Use the async version of getAllProjects
+        const { getAllProjectsAsync } = await import("@/lib/projects/storage");
+        const projects = await getAllProjectsAsync();
         const projectConversationIds = new Set<string>();
 
         projects.forEach((project: any) => {

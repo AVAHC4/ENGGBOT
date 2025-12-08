@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Search, Grid3x3, List, Plus } from "lucide-react";
-import { getAllProjects, deleteProject, searchProjects } from "@/lib/projects/storage";
+import { getAllProjectsAsync, deleteProject } from "@/lib/projects/storage";
 import { Project } from "@/lib/projects/types";
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
 import { ProjectCard } from "@/components/projects/project-card";
@@ -28,8 +28,8 @@ export default function ProjectsPage() {
     const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
 
     // Load projects
-    const loadProjects = React.useCallback(() => {
-        const allProjects = getAllProjects();
+    const loadProjects = React.useCallback(async () => {
+        const allProjects = await getAllProjectsAsync();
         setProjects(allProjects);
     }, []);
 
@@ -40,7 +40,11 @@ export default function ProjectsPage() {
     // Filter projects based on search
     const filteredProjects = React.useMemo(() => {
         if (!searchQuery.trim()) return projects;
-        return searchProjects(searchQuery);
+        const query = searchQuery.toLowerCase();
+        return projects.filter(p =>
+            p.name.toLowerCase().includes(query) ||
+            (p.description && p.description.toLowerCase().includes(query))
+        );
     }, [projects, searchQuery]);
 
     const handleProjectCreated = (projectId: string) => {
@@ -61,9 +65,9 @@ export default function ProjectsPage() {
         setProjectToDelete(project);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (projectToDelete) {
-            deleteProject(projectToDelete.id);
+            await deleteProject(projectToDelete.id);
             loadProjects();
             setProjectToDelete(null);
         }
@@ -103,7 +107,7 @@ export default function ProjectsPage() {
                     <div className="text-center py-16">
                         {searchQuery ? (
                             <div>
-                                <p className="text-muted-foreground mb-4">No projects found matching "{searchQuery}"</p>
+                                <p className="text-muted-foreground mb-4">No projects found matching &quot;{searchQuery}&quot;</p>
                                 <Button variant="outline" onClick={() => setSearchQuery("")}>
                                     Clear Search
                                 </Button>
@@ -153,7 +157,7 @@ export default function ProjectsPage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Delete Project?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete "{projectToDelete?.name}"? This will remove all
+                                Are you sure you want to delete &quot;{projectToDelete?.name}&quot;? This will remove all
                                 associated files and cannot be undone.
                             </AlertDialogDescription>
                         </AlertDialogHeader>

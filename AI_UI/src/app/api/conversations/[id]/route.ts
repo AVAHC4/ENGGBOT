@@ -105,6 +105,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         if (title !== undefined) {
             updates.title = title;
         }
+        if (body?.projectId !== undefined) {
+            updates.project_id = body.projectId;
+        }
 
         const { data, error } = await supabaseAdmin
             .from('conversations')
