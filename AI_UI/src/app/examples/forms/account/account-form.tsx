@@ -34,6 +34,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const languages = [
   { label: "English", value: "en" },
@@ -80,6 +90,8 @@ export function AccountForm() {
   const [dobPopoverOpen, setDobPopoverOpen] = React.useState(false)
   const [languagePopoverOpen, setLanguagePopoverOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(true)
+  const [open, setOpen] = React.useState(false)
+  const [pendingData, setPendingData] = React.useState<AccountFormValues | null>(null)
   const { setLanguage } = useLanguage()
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
@@ -132,7 +144,8 @@ export function AccountForm() {
     loadData()
   }, [form])
 
-  async function onSubmit(data: AccountFormValues) {
+  async function onConfirmSave(data: AccountFormValues) {
+    setOpen(false)
     try {
       // Update app language immediately
       setLanguage(data.language as any)
@@ -195,6 +208,11 @@ export function AccountForm() {
         variant: "destructive",
       })
     }
+  }
+
+  function onSubmit(data: AccountFormValues) {
+    setPendingData(data)
+    setOpen(true)
   }
 
   return (
@@ -324,6 +342,23 @@ export function AccountForm() {
         />
         <Button type="submit">Update account</Button>
       </form>
-    </Form>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will update your account settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form >
   )
 }

@@ -19,6 +19,16 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import * as React from "react"
 
@@ -61,6 +71,8 @@ const defaultValues: Partial<NotificationsFormValues> = {
 export function NotificationsForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
+  const [open, setOpen] = React.useState(false)
+  const [pendingData, setPendingData] = React.useState<NotificationsFormValues | null>(null)
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsFormSchema),
     defaultValues,
@@ -96,7 +108,8 @@ export function NotificationsForm() {
     loadData()
   }, [form])
 
-  async function onSubmit(data: NotificationsFormValues) {
+  async function onConfirmSave(data: NotificationsFormValues) {
+    setOpen(false)
     const email = getUserEmail()
     if (email) {
       try {
@@ -137,6 +150,11 @@ export function NotificationsForm() {
         variant: "destructive",
       })
     }
+  }
+
+  function onSubmit(data: NotificationsFormValues) {
+    setPendingData(data)
+    setOpen(true)
   }
 
   return (
@@ -298,6 +316,23 @@ export function NotificationsForm() {
         />
         <Button type="submit">Update notifications</Button>
       </form>
-    </Form>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will update your notification settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form >
   )
 }

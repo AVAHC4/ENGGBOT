@@ -16,6 +16,16 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { useToast } from "@/hooks/use-toast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import * as React from "react"
 
@@ -68,6 +78,8 @@ const defaultValues: Partial<DisplayFormValues> = {
 
 export function DisplayForm() {
   const { toast } = useToast()
+  const [open, setOpen] = React.useState(false)
+  const [pendingData, setPendingData] = React.useState<DisplayFormValues | null>(null)
   const form = useForm<DisplayFormValues>({
     resolver: zodResolver(displayFormSchema),
     defaultValues,
@@ -107,7 +119,8 @@ export function DisplayForm() {
     loadData()
   }, [form])
 
-  async function onSubmit(data: DisplayFormValues) {
+  async function onConfirmSave(data: DisplayFormValues) {
+    setOpen(false)
     // Save to localStorage for immediate sidebar updates
     localStorage.setItem("sidebar_preferences", JSON.stringify(data.items))
     window.dispatchEvent(new Event("storage"))
@@ -137,6 +150,11 @@ export function DisplayForm() {
       title: "Display settings updated",
       description: "Your sidebar preferences have been saved.",
     })
+  }
+
+  function onSubmit(data: DisplayFormValues) {
+    setPendingData(data)
+    setOpen(true)
   }
 
   return (
@@ -191,6 +209,23 @@ export function DisplayForm() {
         />
         <Button type="submit">Update display</Button>
       </form>
-    </Form>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will update your display settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form >
   )
 }

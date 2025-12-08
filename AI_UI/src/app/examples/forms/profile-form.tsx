@@ -27,6 +27,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const profileFormSchema = z.object({
   username: z
@@ -72,6 +82,8 @@ function getUserEmail(): string | null {
 export function ProfileForm() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
+  const [open, setOpen] = React.useState(false)
+  const [pendingData, setPendingData] = React.useState<ProfileFormValues | null>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -125,7 +137,8 @@ export function ProfileForm() {
     loadData()
   }, [form])
 
-  async function onSubmit(data: ProfileFormValues) {
+  async function onConfirmSave(data: ProfileFormValues) {
+    setOpen(false)
     try {
       const email = getUserEmail()
       if (!email) {
@@ -182,6 +195,11 @@ export function ProfileForm() {
         variant: "destructive",
       })
     }
+  }
+
+  function onSubmit(data: ProfileFormValues) {
+    setPendingData(data)
+    setOpen(true)
   }
 
   return (
@@ -283,6 +301,23 @@ export function ProfileForm() {
         </div>
         <Button type="submit">Update profile</Button>
       </form>
-    </Form>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will update your public profile information.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form >
   )
 }

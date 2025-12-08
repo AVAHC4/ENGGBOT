@@ -10,6 +10,16 @@ import { z } from "zod"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Form,
   FormControl,
   FormDescription,
@@ -67,6 +77,8 @@ export function AppearanceForm() {
   const { background, setBackground, options } = useBackground()
   const [profileImage, setProfileImage] = React.useState<string>("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [open, setOpen] = React.useState(false)
+  const [pendingData, setPendingData] = React.useState<AppearanceFormValues | null>(null)
 
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
@@ -133,7 +145,8 @@ export function AppearanceForm() {
     return null;
   }
 
-  async function onSubmit(data: AppearanceFormValues) {
+  async function onConfirmSave(data: AppearanceFormValues) {
+    setOpen(false)
     setTheme(data.theme)
     setBackground(data.background)
 
@@ -203,6 +216,11 @@ export function AppearanceForm() {
   const triggerFileInput = () => {
     fileInputRef.current?.click();
   };
+
+  function onSubmit(data: AppearanceFormValues) {
+    setPendingData(data)
+    setOpen(true)
+  }
 
   return (
     <Form {...form}>
@@ -428,6 +446,23 @@ export function AppearanceForm() {
 
         <Button type="submit">Update preferences</Button>
       </form>
-    </Form>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will update your appearance settings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Form >
   )
 }
