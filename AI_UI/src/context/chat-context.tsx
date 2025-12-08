@@ -135,10 +135,58 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
         console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
-          // Sort messages by timestamp to ensure correct order
-          const sortedMessages = [...savedMessages].sort((a, b) =>
+          // Sort messages by timestamp first
+          let sortedMessages = [...savedMessages].sort((a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
+
+          // HEURISTIC FIX: Detect and repair inverted message order (AI appearing before User due to clock skew)
+          // Look for patterns where AI message is immediately followed by a User message with very close timestamp
+          let hasModifications = false;
+
+          for (let i = 0; i < sortedMessages.length - 1; i++) {
+            const current = sortedMessages[i];
+            const next = sortedMessages[i + 1];
+
+            // If current is AI and next is User
+            if (!current.isUser && next.isUser) {
+              const currentTime = new Date(current.timestamp).getTime();
+              const nextTime = new Date(next.timestamp).getTime();
+
+              // If they are within 2 seconds of each other (typical race condition window)
+              // We assume this is a flipped pair (User prompt -> AI response)
+              if (nextTime - currentTime < 2000) {
+                console.log('[ChatContext] Healing inverted message order:', {
+                  ai: current.id, user: next.id, diff: nextTime - currentTime
+                });
+
+                // Fix: Move AI timestamp to be slighty after User timestamp
+                // We construct a new Date object to avoid reference issues
+                const fixedTimestamp = new Date(nextTime + 50).toISOString(); // User time + 50ms
+
+                sortedMessages[i] = {
+                  ...current,
+                  timestamp: fixedTimestamp
+                };
+
+                hasModifications = true;
+                // Don't increment i, so we can re-check this new AI message against the *next* one if needed? 
+                // No, just swapping this pair is enough for now.
+              }
+            }
+          }
+
+          // If we modified timestamps, re-sort and save back to DB to make it permanent
+          if (hasModifications) {
+            sortedMessages.sort((a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+
+            // Verify order is now User -> AI
+            console.log('[ChatContext] Saving healed conversation order');
+            saveConversation(conversationId, sortedMessages);
+          }
+
           setMessages(sortedMessages);
         } else {
           setMessages([]);
