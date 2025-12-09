@@ -62,7 +62,7 @@ export function CreateProjectDialog({ trigger, onProjectCreated }: CreateProject
                 customInstructions: customInstructions.trim() || undefined,
             };
 
-            const newProject = createProject(input);
+            const newProject = await createProject(input);
 
             // Reset form
             setName("");
@@ -73,7 +73,9 @@ export function CreateProjectDialog({ trigger, onProjectCreated }: CreateProject
             setOpen(false);
 
             // Notify parent
-            onProjectCreated?.(newProject.id);
+            if (newProject) {
+                onProjectCreated?.(newProject.id);
+            }
         } catch (error) {
             console.error("Error creating project:", error);
         } finally {
