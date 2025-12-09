@@ -29,8 +29,11 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
     } | null>(null);
 
     React.useEffect(() => {
-        const projectStats = getProjectStats(project.id);
-        setStats(projectStats);
+        async function loadStats() {
+            const projectStats = await getProjectStats(project.id);
+            setStats(projectStats);
+        }
+        loadStats();
     }, [project.id]);
 
     const formatFileSize = (bytes: number) => {
