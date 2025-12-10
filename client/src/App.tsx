@@ -13,8 +13,8 @@ import RivaTest from "@/components/RivaTest";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useEffect } from "react";
 import React from "react";
-import { 
-  isAuthenticated, 
+import {
+  isAuthenticated,
   clearAuthData
 } from "@/lib/auth-storage";
 
@@ -22,7 +22,7 @@ import {
 function ProtectedChatDashboard() {
   const [, setLocation] = useLocation();
   const [localAuth, setLocalAuth] = React.useState(false);
-  
+
   // First check for quick auth indicators before doing a full API check
   React.useEffect(() => {
     // Check authentication using the centralized helper
@@ -31,7 +31,7 @@ function ProtectedChatDashboard() {
       setLocalAuth(true);
     }
   }, []);
-  
+
   // Only perform API check if quick auth failed
   const { data: authStatus, isLoading } = useQuery({
     queryKey: ["auth-status"],
@@ -103,16 +103,16 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('logout') || urlParams.has('force_logout')) {
       console.log("Logout detected, clearing user data");
-      
+
       // Clear all auth data using centralized helper
       clearAuthData();
-      
+
       // Forcefully reload the page to reset all state
       if (!urlParams.has('no_reload')) {
         window.location.href = '/';
         return;
       }
-      
+
       // If we're on a path other than root, redirect to root
       if (location !== '/') {
         setLocation('/');
