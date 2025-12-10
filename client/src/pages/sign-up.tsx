@@ -292,9 +292,9 @@ export default function SignUpPage() {
             </div>
 
             <div className="p-3 bg-background border-t">
-              <p className="text-accent-foreground text-center text-sm">
+              <p className="text-foreground text-center text-sm">
                 Have an account?
-                <Button asChild variant="link" className="px-2 text-black dark:text-white">
+                <Button asChild variant="link" className="px-2 text-foreground">
                   <Link href="/login">Sign In</Link>
                 </Button>
               </p>
