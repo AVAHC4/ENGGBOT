@@ -107,8 +107,11 @@ export function DesktopTeamsLayout() {
 
   return (
     <div className="flex h-screen bg-transparent">
-      {/* Teams Sidebar */}
-      <div className="w-80 border-r border-border flex-shrink-0 ml-3">
+      {/* Teams Sidebar - Left Panel */}
+      <div
+        className="w-80 flex-shrink-0 ml-3"
+        style={{ borderRight: '1px solid rgba(255, 255, 255, 0.1)' }}
+      >
         <TeamsSidebar
           selectedTeamId={selectedTeamId}
           onTeamSelect={handleTeamSelect}
@@ -118,8 +121,11 @@ export function DesktopTeamsLayout() {
         />
       </div>
 
-      {/* Chat Interface */}
-      <div className="flex-1">
+      {/* Chat Interface - Right Panel */}
+      <div
+        className="flex-1"
+        style={{ borderLeft: '1px solid rgba(255, 255, 255, 0.1)' }}
+      >
         <ChatInterface
           selectedTeamId={selectedTeamId}
           teams={teams}
