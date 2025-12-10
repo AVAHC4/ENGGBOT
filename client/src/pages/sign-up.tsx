@@ -168,11 +168,6 @@ export default function SignUpPage() {
         </button>
       </Link>
 
-      {/* Theme Toggle Button */}
-      <div className="absolute top-6 right-6 z-20">
-        <ThemeToggle />
-      </div>
-
       <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form

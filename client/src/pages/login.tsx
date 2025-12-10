@@ -33,14 +33,14 @@ const transitionVariants = {
 if (typeof document !== 'undefined') {
   // Add resource hints in the document head
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
-  
+
   googleDomains.forEach(domain => {
     // DNS prefetch - start DNS resolution early
     const dnsPrefetch = document.createElement('link');
     dnsPrefetch.rel = 'dns-prefetch';
     dnsPrefetch.href = `https://${domain}`;
     document.head.appendChild(dnsPrefetch);
-    
+
     // Preconnect - establish early connection
     const preconnect = document.createElement('link');
     preconnect.rel = 'preconnect';
@@ -54,7 +54,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [fastAuth, setFastAuth] = React.useState(false);
-  
+
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
     // Check for error in URL
@@ -64,12 +64,12 @@ export default function LoginPage() {
       setAuthError(`Authentication error: ${error}`);
       setIsLoading(false);
     }
-    
+
     // Check if we've returned from a failed auth attempt
     const authCookie = document.cookie
       .split('; ')
       .find(row => row.startsWith('auth_attempt='));
-      
+
     if (authCookie && !document.cookie.includes('auth_success=true')) {
       // Clear the cookie to prevent repeated checks
       document.cookie = "auth_attempt=; max-age=0; path=/";
@@ -83,7 +83,7 @@ export default function LoginPage() {
     iframe.style.display = 'none';
     iframe.src = 'https://accounts.google.com/favicon.ico';
     document.body.appendChild(iframe);
-    
+
     // Remove after connection is established
     return () => {
       document.body.removeChild(iframe);
@@ -94,35 +94,35 @@ export default function LoginPage() {
     setIsLoading(true);
     setAuthError('');
     setFastAuth(true);
-    
+
     try {
       // Set a cookie to check later if we return here
       document.cookie = "auth_attempt=true; max-age=300; path=/";
-      
+
       // Mark that we should redirect to chat when auth is successful
       setRedirectToChat(true);
-      
+
       // Optimize API URL resolution
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
-      
+
       // Use sessionStorage instead of localStorage (faster)
       const state = Math.random().toString(36).substring(2, 15);
       sessionStorage.setItem('oauth_state', state);
-      
+
       // Set a timeout to reset loading state if redirect takes too long
       const timeout = setTimeout(() => {
         setIsLoading(false);
         setFastAuth(false);
         setAuthError("Connection to Google is taking longer than expected. Please check your network and try again.");
       }, 8000); // Shorter timeout
-      
+
       // Direct navigation to Google auth endpoint with the state parameter
       // Use clean URL construction to prevent double requests
       const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
-      
+
       // Use faster navigation method
       window.location.replace(googleAuthUrl);
-      
+
       // Clear timeout if navigation happens quickly
       window.onbeforeunload = () => {
         clearTimeout(timeout);
@@ -160,11 +160,6 @@ export default function LoginPage() {
           Home
         </button>
       </Link>
-
-      {/* Theme Toggle Button */}
-      <div className="absolute top-6 right-6 z-20">
-        <ThemeToggle />
-      </div>
 
       <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
@@ -237,9 +232,9 @@ export default function LoginPage() {
               )}
 
               <div className="w-full">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   className="w-full"
                   onClick={handleGoogleSignIn}
                   disabled={isLoading}
