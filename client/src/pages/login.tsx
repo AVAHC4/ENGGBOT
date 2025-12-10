@@ -164,9 +164,9 @@ export default function LoginPage() {
       <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
-            className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
+            className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-background"
           >
-            <div className="bg-card -m-px rounded-[14px] border p-12 pb-10">
+            <div className="bg-background -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
                 <Link href="/" aria-label="go home" className="mx-auto block w-fit">
                   <div className="flex items-center space-x-2">
@@ -274,7 +274,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="p-3 bg-card border-t">
+            <div className="p-3 bg-background border-t">
               <p className="text-accent-foreground text-center text-sm">
                 Don't have an account?
                 <Button asChild variant="link" className="text-accent-foreground text-center text-sm">
