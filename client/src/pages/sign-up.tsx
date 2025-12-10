@@ -5,11 +5,10 @@ import { Label } from "@/components/ui/label"
 import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
-import BackgroundPaths from "@/components/background-paths"
-import BeamsBackground from "@/components/beams-background"
-import React, { useEffect } from "react"
+import React from "react"
 import { setRedirectToChat } from "@/lib/auth-storage"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useTheme } from "@/contexts/ThemeProvider"
 
 const transitionVariants = {
   item: {
@@ -53,6 +52,7 @@ if (typeof document !== 'undefined') {
 }
 
 export default function SignUpPage() {
+  const { theme } = useTheme();
   const [isLoading, setIsLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [fastAuth, setFastAuth] = React.useState(false);
@@ -155,16 +155,12 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen relative">
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <div className="block dark:hidden" style={{ position: 'absolute', inset: 0 }}>
-          <BackgroundPaths />
-        </div>
-        <div className="hidden dark:block" style={{ position: 'absolute', inset: 0 }}>
-          <BeamsBackground intensity="medium" />
-        </div>
-      </div>
-
+    <div
+      className="fixed inset-0 min-h-screen overflow-auto"
+      style={{
+        backgroundColor: theme === 'dark' ? '#000000' : '#ffffff'
+      }}
+    >
       {/* Home Button */}
       <Link href="/" className="absolute top-6 left-6 z-20">
         <button className="px-4 py-2 rounded-md bg-white dark:bg-black text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
@@ -177,7 +173,7 @@ export default function SignUpPage() {
         <ThemeToggle />
       </div>
 
-      <section className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
+      <section className="flex min-h-screen items-center justify-center px-4 py-16 md:py-32">
         <AnimatedGroup variants={transitionVariants}>
           <form
             className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-white dark:bg-zinc-900"
