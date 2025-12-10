@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
-import { deleteTeamMessage, fetchMessages, sendMessage } from "@/lib/teams-api"
+import { deleteTeamMessage, fetchMessages, sendMessage, listTeamMembers } from "@/lib/teams-api"
 import { supabaseClient } from "@/lib/supabase-client"
 
 interface Message {
@@ -43,17 +43,7 @@ interface ChatInterfaceProps {
 
 // Messages are now loaded from the backend
 
-const getTeamMembers = (teamId: string) => {
-  const memberCounts: Record<string, number> = {
-    "1": 8,
-    "2": 12,
-    "3": 6,
-    "4": 5,
-    "5": 10,
-    "6": 7,
-  }
-  return memberCounts[teamId] || 5
-}
+// Member count is now fetched from the API
 
 const encodeKeyPart = (value: string) => {
   try {
@@ -96,6 +86,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message } | null>(null)
+  const [teamMembers, setTeamMembers] = useState(0)
 
   const sseRef = useRef<EventSource | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -405,7 +396,17 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   }
 
   const team = teams.find((t) => t.id === selectedTeamId)
-  const teamMembers = selectedTeamId ? getTeamMembers(selectedTeamId) : 0
+
+  // Fetch actual member count when team changes
+  useEffect(() => {
+    if (selectedTeamId) {
+      listTeamMembers(selectedTeamId)
+        .then(members => setTeamMembers(members.length))
+        .catch(() => setTeamMembers(0))
+    } else {
+      setTeamMembers(0)
+    }
+  }, [selectedTeamId])
 
   return (
     <div className="flex flex-col h-full bg-transparent">
