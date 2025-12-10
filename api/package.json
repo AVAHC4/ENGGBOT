@@ -23,7 +23,9 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.8",
+    "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

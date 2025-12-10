@@ -6,6 +6,7 @@ import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
 import React from "react"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { setRedirectToChat } from "@/lib/auth-storage"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "@/contexts/ThemeProvider"
@@ -54,8 +55,13 @@ if (typeof document !== 'undefined') {
 export default function SignUpPage() {
   const { theme } = useTheme();
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isEmailLoading, setIsEmailLoading] = React.useState(false);
   const [authError, setAuthError] = React.useState('');
   const [fastAuth, setFastAuth] = React.useState(false);
+  const [otpSent, setOtpSent] = React.useState(false);
+  const [otp, setOtp] = React.useState("");
+  const [emailForOtp, setEmailForOtp] = React.useState("");
+  const [nameData, setNameData] = React.useState({ firstname: "", lastname: "" });
 
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
@@ -91,6 +97,121 @@ export default function SignUpPage() {
       document.body.removeChild(iframe);
     };
   }, []);
+
+  const handleEmailSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsEmailLoading(true);
+    setAuthError('');
+
+    const formData = new FormData(e.currentTarget);
+    const firstname = formData.get('firstname') as string;
+    const lastname = formData.get('lastname') as string;
+    const email = formData.get('email') as string;
+
+    // Basic validation
+    if (!firstname || !lastname || !email) {
+      setAuthError('All fields are required');
+      setIsEmailLoading(false);
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/auth/otp/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, firstname, lastname, type: 'signup' }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAuthError(data.error || 'Failed to send verification code');
+        setIsEmailLoading(false);
+        return;
+      }
+
+      // Success - show OTP input
+      setOtpSent(true);
+      setEmailForOtp(email);
+      setNameData({ firstname, lastname });
+      setIsEmailLoading(false);
+
+    } catch (err) {
+      console.error('Signup error:', err);
+      setAuthError('An unexpected error occurred. Please try again.');
+      setIsEmailLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEmailLoading(true);
+    setAuthError('');
+
+    if (otp.length !== 6) {
+      setAuthError('Please enter the full 6-digit code');
+      setIsEmailLoading(false);
+      return;
+    }
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      const response = await fetch(`${apiUrl}/api/auth/otp/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: emailForOtp,
+          token: otp,
+          firstname: nameData.firstname,
+          lastname: nameData.lastname
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setAuthError(data.error || 'Invalid verification code');
+        setIsEmailLoading(false);
+        return;
+      }
+
+      // Success - store user data and redirect
+      if (data.user) {
+        localStorage.setItem('authenticated', 'true');
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        setRedirectToChat(true);
+      }
+
+      // Redirect to chat
+      // Redirect to chat
+      let redirectUrl = data.redirectUrl || '/AI_UI/?auth_success=true';
+
+      // Append user data to URL params for cross-origin/port persistence
+      if (data.user) {
+        const separator = redirectUrl.includes('?') ? '&' : '?';
+        const params = new URLSearchParams();
+        if (data.user.name) params.append('user_name', data.user.name);
+        if (data.user.email) params.append('user_email', data.user.email);
+        if (data.user.avatar) params.append('user_avatar', data.user.avatar);
+
+        redirectUrl = `${redirectUrl}${separator}${params.toString()}`;
+      }
+
+      window.location.replace(redirectUrl);
+
+    } catch (err) {
+      console.error('OTP verify error:', err);
+      setAuthError('An unexpected error occurred. Please try again.');
+      setIsEmailLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = () => {
     setIsLoading(true);
@@ -167,6 +288,7 @@ export default function SignUpPage() {
         <AnimatedGroup variants={transitionVariants}>
           <form
             className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-background"
+            onSubmit={handleEmailSignUp}
           >
             <div className="bg-background -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
@@ -192,49 +314,86 @@ export default function SignUpPage() {
                   as="p"
                   className="text-sm"
                 >
-                  Welcome! Create an account to get started
+                  {otpSent ? `Enter the code sent to ${emailForOtp}` : "Welcome! Create an account to get started"}
                 </TextEffect>
               </div>
 
-              <div className="mt-6 space-y-6">
-                <div className="grid grid-cols-2 gap-3">
+              {otpSent ? (
+                <div className="mt-8 flex flex-col items-center space-y-6">
+                  <div className="flex justify-center">
+                    <InputOTP
+                      maxLength={6}
+                      value={otp}
+                      onChange={(value) => setOtp(value)}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={isEmailLoading || otp.length !== 6}
+                    onClick={handleVerifyOtp}
+                  >
+                    {isEmailLoading ? 'Verifying...' : 'Verify Code'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-xs text-muted-foreground"
+                    onClick={() => setOtpSent(false)}
+                  >
+                    Use a different email
+                  </Button>
+                </div>
+              ) : (
+                <div className="mt-6 space-y-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstname" className="block text-sm">
+                        Firstname
+                      </Label>
+                      <Input type="text" required name="firstname" id="firstname" defaultValue={nameData.firstname} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastname" className="block text-sm">
+                        Lastname
+                      </Label>
+                      <Input type="text" required name="lastname" id="lastname" defaultValue={nameData.lastname} />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="firstname" className="block text-sm">
-                      Firstname
+                    <Label htmlFor="email" className="block text-sm">
+                      Email
                     </Label>
-                    <Input type="text" required name="firstname" id="firstname" />
+                    <Input type="email" required name="email" id="email" defaultValue={emailForOtp} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastname" className="block text-sm">
-                      Lastname
-                    </Label>
-                    <Input type="text" required name="lastname" id="lastname" />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="block text-sm">
-                    Email
-                  </Label>
-                  <Input type="email" required name="email" id="email" />
+                  <Button type="submit" className="w-full" disabled={isEmailLoading}>
+                    {isEmailLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending Code...
+                      </>
+                    ) : (
+                      'Sign Up'
+                    )}
+                  </Button>
                 </div>
-
-                <div className="space-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="pwd" className="text-title text-sm">
-                      Password
-                    </Label>
-                    <Button asChild variant="link" size="sm">
-                      <Link href="#" className="link intent-info variant-ghost text-sm">
-                        Forgot your Password?
-                      </Link>
-                    </Button>
-                  </div>
-                  <Input type="password" required name="pwd" id="pwd" className="input sz-md variant-mixed" />
-                </div>
-
-                <Button className="w-full">Sign Up</Button>
-              </div>
+              )}
 
               <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                 <hr className="border-dashed" />

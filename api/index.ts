@@ -40,6 +40,7 @@ import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { initGoogleAuth } from "./auth/google.js";
+import { initEmailAuth } from "./auth/email.js";
 import { supabase } from "./lib/supabase.js";
 import { initTestAuth } from "./auth/test.js";
 
@@ -64,12 +65,12 @@ if (process.env.GOOGLE_CLIENT_ID) {
     .replace(/\r?\n|\r/g, '') // Remove line breaks
     .replace(/\s+/g, '') // Remove extra spaces
     .trim(); // Trim any leading/trailing whitespace
-  
+
   // Ensure it ends with .apps.googleusercontent.com
   if (!process.env.GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com')) {
     process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID.split('.apps.googleuser')[0] + '.apps.googleusercontent.com';
   }
-  
+
   console.log("Original Client ID:", JSON.stringify(originalId));
   console.log("Fixed Client ID:", JSON.stringify(process.env.GOOGLE_CLIENT_ID));
 }
@@ -132,17 +133,17 @@ apiRouter.get("/hello", (req, res) => {
 // Google config check
 apiRouter.get("/check-google-config", (req, res) => {
   console.log("Checking Google OAuth config");
-  
+
   const config = {
     clientID: process.env.GOOGLE_CLIENT_ID || "Not set",
     clientSecret: process.env.GOOGLE_CLIENT_SECRET ? "Set (length: " + process.env.GOOGLE_CLIENT_SECRET.length + ")" : "Not set",
     callbackURL: `${process.env.CLIENT_URL || 'http://localhost:3000'}/api/auth/google/callback`,
     sessionSecret: process.env.SESSION_SECRET ? "Set (length: " + process.env.SESSION_SECRET.length + ")" : "Not set",
   };
-  
-  res.json({ 
+
+  res.json({
     config,
-    message: "If both client ID and secret are set, check that these values match your Google Cloud Console settings." 
+    message: "If both client ID and secret are set, check that these values match your Google Cloud Console settings."
   });
 });
 
@@ -188,33 +189,36 @@ app.use("/api", apiRouter);
 // Initialize Google auth
 initGoogleAuth(app);
 
+// Initialize email auth routes
+initEmailAuth(app);
+
 // Initialize test auth routes
 initTestAuth(app);
 
 // Add this after the application is set up
 const checkDatabaseStructure = async () => {
   console.log("Checking database structure...");
-  
+
   try {
     // Check if users table exists and what permissions we have
     console.log("Testing Supabase connection and permissions...");
-    
+
     // First check if we can read from users table
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('count')
       .limit(1);
-    
+
     if (usersError) {
       console.error("❌ Error reading from users table:", usersError);
     } else {
       console.log("✓ Successfully read from users table");
     }
-    
+
     // Test inserting a temporary user (we'll delete it right after)
     const testEmail = `test-${Date.now()}@example.com`;
     console.log(`Testing user insertion with email: ${testEmail}`);
-    
+
     const { data: insertData, error: insertError } = await supabase
       .from('users')
       .insert({
@@ -223,21 +227,21 @@ const checkDatabaseStructure = async () => {
         google_id: `test-${Date.now()}`,
       })
       .select();
-    
+
     if (insertError) {
       console.error("❌ Error inserting test user:", insertError);
       console.error("This may indicate permission issues with the Supabase anon key");
       console.error("Please check your Supabase settings to ensure the anon key has proper permissions");
     } else {
       console.log("✓ Successfully inserted test user");
-      
+
       // Clean up by deleting the test user
       if (insertData && insertData[0]?.id) {
         const { error: deleteError } = await supabase
           .from('users')
           .delete()
           .eq('id', insertData[0].id);
-        
+
         if (deleteError) {
           console.error("❌ Error deleting test user:", deleteError);
         } else {
