@@ -108,7 +108,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         setConversationId(newId);
         localStorage.setItem(storageKey, newId);
         addConversationToProject(projectId, newId);
-        saveConversation(newId, []);
+        saveConversation(newId, [], projectId);
       }
     }
   }, [isMounted, projectId]);
@@ -810,7 +810,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         : `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
-      saveConversation(newId, []);
+      saveConversation(newId, [], projectId);
 
       // If we are in a project, link this new conversation to the project
       if (projectId) {

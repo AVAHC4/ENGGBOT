@@ -90,7 +90,7 @@ function generateTitleFromMessage(messages: any[]): string {
 const knownConversations = new Set<string>();
 
 // Save conversation to database
-async function saveConversationToDatabase(id: string, messages: any[], title?: string): Promise<boolean> {
+async function saveConversationToDatabase(id: string, messages: any[], title?: string, projectId?: string | null): Promise<boolean> {
   const email = getUserEmail();
   if (!email) {
     console.warn('[DB Save] No email found, skipping database save');
@@ -106,7 +106,7 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
         // Conversation doesn't exist, create it with the same ID
         // Generate title from first user message instead of using generic ID
         const generatedTitle = title || generateTitleFromMessage(messages);
-        console.log('[DB Save] Creating new conversation:', id.substring(0, 8), 'with title:', generatedTitle);
+        console.log('[DB Save] Creating new conversation:', id.substring(0, 8), 'with title:', generatedTitle, 'projectId:', projectId);
         const createResponse = await fetch('/api/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -114,6 +114,7 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
             id, // Pass the ID to ensure consistency
             email,
             title: generatedTitle,
+            projectId: projectId || null, // Pass projectId when creating
           }),
         });
 
@@ -295,7 +296,7 @@ function clearCache(conversationId: string): void {
 // ==================== Hybrid Public API ====================
 
 // Save a conversation (hybrid: localStorage immediately + database with debounce)
-export function saveConversation(id: string, messages: any[]) {
+export function saveConversation(id: string, messages: any[], projectId?: string | null) {
   if (isServer()) return;
 
   // Step 1: Save to localStorage IMMEDIATELY (for instant reload)
@@ -311,8 +312,8 @@ export function saveConversation(id: string, messages: any[]) {
   const timer = setTimeout(() => {
     saveDebounceMap.delete(id);
 
-    // Save to database in background
-    saveConversationToDatabase(id, messages)
+    // Save to database in background, including projectId
+    saveConversationToDatabase(id, messages, undefined, projectId)
       .then((success) => {
         if (success) {
           console.log('[Storage] Synced to database:', id.substring(0, 8));
