@@ -153,7 +153,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-background">
       {/* Home Button */}
       <Link href="/" className="absolute top-6 left-6 z-20">
         <button className="px-4 py-2 rounded-md bg-white dark:bg-zinc-800 text-black dark:text-white font-medium text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-200 dark:border-gray-800">
