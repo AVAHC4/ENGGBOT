@@ -152,7 +152,7 @@ export default function SignUpPage() {
     setAuthError('');
 
     if (otp.length !== 6) {
-      setAuthError('Please entr the full 6-digit code');
+      setAuthError('Please enter the full 6-digit code');
       setIsEmailLoading(false);
       return;
     }
