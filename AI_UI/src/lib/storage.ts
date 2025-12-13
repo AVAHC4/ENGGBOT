@@ -100,7 +100,7 @@ function generateTitleFromMessage(messages: any[]): string {
   // Simple title casing for a cleaner look
   const title = truncated
     .split(' ')
-    .map(word => word ? word[0].toUpperCase() + word.slice(1) : '')
+    .map((word: string) => word ? word[0].toUpperCase() + word.slice(1) : '')
     .join(' ')
     .trim();
 
