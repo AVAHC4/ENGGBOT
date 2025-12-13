@@ -172,25 +172,25 @@ export default function ChatDashboard() {
     return null;
   }
 
-  // Force redirect to the AI_UI app immediately when component loads
-  if (typeof window !== 'undefined') {
-    const aiUiUrl = import.meta.env.VITE_AI_UI_URL || '/AI_UI';
+  // Force redirect to the AI_UI app when we have a valid user
+  useEffect(() => {
+    if (!userData) return;
+
+    const aiUiUrl = import.meta.env.VITE_AI_UI_URL || "/AI_UI";
     console.log(`Redirecting to AI_UI at ${aiUiUrl}`);
 
     // Store auth info and mark for redirection using new helpers
     setRedirectToChat(true);
 
-    // Create URL with user data
-    // Handle both absolute URLs and relative paths
     const redirectUrl = new URL(aiUiUrl, window.location.origin);
-    redirectUrl.searchParams.set('auth_success', 'true');
-    if (userData.name) redirectUrl.searchParams.set('user_name', userData.name);
-    if (userData.email) redirectUrl.searchParams.set('user_email', userData.email);
-    if (userData.avatar) redirectUrl.searchParams.set('user_avatar', userData.avatar);
+    redirectUrl.searchParams.set("auth_success", "true");
+    if (userData.name) redirectUrl.searchParams.set("user_name", userData.name);
+    if (userData.email) redirectUrl.searchParams.set("user_email", userData.email);
+    if (userData.avatar) redirectUrl.searchParams.set("user_avatar", userData.avatar);
 
-    // Redirect
+    setRedirecting(true);
     window.location.replace(redirectUrl.toString());
-  }
+  }, [userData]);
 
   // User is authenticated, show the AI chat interface
   return (
@@ -295,7 +295,9 @@ export default function ChatDashboard() {
         {/* Redirect to AI_UI */}
         <div className="min-h-screen flex items-center justify-center bg-black">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Redirecting to AI Interface...</h1>
+            <h1 className="text-2xl font-bold mb-4">
+              {redirecting ? "Redirecting to AI Interface..." : "Preparing AI Interface..."}
+            </h1>
             <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-400">Please wait...</p>
           </div>
