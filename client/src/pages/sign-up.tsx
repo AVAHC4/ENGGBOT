@@ -325,6 +325,7 @@ export default function SignUpPage() {
                       maxLength={6}
                       value={otp}
                       onChange={(value) => setOtp(value)}
+                      autoFocus
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />

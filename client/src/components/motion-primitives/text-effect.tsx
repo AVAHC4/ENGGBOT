@@ -10,6 +10,9 @@ import {
 } from "framer-motion"
 import React from "react"
 
+// Module-level cache to track animated text instances (persists across remounts)
+const animatedTexts = new Set<string>()
+
 export type PresetType = "blur" | "fade-in-blur" | "scale" | "fade" | "slide"
 
 export type PerType = "word" | "char" | "line"
@@ -184,6 +187,14 @@ const createVariantsWithTransition = (
   }
 }
 
+// Generate a stable ID based on text content and page
+function getTextId(text: string) {
+  if (typeof window !== 'undefined') {
+    return `${window.location.pathname}:${text.slice(0, 50)}`
+  }
+  return text.slice(0, 50)
+}
+
 export function TextEffect({
   children,
   per = "word",
@@ -202,8 +213,11 @@ export function TextEffect({
   segmentTransition,
   style,
 }: TextEffectProps) {
-  // Track if animation has already played to prevent re-animation on re-renders
-  const hasAnimated = React.useRef(false)
+  // Use text content + page path as stable ID
+  const textId = getTextId(children)
+
+  // Check if this text has already animated (persists across remounts via module cache)
+  const hasAnimatedBefore = animatedTexts.has(textId)
 
   const segments = splitText(children, per)
 
@@ -241,13 +255,13 @@ export function TextEffect({
     }),
   }
 
-  // Use "visible" as initial if already animated to prevent replay
-  const initialState = hasAnimated.current ? "visible" : "hidden"
-
-  // Mark as animated after first render
+  // Mark as animated after mount
   React.useEffect(() => {
-    hasAnimated.current = true
-  }, [])
+    animatedTexts.add(textId)
+  }, [textId])
+
+  // Skip animation if already animated before
+  const initialState = hasAnimatedBefore ? "visible" : "hidden"
 
   return (
     <AnimatePresence mode="popLayout">

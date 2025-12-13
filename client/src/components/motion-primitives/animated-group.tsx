@@ -3,6 +3,9 @@ import type { ReactNode } from "react"
 import { motion, type Variants } from "framer-motion"
 import React from "react"
 
+// Module-level cache to track animated instances (persists across remounts)
+const animatedInstances = new Set<string>()
+
 export type PresetType =
   | "fade"
   | "slide"
@@ -100,9 +103,20 @@ const addDefaultVariants = (variants: Variants) => ({
   visible: { ...defaultItemVariants.visible, ...variants.visible },
 })
 
+// Generate a stable ID based on the current URL path
+function getPageId() {
+  if (typeof window !== 'undefined') {
+    return window.location.pathname
+  }
+  return 'default'
+}
+
 function AnimatedGroup({ children, className, variants, preset, as = "div", asChild = "div" }: AnimatedGroupProps) {
-  // Track if animation has already played to prevent re-animation on re-renders
-  const hasAnimated = React.useRef(false)
+  // Use page path as stable ID to track if this page's animation has played
+  const pageId = getPageId()
+
+  // Check if this page has already animated (persists across remounts via module cache)
+  const hasAnimatedBefore = animatedInstances.has(pageId)
 
   const selectedVariants = {
     item: addDefaultVariants(preset ? presetVariants[preset] : {}),
@@ -115,13 +129,13 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
   const MotionComponent = motion(as);
   const MotionChild = motion(asChild);
 
-  // Use "visible" as initial if already animated to prevent replay
-  const initialState = hasAnimated.current ? "visible" : "hidden"
-
-  // Mark as animated after first render
+  // Mark as animated after mount
   React.useEffect(() => {
-    hasAnimated.current = true
-  }, [])
+    animatedInstances.add(pageId)
+  }, [pageId])
+
+  // Skip animation if already animated before
+  const initialState = hasAnimatedBefore ? "visible" : "hidden"
 
   return (
     <MotionComponent initial={initialState} animate="visible" variants={containerVariants} className={className}>
