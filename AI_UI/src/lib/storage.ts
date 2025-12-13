@@ -78,16 +78,53 @@ function generateTitleFromMessage(messages: any[]): string {
   // Clean up the content - remove newlines and extra whitespace
   content = content.replace(/\s+/g, ' ').trim();
 
-  // Truncate to 50 characters, adding ellipsis if needed
-  if (content.length > 50) {
-    content = content.substring(0, 47) + '...';
+  // Prefer the first sentence to keep titles concise
+  const sentenceBoundary = content.search(/[.!?]/);
+  if (sentenceBoundary > 0) {
+    content = content.substring(0, sentenceBoundary);
   }
 
-  return content || 'New Conversation';
+  // Limit to a handful of words so sidebar titles stay readable
+  const words = content.split(' ').filter(Boolean);
+  const maxWords = 8;
+  let truncated = words.slice(0, maxWords).join(' ');
+  if (words.length > maxWords) {
+    truncated = `${truncated}...`;
+  }
+
+  // Strip leading/trailing punctuation
+  truncated = truncated.replace(/^[^a-zA-Z0-9]+/, '').replace(/[:;,.!?]+$/, '');
+
+  if (!truncated) return 'New Conversation';
+
+  // Simple title casing for a cleaner look
+  const title = truncated
+    .split(' ')
+    .map(word => word ? word[0].toUpperCase() + word.slice(1) : '')
+    .join(' ')
+    .trim();
+
+  // Truncate very long strings defensively
+  if (title.length > 60) {
+    return `${title.substring(0, 57)}...`;
+  }
+
+  return title || 'New Conversation';
 }
 
 // Cache of conversations we know exist (to avoid constant GET checks)
 const knownConversations = new Set<string>();
+// Track conversations that have already been auto-titled to avoid repeated updates
+const autoTitledConversations = new Set<string>();
+
+// Detect placeholder titles that should be replaced
+function isPlaceholderTitle(title?: string | null): boolean {
+  if (!title) return true;
+  const normalized = title.trim().toLowerCase();
+  if (!normalized) return true;
+  if (normalized === 'new conversation' || normalized === 'untitled conversation') return true;
+  return /^conversation\s+[0-9a-f]{4,}$/i.test(title.trim());
+}
 
 // Save conversation to database
 async function saveConversationToDatabase(id: string, messages: any[], title?: string, projectId?: string | null): Promise<boolean> {
@@ -100,12 +137,13 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
   try {
     // Only check if conversation exists if we haven't verified it before
     if (!knownConversations.has(id)) {
+      let generatedTitle: string | undefined = title;
       const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
       if (!response.ok) {
         // Conversation doesn't exist, create it with the same ID
         // Generate title from first user message instead of using generic ID
-        const generatedTitle = title || generateTitleFromMessage(messages);
+        generatedTitle = title || generateTitleFromMessage(messages);
         console.log('[DB Save] Creating new conversation:', id.substring(0, 8), 'with title:', generatedTitle, 'projectId:', projectId);
         const createResponse = await fetch('/api/conversations', {
           method: 'POST',
@@ -129,6 +167,9 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
       }
       // Mark as known to avoid future checks
       knownConversations.add(id);
+      if (generatedTitle && generatedTitle !== 'New Conversation') {
+        autoTitledConversations.add(id);
+      }
     }
 
     // Save messages directly (no need to check every time)
@@ -146,6 +187,54 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
         knownConversations.delete(id);
       }
       return false;
+    }
+
+    // Auto-update title based on the first user message once we have one
+    if (messages.some(m => m.isUser) && !autoTitledConversations.has(id)) {
+      // Mark as in-progress to avoid concurrent duplicate calls
+      autoTitledConversations.add(id);
+      const candidateTitle = generateTitleFromMessage(messages);
+
+      // Skip if we still don't have a meaningful title
+      if (candidateTitle && candidateTitle !== 'New Conversation') {
+        // Verify the existing title before overwriting user edits
+        (async () => {
+          try {
+            const metaRes = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
+            let currentTitle: string | null | undefined = undefined;
+
+            if (metaRes.ok) {
+              const data = await metaRes.json();
+              currentTitle = data?.conversation?.title || data?.title;
+            }
+
+            // If the user already named it, do nothing
+            if (metaRes.ok && !isPlaceholderTitle(currentTitle)) {
+              return;
+            }
+
+            const updateResponse = await fetch(`/api/conversations/${id}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, title: candidateTitle }),
+            });
+
+            if (updateResponse.ok) {
+              dispatchConversationUpdated();
+            } else {
+              // Allow retry if the update fails
+              autoTitledConversations.delete(id);
+            }
+          } catch (error) {
+            console.error('[DB Save] Failed to auto-title conversation:', error);
+            // Allow a retry on the next save attempt
+            autoTitledConversations.delete(id);
+          }
+        })();
+      } else {
+        // Allow retry when there is still no usable title
+        autoTitledConversations.delete(id);
+      }
     }
 
     return true;
