@@ -202,8 +202,11 @@ export function TextEffect({
   segmentTransition,
   style,
 }: TextEffectProps) {
+  // Track if animation has already played to prevent re-animation on re-renders
+  const hasAnimated = React.useRef(false)
+
   const segments = splitText(children, per)
-  
+
   const MotionTag = motion(as)
 
   const baseVariants = preset
@@ -238,11 +241,19 @@ export function TextEffect({
     }),
   }
 
+  // Use "visible" as initial if already animated to prevent replay
+  const initialState = hasAnimated.current ? "visible" : "hidden"
+
+  // Mark as animated after first render
+  React.useEffect(() => {
+    hasAnimated.current = true
+  }, [])
+
   return (
     <AnimatePresence mode="popLayout">
       {trigger && (
         <MotionTag
-          initial="hidden"
+          initial={initialState}
           animate="visible"
           exit="exit"
           variants={computedVariants.container}
