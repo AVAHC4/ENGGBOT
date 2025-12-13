@@ -62,6 +62,7 @@ export default function LoginPage() {
   const [otp, setOtp] = React.useState("");
   const [emailForOtp, setEmailForOtp] = React.useState("");
 
+
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
     // Check for error in URL
@@ -282,7 +283,7 @@ export default function LoginPage() {
         <AnimatedGroup variants={transitionVariants}>
           <form
             className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-background"
-            onSubmit={handleEmailLogin}
+            onSubmit={otpSent ? handleVerifyOtp : handleEmailLogin}
           >
             <div className="bg-background -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">

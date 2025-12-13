@@ -101,6 +101,9 @@ const addDefaultVariants = (variants: Variants) => ({
 })
 
 function AnimatedGroup({ children, className, variants, preset, as = "div", asChild = "div" }: AnimatedGroupProps) {
+  // Track if animation has already played to prevent re-animation on re-renders
+  const hasAnimated = React.useRef(false)
+
   const selectedVariants = {
     item: addDefaultVariants(preset ? presetVariants[preset] : {}),
     container: addDefaultVariants(defaultContainerVariants),
@@ -112,8 +115,16 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
   const MotionComponent = motion(as);
   const MotionChild = motion(asChild);
 
+  // Use "visible" as initial if already animated to prevent replay
+  const initialState = hasAnimated.current ? "visible" : "hidden"
+
+  // Mark as animated after first render
+  React.useEffect(() => {
+    hasAnimated.current = true
+  }, [])
+
   return (
-    <MotionComponent initial="hidden" animate="visible" variants={containerVariants} className={className}>
+    <MotionComponent initial={initialState} animate="visible" variants={containerVariants} className={className}>
       {React.Children.map(children, (child, index) => (
         <MotionChild key={index} variants={itemVariants}>
           {child}

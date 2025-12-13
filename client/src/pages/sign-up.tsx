@@ -288,7 +288,7 @@ export default function SignUpPage() {
         <AnimatedGroup variants={transitionVariants}>
           <form
             className="m-auto h-fit w-full max-w-[440px] overflow-hidden rounded-[14px] border shadow-md shadow-zinc-950/5 bg-background"
-            onSubmit={handleEmailSignUp}
+            onSubmit={otpSent ? handleVerifyOtp : handleEmailSignUp}
           >
             <div className="bg-background -m-px rounded-[14px] border p-12 pb-10">
               <div className="text-center">
