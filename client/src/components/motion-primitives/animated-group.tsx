@@ -125,9 +125,10 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
   const containerVariants = variants?.container || selectedVariants.container
   const itemVariants = variants?.item || selectedVariants.item
 
-  // Create motion components using motion() function
-  const MotionComponent = motion(as);
-  const MotionChild = motion(asChild);
+  // Memoize motion components to prevent recreation on every render
+  // This prevents DOM remounting which causes input focus loss
+  const MotionComponent = React.useMemo(() => motion(as), [as]);
+  const MotionChild = React.useMemo(() => motion(asChild), [asChild]);
 
   // Mark as animated after mount
   React.useEffect(() => {
