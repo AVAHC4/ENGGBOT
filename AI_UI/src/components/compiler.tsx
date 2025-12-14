@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Loader2, Play, Square, Trash2, Terminal, Maximize2, Minimize2, Code2, Settings, Keyboard } from "lucide-react";
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 
 // Dynamically import Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
@@ -66,6 +67,8 @@ export function Compiler() {
   const echoInputsRef = useRef<string[]>([]);
 
   const searchParams = useSearchParams();
+  const { resolvedTheme } = useTheme();
+  const isLightMode = resolvedTheme === 'light';
 
   // Initialize bundler after component mounts to prevent hydration issues
   useEffect(() => {
@@ -438,15 +441,15 @@ export function Compiler() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#1e1e1e] text-white">
+    <div className={cn("flex flex-col h-screen", isLightMode ? "bg-white text-black" : "bg-[#1e1e1e] text-white")}>
       {/* Header */}
-      <div className="relative flex items-center px-4 py-2 bg-[#252526] border-b border-[#3c3c3c]">
+      <div className={cn("relative flex items-center px-4 py-2 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium">Online Compiler</span>
           <select
             value={selectedLanguage.id}
             onChange={handleLanguageChange}
-            className="bg-[#333333] text-white text-sm rounded px-2 py-1 border border-[#3c3c3c] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className={cn("text-sm rounded px-2 py-1 border focus:outline-none focus:ring-1 focus:ring-blue-500", isLightMode ? "bg-white text-black border-gray-300" : "bg-[#333333] text-white border-[#3c3c3c]")}
           >
             {LANGUAGES.map(lang => (
               <option key={lang.id} value={lang.id}>{lang.name}</option>
@@ -455,14 +458,14 @@ export function Compiler() {
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center space-x-2">
           <button
-            className="px-4 py-2 text-sm font-medium bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
             disabled={isRunning}
           >
             {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
           </button>
           <button
-            className="px-3 py-2 text-sm font-medium bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+            className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
             onClick={stopExecution}
             disabled={!isRunning}
           >
@@ -486,11 +489,11 @@ export function Compiler() {
         </div>
 
         {/* Console output */}
-        <div className="h-1/3 bg-black border-t border-[#3c3c3c] flex flex-col">
-          <div className="flex items-center justify-between px-4 py-1 bg-[#252526] border-b border-[#3c3c3c]">
+        <div className={cn("h-1/3 border-t flex flex-col", isLightMode ? "bg-gray-50 border-gray-200" : "bg-black border-[#3c3c3c]")}>
+          <div className={cn("flex items-center justify-between px-4 py-1 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
             <span className="text-xs font-medium">Console</span>
             <button
-              className="text-xs text-gray-400 hover:text-white"
+              className={cn("text-xs hover:opacity-80", isLightMode ? "text-gray-600 hover:text-black" : "text-gray-400 hover:text-white")}
               onClick={() => setConsoleOutput([])}
             >
               Clear
@@ -511,8 +514,8 @@ export function Compiler() {
 
                 if (typeof line === 'string') {
                   const display = isPromptLine ? (line + inlineInput) : line;
-                  const cls = line.startsWith('Error') ? 'text-red-400' :
-                    (line.trim() === 'Program exited with code 0' ? 'text-green-400' : 'text-white');
+                  const cls = line.startsWith('Error') ? 'text-red-500' :
+                    (line.trim() === 'Program exited with code 0' ? 'text-green-500' : (isLightMode ? 'text-black' : 'text-white'));
 
                   if (line.startsWith('data:image/png;base64,')) {
                     return (
