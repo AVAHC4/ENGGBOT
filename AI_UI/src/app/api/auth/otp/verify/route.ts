@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase'; // Anon
 import { supabaseAdmin } from '@/lib/supabase-admin'; // Service Role
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, token, firstname, lastname } = body;
+        const { email, token, firstname, lastname, password } = body;
 
         if (!email || !token) {
             return NextResponse.json({ error: "Email and code are required" }, { status: 400 });
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
         if (firstname) updates.firstname = firstname;
         if (lastname) updates.lastname = lastname;
         if (firstname && lastname) updates.name = `${firstname} ${lastname}`;
+
+        // Hash and store password if provided (signup with password)
+        if (password) {
+            const saltRounds = 10;
+            updates.password_hash = await bcrypt.hash(password, saltRounds);
+        }
 
         let publicUser;
 
