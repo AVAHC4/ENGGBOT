@@ -60,7 +60,7 @@ export default function LoginPage() {
   const [fastAuth, setFastAuth] = React.useState(false);
   const [otpSent, setOtpSent] = React.useState(false);
   const [otp, setOtp] = React.useState("");
-  const [emailForOtp, setEmailForOtp] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [usePassword, setUsePassword] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -106,10 +106,7 @@ export default function LoginPage() {
     setIsEmailLoading(true);
     setAuthError('');
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-
-    // Basic validation
+    // Basic validation using controlled state
     if (!email) {
       setAuthError('Email is required');
       setIsEmailLoading(false);
@@ -136,7 +133,6 @@ export default function LoginPage() {
 
       // Success - show OTP input
       setOtpSent(true);
-      setEmailForOtp(email);
       setIsEmailLoading(false);
 
     } catch (err) {
@@ -151,10 +147,7 @@ export default function LoginPage() {
     setIsEmailLoading(true);
     setAuthError('');
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
-
-    // Basic validation
+    // Basic validation using controlled state
     if (!email) {
       setAuthError('Email is required');
       setIsEmailLoading(false);
@@ -237,7 +230,7 @@ export default function LoginPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email: emailForOtp,
+          email,
           token: otp
         }),
       });
@@ -431,7 +424,15 @@ export default function LoginPage() {
                     <Label htmlFor="email" className="block text-sm">
                       Email
                     </Label>
-                    <Input type="email" required name="email" id="email" className="h-12" defaultValue={emailForOtp} />
+                    <Input
+                      type="email"
+                      required
+                      name="email"
+                      id="email"
+                      className="h-12"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
 
                   {usePassword && (
