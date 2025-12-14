@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase, supabaseAnon } from "../lib/supabase.js";
+import bcrypt from "bcrypt";
 
 // Determine redirect URLs based on environment
 const BASE_URL = process.env.NODE_ENV === 'production'
@@ -25,6 +26,7 @@ interface OtpVerifyBody {
     token: string;
     firstname?: string;
     lastname?: string;
+    password?: string;
 }
 
 export const initEmailAuth = (app: any) => {
@@ -85,7 +87,7 @@ export const initEmailAuth = (app: any) => {
     // Verify OTP endpoint
     app.post("/api/auth/otp/verify", async (req: Request, res: Response) => {
         try {
-            const { email, token, firstname, lastname } = req.body as OtpVerifyBody;
+            const { email, token, firstname, lastname, password } = req.body as OtpVerifyBody;
 
             console.log(`OTP verify request for email: ${email}`);
 
@@ -123,6 +125,12 @@ export const initEmailAuth = (app: any) => {
             if (firstname) updates.firstname = firstname;
             if (lastname) updates.lastname = lastname;
             if (firstname && lastname) updates.name = `${firstname} ${lastname}`;
+
+            // Hash and store password if provided (signup with password)
+            if (password) {
+                const saltRounds = 10;
+                updates.password_hash = await bcrypt.hash(password, saltRounds);
+            }
 
             // Upsert user in our public.users table (Non-fatal if it fails)
             try {

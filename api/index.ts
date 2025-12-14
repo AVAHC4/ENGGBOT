@@ -43,6 +43,7 @@ import { initGoogleAuth } from "./auth/google.js";
 import { initEmailAuth } from "./auth/email.js";
 import { supabase } from "./lib/supabase.js";
 import { initTestAuth } from "./auth/test.js";
+import { initPasswordAuth } from "./auth/password.js";
 
 // Log the full environment variables for debugging
 console.log("Environment Variables:");
@@ -194,6 +195,9 @@ initEmailAuth(app);
 
 // Initialize test auth routes
 initTestAuth(app);
+
+// Initialize password auth routes
+initPasswordAuth(app);
 
 // Add this after the application is set up
 const checkDatabaseStructure = async () => {

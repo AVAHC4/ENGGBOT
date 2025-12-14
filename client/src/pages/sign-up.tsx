@@ -60,8 +60,12 @@ export default function SignUpPage() {
   const [fastAuth, setFastAuth] = React.useState(false);
   const [otpSent, setOtpSent] = React.useState(false);
   const [otp, setOtp] = React.useState("");
-  const [emailForOtp, setEmailForOtp] = React.useState("");
-  const [nameData, setNameData] = React.useState({ firstname: "", lastname: "" });
+  const [email, setEmail] = React.useState("");
+  const [firstname, setFirstname] = React.useState("");
+  const [lastname, setLastname] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
 
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
@@ -103,14 +107,28 @@ export default function SignUpPage() {
     setIsEmailLoading(true);
     setAuthError('');
 
-    const formData = new FormData(e.currentTarget);
-    const firstname = formData.get('firstname') as string;
-    const lastname = formData.get('lastname') as string;
-    const email = formData.get('email') as string;
-
-    // Basic validation
+    // Basic validation using controlled state
     if (!firstname || !lastname || !email) {
       setAuthError('All fields are required');
+      setIsEmailLoading(false);
+      return;
+    }
+
+    // Password validation
+    if (!password) {
+      setAuthError('Password is required');
+      setIsEmailLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError('Password must be at least 6 characters');
+      setIsEmailLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setAuthError('Passwords do not match');
       setIsEmailLoading(false);
       return;
     }
@@ -133,10 +151,8 @@ export default function SignUpPage() {
         return;
       }
 
-      // Success - show OTP input
+      // Success - show OTP input (password is already stored in state)
       setOtpSent(true);
-      setEmailForOtp(email);
-      setNameData({ firstname, lastname });
       setIsEmailLoading(false);
 
     } catch (err) {
@@ -166,10 +182,11 @@ export default function SignUpPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email: emailForOtp,
+          email,
           token: otp,
-          firstname: nameData.firstname,
-          lastname: nameData.lastname
+          firstname,
+          lastname,
+          password
         }),
       });
 
@@ -189,7 +206,6 @@ export default function SignUpPage() {
         setRedirectToChat(true);
       }
 
-      // Redirect to chat
       // Redirect to chat
       let redirectUrl = data.redirectUrl || '/AI_UI/?auth_success=true';
 
@@ -314,7 +330,7 @@ export default function SignUpPage() {
                   as="p"
                   className="text-sm"
                 >
-                  {otpSent ? `Enter the code sent to ${emailForOtp}` : "Welcome! Create an account to get started"}
+                  {otpSent ? `Enter the code sent to ${email}` : "Welcome! Create an account to get started"}
                 </TextEffect>
               </div>
 
@@ -357,19 +373,33 @@ export default function SignUpPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="mt-6 space-y-6">
+                <div className="mt-6 space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label htmlFor="firstname" className="block text-sm">
                         Firstname
                       </Label>
-                      <Input type="text" required name="firstname" id="firstname" defaultValue={nameData.firstname} />
+                      <Input
+                        type="text"
+                        required
+                        name="firstname"
+                        id="firstname"
+                        value={firstname}
+                        onChange={(e) => setFirstname(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastname" className="block text-sm">
                         Lastname
                       </Label>
-                      <Input type="text" required name="lastname" id="lastname" defaultValue={nameData.lastname} />
+                      <Input
+                        type="text"
+                        required
+                        name="lastname"
+                        id="lastname"
+                        value={lastname}
+                        onChange={(e) => setLastname(e.target.value)}
+                      />
                     </div>
                   </div>
 
@@ -377,7 +407,65 @@ export default function SignUpPage() {
                     <Label htmlFor="email" className="block text-sm">
                       Email
                     </Label>
-                    <Input type="email" required name="email" id="email" defaultValue={emailForOtp} />
+                    <Input
+                      type="email"
+                      required
+                      name="email"
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="block text-sm">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        name="password"
+                        id="password"
+                        className="pr-10"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        minLength={6}
+                        placeholder="Minimum 6 characters"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="block text-sm">
+                      Confirm Password
+                    </Label>
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      name="confirmPassword"
+                      id="confirmPassword"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      minLength={6}
+                    />
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isEmailLoading}>
@@ -387,7 +475,7 @@ export default function SignUpPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Sending Code...
+                        Creating Account...
                       </>
                     ) : (
                       'Sign Up'
