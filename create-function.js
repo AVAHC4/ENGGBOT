@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 
-// Hard-code the values to avoid env issues
-const SUPABASE_URL = 'https://***REMOVED***';
-const SUPABASE_SERVICE_KEY = '***REMOVED***';
+// Use environment variables for Supabase credentials
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // This SQL creates a function that can be called to insert a user
 const createFunctionSQL = `
@@ -33,7 +33,7 @@ GRANT EXECUTE ON FUNCTION public.insert_user TO anon, authenticated, service_rol
 // Function to execute SQL directly via REST API
 async function executeSql(sql) {
   console.log('Executing SQL via REST API...');
-  
+
   try {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
       method: 'POST',
@@ -47,13 +47,13 @@ async function executeSql(sql) {
         query: sql
       })
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('SQL execution failed:', response.status, errorText);
       return false;
     }
-    
+
     console.log('SQL executed successfully');
     return true;
   } catch (error) {
@@ -71,7 +71,7 @@ async function createFunction() {
 // Run the SQL creation
 async function main() {
   const success = await createFunction();
-  
+
   if (success) {
     console.log('✅ User insertion function created successfully!');
     console.log('Now restart your backend server and try Google authentication again.');

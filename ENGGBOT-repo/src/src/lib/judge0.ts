@@ -43,7 +43,7 @@ export interface SubmissionResult {
 const apiHeaders = {
   'Content-Type': 'application/json',
   'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com',
-  'X-RapidAPI-Key': '***REMOVED***', // Replace with your actual RapidAPI key
+  'X-RapidAPI-Key': process.env.JUDGE0_API_KEY || '', // Set in environment variables
 };
 
 // Submit code for execution
@@ -100,31 +100,31 @@ const STATUS_DESCRIPTIONS = {
 // Helper function to parse the result into a readable format
 export function parseResult(result: SubmissionResult): string {
   let output = '';
-  
+
   // Handle different status codes
   if (result.status.id !== 3) {
     output += `Status: ${result.status.description}\n`;
-    
+
     // Add more details based on status
     if (result.status.id === 6) {
       output += `\nCompilation Error:\n${result.compile_output || ''}`;
     } else if ([7, 8, 9, 10, 11, 12].includes(result.status.id)) {
       output += `\nRuntime Error:\n${result.stderr || result.message || ''}`;
     }
-    
+
     return output;
   }
-  
+
   // If execution was successful, show stdout
   if (result.stdout) {
     output += result.stdout;
   } else {
     output += "[No output]";
   }
-  
+
   // Add execution details
   output += `\n\nExecution Time: ${result.time}s`;
-  
+
   return output;
 }
 
@@ -133,31 +133,31 @@ export async function executeCode(code: string, languageId: string): Promise<str
   try {
     // Submit the code
     const submission = await submitCode(code, languageId);
-    
+
     // Poll for results
     let result: SubmissionResult | null = null;
     let retries = 0;
     const maxRetries = 10;
-    
+
     while (retries < maxRetries) {
       // Wait before polling
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Get the result
       result = await getSubmissionResult(submission.token);
-      
+
       // If processing is complete, break the loop
       if (result.status.id !== 1 && result.status.id !== 2) {
         break;
       }
-      
+
       retries++;
     }
-    
+
     if (!result) {
       return "Error: Failed to get execution result.";
     }
-    
+
     return parseResult(result);
   } catch (error) {
     console.error('Code execution error:', error);

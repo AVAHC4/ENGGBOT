@@ -23,7 +23,7 @@ CLIENT_URL=http://localhost:3000
 SUPABASE_URL=your-supabase-url
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_KEY=your-supabase-service-key
-JUDGE0_API_KEY=***REMOVED***
+JUDGE0_API_KEY=your-judge0-api-key
 ```
 
 ## Steps to Configure
