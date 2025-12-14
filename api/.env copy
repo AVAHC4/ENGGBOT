@@ -1,0 +1,11 @@
+GOOGLE_CLIENT_ID=***REMOVED***
+GOOGLE_CLIENT_SECRET=***REMOVED***
+SESSION_SECRET=***REMOVED***
+CLIENT_URL=http://localhost:3000
+SUPABASE_URL=https://***REMOVED***
+SUPABASE_ANON_KEY=***REMOVED***
+# Add your service role key below (get this from Supabase dashboard → Project Settings → API)
+SUPABASE_SERVICE_ROLE_KEY=***REMOVED***
+JUDGE0_API_KEY=***REMOVED***
+BYTEZ_API_KEY=***REMOVED***
+OPENROUTER_API_KEY=***REMOVED***
