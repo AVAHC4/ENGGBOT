@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Fixed values that we KNOW work (these are already in your .env)
-const SUPABASE_URL = 'https://***REMOVED***';
-const SUPABASE_SERVICE_KEY = '***REMOVED***';
-const SUPABASE_ANON_KEY = '***REMOVED***';
+// Use environment variables - no hardcoded credentials for security
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY!;
 
 // Create a Supabase client with the SERVICE ROLE key
 console.log('Creating Supabase client with SERVICE ROLE KEY (bypasses RLS)');
@@ -32,20 +32,20 @@ if (process.env.NODE_ENV === 'development' && process.env.SUPABASE_TEST === '1')
         name: 'Test User',
         google_id: `test-${Date.now()}`
       };
-      
+
       const { data, error } = await supabase
         .from('users')
         .insert(testUser)
         .select()
         .single();
-        
+
       if (error) {
         console.error('❌ TEST INSERT FAILED:', error);
         console.error('This suggests the service role key is not working properly.');
       } else {
         console.log('✅ TEST INSERT SUCCESSFUL!', data);
         console.log('The service role key is working properly.');
-        
+
         // Clean up the test user
         await supabase
           .from('users')
