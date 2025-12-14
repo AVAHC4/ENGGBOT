@@ -171,10 +171,29 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      // Check if response has content before parsing
+      const contentType = response.headers.get('content-type');
+      let data;
+
+      try {
+        const text = await response.text();
+        if (text) {
+          data = JSON.parse(text);
+        } else {
+          // Empty response - likely server not configured or route not found
+          setAuthError('Server did not respond. Please check if the API server is running.');
+          setIsEmailLoading(false);
+          return;
+        }
+      } catch (parseError) {
+        console.error('Failed to parse API response:', parseError);
+        setAuthError('Server returned an invalid response. Please restart the API server.');
+        setIsEmailLoading(false);
+        return;
+      }
 
       if (!response.ok) {
-        setAuthError(data.error || 'Login failed');
+        setAuthError(data?.error || 'Login failed');
         setIsEmailLoading(false);
         return;
       }
