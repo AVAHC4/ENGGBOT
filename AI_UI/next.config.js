@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Remove console.log in production (keeps error/warn for debugging)
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
   // Disable Vercel deployment badge/logo (the "N" circle)
   images: {
     disableStaticImages: true,
@@ -19,7 +25,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // This ensures the Vercel logo is not displayed and disables the loading indicator
-    devIndicators: {
+  devIndicators: {
     buildActivity: false,
   },
   async headers() {
