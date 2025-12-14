@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Remove console.log in production (keeps error/warn for debugging)
+  // Remove ALL console output in production (completely clean console)
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn'],
-    } : false,
+    removeConsole: process.env.NODE_ENV === 'production',
   },
   // Disable Vercel deployment badge/logo (the "N" circle)
   images: {
