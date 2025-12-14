@@ -97,7 +97,8 @@
         }
         
         // Set up the Google Auth URL
-        const clientId = "***REMOVED***";
+        // Get client ID from environment variable (injected by Vite) or window config
+        const clientId = window.__GOOGLE_CLIENT_ID__ || import.meta.env?.VITE_GOOGLE_CLIENT_ID || "";
         const baseUrl = window.location.origin;
         const redirectUri = `${baseUrl}/api/auth/google/callback`;
         
