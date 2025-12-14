@@ -244,24 +244,33 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
   }
 }
 
+// Special marker to indicate conversation was not found (404)
+const CONVERSATION_NOT_FOUND = Symbol('CONVERSATION_NOT_FOUND');
+
 // Load conversation from database
-async function loadConversationFromDatabase(id: string): Promise<any[]> {
+// Returns messages array, empty array on error, or CONVERSATION_NOT_FOUND on 404
+async function loadConversationFromDatabase(id: string): Promise<any[] | typeof CONVERSATION_NOT_FOUND> {
   const email = getUserEmail();
   if (!email) return [];
 
   try {
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
+    if (response.status === 404) {
+      // Conversation not found - return special marker so caller can clear stale cache
+      return CONVERSATION_NOT_FOUND;
+    }
+
     if (!response.ok) {
-      // Conversation not found in database, return empty array
+      // Other error, return empty array
       return [];
     }
 
     const data = await response.json();
     return data.messages || [];
   } catch (error) {
-    console.error('Error loading conversation from database:', error);
-    return []; // Return empty array instead of null to prevent .length errors
+    // Silently handle errors - no console.error to keep production console clean
+    return [];
   }
 }
 
@@ -425,32 +434,54 @@ export async function loadConversation(id: string): Promise<any[]> {
 
   if (cachedMessages && cachedMessages.length > 0) {
     // Return cached data immediately, but also sync with database in background
-    console.log('[Storage] Using cached messages for:', id.substring(0, 8));
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Storage] Using cached messages for:', id.substring(0, 8));
+    }
 
     // Background sync: fetch from database and update cache if different
     loadConversationFromDatabase(id).then((dbMessages) => {
+      // Check if conversation was deleted from database (404)
+      if (dbMessages === CONVERSATION_NOT_FOUND) {
+        // Clear stale cache - conversation no longer exists in DB
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[Storage] Conversation not found in DB, clearing stale cache:', id.substring(0, 8));
+        }
+        clearCache(id);
+        knownConversations.delete(id);
+        dispatchConversationUpdated();
+        return;
+      }
+
       if (dbMessages && dbMessages.length > 0) {
         // Check if database has different/newer data
         const cacheStr = JSON.stringify(cachedMessages.map(m => m.id).sort());
         const dbStr = JSON.stringify(dbMessages.map((m: any) => m.id).sort());
 
         if (cacheStr !== dbStr) {
-          console.log('[Storage] Database has different data, updating cache');
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[Storage] Database has different data, updating cache');
+          }
           saveToCache(id, dbMessages);
-          // Dispatch event so UI can refresh if needed
           dispatchConversationUpdated();
         }
       }
-    }).catch(err => {
-      console.warn('[Storage] Background sync failed:', err);
+    }).catch(() => {
+      // Silently handle background sync errors
     });
 
     return cachedMessages;
   }
 
   // Step 2: No cache, load from database
-  console.log('[Storage] No cache, loading from database:', id.substring(0, 8));
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[Storage] No cache, loading from database:', id.substring(0, 8));
+  }
   const dbMessages = await loadConversationFromDatabase(id);
+
+  // Handle 404 - conversation doesn't exist
+  if (dbMessages === CONVERSATION_NOT_FOUND) {
+    return [];
+  }
 
   // Step 3: Save to cache for next time
   if (dbMessages && dbMessages.length > 0) {
