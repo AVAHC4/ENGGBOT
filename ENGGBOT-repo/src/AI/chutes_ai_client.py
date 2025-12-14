@@ -11,8 +11,8 @@ import json
 class ChutesAIClient:
     def __init__(self, api_key=None, default_model="deepseek-ai/DeepSeek-V3-0324"):
         """Initialize the AI client with your API key."""
-        # Use API key from parameter or fall back to provided key
-        self.api_key = api_key or "***REMOVED***"
+        # Use API key from parameter or fall back to environment variable
+        self.api_key = api_key or os.environ.get("CHUTES_API_KEY", "")
         
         if not self.api_key:
             raise ValueError("No API key provided.")

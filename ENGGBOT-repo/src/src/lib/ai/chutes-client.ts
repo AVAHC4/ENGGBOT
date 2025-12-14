@@ -12,8 +12,7 @@ export const AVAILABLE_MODELS = {
   "mistral": "mistralai/Mistral-7B-Instruct-v0.2"
 };
 
-// Default API key
-const DEFAULT_API_KEY = "***REMOVED***";
+// No default API key - must be provided via environment variable
 
 // Client interface
 export interface ChutesClientOptions {
@@ -27,7 +26,7 @@ export interface GenerateOptions {
   temperature?: number;
   max_tokens?: number;
   thinking_mode?: boolean;
-  messages?: Array<{role: string, content: string}>;
+  messages?: Array<{ role: string, content: string }>;
 }
 
 /**
@@ -40,28 +39,28 @@ export class ChutesClient {
   private headers: Record<string, string>;
 
   constructor(options?: ChutesClientOptions) {
-    this.apiKey = options?.apiKey || DEFAULT_API_KEY;
+    this.apiKey = options?.apiKey || process.env.CHUTES_API_KEY || "";
     this.apiUrl = "https://llm.chutes.ai/v1/chat/completions";
     this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["deepseek-r1"];
-    
+
     this.headers = {
       "Authorization": `Bearer ${this.apiKey}`,
       "Content-Type": "application/json"
     };
-    
+
     console.log(`Initialized Chutes AI client with model: ${this.defaultModel}`);
   }
-  
+
   /**
    * Generate a response from the AI model
    */
   async generate(options: GenerateOptions): Promise<string> {
     try {
       const { prompt, model, temperature = 0.7, max_tokens = 800, thinking_mode = false, messages } = options;
-      
+
       // Use model or default
       const modelName = model || this.defaultModel;
-      
+
       // Determine whether to use messages array or prompt
       let messagePayload;
       if (messages && messages.length > 0) {
@@ -77,11 +76,11 @@ export class ChutesClient {
             actualPrompt = prompt + " Please think step by step and explain your thought process.";
           }
         }
-        
+
         // Use single message with prompt
-        messagePayload = [{"role": "user", "content": actualPrompt}];
+        messagePayload = [{ "role": "user", "content": actualPrompt }];
       }
-      
+
       // Prepare the payload
       const payload = {
         "model": modelName,
@@ -89,20 +88,20 @@ export class ChutesClient {
         "temperature": temperature,
         "max_tokens": max_tokens
       };
-      
+
       // Make the API call
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify(payload)
       });
-      
+
       if (!response.ok) {
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.choices && result.choices.length > 0) {
         return result.choices[0].message.content;
       } else {
@@ -113,7 +112,7 @@ export class ChutesClient {
       return `Error: ${error instanceof Error ? error.message : String(error)}`;
     }
   }
-  
+
   /**
    * Switch to a different model
    */
@@ -127,7 +126,7 @@ export class ChutesClient {
       return false;
     }
   }
-  
+
   /**
    * Get a list of available models
    */

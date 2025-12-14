@@ -25,7 +25,9 @@ def clear_screen():
 def main():
     # Initialize the AI client with specific API key and model
     print("Initializing DeepSeek Chat via Chutes AI...")
-    api_key = "***REMOVED***"
+    api_key = os.environ.get("CHUTES_API_KEY", "")
+    if not api_key:
+        print("Warning: CHUTES_API_KEY environment variable not set")
     client = ChutesAIClient(api_key=api_key, default_model="deepseek-ai/DeepSeek-V3-0324")
     
     # Show available models

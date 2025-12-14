@@ -8,10 +8,12 @@ This script tests the connection to the Chutes AI API with the DeepSeek-R1 model
 from chutes_ai_client import ChutesAIClient
 import asyncio
 
+import os
+
 async def test_async():
     # Initialize the AI client
     print("Initializing DeepSeek-R1 Chat via Chutes AI...")
-    api_key = "***REMOVED***"
+    api_key = os.environ.get("CHUTES_API_KEY", "")
     client = ChutesAIClient(api_key=api_key, default_model="deepseek-ai/DeepSeek-R1-0528")
     
     # Test prompt
@@ -31,7 +33,7 @@ async def test_async():
 def test_sync():
     # Initialize the AI client
     print("Initializing DeepSeek-R1 Chat via Chutes AI...")
-    api_key = "***REMOVED***"
+    api_key = os.environ.get("CHUTES_API_KEY", "")
     client = ChutesAIClient(api_key=api_key, default_model="deepseek-ai/DeepSeek-R1-0528")
     
     # Test prompt
