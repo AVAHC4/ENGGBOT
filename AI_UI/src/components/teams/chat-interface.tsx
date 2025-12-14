@@ -296,6 +296,17 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }, [selectedTeamId])
 
+  // Fetch actual member count when team changes
+  useEffect(() => {
+    if (selectedTeamId) {
+      listTeamMembers(selectedTeamId)
+        .then(members => setTeamMembers(members.length))
+        .catch(() => setTeamMembers(0))
+    } else {
+      setTeamMembers(0)
+    }
+  }, [selectedTeamId])
+
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedTeamId) return
     const u = getCurrentUser()
@@ -396,17 +407,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   }
 
   const team = teams.find((t) => t.id === selectedTeamId)
-
-  // Fetch actual member count when team changes
-  useEffect(() => {
-    if (selectedTeamId) {
-      listTeamMembers(selectedTeamId)
-        .then(members => setTeamMembers(members.length))
-        .catch(() => setTeamMembers(0))
-    } else {
-      setTeamMembers(0)
-    }
-  }, [selectedTeamId])
 
   return (
     <div className="flex flex-col h-full bg-transparent">
