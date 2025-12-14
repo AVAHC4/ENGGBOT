@@ -245,19 +245,6 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-0 py-3 border-b border-border">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search teams..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
-
       {/* Teams List */}
       <div className="flex-1 overflow-y-auto py-2">
         {filteredTeams.map((team) => (

@@ -219,11 +219,6 @@ const data = {
       url: "/terms",
       icon: HelpCircle,
     },
-    {
-      title: "Search",
-      url: "#",
-      icon: Search,
-    },
   ],
   documents: [],
 }
