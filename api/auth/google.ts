@@ -3,19 +3,19 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase.js";
 
-// Configure Google Strategy - always register the strategy with fallback values
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "***REMOVED***";
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "***REMOVED***";
+// Configure Google Strategy - use environment variables only (no fallbacks for security)
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
 console.log("Loading Google OAuth config...");
 console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID ? "Set" : "Not set");
 console.log("GOOGLE_CLIENT_SECRET from env:", process.env.GOOGLE_CLIENT_SECRET ? "Set" : "Not set");
 
 // Update the way we handle the callback and include the BASE_URL
-const BASE_URL = process.env.NODE_ENV === 'production' 
+const BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://www.enggbot.me'
   : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
-  
+
 // Define callback URL explicitly
 const CALLBACK_URL = process.env.NODE_ENV === 'production'
   ? 'https://www.enggbot.me/api/auth/google/callback'
@@ -37,7 +37,7 @@ declare module 'express-session' {
   interface SessionData {
     oauthState?: string;
     authenticated?: boolean;
-    passport?: any; 
+    passport?: any;
   }
 }
 
@@ -55,10 +55,10 @@ passport.use(
     async (req, accessToken, refreshToken, profile, done) => {
       try {
         console.log("Google auth callback received profile:", profile);
-        
+
         // Log session ID for debugging
         console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
-        
+
         // Upsert user by google_id (single round-trip)
         const upsertUser = {
           google_id: profile.id,
@@ -133,21 +133,21 @@ export const initGoogleAuth = (app: any) => {
     res.on('finish', () => {
       console.log(`[TIMER] /api/auth/google completed in ${Date.now() - routeStart}ms`);
     });
-    
+
     // Ensure session is created and saved before proceeding
     if (!req.session.id) {
       console.log("No session ID found - initializing session");
     }
-    
+
     // Generate a random state parameter for security
     const state = Math.random().toString(36).substring(2, 15);
     req.session.oauthState = state;
-    
+
     console.log("Session ID before redirect:", req.session.id);
     console.log("OAuth state set:", state);
-    
+
     // Authenticate and redirect to Google; session middleware will persist on response end
-    return passport.authenticate("google", { 
+    return passport.authenticate("google", {
       scope: ["profile", "email"],
       prompt: "select_account",
       state: state
@@ -163,7 +163,7 @@ export const initGoogleAuth = (app: any) => {
       res.on('finish', () => {
         console.log(`[TIMER] /api/auth/google/callback completed in ${Date.now() - cbStart}ms`);
       });
-      
+
       // Check if session exists
       if (!req.session) {
         console.error("No session found in callback");
@@ -179,9 +179,9 @@ export const initGoogleAuth = (app: any) => {
           </html>
         `);
       }
-      
+
       console.log("Session cookie received in callback, ID:", req.session.id);
-      
+
       // Check if oauthState exists in session
       if (!req.session.oauthState) {
         console.error("No oauthState found in session");
@@ -191,7 +191,7 @@ export const initGoogleAuth = (app: any) => {
       } else {
         console.log("OAuth state in session:", req.session.oauthState);
         console.log("OAuth state in query:", req.query.state);
-        
+
         if (req.query.state && req.session.oauthState && req.query.state !== req.session.oauthState) {
           console.error("OAuth state mismatch - possible CSRF attack");
           console.error("Expected:", req.session.oauthState);
@@ -199,22 +199,22 @@ export const initGoogleAuth = (app: any) => {
           return res.redirect('/login?error=invalid_state');
         }
       }
-      
+
       if (req.query.error) {
         console.error("Error in Google callback:", req.query.error);
         return res.redirect('/login?error=auth_failed');
       }
-      
+
       if (!req.query.code) {
         console.error("No authorization code received from Google");
         return res.redirect('/login?error=no_code');
       }
-      
+
       // Log critical values for debugging
       console.log("Callback URL being used:", CALLBACK_URL);
       console.log("Session state:", req.session.oauthState);
       console.log("Query state:", req.query.state);
-      
+
       // Proceed to authentication; session will be persisted by middleware
       return next();
     },
@@ -222,7 +222,7 @@ export const initGoogleAuth = (app: any) => {
       // Custom token exchange with explicit error handling
       passport.authenticate('google', { session: true }, (err, user, info) => {
         console.log("Passport authenticate callback triggered");
-        
+
         if (err) {
           console.error("Authentication error:", err);
           if (err.name === 'TokenError') {
@@ -232,7 +232,7 @@ export const initGoogleAuth = (app: any) => {
             console.error("- Authorization code already used");
             console.error("- Session/cookie issues");
             console.error("Error details:", err.message || "No error message");
-            
+
             return res.send(`
               <html>
                 <head><title>Authentication Error</title></head>
@@ -251,15 +251,15 @@ export const initGoogleAuth = (app: any) => {
           }
           return res.redirect('/login?error=auth_error');
         }
-        
+
         if (!user) {
           console.error("No user returned from authentication");
           return res.redirect('/login?error=no_user');
         }
-        
+
         // Log successful authentication
         console.log("Authentication successful, user object received:", user.id);
-        
+
         // Log in the user to the session
         req.login(user, (loginErr) => {
           if (loginErr) {
@@ -273,15 +273,15 @@ export const initGoogleAuth = (app: any) => {
     },
     (req: Request, res: Response) => {
       console.log("Authentication successful, attempting redirect to AI_UI chat interface");
-      
+
       // For optimal performance, use a minimal HTML response that focuses on speed
       // The AI_UI chat interface runs on port 3001 in development
       const redirectUrl = process.env.NODE_ENV === 'production'
         ? `${BASE_URL}/AI_UI/?auth_success=true`
         : AUTH_REDIRECT_URL;
-      
+
       console.log("Redirecting authenticated user to:", redirectUrl);
-      
+
       // Set multiple cookies for redundancy but keep it lightweight
       res.cookie('auth_success', 'true', {
         maxAge: 10000,
@@ -290,17 +290,17 @@ export const initGoogleAuth = (app: any) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/'
       });
-      
+
       // Set session flag and additional auth cookies
       if (req.session) {
         req.session.authenticated = true;
         console.log("Session authenticated flag set");
       }
-      
+
       // Prepare user data for redirect
       const userData = req.user ? JSON.stringify(req.user) : '';
       const encodedUserData = req.user ? encodeURIComponent(JSON.stringify(req.user)) : '';
-      
+
       if (req.user) {
         // Use a safer way to log user info to avoid TypeScript errors
         const userObj = req.user as Record<string, any>;
@@ -310,16 +310,16 @@ export const initGoogleAuth = (app: any) => {
           email: userObj.email
         });
       }
-      
+
       // Build the redirect URL with user data
       let finalRedirectUrl = redirectUrl;
       if (encodedUserData) {
         // Add the user parameter to the URL
         finalRedirectUrl += (finalRedirectUrl.includes('?') ? '&' : '?') + `user=${encodedUserData}`;
       }
-      
+
       console.log("Final redirect URL (params only):", finalRedirectUrl.split('?')[1] || 'No params');
-      
+
       // Send a minimal, performance-optimized HTML response
       res.send(`
         <!DOCTYPE html>
@@ -365,7 +365,7 @@ export const initGoogleAuth = (app: any) => {
     console.log("Auth status route hit");
     console.log("Session ID:", req.session.id);
     console.log("isAuthenticated:", req.isAuthenticated());
-    
+
     if (req.isAuthenticated()) {
       res.json({ authenticated: true, user: req.user });
     } else {
