@@ -2,10 +2,20 @@
 node_modules
 dist
 
-# Environment variables
+# Environment variables - ignore all .env files except examples
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+.env-val
+*/.env
+*/.env.*
+!*/.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Temporary changes folder (may contain copies of env files)
+temp_changes/
 
 # Build outputs
 .DS_Store

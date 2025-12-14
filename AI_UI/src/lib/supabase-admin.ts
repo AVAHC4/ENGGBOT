@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Prefer env, fall back to known working URL used elsewhere in the app
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://***REMOVED***'
+// Use environment variables - no fallbacks to avoid exposing credentials in code
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
