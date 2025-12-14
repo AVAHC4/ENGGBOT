@@ -25,7 +25,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             .single();
 
         if (convError || !conversation) {
-            return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+            // Return 200 with exists: false to prevent browser console network errors
+            return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
         // Verify ownership

@@ -256,17 +256,18 @@ async function loadConversationFromDatabase(id: string): Promise<any[] | typeof 
   try {
     const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
-    if (response.status === 404) {
-      // Conversation not found - return special marker so caller can clear stale cache
-      return CONVERSATION_NOT_FOUND;
-    }
-
     if (!response.ok) {
-      // Other error, return empty array
+      // Network error or server error, return empty array
       return [];
     }
 
     const data = await response.json();
+
+    // Check if conversation doesn't exist (API returns 200 with exists: false)
+    if (data.exists === false) {
+      return CONVERSATION_NOT_FOUND;
+    }
+
     return data.messages || [];
   } catch (error) {
     // Silently handle errors - no console.error to keep production console clean
