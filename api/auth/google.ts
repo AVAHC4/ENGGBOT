@@ -1,36 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { supabase } from "../lib/supabase.js";
-
-// Configure Google Strategy - use environment variables only (no fallbacks for security)
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
-const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-
-console.log("Loading Google OAuth config...");
-console.log("GOOGLE_CLIENT_ID from env:", process.env.GOOGLE_CLIENT_ID ? "Set" : "Not set");
-console.log("GOOGLE_CLIENT_SECRET from env:", process.env.GOOGLE_CLIENT_SECRET ? "Set" : "Not set");
-
-// Update the way we handle the callback and include the BASE_URL
-const BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://www.enggbot.me'
-  : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
-
-// Define callback URL explicitly
-const CALLBACK_URL = process.env.NODE_ENV === 'production'
-  ? 'https://www.enggbot.me/api/auth/google/callback'
-  : (process.env.CALLBACK_URL || `${BASE_URL}/api/auth/google/callback`);
-
-// Define auth redirect URL 
-const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'
-  ? `${BASE_URL}/AI_UI/?auth_success=true`
-  : (process.env.AUTH_REDIRECT_URL || 'http://localhost:3001/?auth_success=true');
-
-console.log("Using BASE_URL for redirection:", BASE_URL);
-console.log("Using CALLBACK_URL for Google OAuth:", CALLBACK_URL);
-console.log("Using AUTH_REDIRECT_URL for redirecting after auth:", AUTH_REDIRECT_URL);
-console.log("Current NODE_ENV:", process.env.NODE_ENV);
-console.log("Using CLIENT_ID:", CLIENT_ID.substring(0, 8) + "...");
+import { supabase } from "../lib/supabase";
 
 // Extend session type
 declare module 'express-session' {
@@ -41,90 +12,128 @@ declare module 'express-session' {
   }
 }
 
-// Always register the strategy with the correct callback URL
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: CLIENT_ID,
-      clientSecret: CLIENT_SECRET,
-      callbackURL: CALLBACK_URL,
-      scope: ["profile", "email"],
-      proxy: true,
-      passReqToCallback: true // Pass request object to the callback
-    },
-    async (req, accessToken, refreshToken, profile, done) => {
-      try {
-        console.log("Google auth callback received profile:", profile);
-
-        // Log session ID for debugging
-        console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
-
-        // Upsert user by google_id (single round-trip)
-        const upsertUser = {
-          google_id: profile.id,
-          email: profile.emails?.[0]?.value,
-          name: profile.displayName,
-          avatar: profile.photos?.[0]?.value,
-        };
-
-        const { data: userRow, error: upsertError } = await supabase
-          .from('users')
-          .upsert(upsertUser, { onConflict: 'google_id' })
-          .select('*')
-          .single();
-
-        if (upsertError) {
-          console.error("Error upserting user:", upsertError);
-          throw upsertError;
-        }
-
-        return done(null, userRow);
-      } catch (error) {
-        console.error("Error in Google Strategy callback:", error);
-        return done(error as Error);
-      }
-    }
-  )
-);
-
-// Serialize user for the session
-passport.serializeUser((user: any, done) => {
-  console.log("Serializing user:", user.id);
-  // Use the database ID, not the Google ID
-  done(null, user.id);
-});
-
-// Deserialize user from the session
-passport.deserializeUser(async (id: string, done) => {
-  try {
-    console.log(`Deserializing user with ID: ${id}`);
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      console.error("Error deserializing user:", error);
-      throw error;
-    }
-
-    if (!user) {
-      console.error("No user found with ID:", id);
-      return done(null, false);
-    }
-
-    console.log("Successfully deserialized user:", user.id);
-    done(null, user);
-  } catch (error) {
-    console.error("Deserialization error:", error);
-    done(error);
-  }
-});
+// Track if strategy is already registered to avoid duplicates
+let strategyRegistered = false;
 
 // Initialize Google auth routes
 export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
+
+  // Read environment variables NOW (after dotenv has loaded)
+  const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+  const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+
+  console.log("Loading Google OAuth config...");
+  console.log("GOOGLE_CLIENT_ID from env:", CLIENT_ID ? "Set" : "Not set");
+  console.log("GOOGLE_CLIENT_SECRET from env:", CLIENT_SECRET ? "Set" : "Not set");
+
+  // Check if credentials are available
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    console.warn("WARNING: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set. Google OAuth will not work.");
+    console.warn("Please ensure these are set in your .env file or environment.");
+    return; // Don't register routes without credentials
+  }
+
+  // Configure URLs
+  const BASE_URL = process.env.NODE_ENV === 'production'
+    ? 'https://www.enggbot.me'
+    : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
+
+  const CALLBACK_URL = process.env.NODE_ENV === 'production'
+    ? 'https://www.enggbot.me/api/auth/google/callback'
+    : (process.env.CALLBACK_URL || `${BASE_URL}/api/auth/google/callback`);
+
+  const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'
+    ? `${BASE_URL}/AI_UI/?auth_success=true`
+    : (process.env.AUTH_REDIRECT_URL || 'http://localhost:3001/?auth_success=true');
+
+  console.log("Using BASE_URL for redirection:", BASE_URL);
+  console.log("Using CALLBACK_URL for Google OAuth:", CALLBACK_URL);
+  console.log("Using AUTH_REDIRECT_URL for redirecting after auth:", AUTH_REDIRECT_URL);
+  console.log("Current NODE_ENV:", process.env.NODE_ENV);
+  console.log("Using CLIENT_ID:", CLIENT_ID.substring(0, 8) + "...");
+
+  // Register passport strategy (only once)
+  if (!strategyRegistered) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: CLIENT_ID,
+          clientSecret: CLIENT_SECRET,
+          callbackURL: CALLBACK_URL,
+          scope: ["profile", "email"],
+          proxy: true,
+          passReqToCallback: true
+        },
+        async (req, accessToken, refreshToken, profile, done) => {
+          try {
+            console.log("Google auth callback received profile:", profile);
+            console.log("Session ID in strategy callback:", req.session?.id?.substring(0, 8) || 'No session');
+
+            const upsertUser = {
+              google_id: profile.id,
+              email: profile.emails?.[0]?.value,
+              name: profile.displayName,
+              avatar: profile.photos?.[0]?.value,
+            };
+
+            const { data: userRow, error: upsertError } = await supabase
+              .from('users')
+              .upsert(upsertUser, { onConflict: 'google_id' })
+              .select('*')
+              .single();
+
+            if (upsertError) {
+              console.error("Error upserting user:", upsertError);
+              throw upsertError;
+            }
+
+            return done(null, userRow);
+          } catch (error) {
+            console.error("Error in Google Strategy callback:", error);
+            return done(error as Error);
+          }
+        }
+      )
+    );
+
+    // Serialize user for the session
+    passport.serializeUser((user: any, done) => {
+      console.log("Serializing user:", user.id);
+      done(null, user.id);
+    });
+
+    // Deserialize user from the session
+    passport.deserializeUser(async (id: string, done) => {
+      try {
+        console.log(`Deserializing user with ID: ${id}`);
+        const { data: user, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error) {
+          console.error("Error deserializing user:", error);
+          throw error;
+        }
+
+        if (!user) {
+          console.error("No user found with ID:", id);
+          return done(null, false);
+        }
+
+        console.log("Successfully deserialized user:", user.id);
+        done(null, user);
+      } catch (error) {
+        console.error("Deserialization error:", error);
+        done(error);
+      }
+    });
+
+    strategyRegistered = true;
+    console.log("Google OAuth strategy registered successfully");
+  }
 
   // Google auth route
   app.get("/api/auth/google", (req: Request, res: Response, next: NextFunction) => {

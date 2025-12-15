@@ -208,28 +208,33 @@ async function executeWasmer(code, lang, stdin) {
 }
 
 /**
- * Extract prompt messages from printf before scanf/cin
+ * Extract prompt messages from printf/cout before scanf/cin
+ * Handles: printf("..."), cout << "...", std::cout << "..."
  */
 function extractPrompts(code) {
   const prompts = [];
-  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+  // Remove block comments and line comments
+  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
-  // Match printf("...") followed by scanf/cin/etc
-  const regex = /printf\s*\(\s*"([^"]*?)"\s*[^)]*\)\s*;?\s*.*?\b(scanf|cin|getchar|gets|fgets|getline)\b/g;
-
-  let match;
-  while ((match = regex.exec(cleanCode)) !== null) {
-    prompts.push(match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t'));
+  // Strategy 1: Match printf("...") - look for any printf before input functions
+  const printfMatches = cleanCode.matchAll(/printf\s*\(\s*"([^"]*?)"/g);
+  for (const match of printfMatches) {
+    const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    if (prompt.trim()) prompts.push(prompt);
   }
 
-  // Also check for cout << "..." followed by cin >>
-  const cppRegex = /cout\s*<<\s*"([^"]*?)"\s*[^;]*;\s*.*?\bcin\s*>>/g;
-  while ((match = cppRegex.exec(cleanCode)) !== null) {
-    prompts.push(match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t'));
+  // Strategy 2: Match cout << "..." or std::cout << "..." 
+  // Use [\s\S] to match across newlines
+  const coutMatches = cleanCode.matchAll(/(?:std::)?cout\s*<<\s*"([^"]+)"/g);
+  for (const match of coutMatches) {
+    const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    if (prompt.trim()) prompts.push(prompt);
   }
 
-  return prompts;
+  // Deduplicate prompts
+  return [...new Set(prompts)];
 }
+
 
 /**
  * Strip duplicate program prompts from output
