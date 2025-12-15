@@ -62,9 +62,7 @@ export async function POST(request: Request) {
     }
 
     // Instantiate server-side client with secure API key
-    const apiKey = typeof process !== 'undefined'
-      ? (process.env.OPENROUTER_API_KEY || process.env.CHUTES_API_TOKEN)
-      : undefined;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }

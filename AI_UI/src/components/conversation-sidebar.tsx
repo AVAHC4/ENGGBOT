@@ -207,6 +207,7 @@ function ConversationItem({
 }
 
 import { useRouter, usePathname } from 'next/navigation';
+import { ConversationItemSkeleton } from '@/components/ui/loading';
 
 // ... existing imports ...
 
@@ -223,13 +224,19 @@ export function ConversationSidebar() {
 
   const [conversations, setConversations] = useState<(ConversationMetadata & { id: string })[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Update conversations list - event-driven, not polling
   useEffect(() => {
     const loadConversations = async () => {
-      if (typeof window !== 'undefined') {
-        const allConversations = await getAllConversationsMetadata();
-        setConversations(allConversations);
+      setIsLoading(true);
+      try {
+        if (typeof window !== 'undefined') {
+          const allConversations = await getAllConversationsMetadata();
+          setConversations(allConversations);
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -359,7 +366,12 @@ export function ConversationSidebar() {
       {/* Conversation list */}
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 py-2">
-          {filteredConversations.length > 0 ? (
+          {isLoading ? (
+            // Show skeleton loaders while loading
+            [...Array(5)].map((_, i) => (
+              <ConversationItemSkeleton key={i} />
+            ))
+          ) : filteredConversations.length > 0 ? (
             filteredConversations.map((conversation) => (
               <ConversationItem
                 key={conversation.id}

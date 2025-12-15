@@ -9,6 +9,7 @@ import { CreateProjectDialog } from "@/components/projects/create-project-dialog
 import { ProjectCard } from "@/components/projects/project-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ProjectCardSkeleton } from "@/components/ui/loading";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,11 +27,17 @@ export default function ProjectsPage() {
     const [searchQuery, setSearchQuery] = React.useState("");
     const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('list');
     const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
 
     // Load projects
     const loadProjects = React.useCallback(async () => {
-        const allProjects = await getAllProjectsAsync();
-        setProjects(allProjects);
+        setIsLoading(true);
+        try {
+            const allProjects = await getAllProjectsAsync();
+            setProjects(allProjects);
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
 
     React.useEffect(() => {
@@ -103,7 +110,13 @@ export default function ProjectsPage() {
                 </div>
 
                 {/* Projects Grid/List */}
-                {filteredProjects.length === 0 ? (
+                {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <ProjectCardSkeleton key={i} />
+                        ))}
+                    </div>
+                ) : filteredProjects.length === 0 ? (
                     <div className="text-center py-16">
                         {searchQuery ? (
                             <div>
