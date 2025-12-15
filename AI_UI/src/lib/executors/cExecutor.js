@@ -232,6 +232,42 @@ function extractPrompts(code) {
 }
 
 /**
+ * Strip duplicate program prompts from output
+ * Keeps the first occurrence of each prompt but removes subsequent ones
+ */
+function stripProgramPrompts(text, prompts) {
+  if (!text || !prompts || !prompts.length) return text;
+
+  let output = String(text);
+
+  for (const prompt of prompts) {
+    if (!prompt) continue;
+
+    // Escape special regex characters in the prompt
+    const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Find all occurrences of the prompt
+    const regex = new RegExp(escapedPrompt, 'g');
+    const matches = [...output.matchAll(regex)];
+
+    // Keep the first occurrence, remove all subsequent ones
+    if (matches.length > 1) {
+      // Remove all but the first occurrence
+      let count = 0;
+      output = output.replace(regex, (match) => {
+        count++;
+        return count === 1 ? match : '';
+      });
+    }
+  }
+
+  // Clean up any resulting double newlines or leading whitespace issues
+  output = output.replace(/\n{3,}/g, '\n\n').trim();
+
+  return output;
+}
+
+/**
  * Execute C/C++ code with hybrid approach:
  * 1. Try Piston API first (fast, free)
  * 2. Fall back to Wasmer SDK if Piston fails
@@ -273,12 +309,19 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
     }
   }
 
+  // Extract prompts for stripping from output
+  const prompts = extractPrompts(code);
+
   // Strategy 1: Try Piston API first (fast)
   if (usePistonFirst) {
     console.log('[cExecutor] Trying Piston API first...');
     const pistonResult = await executePiston(code, lang, collectedStdin);
     if (pistonResult) {
       console.log('[cExecutor] Piston API succeeded');
+      // Strip duplicate prompts from output
+      if (prompts.length > 0) {
+        pistonResult.output = stripProgramPrompts(pistonResult.output, prompts);
+      }
       return pistonResult;
     }
     console.log('[cExecutor] Piston failed, falling back to Wasmer...');
@@ -286,7 +329,14 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
 
   // Strategy 2: Fall back to Wasmer SDK
   console.log('[cExecutor] Using Wasmer SDK...');
-  return executeWasmer(code, lang, collectedStdin);
+  const wasmerResult = await executeWasmer(code, lang, collectedStdin);
+
+  // Strip duplicate prompts from output
+  if (prompts.length > 0) {
+    wasmerResult.output = stripProgramPrompts(wasmerResult.output, prompts);
+  }
+
+  return wasmerResult;
 }
 
 export function isReady() {
