@@ -10,17 +10,28 @@ self.onmessage = async (e) => {
   const data = e.data || {};
   if (data.type === 'INIT') {
     try {
+      // Progress: Loading Pyodide
+      self.postMessage({ type: 'PROGRESS', stage: 'Loading Python runtime...', progress: 10 });
+
       // Load Pyodide from jsdelivr (stable version)
       self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
+
+      self.postMessage({ type: 'PROGRESS', stage: 'Initializing Python...', progress: 30 });
       pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' });
 
-      // Load only essential packages - matplotlib and numpy
-      await pyodide.loadPackage(['numpy', 'matplotlib', 'micropip']);
+      // Progress: Loading packages
+      self.postMessage({ type: 'PROGRESS', stage: 'Loading numpy...', progress: 50 });
+      await pyodide.loadPackage(['numpy']);
+
+      self.postMessage({ type: 'PROGRESS', stage: 'Loading matplotlib...', progress: 65 });
+      await pyodide.loadPackage(['matplotlib', 'micropip']);
 
       // Install plotly via micropip  
+      self.postMessage({ type: 'PROGRESS', stage: 'Loading plotly...', progress: 80 });
       const micropip = pyodide.pyimport('micropip');
       await micropip.install('plotly');
 
+      self.postMessage({ type: 'PROGRESS', stage: 'Finalizing...', progress: 95 });
       console.log('[PythonWorker] Pyodide and packages loaded successfully');
 
       // Prepare stdout/stderr capture helpers and matplotlib hook

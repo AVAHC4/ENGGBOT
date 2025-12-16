@@ -62,6 +62,7 @@ export function Compiler() {
   const bundlerRef = useRef<Bundler | null>(null);
   const pendingInputResolve = useRef<((v: string) => void) | null>(null);
   const [pythonBooting, setPythonBooting] = useState(false);
+  const [pythonLoadingProgress, setPythonLoadingProgress] = useState({ stage: '', progress: 0 });
   // Track prompts and user inputs to merge into final stdout
   const echoPromptsRef = useRef<string[]>([]);
   const echoInputsRef = useRef<string[]>([]);
@@ -116,6 +117,10 @@ export function Compiler() {
       try {
         if (initialLanguage.id === 'python') {
           setPythonBooting(true);
+          // Set up progress callback for visual feedback
+          pythonExecutor.setProgressCallback((stage: string, progress: number) => {
+            setPythonLoadingProgress({ stage, progress });
+          });
           await pythonExecutor.init();
           setPythonBooting(false);
         } else if (initialLanguage.id === 'c' || initialLanguage.id === 'cpp') {
@@ -123,6 +128,17 @@ export function Compiler() {
         } else if (initialLanguage.id === 'java') {
           try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
         }
+
+        // Preload Python in background after a short delay if not already loaded
+        // This ensures Python is ready when user switches to it
+        setTimeout(() => {
+          if (initialLanguage.id !== 'python') {
+            pythonExecutor.setProgressCallback((stage: string, progress: number) => {
+              setPythonLoadingProgress({ stage, progress });
+            });
+            pythonExecutor.preload();
+          }
+        }, 2000);
 
         // We can optionally warm up others in the background after a delay
         // but for "fast as hell", let's skip aggressive pre-warming of unused languages
@@ -460,9 +476,14 @@ export function Compiler() {
           <button
             className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 flex items-center"
             onClick={runCode}
-            disabled={isRunning}
+            disabled={isRunning || pythonBooting}
           >
-            {isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
+            {pythonBooting ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {pythonLoadingProgress.stage || 'Loading Python...'}
+              </span>
+            ) : isRunning ? (isCompiling ? 'Compiling...' : 'Running...') : 'Run'}
           </button>
           <button
             className="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"

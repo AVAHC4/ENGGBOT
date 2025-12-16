@@ -3,20 +3,42 @@
  *
  * Runs Pyodide inside a Worker and supports interactive input via a
  * SharedArrayBuffer handoff. Falls back to pre-supplied stdin if provided.
+ * 
+ * OPTIMIZED: Preloads Pyodide on module import for faster execution.
  */
 
 let worker = null;
 let isInitialized = false;
 let initPromise = null;
+let initStartTime = null;
 // Track in-flight execution so we can cancel
 let currentResolve = null;
 let currentMsgHandler = null;
 let currentExecTimeoutId = null;
 let currentInputWaitTimeoutId = null;
+// Progress callbacks
+let onProgressCallback = null;
+
+/**
+ * Set a callback to receive initialization progress updates
+ * @param {(stage: string, progress: number) => void} callback
+ */
+export function setProgressCallback(callback) {
+  onProgressCallback = callback;
+}
+
+function notifyProgress(stage, progress) {
+  if (typeof onProgressCallback === 'function') {
+    try { onProgressCallback(stage, progress); } catch { }
+  }
+}
 
 export async function init() {
   if (isInitialized) return;
   if (initPromise) return initPromise;
+
+  initStartTime = Date.now();
+  notifyProgress('Starting Python runtime...', 0);
 
   initPromise = new Promise((resolve, reject) => {
     try {
@@ -26,9 +48,16 @@ export async function init() {
       const onMessage = (e) => {
         const msg = e.data || {};
         if (msg.type === 'BOOT') {
+          notifyProgress('Loading Pyodide...', 10);
           // Worker loaded; kick off init inside worker
           worker.postMessage({ type: 'INIT' });
+        } else if (msg.type === 'PROGRESS') {
+          // Forward progress updates from worker
+          notifyProgress(msg.stage || 'Loading...', msg.progress || 0);
         } else if (msg.type === 'READY') {
+          const loadTime = ((Date.now() - initStartTime) / 1000).toFixed(1);
+          console.log(`[PythonExecutor] Ready in ${loadTime}s`);
+          notifyProgress('Python ready!', 100);
           isInitialized = true;
           worker.removeEventListener('message', onMessage);
           worker.removeEventListener('error', onError);
@@ -69,13 +98,25 @@ export async function init() {
         try { worker.removeEventListener('error', onError); } catch { }
         initPromise = null;
         reject(new Error('Python worker initialization timed out'));
-      }, 60000); // 60 seconds to load Pyodide + all scientific packages
+      }, 90000); // 90 seconds to load Pyodide + all scientific packages
     } catch (err) {
       reject(err);
     }
   });
 
   return initPromise;
+}
+
+/**
+ * Preload Python runtime in the background without waiting
+ * Call this early (e.g., on page load) to reduce lag when user runs code
+ */
+export function preload() {
+  if (!isInitialized && !initPromise) {
+    init().catch(() => {
+      // Silently ignore preload failures; user will see error when they actually run code
+    });
+  }
 }
 
 /**
