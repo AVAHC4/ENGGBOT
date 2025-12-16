@@ -250,25 +250,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
         {filteredTeams.map((team) => (
           <div
             key={team.id}
-            className="mx-2 mb-1 rounded-lg transition-all duration-200"
-            style={{
-              background: selectedTeamId === team.id
-                ? 'rgba(255, 255, 255, 0.1)'
-                : 'transparent',
-              borderLeft: selectedTeamId === team.id
-                ? '3px solid #8b5cf6'
-                : '3px solid transparent',
-            }}
-            onMouseEnter={(e) => {
-              if (selectedTeamId !== team.id) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (selectedTeamId !== team.id) {
-                e.currentTarget.style.background = 'transparent';
-              }
-            }}
+            className={`mx-2 mb-1 rounded-lg transition-all duration-200 ${selectedTeamId === team.id ? 'bg-primary/10 border-l-[3px] border-l-primary' : 'border-l-[3px] border-l-transparent hover:bg-muted/50'}`}
           >
             <div className="flex items-center gap-2 px-3 py-3">
               <button
@@ -279,13 +261,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                 <div className="relative flex-shrink-0">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
-                    <AvatarFallback
-                      className="font-medium text-sm"
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        color: selectedTeamId === team.id ? '#fff' : 'rgba(255, 255, 255, 0.6)'
-                      }}
-                    >
+                    <AvatarFallback className="font-medium text-sm bg-muted text-muted-foreground">
                       {team.name
                         .split(" ")
                         .map((word) => word[0])
@@ -301,23 +277,14 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <h3
-                      className="font-semibold text-sm truncate"
-                      style={{ color: selectedTeamId === team.id ? '#fff' : 'rgba(255, 255, 255, 0.9)' }}
-                    >
+                    <h3 className={`font-semibold text-sm truncate ${selectedTeamId === team.id ? 'text-foreground' : 'text-foreground/90'}`}>
                       {team.name}
                     </h3>
-                    <span
-                      className="text-xs flex-shrink-0 ml-2"
-                      style={{ color: 'rgba(255, 255, 255, 0.4)' }}
-                    >
+                    <span className="text-xs flex-shrink-0 ml-2 text-muted-foreground">
                       {team.timestamp}
                     </span>
                   </div>
-                  <p
-                    className="text-xs truncate"
-                    style={{ color: 'rgba(255, 255, 255, 0.5)' }}
-                  >
+                  <p className="text-xs truncate text-muted-foreground">
                     {team.lastMessage || 'No messages yet'}
                   </p>
                 </div>
@@ -339,8 +306,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 flex-shrink-0 opacity-0 group-hover:opacity-100"
-                    style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+                    className="h-7 w-7 flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground"
                   >
                     <MoreVertical className="h-3.5 w-3.5" />
                   </Button>
