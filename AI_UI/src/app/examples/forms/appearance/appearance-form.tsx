@@ -349,65 +349,65 @@ export function AppearanceForm() {
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2"
               >
                 {/* Flickering Grid */}
-                <FormItem>
-                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="flicker" className="sr-only" />
                     </FormControl>
-                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
-                      <div className="h-20 w-full rounded-sm bg-[radial-gradient(circle_at_1px_1px,#000_1px,transparent_1px)] [background-size:6px_6px] dark:bg-[radial-gradient(circle_at_1px_1px,#ccc_1px,transparent_1px)]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-slate-900 bg-[radial-gradient(circle_at_1px_1px,#444_1px,transparent_1px)] [background-size:8px_8px] dark:bg-slate-800 dark:bg-[radial-gradient(circle_at_1px_1px,#666_1px,transparent_1px)]" />
                     </div>
                     <span className="block w-full p-2 text-center font-normal">Flickering Grid</span>
                   </FormLabel>
                 </FormItem>
 
                 {/* Radial Vignette */}
-                <FormItem>
-                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="radial-vignette" className="sr-only" />
                     </FormControl>
-                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
-                      <div className="h-20 w-full rounded-sm bg-[radial-gradient(60%_50%_at_50%_30%,rgba(0,0,0,0.1),rgba(0,0,0,0))] dark:bg-[radial-gradient(60%_50%_at_50%_30%,rgba(255,255,255,0.1),rgba(0,0,0,0))]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-slate-800 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(255,255,255,0.15),rgba(0,0,0,0))]" />
                     </div>
                     <span className="block w-full p-2 text-center font-normal">Radial Vignette</span>
                   </FormLabel>
                 </FormItem>
 
                 {/* Sunset Gradient */}
-                <FormItem>
-                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="sunset-gradient" className="sr-only" />
                     </FormControl>
-                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
-                      <div className="h-20 w-full rounded-sm bg-[linear-gradient(135deg,#ff9a9e_0%,#fad0c4_55%,#fbc2eb_100%)] dark:bg-[linear-gradient(135deg,#0f0c29_0%,#302b63_50%,#24243e_100%)]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-[linear-gradient(135deg,#ff9a9e_0%,#fad0c4_55%,#fbc2eb_100%)] dark:bg-[linear-gradient(135deg,#0f0c29_0%,#302b63_50%,#24243e_100%)]" />
                     </div>
                     <span className="block w-full p-2 text-center font-normal">Sunset Gradient</span>
                   </FormLabel>
                 </FormItem>
 
                 {/* Solid Light */}
-                <FormItem>
-                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="solid-light" className="sr-only" />
                     </FormControl>
-                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
-                      <div className="h-20 w-full rounded-sm bg-white border" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-white border border-slate-200" />
                     </div>
                     <span className="block w-full p-2 text-center font-normal">Solid Light</span>
                   </FormLabel>
                 </FormItem>
 
                 {/* Solid Dark */}
-                <FormItem>
-                  <FormLabel className="[&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="solid-dark" className="sr-only" />
                     </FormControl>
-                    <div className="rounded-md border-2 border-muted p-2 hover:border-accent">
-                      <div className="h-20 w-full rounded-sm bg-black" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-black" />
                     </div>
                     <span className="block w-full p-2 text-center font-normal">Solid Dark</span>
                   </FormLabel>
