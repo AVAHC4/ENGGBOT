@@ -4,8 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 export type BackgroundOption =
   | "flicker"
-  | "solid-dark"
-  | "solid-light"
+  | "solid"
   | "radial-vignette"
   | "sunset-gradient";
 
@@ -25,16 +24,22 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
   // Load persisted value
   useEffect(() => {
     try {
-      const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as BackgroundOption | null;
-      if (saved) setBackgroundState(saved);
-    } catch {}
+      const saved = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+      // Migrate old values to new 'solid' option
+      if (saved === "solid-light" || saved === "solid-dark") {
+        setBackgroundState("solid");
+        localStorage.setItem(STORAGE_KEY, "solid");
+      } else if (saved && ["flicker", "solid", "radial-vignette", "sunset-gradient"].includes(saved)) {
+        setBackgroundState(saved as BackgroundOption);
+      }
+    } catch { }
   }, []);
 
   // Persist changes
   useEffect(() => {
     try {
       if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, background);
-    } catch {}
+    } catch { }
   }, [background]);
 
   const setBackground = (bg: BackgroundOption) => setBackgroundState(bg);
@@ -44,8 +49,7 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
       { value: "flicker" as const, label: "Flickering Grid" },
       { value: "radial-vignette" as const, label: "Radial Vignette" },
       { value: "sunset-gradient" as const, label: "Sunset Gradient" },
-      { value: "solid-light" as const, label: "Solid Light" },
-      { value: "solid-dark" as const, label: "Solid Dark" },
+      { value: "solid" as const, label: "Solid" },
     ],
     [],
   );

@@ -61,8 +61,7 @@ const appearanceFormSchema = z.object({
     "flicker",
     "radial-vignette",
     "sunset-gradient",
-    "solid-light",
-    "solid-dark",
+    "solid",
   ] as const),
 })
 
@@ -387,29 +386,16 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
 
-                {/* Solid Light */}
+                {/* Solid - adapts to theme */}
                 <FormItem className="w-full">
                   <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
-                      <RadioGroupItem value="solid-light" className="sr-only" />
+                      <RadioGroupItem value="solid" className="sr-only" />
                     </FormControl>
                     <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-white border border-slate-200" />
+                      <div className="h-24 w-full rounded-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-700" />
                     </div>
-                    <span className="block w-full p-2 text-center font-normal">Solid Light</span>
-                  </FormLabel>
-                </FormItem>
-
-                {/* Solid Dark */}
-                <FormItem className="w-full">
-                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
-                    <FormControl>
-                      <RadioGroupItem value="solid-dark" className="sr-only" />
-                    </FormControl>
-                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-black" />
-                    </div>
-                    <span className="block w-full p-2 text-center font-normal">Solid Dark</span>
+                    <span className="block w-full p-2 text-center font-normal">Solid</span>
                   </FormLabel>
                 </FormItem>
               </RadioGroup>
