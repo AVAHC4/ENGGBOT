@@ -386,21 +386,15 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       <div className="flex items-center justify-center h-full bg-transparent">
         <div className="text-center">
           {/* Large watermark logo */}
-          <div
-            className="w-40 h-40 mx-auto mb-6 rounded-full flex items-center justify-center"
-            style={{ opacity: 0.15 }}
-          >
-            <div
-              className="w-32 h-32 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(255, 255, 255, 0.3)' }}
-            >
-              <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          <div className="w-40 h-40 mx-auto mb-6 rounded-full flex items-center justify-center opacity-15">
+            <div className="w-32 h-32 rounded-full flex items-center justify-center bg-muted">
+              <svg className="w-16 h-16 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
               </svg>
             </div>
           </div>
-          <h2 className="text-xl font-semibold mb-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Welcome to Teams</h2>
-          <p style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Select a team to start chatting</p>
+          <h2 className="text-xl font-semibold mb-2 text-foreground">Welcome to Teams</h2>
+          <p className="text-muted-foreground">Select a team to start chatting</p>
         </div>
       </div>
     )
@@ -411,17 +405,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   return (
     <div className="flex flex-col h-full bg-transparent">
       {/* Chat Header */}
-      <div
-        className="flex items-center justify-between px-6 py-4 bg-transparent"
-        style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
-      >
+      <div className="flex items-center justify-between px-6 py-4 bg-transparent border-b border-border">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
-            <AvatarFallback
-              className="font-medium"
-              style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255, 255, 255, 0.8)' }}
-            >
+            <AvatarFallback className="font-medium bg-muted text-muted-foreground">
               {team?.name
                 .split(" ")
                 .map((word) => word[0])
@@ -430,42 +418,35 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             </AvatarFallback>
           </Avatar>
           <div
-            className="cursor-pointer rounded-md p-2 -m-2 transition-colors"
+            className="cursor-pointer rounded-md p-2 -m-2 transition-colors hover:bg-muted/50"
             onClick={() => setShowTeamManagement(true)}
-            style={{ background: 'transparent' }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            <h2 className="font-semibold" style={{ color: '#fff' }}>{team?.name}</h2>
+            <h2 className="font-semibold text-foreground">{team?.name}</h2>
             <div className="flex items-center gap-2">
               {/* Member Facepile */}
               <div className="flex -space-x-2">
                 {[...Array(Math.min(3, teamMembers))].map((_, i) => (
                   <div
                     key={i}
-                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center text-[8px] font-medium"
-                    style={{
-                      background: `hsl(${(i * 60) + 200}, 60%, 50%)`,
-                      borderColor: '#1a1a1a',
-                      color: '#fff'
-                    }}
+                    className="w-5 h-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] font-medium text-white"
+                    style={{ background: `hsl(${(i * 60) + 200}, 60%, 50%)` }}
                   >
                     {String.fromCharCode(65 + i)}
                   </div>
                 ))}
               </div>
-              <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>{teamMembers} members</p>
+              <p className="text-sm text-muted-foreground">{teamMembers} members</p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-9 w-9" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
             <Search className="h-4 w-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
                 <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -475,7 +456,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -494,21 +475,15 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               {/* Large watermark */}
-              <div
-                className="w-32 h-32 mx-auto mb-6 rounded-full flex items-center justify-center"
-                style={{ opacity: 0.12 }}
-              >
-                <div
-                  className="w-28 h-28 rounded-full flex items-center justify-center"
-                  style={{ background: 'rgba(255, 255, 255, 0.2)' }}
-                >
-                  <svg className="w-14 h-14" fill="currentColor" viewBox="0 0 24 24" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+              <div className="w-32 h-32 mx-auto mb-6 rounded-full flex items-center justify-center opacity-15">
+                <div className="w-28 h-28 rounded-full flex items-center justify-center bg-muted">
+                  <svg className="w-14 h-14 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
                   </svg>
                 </div>
               </div>
-              <h3 className="text-lg font-medium mb-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Start chatting with {team?.name}</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Send a message to get the conversation started</p>
+              <h3 className="text-lg font-medium mb-2 text-foreground">Start chatting with {team?.name}</h3>
+              <p className="text-muted-foreground">Send a message to get the conversation started</p>
             </div>
           </div>
         ) : (
@@ -573,19 +548,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
       {/* Floating Pill Input Area */}
       <div className="p-4 pb-6 bg-transparent">
-        <div
-          className="flex items-center gap-2 px-4 py-2"
-          style={{
-            background: 'rgba(38, 38, 38, 0.95)',
-            borderRadius: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}
-        >
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-3xl border border-border">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 flex-shrink-0 rounded-full"
-            style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+            className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -595,14 +562,12 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-transparent border-none outline-none text-sm"
-            style={{ color: '#fff' }}
+            className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
           />
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 flex-shrink-0 rounded-full"
-            style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+            className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground"
           >
             <Smile className="h-4 w-4" />
           </Button>
@@ -610,11 +575,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             onClick={handleSendMessage}
             disabled={!message.trim()}
             size="icon"
-            className="h-9 w-9 flex-shrink-0 rounded-full"
-            style={{
-              background: message.trim() ? '#8b5cf6' : 'rgba(255, 255, 255, 0.1)',
-              color: message.trim() ? '#fff' : 'rgba(255, 255, 255, 0.3)'
-            }}
+            className={`h-9 w-9 flex-shrink-0 rounded-full ${message.trim() ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
           >
             <Send className="h-4 w-4" />
           </Button>
