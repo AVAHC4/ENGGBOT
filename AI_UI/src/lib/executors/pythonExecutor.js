@@ -11,7 +11,7 @@ let worker = null;
 let isInitialized = false;
 let initPromise = null;
 let initStartTime = null;
-// Track in-flight execution so we can cancel
+
 let currentResolve = null;
 let currentMsgHandler = null;
 let currentExecTimeoutId = null;
