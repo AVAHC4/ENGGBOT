@@ -664,7 +664,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         <Sidebar
           collapsible={sidebarCollapsed ? "none" : "offcanvas"}
           className={cn(
-            "transition-all duration-300 border-none",
+            "transition-all duration-300",
             sidebarCollapsed ? "opacity-0 invisible" : "opacity-100 visible",
             className
           )}
@@ -672,7 +672,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             width: '200px',
             minWidth: '200px',
             maxWidth: '200px',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            borderRight: '1px solid rgba(255, 255, 255, 0.2)'
           }}
           {...props}
         >
