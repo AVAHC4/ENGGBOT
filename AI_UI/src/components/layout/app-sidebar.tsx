@@ -361,7 +361,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         setConversations(filteredConversations);
       };
 
-      // Load once on mount and when conversationId changes (user action)
+      // Load once on mount only
       loadConversations();
 
       // Listen for custom events when conversations are updated
@@ -372,7 +372,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         window.removeEventListener('conversationUpdated', handleConversationUpdate);
       };
     }
-  }, [conversationId, isMounted]);
+  }, [isMounted]); // Removed conversationId - don't re-sort list when selecting a conversation
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
