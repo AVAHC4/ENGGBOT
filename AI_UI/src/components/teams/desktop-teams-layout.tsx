@@ -118,12 +118,12 @@ export function DesktopTeamsLayout() {
         />
       </div>
 
-      {/* Vertical Separator Line */}
+      {/* Subtle Separator - Gradient Fade */}
       <div
         className="flex-shrink-0 self-stretch"
         style={{
-          width: '1px',
-          backgroundColor: 'rgba(255, 255, 255, 0.3)'
+          width: '20px',
+          background: 'linear-gradient(to right, rgba(255, 255, 255, 0.03), transparent)'
         }}
       />
 

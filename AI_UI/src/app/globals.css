@@ -102,7 +102,7 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --sidebar-border: rgba(0, 0, 0, 0.05);
   --sidebar-ring: transparent;
 }
 
@@ -136,7 +136,7 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: rgba(255, 255, 255, 0.15);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-ring: transparent;
 
   /* Dark mode scrollbar colors */
