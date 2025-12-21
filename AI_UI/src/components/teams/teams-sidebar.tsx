@@ -177,7 +177,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
   return (
     <div className="flex flex-col h-full bg-transparent">
       {/* Header */}
-      <div className="flex items-center justify-between px-0 py-3 border-b border-border">
+      <div className="flex items-center justify-between pl-4 pr-0 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" aria-label="View invitations" onClick={() => { setShowInvites(true); refreshInvites(); }}>
