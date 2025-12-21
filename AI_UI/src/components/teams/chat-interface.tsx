@@ -38,7 +38,8 @@ interface ChatInterfaceProps {
   selectedTeamId: string | null
   teams: Team[]
   onTeamNameUpdate: (teamId: string, newName: string) => void
-  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void // Added avatar update prop
+  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void
+  onLeaveTeam?: (teamId: string) => void
 }
 
 // Messages are now loaded from the backend
@@ -79,7 +80,7 @@ const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) 
   }
 }
 
-export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate }: ChatInterfaceProps) {
+export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate, onLeaveTeam }: ChatInterfaceProps) {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [showTeamManagement, setShowTeamManagement] = useState(false)
@@ -589,7 +590,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         teamName={team?.name || ""}
         teamAvatar={team?.avatar}
         onTeamNameUpdate={onTeamNameUpdate}
-        onTeamAvatarUpdate={onTeamAvatarUpdate} // Added avatar update callback
+        onTeamAvatarUpdate={onTeamAvatarUpdate}
+        onLeaveTeam={onLeaveTeam}
       />
 
       <AddPeopleDialog

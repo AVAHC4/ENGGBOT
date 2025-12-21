@@ -115,3 +115,10 @@ export async function deleteTeam(teamId: string): Promise<void> {
   })
   if (!res.ok) throw new Error(await res.text())
 }
+
+export async function leaveTeam(teamId: string, email: string): Promise<void> {
+  const res = await fetch(`/api/teams/${teamId}/members/${encodeURIComponent(email)}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}

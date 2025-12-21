@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
 import { getCurrentUser } from "@/lib/user"
-import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam } from "@/lib/teams-api"
+import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam, leaveTeam as apiLeaveTeam } from "@/lib/teams-api"
 
 interface Team {
   id: string
@@ -105,6 +105,27 @@ export function DesktopTeamsLayout() {
     }
   }
 
+  const handleLeaveTeam = async (teamId: string) => {
+    try {
+      const user = getCurrentUser()
+      await apiLeaveTeam(teamId, user.email)
+      // Remove the team from the list
+      setTeams((prev) => {
+        const updated = prev.filter((team) => team.id !== teamId)
+        setSelectedTeamId((current) => {
+          if (current === teamId) {
+            return updated.length > 0 ? updated[0].id : null
+          }
+          return current
+        })
+        return updated
+      })
+    } catch (e) {
+      console.error("Failed to leave team:", e)
+      alert("Failed to leave team. Please try again.")
+    }
+  }
+
   return (
     <div className="flex h-screen bg-transparent">
       {/* Teams Sidebar - Left Panel */}
@@ -136,6 +157,7 @@ export function DesktopTeamsLayout() {
           teams={teams}
           onTeamNameUpdate={updateTeamName}
           onTeamAvatarUpdate={updateTeamAvatar}
+          onLeaveTeam={handleLeaveTeam}
         />
       </div>
     </div>

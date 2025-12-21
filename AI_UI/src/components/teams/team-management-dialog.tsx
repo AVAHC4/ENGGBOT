@@ -35,7 +35,9 @@ interface TeamManagementDialogProps {
   teamName: string
   teamAvatar?: string
   onTeamNameUpdate?: (teamId: string, newName: string) => void
-  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void // Added avatar update callback
+  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void
+  onLeaveTeam?: (teamId: string) => void
+  onArchiveTeam?: (teamId: string) => void
 }
 
 export function TeamManagementDialog({
@@ -45,7 +47,9 @@ export function TeamManagementDialog({
   teamName,
   teamAvatar,
   onTeamNameUpdate,
-  onTeamAvatarUpdate, // Added avatar update prop
+  onTeamAvatarUpdate,
+  onLeaveTeam,
+  onArchiveTeam,
 }: TeamManagementDialogProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedName, setEditedName] = useState(teamName)
@@ -113,7 +117,7 @@ export function TeamManagementDialog({
     return () => {
       cancelled = true
       if (channel && supabaseClient) {
-        try { supabaseClient.removeChannel(channel) } catch {}
+        try { supabaseClient.removeChannel(channel) } catch { }
         channel = null
       }
       if (poll) {
@@ -355,15 +359,49 @@ export function TeamManagementDialog({
 
             <TabsContent value="actions" className="space-y-4">
               <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start bg-transparent" size="lg">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start bg-transparent"
+                  size="lg"
+                  onClick={() => {
+                    // Advanced settings - for now just show a toast or alert
+                    alert("Advanced settings coming soon!")
+                  }}
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Advanced Settings
                 </Button>
-                <Button variant="outline" className="w-full justify-start bg-transparent" size="lg">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start bg-transparent"
+                  size="lg"
+                  onClick={() => {
+                    if (onArchiveTeam) {
+                      if (confirm(`Are you sure you want to archive "${teamName}"? Archived teams can be restored later.`)) {
+                        onArchiveTeam(teamId)
+                        onOpenChange(false)
+                      }
+                    } else {
+                      alert("Archive functionality coming soon!")
+                    }
+                  }}
+                >
                   <Archive className="h-4 w-4 mr-2" />
                   Archive Team
                 </Button>
-                <Button variant="destructive" className="w-full justify-start" size="lg">
+                <Button
+                  variant="destructive"
+                  className="w-full justify-start"
+                  size="lg"
+                  onClick={() => {
+                    if (onLeaveTeam) {
+                      if (confirm(`Are you sure you want to leave "${teamName}"? You'll need to be invited again to rejoin.`)) {
+                        onLeaveTeam(teamId)
+                        onOpenChange(false)
+                      }
+                    }
+                  }}
+                >
                   <UserMinus className="h-4 w-4 mr-2" />
                   Leave Team
                 </Button>
