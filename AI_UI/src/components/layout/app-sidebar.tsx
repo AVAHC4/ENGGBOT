@@ -74,7 +74,7 @@ import { getAllProjectsAsync } from "@/lib/projects/storage"
 import { Project } from "@/lib/projects/types"
 import { useLanguage } from "@/context/language-context"
 
-// Add this function to get user data from localStorage
+
 function getUserData() {
   if (typeof window === 'undefined') {
     return {
@@ -85,10 +85,10 @@ function getUserData() {
   }
 
   try {
-    // Try to get user data from localStorage - this would be set during Google auth
+
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
 
-    // If we have user data, use it; otherwise return default
+
     if (userData && userData.name) {
       return {
         name: userData.name || "User",
@@ -379,9 +379,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         window.removeEventListener('conversationUpdated', handleConversationUpdate);
       };
     }
-  }, [isMounted]); // Removed conversationId - don't re-sort list when selecting a conversation
+  }, [isMounted]);
 
-  // Load projects - only on client side after mounting
+
   React.useEffect(() => {
     if (isMounted) {
       const loadProjects = async () => {
@@ -424,7 +424,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     if (matchingItem) {
       setActivePath(matchingItem.url);
     } else {
-      // Use current pathname so no main item stays active on secondary pages (e.g., Settings)
       setActivePath(pathname);
     }
   }, [pathname]);
@@ -599,21 +598,19 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [friends]);
 
-  // Function to handle conversation rename
   const handleRenameConversation = async (id: string, newTitle: string) => {
     if (!newTitle.trim()) {
       setEditingConversationId(null);
       return;
     }
 
-    // Get all conversations from storage
     const allConversations = await getAllConversationsMetadata();
 
-    // Find the conversation that needs to be renamed
+
     const conversationToUpdate = allConversations.find((c: { id: string }) => c.id === id);
 
     if (conversationToUpdate) {
-      // Get existing metadata
+
       const existingMeta = await getConversationMetadata(id) || {
         title: `Conversation ${id.substring(0, 6)}`,
         created: new Date().toISOString(),
@@ -639,9 +636,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setEditingConversationId(null);
   };
 
-  // Function to handle conversation share
   const handleShareConversation = (id: string) => {
-    // Copy conversation link/id to clipboard
+
     navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
       .then(() => {
         alert('Conversation link copied to clipboard!');
@@ -651,14 +647,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       });
   };
 
-  // Function to handle delete request
+
   const handleDeleteRequest = (e: React.MouseEvent, id: string, title: string) => {
     e.stopPropagation();
     setConversationToDelete({ id, title });
     setShowDeleteModal(true);
   };
 
-  // Function to confirm deletion
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
       try {
@@ -667,12 +662,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         console.error("Error deleting conversation:", error);
       }
     }
-    // Always close the modal and reset state
+
     setShowDeleteModal(false);
     setConversationToDelete(null);
   };
 
-  // Function to cancel deletion
+
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setConversationToDelete(null);
@@ -727,11 +722,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       (item.url === '/' && activePath === '/') ||
                       (item.url !== '/' && activePath.startsWith(item.url));
 
-                    // Map title to translation key
+
                     const translationKey = `sidebar.${item.title.toLowerCase()}`;
                     const title = t(translationKey);
 
-                    // Special handling for Projects - make it expandable
                     if (item.title === 'Projects') {
                       return (
                         <SidebarMenuItem key={item.title}>
@@ -992,5 +986,4 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       )}
     </>
   )
-} // Updated sidebar navigation components
-// Updated sidebar for improved navigation workflow
+} 
