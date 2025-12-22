@@ -791,7 +791,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             href={item.url}
                             className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             onClick={(e) => {
-                              // Update active path for all nav items, not just chat
                               setActivePath(item.url);
                             }}
                           >
