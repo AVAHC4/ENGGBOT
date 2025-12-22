@@ -810,12 +810,10 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
         : `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
+      // saveConversation will create the conversation with projectId set
+      // No need to call addConversationToProject separately - it causes a race condition
+      // because the debounced saveConversation hasn't created the conversation yet
       saveConversation(newId, [], projectId);
-
-      // If we are in a project, link this new conversation to the project
-      if (projectId) {
-        addConversationToProject(projectId, newId);
-      }
     }
   }, [isGenerating, isLoading, stopGeneration, isMounted, projectId]);
 

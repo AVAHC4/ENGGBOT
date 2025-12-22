@@ -395,19 +395,35 @@ function clearCache(conversationId: string): void {
 // ==================== Hybrid Public API ====================
 
 // Save a conversation (hybrid: localStorage immediately + database with debounce)
+// For NEW conversations (not in knownConversations), create immediately to avoid race conditions
 export function saveConversation(id: string, messages: any[], projectId?: string | null) {
   if (isServer()) return;
 
   // Step 1: Save to localStorage IMMEDIATELY (for instant reload)
   saveToCache(id, messages);
 
-  // Step 2: Clear existing debounce timer for this conversation
+  // Step 2: If this is a NEW conversation, create it IMMEDIATELY (no debounce)
+  // This ensures the conversation exists in the database before user navigates away
+  if (!knownConversations.has(id)) {
+    // Create immediately - don't debounce new conversations
+    saveConversationToDatabase(id, messages, undefined, projectId)
+      .then((success) => {
+        if (success) {
+          console.log('[Storage] Created new conversation in database:', id.substring(0, 8), 'projectId:', projectId);
+        }
+      })
+      .catch(err => {
+        console.error('Database creation failed:', err);
+      });
+    return; // Don't also add to debounce queue
+  }
+
+  // Step 3: For EXISTING conversations, debounce updates (500ms after last change)
   const existingTimer = saveDebounceMap.get(id);
   if (existingTimer) {
     clearTimeout(existingTimer);
   }
 
-  // Step 3: Debounce database save (500ms after last change)
   const timer = setTimeout(() => {
     saveDebounceMap.delete(id);
 
