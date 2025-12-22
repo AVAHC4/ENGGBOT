@@ -70,7 +70,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
-import { getAllProjects } from "@/lib/projects/storage"
+import { getAllProjectsAsync } from "@/lib/projects/storage"
+import { Project } from "@/lib/projects/types"
 import { useLanguage } from "@/context/language-context"
 
 // Add this function to get user data from localStorage
@@ -229,6 +230,9 @@ const initialFriends: Friend[] = [];
 export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
+  const [projectsExpanded, setProjectsExpanded] = React.useState(false);
+  const [expandedProjectId, setExpandedProjectId] = React.useState<string | null>(null);
+  const [projects, setProjects] = React.useState<Project[]>([]);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
     // Initialize from localStorage if available, otherwise use empty array
     if (typeof window !== 'undefined') {
@@ -246,6 +250,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
   const [conversations, setConversations] = React.useState<any[]>([]);
+  const [allConversations, setAllConversations] = React.useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('');
   const pathname = usePathname();
@@ -353,11 +358,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   React.useEffect(() => {
     if (isMounted) {
       const loadConversations = async () => {
-        const allConversations = await getAllConversationsMetadata();
+        const fetchedConversations = await getAllConversationsMetadata();
 
-        // Filter out conversations that belong to projects (have a project_id)
-        const filteredConversations = allConversations.filter((c: any) => !c.projectId);
+        // Store all conversations for project display
+        setAllConversations(fetchedConversations);
 
+        // Filter out conversations that belong to projects (have a project_id) for main list
+        const filteredConversations = fetchedConversations.filter((c: any) => !c.projectId);
         setConversations(filteredConversations);
       };
 
@@ -373,6 +380,26 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       };
     }
   }, [isMounted]); // Removed conversationId - don't re-sort list when selecting a conversation
+
+  // Load projects - only on client side after mounting
+  React.useEffect(() => {
+    if (isMounted) {
+      const loadProjects = async () => {
+        const allProjects = await getAllProjectsAsync();
+        setProjects(allProjects);
+      };
+
+      loadProjects();
+
+      // Listen for project updates
+      const handleProjectUpdate = () => loadProjects();
+      window.addEventListener('projectUpdated', handleProjectUpdate);
+
+      return () => {
+        window.removeEventListener('projectUpdated', handleProjectUpdate);
+      };
+    }
+  }, [isMounted]);
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -843,6 +870,109 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         <SidebarMenuSubItem>
                           <div className="px-4 py-2 text-xs text-muted-foreground">
                             No conversations yet
+                          </div>
+                        </SidebarMenuSubItem>
+                      )}
+                    </SidebarMenuSub>
+                  )}
+                </SidebarMenuItem>
+              </SidebarMenu>
+
+              {/* Projects Section */}
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setProjectsExpanded(!projectsExpanded)}
+                    className="justify-between"
+                  >
+                    <div className="flex items-center">
+                      <Folder className="h-4 w-4 mr-2" />
+                      <span>Projects</span>
+                    </div>
+                    {projectsExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </SidebarMenuButton>
+
+                  {projectsExpanded && (
+                    <SidebarMenuSub>
+                      {projects.length > 0 ? (
+                        projects.map((project) => (
+                          <SidebarMenuSubItem key={project.id}>
+                            <SidebarMenuSubButton
+                              onClick={() => setExpandedProjectId(
+                                expandedProjectId === project.id ? null : project.id
+                              )}
+                              className="w-full justify-between"
+                            >
+                              <div className="flex items-center">
+                                <span className="mr-2">{project.emoji}</span>
+                                <span className="text-xs truncate">{project.name}</span>
+                              </div>
+                              {expandedProjectId === project.id ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ChevronRight className="h-3 w-3" />
+                              )}
+                            </SidebarMenuSubButton>
+
+                            {/* Project's Conversations */}
+                            {expandedProjectId === project.id && (
+                              <SidebarMenuSub className="ml-2 mt-1">
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartNewConversation();
+                                    // TODO: Associate new conversation with this project
+                                  }} className="w-full flex items-center">
+                                    <PlusCircle className="h-3.5 w-3.5 mr-2" />
+                                    <span className="font-medium text-primary">New chat</span>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                                {project.conversationIds.length > 0 ? (
+                                  project.conversationIds.map((convId) => {
+                                    // Find the conversation metadata from all conversations
+                                    const convo = allConversations.find(c => c.id === convId) ||
+                                      { id: convId, title: 'Conversation', updated: '' };
+                                    return (
+                                      <SidebarMenuSubItem key={convId}>
+                                        <SidebarMenuSubButton
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleSwitchConversation(convId);
+                                          }}
+                                          className={cn(
+                                            "w-full justify-between group pr-1",
+                                            convId === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
+                                          )}
+                                        >
+                                          <div className="flex flex-col items-start overflow-hidden">
+                                            <span className="text-xs truncate w-full text-left">{convo.title || 'Untitled'}</span>
+                                            <span className="text-[10px] text-muted-foreground">
+                                              {formatTime(convo.updated)}
+                                            </span>
+                                          </div>
+                                        </SidebarMenuSubButton>
+                                      </SidebarMenuSubItem>
+                                    );
+                                  })
+                                ) : (
+                                  <SidebarMenuSubItem>
+                                    <div className="px-4 py-2 text-xs text-muted-foreground">
+                                      No conversations yet
+                                    </div>
+                                  </SidebarMenuSubItem>
+                                )}
+                              </SidebarMenuSub>
+                            )}
+                          </SidebarMenuSubItem>
+                        ))
+                      ) : (
+                        <SidebarMenuSubItem>
+                          <div className="px-4 py-2 text-xs text-muted-foreground">
+                            No projects yet
                           </div>
                         </SidebarMenuSubItem>
                       )}
