@@ -7,9 +7,19 @@ import { Project } from "@/lib/projects/types";
 import { ChatInterface } from "@/components/chat-interface";
 import { ChatProvider, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageSquare, Plus } from "lucide-react";
+import { ArrowLeft, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ConversationMeta {
     id: string;
@@ -30,6 +40,8 @@ function ProjectConversationsView({
     const { switchConversation, startNewConversation, conversationId } = useChat();
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [conversations, setConversations] = useState(initialConversations);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [conversationToDelete, setConversationToDelete] = useState<ConversationMeta | null>(null);
 
     // Update conversations when initialConversations changes
     useEffect(() => {
@@ -54,6 +66,23 @@ function ProjectConversationsView({
         setSelectedConversationId(null);
         // Refresh the conversations list to pick up the new conversation
         onRefresh();
+    };
+
+    const handleDeleteConversation = async (convId: string) => {
+        try {
+            const email = localStorage.getItem('user_email') || '';
+            const response = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`, {
+                method: 'DELETE',
+            });
+            if (response.ok) {
+                // Remove from local state immediately
+                setConversations(prev => prev.filter(c => c.id !== convId));
+                // Also refresh to sync with server
+                onRefresh();
+            }
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+        }
     };
 
     // Format timestamp for display
@@ -116,24 +145,40 @@ function ProjectConversationsView({
                 {conversations.length > 0 ? (
                     <div className="space-y-2">
                         {conversations.map((convo) => (
-                            <button
+                            <div
                                 key={convo.id}
-                                onClick={() => handleSelectConversation(convo.id)}
                                 className={cn(
                                     "w-full text-left p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors",
-                                    "flex items-center gap-4"
+                                    "flex items-center gap-4 group"
                                 )}
                             >
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                    <MessageSquare className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium truncate">{convo.title || 'Untitled'}</h3>
-                                    <p className="text-sm text-muted-foreground">
-                                        {formatTime(convo.updated)}
-                                    </p>
-                                </div>
-                            </button>
+                                <button
+                                    onClick={() => handleSelectConversation(convo.id)}
+                                    className="flex items-center gap-4 flex-1 min-w-0"
+                                >
+                                    <div className="p-2 rounded-lg bg-primary/10">
+                                        <MessageSquare className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="flex-1 min-w-0 text-left">
+                                        <h3 className="font-medium truncate">{convo.title || 'Untitled'}</h3>
+                                        <p className="text-sm text-muted-foreground">
+                                            {formatTime(convo.updated)}
+                                        </p>
+                                    </div>
+                                </button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setConversationToDelete(convo);
+                                        setDeleteDialogOpen(true);
+                                    }}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         ))}
                     </div>
                 ) : (
@@ -148,6 +193,34 @@ function ProjectConversationsView({
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete &quot;{conversationToDelete?.title || 'Untitled'}&quot;?
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => {
+                                if (conversationToDelete) {
+                                    handleDeleteConversation(conversationToDelete.id);
+                                }
+                                setDeleteDialogOpen(false);
+                                setConversationToDelete(null);
+                            }}
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
