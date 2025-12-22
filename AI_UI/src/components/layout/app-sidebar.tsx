@@ -731,6 +731,56 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const translationKey = `sidebar.${item.title.toLowerCase()}`;
                     const title = t(translationKey);
 
+                    // Special handling for Projects - make it expandable
+                    if (item.title === 'Projects') {
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton
+                            onClick={() => setProjectsExpanded(!projectsExpanded)}
+                            className="justify-between"
+                            data-active={isActive}
+                          >
+                            <div className="flex items-center">
+                              <Icon className="h-4 w-4 mr-2" />
+                              <span>{title}</span>
+                            </div>
+                            {projectsExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </SidebarMenuButton>
+
+                          {projectsExpanded && (
+                            <SidebarMenuSub>
+                              {projects.length > 0 ? (
+                                projects.map((project) => (
+                                  <SidebarMenuSubItem key={project.id}>
+                                    <SidebarMenuSubButton
+                                      onClick={() => router.push(`/projects/${project.id}`)}
+                                      className="w-full"
+                                    >
+                                      <div className="flex items-center">
+                                        <span className="mr-2">{project.emoji}</span>
+                                        <span className="text-xs truncate">{project.name}</span>
+                                      </div>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))
+                              ) : (
+                                <SidebarMenuSubItem>
+                                  <div className="px-4 py-2 text-xs text-muted-foreground">
+                                    No projects yet
+                                  </div>
+                                </SidebarMenuSubItem>
+                              )}
+                            </SidebarMenuSub>
+                          )}
+                        </SidebarMenuItem>
+                      );
+                    }
+
+                    // Regular nav items
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -870,52 +920,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         <SidebarMenuSubItem>
                           <div className="px-4 py-2 text-xs text-muted-foreground">
                             No conversations yet
-                          </div>
-                        </SidebarMenuSubItem>
-                      )}
-                    </SidebarMenuSub>
-                  )}
-                </SidebarMenuItem>
-              </SidebarMenu>
-
-              {/* Projects Section */}
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => setProjectsExpanded(!projectsExpanded)}
-                    className="justify-between"
-                  >
-                    <div className="flex items-center">
-                      <Folder className="h-4 w-4 mr-2" />
-                      <span>Projects</span>
-                    </div>
-                    {projectsExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </SidebarMenuButton>
-
-                  {projectsExpanded && (
-                    <SidebarMenuSub>
-                      {projects.length > 0 ? (
-                        projects.map((project) => (
-                          <SidebarMenuSubItem key={project.id}>
-                            <SidebarMenuSubButton
-                              onClick={() => router.push(`/projects/${project.id}`)}
-                              className="w-full"
-                            >
-                              <div className="flex items-center">
-                                <span className="mr-2">{project.emoji}</span>
-                                <span className="text-xs truncate">{project.name}</span>
-                              </div>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))
-                      ) : (
-                        <SidebarMenuSubItem>
-                          <div className="px-4 py-2 text-xs text-muted-foreground">
-                            No projects yet
                           </div>
                         </SidebarMenuSubItem>
                       )}
