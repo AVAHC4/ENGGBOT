@@ -140,7 +140,14 @@ async function saveConversationToDatabase(id: string, messages: any[], title?: s
       let generatedTitle: string | undefined = title;
       const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
 
-      if (!response.ok) {
+      // Check if conversation exists - API returns 200 with { exists: false } for non-existent
+      let conversationExists = false;
+      if (response.ok) {
+        const data = await response.json();
+        conversationExists = data.exists !== false && data.conversation !== undefined;
+      }
+
+      if (!conversationExists) {
         // Conversation doesn't exist, create it with the same ID
         // Generate title from first user message instead of using generic ID
         generatedTitle = title || generateTitleFromMessage(messages);

@@ -184,7 +184,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
             // Verify order is now User -> AI
             console.log('[ChatContext] Saving healed conversation order');
-            saveConversation(conversationId, sortedMessages);
+            saveConversation(conversationId, sortedMessages, projectId);
           }
 
           setMessages(sortedMessages);
@@ -217,9 +217,9 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     // Skip saving while AI is generating - will save when streaming completes
     // Also skip if conversationId doesn't match ref (prevents saving old messages to new conversation)
     if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && conversationIdRef.current === conversationId) {
-      saveConversation(conversationId, messages);
+      saveConversation(conversationId, messages, projectId);
     }
-  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating]);
+  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating, projectId]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
@@ -302,7 +302,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
       // Save conversation after adding user message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, updatedMessages);
+        saveConversation(conversationId, updatedMessages, projectId);
       }
 
       setIsLoading(true);
@@ -401,7 +401,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
               // Save the COMPLETE conversation with the full AI response
               if (typeof window !== 'undefined' && !isPrivateMode) {
-                saveConversation(conversationId, finalMessages);
+                saveConversation(conversationId, finalMessages, projectId);
               }
 
               return finalMessages;
@@ -447,7 +447,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
                     // Save conversation
                     if (typeof window !== 'undefined' && !isPrivateMode) {
-                      saveConversation(conversationId, updatedMessages);
+                      saveConversation(conversationId, updatedMessages, projectId);
                     }
 
                     return updatedMessages;
@@ -515,7 +515,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
       // Save conversation with the error message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, messagesWithError);
+        saveConversation(conversationId, messagesWithError, projectId);
       }
 
       // Reset both states on error
@@ -551,7 +551,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
       const updatedMessages = [...prev, newMessage];
       // Save conversation after adding message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, updatedMessages);
+        saveConversation(conversationId, updatedMessages, projectId);
       }
       return updatedMessages;
     });
@@ -620,7 +620,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
     // Save the conversation state
     if (typeof window !== 'undefined' && !isPrivateMode) {
-      saveConversation(conversationId, updatedMessages);
+      saveConversation(conversationId, updatedMessages, projectId);
     }
 
     try {
@@ -674,7 +674,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
             // Save conversation
             if (typeof window !== 'undefined' && !isPrivateMode) {
-              saveConversation(conversationId, updated);
+              saveConversation(conversationId, updated, projectId);
             }
 
             return updated;
@@ -724,7 +724,7 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
 
                   // Save intermediate state periodically
                   if (typeof window !== 'undefined' && !isPrivateMode) {
-                    saveConversation(conversationId, updated);
+                    saveConversation(conversationId, updated, projectId);
                   }
 
                   return updated;
