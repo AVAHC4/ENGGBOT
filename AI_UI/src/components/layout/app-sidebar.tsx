@@ -902,71 +902,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         projects.map((project) => (
                           <SidebarMenuSubItem key={project.id}>
                             <SidebarMenuSubButton
-                              onClick={() => setExpandedProjectId(
-                                expandedProjectId === project.id ? null : project.id
-                              )}
-                              className="w-full justify-between"
+                              onClick={() => router.push(`/projects/${project.id}`)}
+                              className="w-full"
                             >
                               <div className="flex items-center">
                                 <span className="mr-2">{project.emoji}</span>
                                 <span className="text-xs truncate">{project.name}</span>
                               </div>
-                              {expandedProjectId === project.id ? (
-                                <ChevronDown className="h-3 w-3" />
-                              ) : (
-                                <ChevronRight className="h-3 w-3" />
-                              )}
                             </SidebarMenuSubButton>
-
-                            {/* Project's Conversations */}
-                            {expandedProjectId === project.id && (
-                              <SidebarMenuSub className="ml-2 mt-1">
-                                <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStartNewConversation();
-                                    // TODO: Associate new conversation with this project
-                                  }} className="w-full flex items-center">
-                                    <PlusCircle className="h-3.5 w-3.5 mr-2" />
-                                    <span className="font-medium text-primary">New chat</span>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                                {project.conversationIds.length > 0 ? (
-                                  project.conversationIds.map((convId) => {
-                                    // Find the conversation metadata from all conversations
-                                    const convo = allConversations.find(c => c.id === convId) ||
-                                      { id: convId, title: 'Conversation', updated: '' };
-                                    return (
-                                      <SidebarMenuSubItem key={convId}>
-                                        <SidebarMenuSubButton
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleSwitchConversation(convId);
-                                          }}
-                                          className={cn(
-                                            "w-full justify-between group pr-1",
-                                            convId === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
-                                          )}
-                                        >
-                                          <div className="flex flex-col items-start overflow-hidden">
-                                            <span className="text-xs truncate w-full text-left">{convo.title || 'Untitled'}</span>
-                                            <span className="text-[10px] text-muted-foreground">
-                                              {formatTime(convo.updated)}
-                                            </span>
-                                          </div>
-                                        </SidebarMenuSubButton>
-                                      </SidebarMenuSubItem>
-                                    );
-                                  })
-                                ) : (
-                                  <SidebarMenuSubItem>
-                                    <div className="px-4 py-2 text-xs text-muted-foreground">
-                                      No conversations yet
-                                    </div>
-                                  </SidebarMenuSubItem>
-                                )}
-                              </SidebarMenuSub>
-                            )}
                           </SidebarMenuSubItem>
                         ))
                       ) : (
