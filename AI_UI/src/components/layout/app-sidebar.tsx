@@ -283,6 +283,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [projectToRename, setProjectToRename] = React.useState<Project | null>(null);
   const [showRenameProjectDialog, setShowRenameProjectDialog] = React.useState(false);
   const [newProjectName, setNewProjectName] = React.useState('');
+  const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
+  const [newProjectInput, setNewProjectInput] = React.useState('');
 
   // Handle conversation switching with navigation
   const handleSwitchConversation = (id: string) => {
@@ -839,6 +841,18 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                   </div>
                                 </SidebarMenuSubItem>
                               )}
+                              {/* New Project Button */}
+                              <SidebarMenuSubItem>
+                                <SidebarMenuSubButton
+                                  onClick={() => setShowNewProjectDialog(true)}
+                                  className="w-full text-primary hover:text-primary"
+                                >
+                                  <div className="flex items-center">
+                                    <Plus className="h-3.5 w-3.5 mr-2" />
+                                    <span className="text-xs font-medium">New Project</span>
+                                  </div>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
                             </SidebarMenuSub>
                           )}
                         </SidebarMenuItem>
@@ -1145,6 +1159,59 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
               setNewProjectName('');
             }}>
               Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Project Dialog */}
+      <Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Enter a name for your new project
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newProjectInput}
+            onChange={(e) => setNewProjectInput(e.target.value)}
+            placeholder="Project name"
+            className="mt-2"
+          />
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => {
+              setShowNewProjectDialog(false);
+              setNewProjectInput('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              if (newProjectInput.trim()) {
+                try {
+                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                  const email = userData?.email || '';
+                  const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email,
+                      name: newProjectInput.trim(),
+                      emoji: '📁',
+                    }),
+                  });
+                  if (response.ok) {
+                    const data = await response.json();
+                    setProjects(prev => [...prev, data.project]);
+                  }
+                } catch (error) {
+                  console.error('Error creating project:', error);
+                }
+              }
+              setShowNewProjectDialog(false);
+              setNewProjectInput('');
+            }}>
+              Create
             </Button>
           </DialogFooter>
         </DialogContent>
