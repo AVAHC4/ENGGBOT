@@ -808,28 +808,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                             Share
                                           </DropdownMenuItem>
                                           <DropdownMenuItem
-                                            onClick={() => router.push(`/projects/${project.id}?edit=true`)}
+                                            onClick={() => {
+                                              setProjectToRename(project);
+                                              setNewProjectName(project.name);
+                                              setShowRenameProjectDialog(true);
+                                            }}
                                           >
                                             <Pencil className="h-4 w-4 mr-2" />
-                                            Edit
+                                            Rename
                                           </DropdownMenuItem>
                                           <DropdownMenuItem
                                             className="text-destructive focus:text-destructive"
-                                            onClick={async () => {
-                                              if (confirm(`Delete project "${project.name}"? This will also delete all conversations in this project.`)) {
-                                                try {
-                                                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                                                  const email = userData?.email || '';
-                                                  const response = await fetch(`/api/projects/${project.id}?email=${encodeURIComponent(email)}`, {
-                                                    method: 'DELETE',
-                                                  });
-                                                  if (response.ok) {
-                                                    setProjects(prev => prev.filter(p => p.id !== project.id));
-                                                  }
-                                                } catch (error) {
-                                                  console.error('Error deleting project:', error);
-                                                }
-                                              }
+                                            onClick={() => {
+                                              setProjectToDelete(project);
+                                              setShowDeleteProjectDialog(true);
                                             }}
                                           >
                                             <Trash2 className="h-4 w-4 mr-2" />
@@ -1063,6 +1055,100 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           </div>
         </div>
       )}
+
+      {/* Project Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteProjectDialog} onOpenChange={setShowDeleteProjectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &quot;{projectToDelete?.name}&quot;?
+              This will also delete all conversations in this project. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (projectToDelete) {
+                  try {
+                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                    const email = userData?.email || '';
+                    const response = await fetch(`/api/projects/${projectToDelete.id}?email=${encodeURIComponent(email)}`, {
+                      method: 'DELETE',
+                    });
+                    if (response.ok) {
+                      setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+                    }
+                  } catch (error) {
+                    console.error('Error deleting project:', error);
+                  }
+                }
+                setShowDeleteProjectDialog(false);
+                setProjectToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Project Rename Dialog */}
+      <Dialog open={showRenameProjectDialog} onOpenChange={setShowRenameProjectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+            <DialogDescription>
+              Enter a new name for &quot;{projectToRename?.name}&quot;
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
+            placeholder="Project name"
+            className="mt-2"
+          />
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => {
+              setShowRenameProjectDialog(false);
+              setProjectToRename(null);
+              setNewProjectName('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              if (projectToRename && newProjectName.trim()) {
+                try {
+                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                  const email = userData?.email || '';
+                  const response = await fetch(`/api/projects/${projectToRename.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email,
+                      name: newProjectName.trim(),
+                    }),
+                  });
+                  if (response.ok) {
+                    setProjects(prev => prev.map(p =>
+                      p.id === projectToRename.id ? { ...p, name: newProjectName.trim() } : p
+                    ));
+                  }
+                } catch (error) {
+                  console.error('Error renaming project:', error);
+                }
+              }
+              setShowRenameProjectDialog(false);
+              setProjectToRename(null);
+              setNewProjectName('');
+            }}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 } 
