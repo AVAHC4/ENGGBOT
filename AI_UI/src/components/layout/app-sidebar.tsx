@@ -49,6 +49,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 
 import { NavDocuments } from "./nav-documents"
 import { NavMain } from "./nav-main"
@@ -257,6 +276,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
   const router = useRouter();
   const { t } = useLanguage();
+
+  // Project dialogs state
+  const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
+  const [showDeleteProjectDialog, setShowDeleteProjectDialog] = React.useState(false);
+  const [projectToRename, setProjectToRename] = React.useState<Project | null>(null);
+  const [showRenameProjectDialog, setShowRenameProjectDialog] = React.useState(false);
+  const [newProjectName, setNewProjectName] = React.useState('');
 
   // Handle conversation switching with navigation
   const handleSwitchConversation = (id: string) => {
@@ -749,16 +775,69 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             <SidebarMenuSub>
                               {projects.length > 0 ? (
                                 projects.map((project) => (
-                                  <SidebarMenuSubItem key={project.id}>
-                                    <SidebarMenuSubButton
-                                      onClick={() => router.push(`/projects/${project.id}`)}
-                                      className="w-full"
-                                    >
-                                      <div className="flex items-center">
-                                        <span className="mr-2">{project.emoji}</span>
-                                        <span className="text-xs truncate">{project.name}</span>
-                                      </div>
-                                    </SidebarMenuSubButton>
+                                  <SidebarMenuSubItem key={project.id} className="group">
+                                    <div className="flex items-center w-full">
+                                      <SidebarMenuSubButton
+                                        onClick={() => router.push(`/projects/${project.id}`)}
+                                        className="flex-1"
+                                      >
+                                        <div className="flex items-center">
+                                          <span className="mr-2">{project.emoji}</span>
+                                          <span className="text-xs truncate">{project.name}</span>
+                                        </div>
+                                      </SidebarMenuSubButton>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <MoreVertical className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-40">
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              navigator.clipboard.writeText(`${window.location.origin}/projects/${project.id}`);
+                                              alert('Project link copied to clipboard!');
+                                            }}
+                                          >
+                                            <Share2 className="h-4 w-4 mr-2" />
+                                            Share
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => router.push(`/projects/${project.id}?edit=true`)}
+                                          >
+                                            <Pencil className="h-4 w-4 mr-2" />
+                                            Edit
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-destructive focus:text-destructive"
+                                            onClick={async () => {
+                                              if (confirm(`Delete project "${project.name}"? This will also delete all conversations in this project.`)) {
+                                                try {
+                                                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                                                  const email = userData?.email || '';
+                                                  const response = await fetch(`/api/projects/${project.id}?email=${encodeURIComponent(email)}`, {
+                                                    method: 'DELETE',
+                                                  });
+                                                  if (response.ok) {
+                                                    setProjects(prev => prev.filter(p => p.id !== project.id));
+                                                  }
+                                                } catch (error) {
+                                                  console.error('Error deleting project:', error);
+                                                }
+                                              }
+                                            }}
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </SidebarMenuSubItem>
                                 ))
                               ) : (
