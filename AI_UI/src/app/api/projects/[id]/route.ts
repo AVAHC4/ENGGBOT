@@ -72,17 +72,21 @@ export async function PUT(
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
+        // Build update object only with provided fields
+        const updateData: Record<string, any> = {
+            updated_at: new Date().toISOString()
+        };
+
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (emoji !== undefined) updateData.emoji = emoji;
+        if (color !== undefined) updateData.color = color;
+        if (customInstructions !== undefined) updateData.custom_instructions = customInstructions;
+
         // Update project fields
         const { data: project, error } = await supabaseAdmin
             .from('projects')
-            .update({
-                name,
-                description,
-                emoji,
-                color,
-                custom_instructions: customInstructions,
-                updated_at: new Date().toISOString()
-            })
+            .update(updateData)
             .eq('id', id)
             .eq('user_email', email)
             .select()
