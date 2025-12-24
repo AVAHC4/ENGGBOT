@@ -179,6 +179,30 @@ export function ChatInput({
         if (!model) return;
       }
 
+      // Wait for model to be ready
+      if (!model.ready) {
+        console.log("Waiting for Vosk model to be ready...");
+        // Model might still be initializing
+        await new Promise<void>((resolve) => {
+          const checkReady = setInterval(() => {
+            if (model.ready) {
+              clearInterval(checkReady);
+              resolve();
+            }
+          }, 100);
+          // Timeout after 30 seconds
+          setTimeout(() => {
+            clearInterval(checkReady);
+            resolve();
+          }, 30000);
+        });
+      }
+
+      if (!model.ready) {
+        alert("Speech recognition model is not ready. Please try again.");
+        return;
+      }
+
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -194,7 +218,7 @@ export function ChatInput({
       audioContextRef.current = audioContext;
 
       // Create Vosk recognizer
-      const recognizer = new model.KaldiRecognizer(16000);
+      const recognizer = new model.KaldiRecognizer(audioContext.sampleRate);
       recognizerRef.current = recognizer;
       finalTranscriptRef.current = "";
 
