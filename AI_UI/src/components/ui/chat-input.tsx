@@ -6,9 +6,8 @@ import { cn } from "@/lib/utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
+import { getVoskModel, preloadVoskModel, isVoskModelLoading, isVoskModelLoaded } from "@/lib/vosk-preloader";
 
-// Vosk model URL - small English model for faster loading (~40MB, cached after first load)
-const VOSK_MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip";
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: File[], replyToId?: string) => void;
@@ -50,9 +49,9 @@ export function ChatInput({
 
   // Vosk speech recognition state
   const [isRecording, setIsRecording] = useState(false);
-  const [isLoadingModel, setIsLoadingModel] = useState(false);
+  const [isLoadingModel, setIsLoadingModel] = useState(isVoskModelLoading());
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [modelLoaded, setModelLoaded] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(isVoskModelLoaded());
 
   // Vosk refs
   const voskModelRef = useRef<any>(null);
@@ -61,6 +60,24 @@ export function ChatInput({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const finalTranscriptRef = useRef("");
+
+  // Sync state with global preloader
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const loading = isVoskModelLoading();
+      const loaded = isVoskModelLoaded();
+
+      if (loading !== isLoadingModel) setIsLoadingModel(loading);
+      if (loaded !== modelLoaded) {
+        setModelLoaded(loaded);
+        if (loaded) {
+          voskModelRef.current = getVoskModel();
+        }
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [isLoadingModel, modelLoaded]);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -117,22 +134,32 @@ export function ChatInput({
     e.target.value = "";
   };
 
-  // Load Vosk model (cached after first download)
+  // Load Vosk model - uses the global preloader that starts after login
   const loadVoskModel = useCallback(async () => {
-    if (voskModelRef.current || isLoadingModel) return voskModelRef.current;
+    // Check if already loaded in component
+    if (voskModelRef.current) return voskModelRef.current;
 
+    // Check if preloaded globally
+    const preloadedModel = getVoskModel();
+    if (preloadedModel) {
+      voskModelRef.current = preloadedModel;
+      setModelLoaded(true);
+      return preloadedModel;
+    }
+
+    // If not preloaded yet, load it now (fallback)
     try {
       setIsLoadingModel(true);
       console.log("Loading Vosk model... (first time may take 15-30 seconds)");
 
-      // Dynamic import to avoid SSR issues
-      const { createModel } = await import("vosk-browser");
-      const model = await createModel(VOSK_MODEL_URL);
-
-      voskModelRef.current = model;
-      setModelLoaded(true);
-      console.log("Vosk model loaded successfully!");
-      return model;
+      const model = await preloadVoskModel();
+      if (model) {
+        voskModelRef.current = model;
+        setModelLoaded(true);
+        console.log("Vosk model loaded successfully!");
+        return model;
+      }
+      return null;
     } catch (err: any) {
       console.error("Failed to load Vosk model:", err);
       alert("Failed to load speech recognition model. Please try again.");
@@ -140,7 +167,7 @@ export function ChatInput({
     } finally {
       setIsLoadingModel(false);
     }
-  }, [isLoadingModel]);
+  }, []);
 
   // Start Vosk recording
   const startRecording = useCallback(async () => {
@@ -201,13 +228,8 @@ export function ChatInput({
 
       processor.onaudioprocess = (e) => {
         if (recognizerRef.current) {
-          const inputData = e.inputBuffer.getChannelData(0);
-          // Convert Float32Array to Int16Array for Vosk
-          const int16Data = new Int16Array(inputData.length);
-          for (let i = 0; i < inputData.length; i++) {
-            int16Data[i] = Math.max(-32768, Math.min(32767, Math.floor(inputData[i] * 32768)));
-          }
-          recognizerRef.current.acceptWaveform(int16Data);
+          // Vosk expects the AudioBuffer directly
+          recognizerRef.current.acceptWaveform(e.inputBuffer);
         }
       };
 

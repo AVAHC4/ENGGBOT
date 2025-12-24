@@ -32,6 +32,7 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { preloadVoskModel } from '@/lib/vosk-preloader';
 
 
 // AI thinking animation component
@@ -148,6 +149,17 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       return () => clearTimeout(timeout);
     }
   }, [isLoading]);
+
+  // Preload Vosk speech recognition model in background after login
+  // This ensures the model is ready when user clicks the mic button
+  useEffect(() => {
+    // Small delay to let the UI settle first
+    const timer = setTimeout(() => {
+      preloadVoskModel().catch(console.error);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Add state to track if sidebar and conversation sidebar are collapsed
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
