@@ -7,6 +7,50 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
 
+// Web Speech API types for TypeScript
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionResultList {
+  length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event & { error: string }) => void) | null;
+  onend: (() => void) | null;
+  onstart: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 interface ChatInputProps {
   onSend: (message: string, attachments?: File[], replyToId?: string) => void;
   placeholder?: string;
@@ -46,8 +90,7 @@ export function ChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -104,78 +147,98 @@ export function ChatInput({
     e.target.value = "";
   };
 
-  // Transcribe an audio Blob via our Next.js API -> Bytez
-  const transcribeBlob = async (blob: Blob) => {
-    setIsTranscribing(true);
+  // Web Speech API - 100% Free, browser-native speech recognition
+  // Note: Requires internet connection (audio processed by Google servers)
+  const startRecording = () => {
     try {
-      const form = new FormData();
-      form.append("file", blob, "audio.webm");
-      const res = await fetch("/api/transcribe", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok || data?.error) throw new Error(data?.error || "Transcription failed");
-      const transcript = typeof data.output === "string" ? data.output : JSON.stringify(data.output);
-      setMessage((prev) => (prev ? prev + " " : "") + transcript);
-      // Focus after inserting
-      setTimeout(() => textareaRef.current?.focus(), 50);
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Transcription error");
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // Microphone recording controls
-  const startRecording = async () => {
-    try {
-      if (typeof window === "undefined" || !("MediaRecorder" in window)) {
-        alert("Your browser does not support audio recording.");
+      if (!SpeechRecognitionAPI) {
+        alert("Speech recognition is not supported in your browser. Please use Chrome or Edge.");
         return;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeCandidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/mp4",
-      ];
-      const supportedMime = mimeCandidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || "audio/webm";
-      const mr = new MediaRecorder(stream, { mimeType: supportedMime });
-      mediaRecorderRef.current = mr;
-      chunksRef.current = [];
-      mr.ondataavailable = (e: any) => {
-        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+
+      const recognition = new SpeechRecognitionAPI();
+      recognitionRef.current = recognition;
+
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      let finalTranscript = "";
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setIsTranscribing(true);
       };
-      mr.onstop = async () => {
-        try {
-          const blob = new Blob(chunksRef.current, { type: mr.mimeType });
-          await transcribeBlob(blob);
-        } finally {
-          stream.getTracks().forEach((t) => t.stop());
-          setIsRecording(false);
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript + " ";
+          } else {
+            interimTranscript += result[0].transcript;
+          }
         }
+
+        // Update message with both final and interim results for real-time feedback
+        setMessage((prev) => {
+          const baseMessage = prev.replace(/\[.*?\]$/, "").trim(); // Remove previous interim
+          const newText = finalTranscript + (interimTranscript ? `[${interimTranscript}]` : "");
+          return baseMessage ? `${baseMessage} ${newText}` : newText;
+        });
       };
-      mr.start();
-      setIsRecording(true);
+
+      recognition.onerror = (event: Event & { error: string }) => {
+        console.error("Speech recognition error:", event.error);
+
+        if (event.error === "network") {
+          alert("Network error: Web Speech API requires an active internet connection.\n\nTroubleshooting:\n• Check your internet connection\n• Make sure you're on HTTPS or localhost\n• Try refreshing the page");
+        } else if (event.error === "not-allowed") {
+          alert("Microphone permission denied. Please allow microphone access.");
+        } else if (event.error === "no-speech") {
+          // No speech detected - not an error, just stop gracefully
+          console.log("No speech detected");
+        } else if (event.error !== "aborted") {
+          alert(`Speech recognition error: ${event.error}`);
+        }
+        setIsRecording(false);
+        setIsTranscribing(false);
+      };
+
+      recognition.onend = () => {
+        // Clean up interim markers when recording ends
+        setMessage((prev) => prev.replace(/\[.*?\]/g, "").trim());
+        setIsRecording(false);
+        setIsTranscribing(false);
+        setTimeout(() => textareaRef.current?.focus(), 50);
+      };
+
+      recognition.start();
     } catch (err) {
       console.error(err);
-      alert("Microphone permission denied or unavailable");
+      alert("Failed to start speech recognition. Please try again.");
+      setIsRecording(false);
+      setIsTranscribing(false);
     }
   };
 
   const stopRecording = () => {
     try {
-      mediaRecorderRef.current?.stop();
+      recognitionRef.current?.stop();
     } catch (err) {
       console.error(err);
     }
   };
 
-  const toggleRecording = async () => {
+  const toggleRecording = () => {
     if (isRecording) {
       stopRecording();
     } else {
-      await startRecording();
+      startRecording();
     }
   };
 
@@ -183,12 +246,11 @@ export function ChatInput({
   useEffect(() => {
     return () => {
       try {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-          mediaRecorderRef.current.stop();
-        }
+        recognitionRef.current?.abort();
       } catch { }
     };
   }, []);
+
 
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);

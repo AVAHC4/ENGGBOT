@@ -72,6 +72,7 @@
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.2.0",
     "tesseract.js": "^6.0.1",
+    "vosk-browser": "^0.0.8",
     "xlsx": "^0.18.5",
     "zod": "^3.25.76"
   },
