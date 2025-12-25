@@ -102,14 +102,15 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
       const storedId = localStorage.getItem(storageKey);
       if (storedId) {
         setConversationId(storedId);
-      } else if (projectId) {
-        // If in a project but no active conversation, start a new one
+      } else if (!projectId) {
+        // Only auto-create a conversation for the global chat, not for projects
+        // Projects should only create conversations when user explicitly starts one
         const newId = crypto.randomUUID();
         setConversationId(newId);
         localStorage.setItem(storageKey, newId);
-        addConversationToProject(projectId, newId);
-        saveConversation(newId, [], projectId);
       }
+      // For projects without a stored conversation, we leave conversationId as is
+      // User will click "New Chat" to start a conversation
     }
   }, [isMounted, projectId]);
 

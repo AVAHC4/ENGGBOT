@@ -1186,30 +1186,79 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             }}>
               Cancel
             </Button>
-            <Button onClick={async () => {
+            <Button onClick={() => {
               if (newProjectInput.trim()) {
-                try {
-                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                  const email = userData?.email || '';
-                  const response = await fetch('/api/projects', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email,
-                      name: newProjectInput.trim(),
-                      emoji: '📁',
-                    }),
-                  });
-                  if (response.ok) {
-                    const data = await response.json();
-                    setProjects(prev => [...prev, data.project]);
+                const projectName = newProjectInput.trim();
+
+                // Generate a temporary ID for optimistic update
+                const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                const now = new Date().toISOString();
+
+                // Create optimistic project immediately
+                const optimisticProject: Project = {
+                  id: tempId,
+                  name: projectName,
+                  emoji: '📁',
+                  created: now,
+                  updated: now,
+                  conversationIds: [],
+                  fileIds: [],
+                };
+
+                // Immediately add to UI
+                setProjects(prev => [...prev, optimisticProject]);
+
+                // Store project name in sessionStorage for project page to use
+                sessionStorage.setItem(`project_name_${tempId}`, projectName);
+
+                // Close dialog and navigate immediately
+                setShowNewProjectDialog(false);
+                setNewProjectInput('');
+                router.push(`/projects/${tempId}`);
+
+                // Sync with Supabase in background
+                (async () => {
+                  try {
+                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                    const email = userData?.email || '';
+                    const response = await fetch('/api/projects', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        email,
+                        name: projectName,
+                        emoji: '📁',
+                      }),
+                    });
+                    if (response.ok) {
+                      const data = await response.json();
+                      // Replace temp project with real one from server
+                      setProjects(prev => prev.map(p =>
+                        p.id === tempId ? data.project : p
+                      ));
+                      // Update URL to use real ID (without full page reload)
+                      window.history.replaceState(null, '', `/projects/${data.project.id}`);
+                      // Store mapping in sessionStorage for project page to use
+                      sessionStorage.setItem(`project_id_map_${tempId}`, data.project.id);
+                      // Dispatch event for project page to update its ID
+                      window.dispatchEvent(new CustomEvent('projectIdUpdated', {
+                        detail: { tempId, realId: data.project.id }
+                      }));
+                    } else {
+                      // Remove optimistic project on failure
+                      setProjects(prev => prev.filter(p => p.id !== tempId));
+                      console.error('Failed to create project in database');
+                    }
+                  } catch (error) {
+                    // Remove optimistic project on error
+                    setProjects(prev => prev.filter(p => p.id !== tempId));
+                    console.error('Error creating project:', error);
                   }
-                } catch (error) {
-                  console.error('Error creating project:', error);
-                }
+                })();
+              } else {
+                setShowNewProjectDialog(false);
+                setNewProjectInput('');
               }
-              setShowNewProjectDialog(false);
-              setNewProjectInput('');
             }}>
               Create
             </Button>

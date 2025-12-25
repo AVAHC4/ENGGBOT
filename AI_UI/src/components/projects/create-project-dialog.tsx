@@ -48,39 +48,55 @@ export function CreateProjectDialog({ trigger, onProjectCreated }: CreateProject
     const [customInstructions, setCustomInstructions] = React.useState("");
     const [isCreating, setIsCreating] = React.useState(false);
 
-    const handleCreate = async () => {
+    const handleCreate = () => {
         if (!name.trim()) return;
 
         setIsCreating(true);
 
-        try {
-            const input: CreateProjectInput = {
-                name: name.trim(),
-                description: description.trim() || undefined,
-                emoji,
-                color,
-                customInstructions: customInstructions.trim() || undefined,
-            };
+        // Generate a temporary ID for optimistic update
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const now = new Date().toISOString();
+        const projectName = name.trim();
 
-            const newProject = await createProject(input);
+        // Store project name in sessionStorage for project page to use
+        sessionStorage.setItem(`project_name_${tempId}`, projectName);
 
-            // Reset form
-            setName("");
-            setDescription("");
-            setEmoji("📁");
-            setColor(DEFAULT_COLORS[0]);
-            setCustomInstructions("");
-            setOpen(false);
+        // Reset form and close dialog immediately
+        setName("");
+        setDescription("");
+        setEmoji("📁");
+        setColor(DEFAULT_COLORS[0]);
+        setCustomInstructions("");
+        setOpen(false);
+        setIsCreating(false);
 
-            // Notify parent
-            if (newProject) {
-                onProjectCreated?.(newProject.id);
+        // Notify parent with temp ID immediately
+        onProjectCreated?.(tempId);
+
+        // Sync with Supabase in background
+        const input: CreateProjectInput = {
+            name: projectName,
+            description: description.trim() || undefined,
+            emoji,
+            color,
+            customInstructions: customInstructions.trim() || undefined,
+        };
+
+        (async () => {
+            try {
+                const newProject = await createProject(input);
+                if (newProject) {
+                    // Store mapping in sessionStorage for project page to use
+                    sessionStorage.setItem(`project_id_map_${tempId}`, newProject.id);
+                    // Dispatch event for components to update their ID
+                    window.dispatchEvent(new CustomEvent('projectIdUpdated', {
+                        detail: { tempId, realId: newProject.id }
+                    }));
+                }
+            } catch (error) {
+                console.error("Error creating project:", error);
             }
-        } catch (error) {
-            console.error("Error creating project:", error);
-        } finally {
-            setIsCreating(false);
-        }
+        })();
     };
 
     return (

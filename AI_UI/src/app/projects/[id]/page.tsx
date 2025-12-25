@@ -245,46 +245,96 @@ export default function ProjectPage() {
     const [project, setProject] = useState<Project | null>(null);
     const [conversations, setConversations] = useState<ConversationMeta[]>([]);
     const [loading, setLoading] = useState(true);
+    const [projectId, setProjectId] = useState<string | null>(null);
 
-    const loadProjectData = useCallback(async () => {
+    // Handle temporary ID detection and real ID updates
+    useEffect(() => {
         if (params && params.id) {
-            const projectId = Array.isArray(params.id) ? params.id[0] : params.id;
-            const foundProject = await getProjectAsync(projectId);
-            setProject(foundProject);
+            const id = Array.isArray(params.id) ? params.id[0] : params.id;
+            setProjectId(id);
 
-            // Load conversation metadata for this project's conversations
-            if (foundProject && foundProject.conversationIds.length > 0) {
-                try {
-                    const convPromises = foundProject.conversationIds.map(async (convId) => {
-                        const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(localStorage.getItem('user_email') || '')}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            return {
-                                id: convId,
-                                title: data.conversation?.title || 'Untitled',
-                                updated: data.conversation?.updated_at || data.conversation?.created_at || ''
-                            };
-                        }
-                        return { id: convId, title: 'Untitled', updated: '' };
-                    });
-                    const convos = await Promise.all(convPromises);
-                    // Sort by updated time (newest first)
-                    convos.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
-                    setConversations(convos);
-                } catch (error) {
-                    console.error('Error loading conversations:', error);
-                }
-            } else {
+            // If this is a temporary ID, create an optimistic project immediately
+            if (id.startsWith('temp_')) {
+                // Get project name from sessionStorage if available
+                const storedName = sessionStorage.getItem(`project_name_${id}`);
+                const optimisticProject: Project = {
+                    id: id,
+                    name: storedName || 'New Project',
+                    emoji: '📁',
+                    created: new Date().toISOString(),
+                    updated: new Date().toISOString(),
+                    conversationIds: [],
+                    fileIds: [],
+                };
+                setProject(optimisticProject);
                 setConversations([]);
+                setLoading(false);
             }
-
-            setLoading(false);
         }
     }, [params]);
 
+    // Listen for project ID updates (when temp ID is replaced with real ID)
     useEffect(() => {
-        loadProjectData();
-    }, [loadProjectData]);
+        const handleProjectIdUpdate = (event: CustomEvent<{ tempId: string; realId: string }>) => {
+            if (projectId && projectId === event.detail.tempId) {
+                // Update local state with real ID
+                setProjectId(event.detail.realId);
+                setProject(prev => prev ? { ...prev, id: event.detail.realId } : null);
+            }
+        };
+
+        window.addEventListener('projectIdUpdated', handleProjectIdUpdate as EventListener);
+        return () => {
+            window.removeEventListener('projectIdUpdated', handleProjectIdUpdate as EventListener);
+        };
+    }, [projectId]);
+
+    const loadProjectData = useCallback(async () => {
+        if (!projectId) return;
+
+        // Don't try to load from API if this is a temp ID
+        if (projectId.startsWith('temp_')) {
+            // Project is already set optimistically, just wait for real ID
+            return;
+        }
+
+        const foundProject = await getProjectAsync(projectId);
+        setProject(foundProject);
+
+        // Load conversation metadata for this project's conversations
+        if (foundProject && foundProject.conversationIds.length > 0) {
+            try {
+                const convPromises = foundProject.conversationIds.map(async (convId) => {
+                    const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(localStorage.getItem('user_email') || '')}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        return {
+                            id: convId,
+                            title: data.conversation?.title || 'Untitled',
+                            updated: data.conversation?.updated_at || data.conversation?.created_at || ''
+                        };
+                    }
+                    return { id: convId, title: 'Untitled', updated: '' };
+                });
+                const convos = await Promise.all(convPromises);
+                // Sort by updated time (newest first)
+                convos.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+                setConversations(convos);
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        } else {
+            setConversations([]);
+        }
+
+        setLoading(false);
+    }, [projectId]);
+
+    useEffect(() => {
+        if (projectId && !projectId.startsWith('temp_')) {
+            loadProjectData();
+        }
+    }, [projectId, loadProjectData]);
 
     const handleRefresh = useCallback(() => {
         // Reload project data to get updated conversationIds
@@ -320,3 +370,4 @@ export default function ProjectPage() {
         </ChatProvider>
     );
 }
+
