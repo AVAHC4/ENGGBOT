@@ -32,7 +32,6 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { preloadVoskModel } from '@/lib/vosk-preloader';
 
 
 function ThinkingAnimation() {
@@ -148,26 +147,6 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       return () => clearTimeout(timeout);
     }
   }, [isLoading]);
-
-  // Preload Vosk only for browsers that don't support Web Speech API
-  // Chrome/Edge users don't need the 40MB download - they use native Web Speech
-  useEffect(() => {
-    const hasWebSpeech = typeof window !== "undefined" &&
-      (window.SpeechRecognition || (window as any).webkitSpeechRecognition);
-
-    if (hasWebSpeech) {
-      console.log("Web Speech API available - skipping Vosk preload");
-      return;
-    }
-
-    // No Web Speech API - preload Vosk for this browser (Brave, Firefox, Safari)
-    console.log("No Web Speech API - preloading Vosk for offline speech recognition");
-    const timer = setTimeout(() => {
-      preloadVoskModel().catch(console.error);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Add state to track if sidebar and conversation sidebar are collapsed
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
