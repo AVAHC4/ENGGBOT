@@ -15,12 +15,14 @@ export function getUserEmail(): string | null {
   try {
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
     if (userData && userData.email) {
-      return userData.email;
+      // Always lowercase for consistent matching with Supabase
+      return userData.email.toLowerCase();
     }
 
     const email = localStorage.getItem('user_email');
     if (email) {
-      return email;
+      // Always lowercase for consistent matching with Supabase
+      return email.toLowerCase();
     }
 
     return null;
