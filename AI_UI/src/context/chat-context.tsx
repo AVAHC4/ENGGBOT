@@ -819,32 +819,47 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   }, [isGenerating, isLoading, stopGeneration, isMounted, projectId]);
 
   // Delete the current conversation
-  const deleteCurrentConversation = useCallback(async () => {
+  const deleteCurrentConversation = useCallback(() => {
     if (isMounted) {
-      // Get conversation list before deletion
-      const conversations = await getConversationList();
+      const deletingConversationId = conversationId;
+      const deletingProjectId = projectId;
 
-      // Delete current conversation
-      await deleteConversation(conversationId);
+      // Immediately clear messages and switch to new conversation (optimistic update)
+      setMessages([]);
 
-      // If in a project, remove the link
-      if (projectId) {
-        removeConversationFromProject(projectId, conversationId);
-      }
+      // Start a new conversation immediately
+      const newId = crypto.randomUUID();
+      conversationIdRef.current = newId;
+      setConversationId(newId);
 
-      // If there are other conversations, switch to the most recent one
-      // Otherwise, create a new conversation
-      const remainingConversations = conversations.filter((id: string) => id !== conversationId);
+      // Delete from backend in background
+      (async () => {
+        try {
+          // Get conversation list
+          const conversations = await getConversationList();
 
-      if (remainingConversations.length > 0) {
-        // Switch to the first conversation in the list
-        switchConversation(remainingConversations[0]);
-      } else {
-        // Create a new conversation if no others exist
-        startNewConversation();
-      }
+          // Delete conversation from backend
+          await deleteConversation(deletingConversationId);
+
+          // If in a project, remove the link
+          if (deletingProjectId) {
+            removeConversationFromProject(deletingProjectId, deletingConversationId);
+          }
+
+          // Check if there are other conversations to switch to
+          const remainingConversations = conversations.filter((id: string) => id !== deletingConversationId);
+
+          if (remainingConversations.length > 0) {
+            // Switch to the first remaining conversation
+            switchConversation(remainingConversations[0]);
+          }
+          // If no remaining, we already created a new one above
+        } catch (error) {
+          console.error('Error deleting conversation:', error);
+        }
+      })();
     }
-  }, [conversationId, startNewConversation, switchConversation, isMounted, projectId]);
+  }, [conversationId, switchConversation, isMounted, projectId]);
 
   const toggleThinkingMode = useCallback(() => {
     setThinkingMode(prev => !prev);

@@ -68,35 +68,40 @@ function ProjectConversationsView({
         onRefresh();
     };
 
-    const handleDeleteConversation = async (convId: string) => {
-        try {
-            // Get email from user_data (consistent with rest of app)
-            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-            const email = userData?.email || localStorage.getItem('user_email') || '';
+    const handleDeleteConversation = (convId: string) => {
+        // Optimistic update - remove from UI immediately
+        setConversations(prev => prev.filter(c => c.id !== convId));
 
-            if (!email) {
-                console.error('No email found for delete operation');
-                return;
+        // Delete from backend in background
+        (async () => {
+            try {
+                // Get email from user_data (consistent with rest of app)
+                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                const email = userData?.email || localStorage.getItem('user_email') || '';
+
+                if (!email) {
+                    console.error('No email found for delete operation');
+                    return;
+                }
+
+                console.log('[Delete] Deleting conversation:', convId, 'for email:', email);
+                const response = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    console.log('[Delete] Successfully deleted conversation from database');
+                    // Optionally refresh to ensure sync
+                    onRefresh();
+                } else {
+                    const errorData = await response.json();
+                    console.error('[Delete] Failed to delete:', response.status, errorData);
+                    // Could restore the conversation here if needed
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
             }
-
-            console.log('[Delete] Deleting conversation:', convId, 'for email:', email);
-            const response = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`, {
-                method: 'DELETE',
-            });
-
-            if (response.ok) {
-                console.log('[Delete] Successfully deleted conversation from database');
-                // Remove from local state immediately
-                setConversations(prev => prev.filter(c => c.id !== convId));
-                // Also refresh to sync with server
-                onRefresh();
-            } else {
-                const errorData = await response.json();
-                console.error('[Delete] Failed to delete:', response.status, errorData);
-            }
-        } catch (error) {
-            console.error('Error deleting conversation:', error);
-        }
+        })();
     };
 
     // Format timestamp for display

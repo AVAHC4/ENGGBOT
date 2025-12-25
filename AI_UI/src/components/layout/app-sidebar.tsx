@@ -684,6 +684,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
+      // Optimistic update - remove from UI immediately
+      setConversations(prev => prev.filter(c => c.id !== conversationToDelete.id));
+
       try {
         deleteCurrentConversation();
       } catch (error) {
