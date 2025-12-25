@@ -396,6 +396,13 @@ export default function ProjectPage() {
         loadProjectData();
     }, [loadProjectData]);
 
+    const handleConversationsChange = useCallback((convos: ConversationMeta[]) => {
+        setConversations(convos);
+        if (projectId) {
+            saveConvosToCache(projectId, convos);
+        }
+    }, [projectId, saveConvosToCache]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -412,13 +419,6 @@ export default function ProjectPage() {
             </div>
         );
     }
-
-    const handleConversationsChange = useCallback((convos: ConversationMeta[]) => {
-        setConversations(convos);
-        if (projectId) {
-            saveConvosToCache(projectId, convos);
-        }
-    }, [projectId, saveConvosToCache]);
 
     return (
         <ChatProvider projectId={project.id}>
