@@ -10,16 +10,6 @@ import { z } from "zod"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import {
   Form,
   FormControl,
   FormDescription,
@@ -74,19 +64,19 @@ export function AppearanceForm() {
   const { background, setBackground, options } = useBackground()
   const [profileImage, setProfileImage] = React.useState<string>("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [open, setOpen] = React.useState(false)
-  const [pendingData, setPendingData] = React.useState<AppearanceFormValues | null>(null)
+  const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  const isInitialLoadRef = React.useRef(true)
 
   const form = useForm<AppearanceFormValues>({
     resolver: zodResolver(appearanceFormSchema),
     defaultValues: {
-      theme: "dark", // Default to dark
+      theme: "dark",
       font: "inter",
       background: "flicker",
     },
   })
 
-  // When the component mounts, update the form with the actual theme.
+
   React.useEffect(() => {
     const loadData = async () => {
       if (theme) {
@@ -131,34 +121,29 @@ export function AppearanceForm() {
       }
 
       setIsMounted(true);
+      // Wait a bit before allowing auto-save to prevent saving during initial load
+      setTimeout(() => {
+        isInitialLoadRef.current = false
+      }, 1000)
     }
 
     loadData()
   }, [theme, background, form]);
 
-
-  // Prevent rendering the form until the component is mounted on the client
-  if (!isMounted) {
-    return null;
-  }
-
-  async function onConfirmSave(data: AppearanceFormValues) {
-    setOpen(false)
-    setTheme(data.theme)
-    setBackground(data.background)
+  // Auto-save function
+  const autoSave = React.useCallback(async (data: AppearanceFormValues, avatar: string) => {
+    if (isInitialLoadRef.current) return
 
     // Save profile image to localStorage for immediate updates
-    if (profileImage) {
-      localStorage.setItem('user_avatar', profileImage);
-
+    if (avatar) {
+      localStorage.setItem('user_avatar', avatar);
       try {
         const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-        userData.avatar = profileImage;
+        userData.avatar = avatar;
         localStorage.setItem('user_data', JSON.stringify(userData));
       } catch (e) {
         console.error("Error updating user data", e);
       }
-
       window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
     }
 
@@ -174,7 +159,7 @@ export function AppearanceForm() {
             theme: data.theme,
             font: data.font,
             background: data.background,
-            avatar: profileImage || null,
+            avatar: avatar || null,
           }),
         })
 
@@ -187,10 +172,45 @@ export function AppearanceForm() {
     }
 
     toast({
-      title: "Preferences updated!",
-      description: "Your theme, font, background, and profile picture have been saved.",
+      title: "Preferences saved!",
+      description: "Your changes have been auto-saved.",
     })
+  }, [toast])
+
+  // Watch for form changes and auto-save with debouncing
+  React.useEffect(() => {
+    const subscription = form.watch((data) => {
+      if (isInitialLoadRef.current || !isMounted) return
+
+      // Clear existing timeout
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+
+      // Debounce save by 500ms
+      saveTimeoutRef.current = setTimeout(() => {
+        const formData = data as AppearanceFormValues
+        if (formData.theme && formData.font && formData.background) {
+          autoSave(formData, profileImage)
+        }
+      }, 500)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [form, autoSave, profileImage, isMounted])
+
+
+  // Prevent rendering the form until the component is mounted on the client
+  if (!isMounted) {
+    return null;
   }
+
+
 
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,6 +219,9 @@ export function AppearanceForm() {
       try {
         const compressedBase64 = await compressImage(file);
         setProfileImage(compressedBase64);
+        // Auto-save after profile image change
+        const formData = form.getValues()
+        autoSave(formData, compressedBase64)
       } catch (error) {
         console.error("Error compressing image:", error);
         toast({
@@ -214,14 +237,9 @@ export function AppearanceForm() {
     fileInputRef.current?.click();
   };
 
-  function onSubmit(data: AppearanceFormValues) {
-    setPendingData(data)
-    setOpen(true)
-  }
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <div className="space-y-8">
         <FormField
           control={form.control}
           name="font"
@@ -428,25 +446,7 @@ export function AppearanceForm() {
           </div>
         </div>
 
-        <Button type="submit">Update preferences</Button>
-      </form>
-
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action will update your appearance settings.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => pendingData && onConfirmSave(pendingData)}>
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      </div>
     </Form >
   )
 }
