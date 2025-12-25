@@ -72,7 +72,15 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
   const [engineeringMode, setEngineeringMode] = useState(false);
 
   // projectId as state so it can be updated dynamically
-  const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
+  const [projectId, setProjectIdState] = useState<string | null>(initialProjectId || null);
+
+  // Wrapper for setProjectId that clears messages and triggers reload
+  const setProjectId = useCallback((newProjectId: string | null) => {
+    console.log('[ChatContext] setProjectId called:', newProjectId);
+    // Clear messages when switching projects
+    setMessages([]);
+    setProjectIdState(newProjectId);
+  }, []);
 
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
