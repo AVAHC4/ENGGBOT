@@ -78,6 +78,8 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     toggleEngineeringMode
   } = useChat();
 
+  console.log('[ChatInterface] Render - messages:', messages.length, 'conversationId:', conversationId);
+
   // Add local loading state to ensure animation shows immediately
   const [localLoading, setLocalLoading] = useState(false);
 
