@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // TEMPORARILY ENABLED FOR DEBUGGING - to be reverted
   // Remove ALL console output in production (completely clean console)
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: false,
   },
   // Disable Vercel deployment badge/logo (the "N" circle)
   images: {
