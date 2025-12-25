@@ -30,11 +30,13 @@ interface ConversationMeta {
 function ProjectConversationsView({
     project,
     conversations: initialConversations,
-    onRefresh
+    onRefresh,
+    onConversationsChange
 }: {
     project: Project;
     conversations: ConversationMeta[];
     onRefresh: () => void;
+    onConversationsChange?: (convos: ConversationMeta[]) => void;
 }) {
     const router = useRouter();
     const { switchConversation, startNewConversation, conversationId } = useChat();
@@ -70,7 +72,10 @@ function ProjectConversationsView({
 
     const handleDeleteConversation = (convId: string) => {
         // Optimistic update - remove from UI immediately
-        setConversations(prev => prev.filter(c => c.id !== convId));
+        const updatedConvos = conversations.filter(c => c.id !== convId);
+        setConversations(updatedConvos);
+        // Update cache immediately
+        onConversationsChange?.(updatedConvos);
 
         // Delete from backend in background
         (async () => {
@@ -294,6 +299,37 @@ export default function ProjectPage() {
         };
     }, [projectId]);
 
+    // Get cache key for project conversations
+    const getProjectConvCacheKey = useCallback((pId: string) => {
+        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+        const email = userData?.email || '';
+        const prefix = email ? btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_') : 'default';
+        return `${prefix}_project_convos_${pId}`;
+    }, []);
+
+    // Save project conversations to cache
+    const saveConvosToCache = useCallback((pId: string, convos: ConversationMeta[]) => {
+        try {
+            const cacheKey = getProjectConvCacheKey(pId);
+            localStorage.setItem(cacheKey, JSON.stringify({ convos, timestamp: Date.now() }));
+        } catch (e) {
+            console.warn('[Cache] Failed to save project convos:', e);
+        }
+    }, [getProjectConvCacheKey]);
+
+    // Load project conversations from cache
+    const loadConvosFromCache = useCallback((pId: string): ConversationMeta[] | null => {
+        try {
+            const cacheKey = getProjectConvCacheKey(pId);
+            const cached = localStorage.getItem(cacheKey);
+            if (!cached) return null;
+            const data = JSON.parse(cached);
+            return data.convos || null;
+        } catch (e) {
+            return null;
+        }
+    }, [getProjectConvCacheKey]);
+
     const loadProjectData = useCallback(async () => {
         if (!projectId) return;
 
@@ -303,14 +339,25 @@ export default function ProjectPage() {
             return;
         }
 
+        // Step 1: Load from cache FIRST for instant display
+        const cachedConvos = loadConvosFromCache(projectId);
+        if (cachedConvos && cachedConvos.length > 0) {
+            setConversations(cachedConvos);
+            setLoading(false);
+        }
+
+        // Step 2: Load project data from API
         const foundProject = await getProjectAsync(projectId);
         setProject(foundProject);
 
-        // Load conversation metadata for this project's conversations
+        // Step 3: Load conversation metadata (in background if we had cache)
         if (foundProject && foundProject.conversationIds.length > 0) {
             try {
+                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                const email = userData?.email || localStorage.getItem('user_email') || '';
+
                 const convPromises = foundProject.conversationIds.map(async (convId) => {
-                    const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(localStorage.getItem('user_email') || '')}`);
+                    const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`);
                     if (res.ok) {
                         const data = await res.json();
                         return {
@@ -324,7 +371,10 @@ export default function ProjectPage() {
                 const convos = await Promise.all(convPromises);
                 // Sort by updated time (newest first)
                 convos.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+
+                // Update state and cache
                 setConversations(convos);
+                saveConvosToCache(projectId, convos);
             } catch (error) {
                 console.error('Error loading conversations:', error);
             }
@@ -333,7 +383,7 @@ export default function ProjectPage() {
         }
 
         setLoading(false);
-    }, [projectId]);
+    }, [projectId, loadConvosFromCache, saveConvosToCache]);
 
     useEffect(() => {
         if (projectId && !projectId.startsWith('temp_')) {
@@ -363,6 +413,13 @@ export default function ProjectPage() {
         );
     }
 
+    const handleConversationsChange = useCallback((convos: ConversationMeta[]) => {
+        setConversations(convos);
+        if (projectId) {
+            saveConvosToCache(projectId, convos);
+        }
+    }, [projectId, saveConvosToCache]);
+
     return (
         <ChatProvider projectId={project.id}>
             <div className="relative h-screen w-full overflow-hidden">
@@ -370,6 +427,7 @@ export default function ProjectPage() {
                     project={project}
                     conversations={conversations}
                     onRefresh={handleRefresh}
+                    onConversationsChange={handleConversationsChange}
                 />
             </div>
         </ChatProvider>
