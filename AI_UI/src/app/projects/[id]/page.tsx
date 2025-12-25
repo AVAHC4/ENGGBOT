@@ -252,16 +252,17 @@ function ProjectConversationsView({
 export default function ProjectPage() {
     const params = useParams();
     const router = useRouter();
+    const { setProjectId: setContextProjectId } = useChat();
     const [project, setProject] = useState<Project | null>(null);
     const [conversations, setConversations] = useState<ConversationMeta[]>([]);
     const [loading, setLoading] = useState(true);
-    const [projectId, setProjectId] = useState<string | null>(null);
+    const [localProjectId, setLocalProjectId] = useState<string | null>(null);
 
     // Handle temporary ID detection and real ID updates
     useEffect(() => {
         if (params && params.id) {
             const id = Array.isArray(params.id) ? params.id[0] : params.id;
-            setProjectId(id);
+            setLocalProjectId(id); setContextProjectId(id);
 
             // If this is a temporary ID, create an optimistic project immediately
             if (id.startsWith('temp_')) {
@@ -286,9 +287,9 @@ export default function ProjectPage() {
     // Listen for project ID updates (when temp ID is replaced with real ID)
     useEffect(() => {
         const handleProjectIdUpdate = (event: CustomEvent<{ tempId: string; realId: string }>) => {
-            if (projectId && projectId === event.detail.tempId) {
+            if (localProjectId && localProjectId === event.detail.tempId) {
                 // Update local state with real ID
-                setProjectId(event.detail.realId);
+                setLocalProjectId(event.detail.realId); setContextProjectId(event.detail.realId);
                 setProject(prev => prev ? { ...prev, id: event.detail.realId } : null);
             }
         };
@@ -297,7 +298,7 @@ export default function ProjectPage() {
         return () => {
             window.removeEventListener('projectIdUpdated', handleProjectIdUpdate as EventListener);
         };
-    }, [projectId]);
+    }, [localProjectId]);
 
     // Get cache key for project conversations
     const getProjectConvCacheKey = useCallback((pId: string) => {
@@ -331,23 +332,23 @@ export default function ProjectPage() {
     }, [getProjectConvCacheKey]);
 
     const loadProjectData = useCallback(async () => {
-        if (!projectId) return;
+        if (!localProjectId) return;
 
         // Don't try to load from API if this is a temp ID
-        if (projectId.startsWith('temp_')) {
+        if (localProjectId.startsWith('temp_')) {
             // Project is already set optimistically, just wait for real ID
             return;
         }
 
         // Step 1: Load from cache FIRST for instant display
-        const cachedConvos = loadConvosFromCache(projectId);
+        const cachedConvos = loadConvosFromCache(localProjectId);
         if (cachedConvos && cachedConvos.length > 0) {
             setConversations(cachedConvos);
             setLoading(false);
         }
 
         // Step 2: Load project data from API
-        const foundProject = await getProjectAsync(projectId);
+        const foundProject = await getProjectAsync(localProjectId);
         setProject(foundProject);
 
         // Step 3: Load conversation metadata (in background if we had cache)
@@ -374,7 +375,7 @@ export default function ProjectPage() {
 
                 // Update state and cache
                 setConversations(convos);
-                saveConvosToCache(projectId, convos);
+                saveConvosToCache(localProjectId, convos);
             } catch (error) {
                 console.error('Error loading conversations:', error);
             }
@@ -383,13 +384,13 @@ export default function ProjectPage() {
         }
 
         setLoading(false);
-    }, [projectId, loadConvosFromCache, saveConvosToCache]);
+    }, [localProjectId, loadConvosFromCache, saveConvosToCache]);
 
     useEffect(() => {
-        if (projectId && !projectId.startsWith('temp_')) {
+        if (localProjectId && !localProjectId.startsWith('temp_')) {
             loadProjectData();
         }
-    }, [projectId, loadProjectData]);
+    }, [localProjectId, loadProjectData]);
 
     const handleRefresh = useCallback(() => {
         // Reload project data to get updated conversationIds
@@ -398,10 +399,10 @@ export default function ProjectPage() {
 
     const handleConversationsChange = useCallback((convos: ConversationMeta[]) => {
         setConversations(convos);
-        if (projectId) {
-            saveConvosToCache(projectId, convos);
+        if (localProjectId) {
+            saveConvosToCache(localProjectId, convos);
         }
-    }, [projectId, saveConvosToCache]);
+    }, [localProjectId, saveConvosToCache]);
 
     if (loading) {
         return (
@@ -421,16 +422,14 @@ export default function ProjectPage() {
     }
 
     return (
-        <ChatProvider projectId={project.id}>
-            <div className="relative h-screen w-full overflow-hidden">
-                <ProjectConversationsView
-                    project={project}
-                    conversations={conversations}
-                    onRefresh={handleRefresh}
-                    onConversationsChange={handleConversationsChange}
-                />
-            </div>
-        </ChatProvider>
+        <div className="relative h-screen w-full overflow-hidden">
+            <ProjectConversationsView
+                project={project}
+                conversations={conversations}
+                onRefresh={handleRefresh}
+                onConversationsChange={handleConversationsChange}
+            />
+        </div>
     );
 }
 

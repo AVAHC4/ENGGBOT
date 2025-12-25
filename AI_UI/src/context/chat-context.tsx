@@ -48,16 +48,18 @@ interface ChatContextType {
   setReplyToMessage: (message: ExtendedChatMessage | null) => void;
   addMessage: (message: Partial<ExtendedChatMessage>) => void;
   displayedMessageIds: Set<string>;
-  regenerateLastResponse: () => Promise<void>; // Add regenerate function
-  isPrivateMode: boolean; // Add private mode flag
-  togglePrivateMode: () => void; // Add toggle function for private mode
+  regenerateLastResponse: () => Promise<void>;
+  isPrivateMode: boolean;
+  togglePrivateMode: () => void;
   engineeringMode: boolean;
   toggleEngineeringMode: () => void;
+  projectId: string | null;
+  setProjectId: (id: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children, projectId }: { children: ReactNode; projectId?: string }) {
+export function ChatProvider({ children, projectId: initialProjectId }: { children: ReactNode; projectId?: string }) {
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -68,6 +70,9 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [engineeringMode, setEngineeringMode] = useState(false);
+
+  // projectId as state so it can be updated dynamically
+  const [projectId, setProjectId] = useState<string | null>(initialProjectId || null);
 
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -927,6 +932,8 @@ export function ChatProvider({ children, projectId }: { children: ReactNode; pro
     togglePrivateMode,
     engineeringMode,
     toggleEngineeringMode,
+    projectId,
+    setProjectId,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
