@@ -418,6 +418,8 @@ function clearCache(conversationId: string): void {
 export function saveConversation(id: string, messages: any[], projectId?: string | null) {
   if (isServer()) return;
 
+  console.log('[Storage] saveConversation called:', id.substring(0, 8), 'messages:', messages.length, 'projectId:', projectId);
+
   // Step 1: Save to localStorage IMMEDIATELY (for instant reload)
   saveToCache(id, messages);
 
