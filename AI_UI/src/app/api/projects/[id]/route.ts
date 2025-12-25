@@ -7,11 +7,13 @@ export async function GET(
 ) {
     const { id } = params;
     const searchParams = request.nextUrl.searchParams;
-    const email = searchParams.get('email');
+    const email = searchParams.get('email')?.toLowerCase();
 
     if (!email) {
         return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
+
+    console.log('[API] GET /api/projects/', id, 'email:', email);
 
     try {
         // Verify ownership
