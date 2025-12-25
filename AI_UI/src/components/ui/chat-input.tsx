@@ -6,6 +6,12 @@ import { cn } from "@/lib/utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
+import {
+  preloadWhisperModel,
+  transcribeAudio,
+  isWhisperModelLoading,
+  isWhisperModelLoaded
+} from "@/lib/whisper-preloader";
 
 // Web Speech API types
 interface SpeechRecognitionEvent extends Event {
@@ -85,12 +91,42 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Speech recognition state (Web Speech API only)
+  // Speech recognition state (hybrid: Web Speech + Whisper fallback)
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isLoadingModel, setIsLoadingModel] = useState(false);
+  const [useWhisper, setUseWhisper] = useState(!hasWebSpeechAPI);
+  const [modelLoaded, setModelLoaded] = useState(false);
 
   // Web Speech API ref
   const webSpeechRef = useRef<SpeechRecognition | null>(null);
+
+  // Whisper recording refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
+  // Sync Whisper model state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkState = () => {
+      setIsLoadingModel(isWhisperModelLoading());
+      setModelLoaded(isWhisperModelLoaded());
+    };
+
+    // Check periodically when loading
+    const interval = setInterval(checkState, 500);
+
+    // Listen for whisper events
+    const handleLoaded = () => setModelLoaded(true);
+    window.addEventListener("whisper-loaded", handleLoaded);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("whisper-loaded", handleLoaded);
+    };
+  }, []);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -192,7 +228,15 @@ export function ChatInput({
         console.error("Web Speech API error:", event.error);
 
         if (event.error === "network") {
-          alert("Voice input requires an internet connection. Please check your network.");
+          // Network error - switch to Whisper permanently for this session
+          console.log("Web Speech API network error - switching to Whisper");
+          setUseWhisper(true);
+          webSpeechRef.current = null;
+          setIsRecording(false);
+          setIsTranscribing(false);
+          // Start Whisper recording after a short delay
+          setTimeout(() => startWhisperRecording(), 100);
+          return;
         } else if (event.error === "not-allowed") {
           alert("Microphone permission denied. Please allow microphone access.");
         } else if (event.error !== "aborted" && event.error !== "no-speech") {
@@ -227,27 +271,151 @@ export function ChatInput({
     }
   }, []);
 
-  // Start/stop recording (Web Speech API only)
-  const startRecording = useCallback(() => {
-    if (!hasWebSpeechAPI) {
-      alert("Voice input is only available in Chrome or Edge browsers. Please switch to a supported browser for voice input.");
-      return;
-    }
-    const started = startWebSpeechRecording();
-    if (!started) {
-      alert("Failed to start voice input. Please try again.");
-    }
-  }, [startWebSpeechRecording]);
+  // ========== WHISPER RECORDING (Fallback for Brave/Firefox/Safari) ==========
+  const startWhisperRecording = useCallback(async () => {
+    try {
+      // Load model if not already loaded
+      if (!modelLoaded && !isLoadingModel) {
+        setIsLoadingModel(true);
+        console.log("Loading Whisper model... (first time may take 30-60 seconds)");
+        await preloadWhisperModel();
+        setIsLoadingModel(false);
+        setModelLoaded(true);
+      }
 
-  const stopRecording = useCallback(() => {
-    stopWebSpeechRecording();
-  }, [stopWebSpeechRecording]);
+      setIsRecording(true);
+      audioChunksRef.current = [];
 
-  const toggleRecording = useCallback(() => {
-    if (isRecording) {
-      stopRecording();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 16000,
+        },
+      });
+      mediaStreamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
+      });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start(1000); // Collect chunks every second
+      console.log("Whisper recording started");
+    } catch (err: any) {
+      console.error("Failed to start Whisper recording:", err);
+      setIsRecording(false);
+      setIsLoadingModel(false);
+      if (err.name === "NotAllowedError") {
+        alert("Microphone permission denied. Please allow microphone access.");
+      } else {
+        alert(`Failed to start recording: ${err.message}`);
+      }
+    }
+  }, [modelLoaded, isLoadingModel]);
+
+  const stopWhisperRecording = useCallback(async () => {
+    try {
+      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+        setIsRecording(false);
+        return;
+      }
+
+      setIsRecording(false);
+      setIsTranscribing(true);
+
+      // Stop the media recorder and wait for final data
+      await new Promise<void>((resolve) => {
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.onstop = () => resolve();
+          mediaRecorderRef.current.stop();
+        } else {
+          resolve();
+        }
+      });
+
+      // Stop media stream
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+        mediaStreamRef.current = null;
+      }
+
+      // If no audio recorded, just return
+      if (audioChunksRef.current.length === 0) {
+        setIsTranscribing(false);
+        return;
+      }
+
+      // Convert recorded audio to Float32Array for Whisper
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const arrayBuffer = await audioBlob.arrayBuffer();
+
+      // Decode audio using AudioContext
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const audioData = audioBuffer.getChannelData(0);
+
+      console.log("Transcribing with Whisper...");
+
+      // Transcribe with Whisper
+      const transcription = await transcribeAudio(audioData);
+
+      if (transcription && transcription.trim()) {
+        setMessage((prev) => {
+          const cleaned = prev.trim();
+          return cleaned ? `${cleaned} ${transcription.trim()}` : transcription.trim();
+        });
+      }
+
+      audioContext.close();
+      mediaRecorderRef.current = null;
+      audioChunksRef.current = [];
+      setIsTranscribing(false);
+      setTimeout(() => textareaRef.current?.focus(), 50);
+      console.log("Whisper transcription complete");
+    } catch (err) {
+      console.error("Error in Whisper transcription:", err);
+      setIsTranscribing(false);
+      alert("Failed to transcribe audio. Please try again.");
+    }
+  }, []);
+
+  // ========== HYBRID START/STOP ==========
+  const startRecording = useCallback(async () => {
+    if (useWhisper) {
+      // Use Whisper directly (browser doesn't support Web Speech or had network error)
+      await startWhisperRecording();
     } else {
-      startRecording();
+      // Try Web Speech API first
+      const started = startWebSpeechRecording();
+      if (!started) {
+        // Fall back to Whisper if Web Speech failed to start
+        console.log("Web Speech API not available, falling back to Whisper");
+        setUseWhisper(true);
+        await startWhisperRecording();
+      }
+    }
+  }, [useWhisper, startWebSpeechRecording, startWhisperRecording]);
+
+  const stopRecording = useCallback(async () => {
+    if (webSpeechRef.current) {
+      stopWebSpeechRecording();
+    } else {
+      await stopWhisperRecording();
+    }
+  }, [stopWebSpeechRecording, stopWhisperRecording]);
+
+  const toggleRecording = useCallback(async () => {
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
     }
   }, [isRecording, startRecording, stopRecording]);
 
@@ -255,6 +423,12 @@ export function ChatInput({
   useEffect(() => {
     return () => {
       stopWebSpeechRecording();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      }
     };
   }, [stopWebSpeechRecording]);
 
@@ -365,7 +539,7 @@ export function ChatInput({
             <Paperclip className="h-5 w-5" />
           </Button>
 
-          {/* Voice input button (Vosk offline transcription) */}
+          {/* Voice input button (Web Speech + Whisper fallback) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -376,10 +550,14 @@ export function ChatInput({
                   isRecording && "bg-red-500 hover:bg-red-600 text-white"
                 )}
                 onClick={toggleRecording}
-                disabled={disabled || awaitingResponse}
-                aria-label={isRecording ? "Stop recording" : "Start voice input"}
+                disabled={disabled || awaitingResponse || isLoadingModel || isTranscribing}
+                aria-label={isLoadingModel ? "Loading speech model..." : isRecording ? "Stop recording" : "Start voice input"}
               >
-                {isRecording ? (
+                {isLoadingModel ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isTranscribing ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : isRecording ? (
                   <Square className="h-5 w-5" />
                 ) : (
                   <Mic className="h-5 w-5" />
@@ -388,11 +566,15 @@ export function ChatInput({
             </TooltipTrigger>
             <TooltipContent side="top">
               <p className="text-xs">
-                {isRecording
-                  ? "Stop recording"
-                  : hasWebSpeechAPI
-                    ? "Start voice input"
-                    : "Voice input (Chrome/Edge only)"}
+                {isLoadingModel
+                  ? "Loading speech model... (first time takes ~30s)"
+                  : isTranscribing
+                    ? "Transcribing..."
+                    : isRecording
+                      ? "Stop recording"
+                      : useWhisper
+                        ? "Start voice input (offline)"
+                        : "Start voice input"}
               </p>
             </TooltipContent>
           </Tooltip>

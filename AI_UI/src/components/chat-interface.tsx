@@ -32,6 +32,7 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { preloadWhisperModel } from '@/lib/whisper-preloader';
 
 
 function ThinkingAnimation() {
@@ -147,6 +148,27 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       return () => clearTimeout(timeout);
     }
   }, [isLoading]);
+
+  // Preload Whisper only for browsers that don't support Web Speech API
+  // Chrome/Edge users don't need model download - they use native Web Speech
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hasWebSpeech = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (hasWebSpeech) {
+      console.log("Web Speech API available - skipping Whisper preload");
+      return;
+    }
+
+    // No Web Speech API (Brave, Firefox, Safari) - preload Whisper in background
+    console.log("No Web Speech API - preloading Whisper for offline speech recognition");
+    const timer = setTimeout(() => {
+      preloadWhisperModel().catch(console.error);
+    }, 3000); // Delay preload to not block initial render
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // Add state to track if sidebar and conversation sidebar are collapsed
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
