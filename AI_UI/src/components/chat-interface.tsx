@@ -35,7 +35,6 @@ import { cn } from "@/lib/utils";
 import { preloadVoskModel } from '@/lib/vosk-preloader';
 
 
-// AI thinking animation component
 function ThinkingAnimation() {
   return (
     <div className="message-container assistant-message">
@@ -150,10 +149,19 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     }
   }, [isLoading]);
 
-  // Preload Vosk speech recognition model in background after login
-  // This ensures the model is ready when user clicks the mic button
+  // Preload Vosk only for browsers that don't support Web Speech API
+  // Chrome/Edge users don't need the 40MB download - they use native Web Speech
   useEffect(() => {
-    // Small delay to let the UI settle first
+    const hasWebSpeech = typeof window !== "undefined" &&
+      (window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+    if (hasWebSpeech) {
+      console.log("Web Speech API available - skipping Vosk preload");
+      return;
+    }
+
+    // No Web Speech API - preload Vosk for this browser (Brave, Firefox, Safari)
+    console.log("No Web Speech API - preloading Vosk for offline speech recognition");
     const timer = setTimeout(() => {
       preloadVoskModel().catch(console.error);
     }, 2000);

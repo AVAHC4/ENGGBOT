@@ -8,6 +8,45 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useChat } from "@/context/chat-context";
 import { getVoskModel, preloadVoskModel, isVoskModelLoading, isVoskModelLoaded } from "@/lib/vosk-preloader";
 
+// Web Speech API types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+interface SpeechRecognitionResultList {
+  length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event & { error: string }) => void) | null;
+  onend: (() => void) | null;
+  onstart: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
+// Check if Web Speech API is available and working
+const hasWebSpeechAPI = typeof window !== "undefined" &&
+  (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: File[], replyToId?: string) => void;
@@ -47,11 +86,15 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Vosk speech recognition state
+  // Speech recognition state
   const [isRecording, setIsRecording] = useState(false);
-  const [isLoadingModel, setIsLoadingModel] = useState(isVoskModelLoading());
+  const [isLoadingModel, setIsLoadingModel] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [useVosk, setUseVosk] = useState(!hasWebSpeechAPI);
   const [modelLoaded, setModelLoaded] = useState(isVoskModelLoaded());
+
+  // Web Speech API ref
+  const webSpeechRef = useRef<SpeechRecognition | null>(null);
 
   // Vosk refs
   const voskModelRef = useRef<any>(null);
@@ -61,8 +104,10 @@ export function ChatInput({
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const finalTranscriptRef = useRef("");
 
-  // Sync state with global preloader
+  // Only sync Vosk state if we're using Vosk
   useEffect(() => {
+    if (!useVosk) return;
+
     const interval = setInterval(() => {
       const loading = isVoskModelLoading();
       const loaded = isVoskModelLoaded();
@@ -77,7 +122,7 @@ export function ChatInput({
     }, 500);
 
     return () => clearInterval(interval);
-  }, [isLoadingModel, modelLoaded]);
+  }, [isLoadingModel, modelLoaded, useVosk]);
 
   // Update internal state when prop changes
   useEffect(() => {
@@ -169,20 +214,113 @@ export function ChatInput({
     }
   }, []);
 
-  // Start Vosk recording
-  const startRecording = useCallback(async () => {
+  // ========== WEB SPEECH API (Primary for Chrome/Edge) ==========
+  const startWebSpeechRecording = useCallback(() => {
     try {
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognitionAPI) {
+        return false; // Not supported, will fall back to Vosk
+      }
+
+      const recognition = new SpeechRecognitionAPI();
+      webSpeechRef.current = recognition;
+
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      let finalTranscript = "";
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setIsTranscribing(true);
+        console.log("Web Speech API recording started");
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript + " ";
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+
+        setMessage((prev) => {
+          const baseMessage = prev.replace(/\[.*?\]$/, "").trim();
+          const newText = finalTranscript + (interimTranscript ? `[${interimTranscript}]` : "");
+          return baseMessage ? `${baseMessage} ${newText}` : newText;
+        });
+      };
+
+      recognition.onerror = (event: Event & { error: string }) => {
+        console.error("Web Speech API error:", event.error);
+
+        if (event.error === "network") {
+          // Network error - switch to Vosk permanently for this session
+          console.log("Web Speech API network error - switching to Vosk");
+          setUseVosk(true);
+          webSpeechRef.current = null;
+          setIsRecording(false);
+          setIsTranscribing(false);
+          // Trigger Vosk recording
+          setTimeout(() => startVoskRecording(), 100);
+          return;
+        } else if (event.error === "not-allowed") {
+          alert("Microphone permission denied. Please allow microphone access.");
+        } else if (event.error !== "aborted" && event.error !== "no-speech") {
+          alert(`Speech recognition error: ${event.error}`);
+        }
+        setIsRecording(false);
+        setIsTranscribing(false);
+      };
+
+      recognition.onend = () => {
+        setMessage((prev) => prev.replace(/\[.*?\]/g, "").trim());
+        setIsRecording(false);
+        setIsTranscribing(false);
+        setTimeout(() => textareaRef.current?.focus(), 50);
+        console.log("Web Speech API recording stopped");
+      };
+
+      recognition.start();
+      return true;
+    } catch (err) {
+      console.error("Failed to start Web Speech API:", err);
+      return false;
+    }
+  }, []);
+
+  const stopWebSpeechRecording = useCallback(() => {
+    try {
+      webSpeechRef.current?.stop();
+      webSpeechRef.current = null;
+    } catch (err) {
+      console.error("Error stopping Web Speech API:", err);
+    }
+  }, []);
+
+  // ========== VOSK (Fallback for Brave/Firefox/Safari) ==========
+  const startVoskRecording = useCallback(async () => {
+    try {
+      setIsLoadingModel(true);
+
       // Load model if not already loaded
       let model = voskModelRef.current;
       if (!model) {
         model = await loadVoskModel();
-        if (!model) return;
+        if (!model) {
+          setIsLoadingModel(false);
+          return;
+        }
       }
 
       // Wait for model to be ready
       if (!model.ready) {
         console.log("Waiting for Vosk model to be ready...");
-        // Model might still be initializing
         await new Promise<void>((resolve) => {
           const checkReady = setInterval(() => {
             if (model.ready) {
@@ -190,13 +328,14 @@ export function ChatInput({
               resolve();
             }
           }, 100);
-          // Timeout after 30 seconds
           setTimeout(() => {
             clearInterval(checkReady);
             resolve();
           }, 30000);
         });
       }
+
+      setIsLoadingModel(false);
 
       if (!model.ready) {
         alert("Speech recognition model is not ready. Please try again.");
@@ -252,7 +391,6 @@ export function ChatInput({
 
       processor.onaudioprocess = (e) => {
         if (recognizerRef.current) {
-          // Vosk expects the AudioBuffer directly
           recognizerRef.current.acceptWaveform(e.inputBuffer);
         }
       };
@@ -264,7 +402,8 @@ export function ChatInput({
       setIsTranscribing(true);
       console.log("Vosk recording started");
     } catch (err: any) {
-      console.error("Failed to start recording:", err);
+      console.error("Failed to start Vosk recording:", err);
+      setIsLoadingModel(false);
       if (err.name === "NotAllowedError") {
         alert("Microphone permission denied. Please allow microphone access.");
       } else {
@@ -275,48 +414,61 @@ export function ChatInput({
     }
   }, [loadVoskModel]);
 
-  // Stop Vosk recording
-  const stopRecording = useCallback(() => {
+  const stopVoskRecording = useCallback(() => {
     try {
-      // Disconnect processor
       if (processorRef.current) {
         processorRef.current.disconnect();
         processorRef.current = null;
       }
-
-      // Close audio context
       if (audioContextRef.current) {
         audioContextRef.current.close();
         audioContextRef.current = null;
       }
-
-      // Stop media stream
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach((t) => t.stop());
         mediaStreamRef.current = null;
       }
-
-      // Clean up recognizer
       if (recognizerRef.current) {
         recognizerRef.current.remove();
         recognizerRef.current = null;
       }
-
-      // Clean up interim markers in message
       setMessage((prev) => prev.replace(/\[.*?\]/g, "").trim());
-
       setIsRecording(false);
       setIsTranscribing(false);
       setTimeout(() => textareaRef.current?.focus(), 50);
       console.log("Vosk recording stopped");
     } catch (err) {
-      console.error("Error stopping recording:", err);
+      console.error("Error stopping Vosk recording:", err);
       setIsRecording(false);
       setIsTranscribing(false);
     }
   }, []);
 
-  // Toggle recording
+  // ========== HYBRID START/STOP ==========
+  const startRecording = useCallback(async () => {
+    if (useVosk) {
+      // Use Vosk directly (browser doesn't support Web Speech or had network error)
+      await startVoskRecording();
+    } else {
+      // Try Web Speech API first
+      const started = startWebSpeechRecording();
+      if (!started) {
+        // Fall back to Vosk if Web Speech failed to start
+        console.log("Web Speech API not available, falling back to Vosk");
+        setUseVosk(true);
+        await startVoskRecording();
+      }
+    }
+  }, [useVosk, startWebSpeechRecording, startVoskRecording]);
+
+  const stopRecording = useCallback(() => {
+    if (webSpeechRef.current) {
+      stopWebSpeechRecording();
+    } else {
+      stopVoskRecording();
+    }
+  }, [stopWebSpeechRecording, stopVoskRecording]);
+
   const toggleRecording = useCallback(() => {
     if (isRecording) {
       stopRecording();
@@ -328,7 +480,8 @@ export function ChatInput({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopRecording();
+      stopWebSpeechRecording();
+      stopVoskRecording();
       if (voskModelRef.current) {
         voskModelRef.current.terminate?.();
         voskModelRef.current = null;
