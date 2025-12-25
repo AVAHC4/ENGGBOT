@@ -156,7 +156,7 @@ export async function DELETE(
         // 2. Delete all messages for these conversations
         if (conversationIds.length > 0) {
             const { error: msgError } = await supabaseAdmin
-                .from('messages')
+                .from('conversation_messages')
                 .delete()
                 .in('conversation_id', conversationIds);
 

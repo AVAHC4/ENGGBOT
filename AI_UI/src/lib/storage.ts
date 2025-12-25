@@ -258,17 +258,26 @@ const CONVERSATION_NOT_FOUND = Symbol('CONVERSATION_NOT_FOUND');
 // Returns messages array, empty array on error, or CONVERSATION_NOT_FOUND on 404
 async function loadConversationFromDatabase(id: string): Promise<any[] | typeof CONVERSATION_NOT_FOUND> {
   const email = getUserEmail();
-  if (!email) return [];
+  console.log('[DB Load] Loading conversation:', id.substring(0, 8), 'email:', email ? email.substring(0, 5) + '...' : 'null');
+
+  if (!email) {
+    console.warn('[DB Load] No email found, cannot load from database');
+    return [];
+  }
 
   try {
-    const response = await fetch(`/api/conversations/${id}?email=${encodeURIComponent(email)}`);
+    const url = `/api/conversations/${id}?email=${encodeURIComponent(email)}`;
+    console.log('[DB Load] Fetching from:', url.substring(0, 50) + '...');
+    const response = await fetch(url);
 
     if (!response.ok) {
       // Network error or server error, return empty array
+      console.error('[DB Load] Response not ok:', response.status);
       return [];
     }
 
     const data = await response.json();
+    console.log('[DB Load] Response data:', { exists: data.exists, messageCount: data.messages?.length || 0 });
 
     // Check if conversation doesn't exist (API returns 200 with exists: false)
     if (data.exists === false) {
@@ -278,6 +287,7 @@ async function loadConversationFromDatabase(id: string): Promise<any[] | typeof 
     return data.messages || [];
   } catch (error) {
     // Silently handle errors - no console.error to keep production console clean
+    console.error('[DB Load] Error:', error);
     return [];
   }
 }
