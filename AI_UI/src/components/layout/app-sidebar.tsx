@@ -1087,23 +1087,37 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
             <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async () => {
+              onClick={() => {
                 if (projectToDelete) {
-                  try {
-                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                    const email = userData?.email || '';
-                    const response = await fetch(`/api/projects/${projectToDelete.id}?email=${encodeURIComponent(email)}`, {
-                      method: 'DELETE',
-                    });
-                    if (response.ok) {
-                      setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+                  const deletingProject = projectToDelete;
+
+                  // Optimistic update - remove from UI immediately
+                  setProjects(prev => prev.filter(p => p.id !== deletingProject.id));
+                  setShowDeleteProjectDialog(false);
+                  setProjectToDelete(null);
+
+                  // Delete from backend in background (this will also delete all conversations)
+                  (async () => {
+                    try {
+                      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+                      const email = userData?.email || '';
+                      const response = await fetch(`/api/projects/${deletingProject.id}?email=${encodeURIComponent(email)}`, {
+                        method: 'DELETE',
+                      });
+                      if (response.ok) {
+                        const data = await response.json();
+                        console.log(`[Delete Project] Successfully deleted project with ${data.deletedConversations || 0} conversations`);
+                      } else {
+                        console.error('Failed to delete project from backend');
+                      }
+                    } catch (error) {
+                      console.error('Error deleting project:', error);
                     }
-                  } catch (error) {
-                    console.error('Error deleting project:', error);
-                  }
+                  })();
+                } else {
+                  setShowDeleteProjectDialog(false);
+                  setProjectToDelete(null);
                 }
-                setShowDeleteProjectDialog(false);
-                setProjectToDelete(null);
               }}
             >
               Delete

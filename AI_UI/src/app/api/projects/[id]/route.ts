@@ -141,18 +141,47 @@ export async function DELETE(
     }
 
     try {
-        // Delete project (cascade will handle files and conversation links?
-        // Conversation table has: project_id uuid. onDelete set to?
-        // In schema: `project_id uuid`. No foreign key constraint defined in `conversations` table in my view earlier?
-        // If no FK constraint, we need to manually unlink conversations.
-        // Let's first check if we should unlink or delete. Usually projects deleted -> conversations deleted?
-        // Or just unlinked.
-        // The `projects_schema.sql` defines FK for `project_files` with cascade.
-        // `conversations_schema.sql` had: `project_id uuid`. It did NOT define a reference to public.projects (maybe because projects didn't exist yet).
-        // So we should manually update conversations to set project_id = null OR delete them.
-        // For now, let's just delete the project.
+        // 1. First, get all conversation IDs that belong to this project
+        const { data: conversations, error: convError } = await supabaseAdmin
+            .from('conversations')
+            .select('id')
+            .eq('project_id', id);
 
-        // 1. Delete project
+        if (convError) {
+            console.error('Error fetching project conversations:', convError);
+        }
+
+        const conversationIds = conversations?.map(c => c.id) || [];
+
+        // 2. Delete all messages for these conversations
+        if (conversationIds.length > 0) {
+            const { error: msgError } = await supabaseAdmin
+                .from('messages')
+                .delete()
+                .in('conversation_id', conversationIds);
+
+            if (msgError) {
+                console.error('Error deleting conversation messages:', msgError);
+            }
+
+            // 3. Delete all conversations in this project
+            const { error: delConvError } = await supabaseAdmin
+                .from('conversations')
+                .delete()
+                .in('id', conversationIds);
+
+            if (delConvError) {
+                console.error('Error deleting conversations:', delConvError);
+            }
+        }
+
+        // 4. Delete project files (should cascade, but let's be explicit)
+        await supabaseAdmin
+            .from('project_files')
+            .delete()
+            .eq('project_id', id);
+
+        // 5. Finally delete the project itself
         const { error } = await supabaseAdmin
             .from('projects')
             .delete()
@@ -163,13 +192,9 @@ export async function DELETE(
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        // 2. Unlink conversations (if no FK) - Optional clean up
-        await supabaseAdmin
-            .from('conversations')
-            .update({ project_id: null })
-            .eq('project_id', id);
+        console.log(`[Delete Project] Deleted project ${id} with ${conversationIds.length} conversations`);
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, deletedConversations: conversationIds.length });
     } catch (error) {
         console.error('Error deleting project:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
