@@ -44,7 +44,7 @@ interface ChatContextType {
   switchConversation: (id: string) => void;
   startNewConversation: () => void;
   deleteCurrentConversation: () => void;
-  replyToMessage: ExtendedChatMessage | null;
+  replyToMessage: ExtdedChatMessage | null;
   setReplyToMessage: (message: ExtendedChatMessage | null) => void;
   addMessage: (message: Partial<ExtendedChatMessage>) => void;
   displayedMessageIds: Set<string>;
