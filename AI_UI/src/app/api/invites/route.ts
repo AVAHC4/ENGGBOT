@@ -41,6 +41,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ invites: withNames })
   } catch (e: any) {
+    console.error('[GET /api/invites] Error:', e)
     return NextResponse.json({ error: e?.message || 'Failed to list invites' }, { status: 500 })
   }
 }
