@@ -39,7 +39,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ teams })
   } catch (e: any) {
-    console.error('[GET /api/teams] Error:', e)
     return NextResponse.json({ error: e?.message || 'Failed to list teams' }, { status: 500 })
   }
 }
