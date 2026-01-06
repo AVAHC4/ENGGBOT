@@ -6,7 +6,7 @@
 
 // Model definitions
 export const AVAILABLE_MODELS = {
-    "glm-4.5": "z-ai/glm-4.5-air:free",
+    "gpt-oss": "openai/gpt-oss-120b:free",
 };
 
 // Client interface
@@ -38,7 +38,7 @@ export class OpenRouterClient {
     constructor(options?: OpenRouterClientOptions) {
         this.apiKey = options?.apiKey?.trim() || "";
         this.apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-        this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["glm-4.5"];
+        this.defaultModel = options?.defaultModel || AVAILABLE_MODELS["gpt-oss"];
 
         // Dynamically determine the referer URL for OpenRouter
         const refererUrl = typeof process !== 'undefined' && process.env.VERCEL_URL

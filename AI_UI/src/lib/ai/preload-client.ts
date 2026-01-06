@@ -38,7 +38,7 @@ export function getOpenRouterClient(): OpenRouterClient {
 
     // Create the instance
     _openRouterClientInstance = new OpenRouterClient({
-      defaultModel: AVAILABLE_MODELS["glm-4.5"]
+      defaultModel: AVAILABLE_MODELS["gpt-oss"]
     });
 
     if (SUPPRESS_INIT_LOG) {

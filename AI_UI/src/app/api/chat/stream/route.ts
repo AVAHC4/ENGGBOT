@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "z-ai/glm-4.5-air:free",
+      model = "openai/gpt-oss-120b:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
     }
     const openRouterClient = new OpenRouterClient({ apiKey });
 
-    const modelName = AVAILABLE_MODELS["glm-4.5"];
+    const modelName = AVAILABLE_MODELS["gpt-oss"];
 
     const messages = [];
 

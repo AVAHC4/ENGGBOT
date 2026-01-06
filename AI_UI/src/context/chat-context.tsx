@@ -65,7 +65,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
   const [isGenerating, setIsGenerating] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(true);
   const [webSearchMode, setWebSearchMode] = useState(false);
-  const currentModel = "z-ai/glm-4.5-air:free";
+  const currentModel = "openai/gpt-oss-120b:free";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
