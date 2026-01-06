@@ -41,6 +41,7 @@ function processOpenRouterStream(
                 continue;
               }
               const data = JSON.parse(jsonData);
+              console.log('[STREAM DEBUG] Parsed chunk:', JSON.stringify(data).substring(0, 200));
 
               if (data.choices && data.choices[0]?.delta?.content) {
                 const content = data.choices[0].delta.content;
