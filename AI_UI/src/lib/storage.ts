@@ -472,18 +472,14 @@ export async function loadConversation(id: string): Promise<any[]> {
 
   if (cachedMessages && cachedMessages.length > 0) {
     // Return cached data immediately, but also sync with database in background
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Storage] Using cached messages for:', id.substring(0, 8));
-    }
+    console.log('[Storage] Using cached messages for:', id.substring(0, 8), cachedMessages.length, 'messages');
 
     // Background sync: fetch from database and update cache if different
     loadConversationFromDatabase(id).then((dbMessages) => {
       // Check if conversation was deleted from database (404)
       if (dbMessages === CONVERSATION_NOT_FOUND) {
         // Clear stale cache - conversation no longer exists in DB
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('[Storage] Conversation not found in DB, clearing stale cache:', id.substring(0, 8));
-        }
+        console.log('[Storage] Conversation not found in DB, clearing stale cache:', id.substring(0, 8));
         clearCache(id);
         knownConversations.delete(id);
         dispatchConversationUpdated();
@@ -496,9 +492,7 @@ export async function loadConversation(id: string): Promise<any[]> {
         const dbStr = JSON.stringify(dbMessages.map((m: any) => m.id).sort());
 
         if (cacheStr !== dbStr) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('[Storage] Database has different data, updating cache');
-          }
+          console.log('[Storage] Database has different data, updating cache');
           saveToCache(id, dbMessages);
           dispatchConversationUpdated();
         }
@@ -511,10 +505,9 @@ export async function loadConversation(id: string): Promise<any[]> {
   }
 
   // Step 2: No cache, load from database
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[Storage] No cache, loading from database:', id.substring(0, 8));
-  }
+  console.log('[Storage] No cache, loading from database:', id.substring(0, 8));
   const dbMessages = await loadConversationFromDatabase(id);
+  console.log('[Storage] DB returned:', dbMessages === CONVERSATION_NOT_FOUND ? 'NOT_FOUND' : (Array.isArray(dbMessages) ? dbMessages.length + ' messages' : 'error'));
 
   // Handle 404 - conversation doesn't exist
   if (dbMessages === CONVERSATION_NOT_FOUND) {
