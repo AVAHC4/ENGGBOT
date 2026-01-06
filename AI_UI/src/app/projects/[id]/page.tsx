@@ -358,18 +358,30 @@ export default function ProjectPage() {
                 const email = userData?.email || localStorage.getItem('user_email') || '';
 
                 const convPromises = foundProject.conversationIds.map(async (convId) => {
-                    const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        return {
-                            id: convId,
-                            title: data.conversation?.title || 'Untitled',
-                            updated: data.conversation?.updated_at || data.conversation?.created_at || ''
-                        };
+                    try {
+                        const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            // Check if the conversation actually exists (not deleted/orphaned)
+                            if (data.exists === false) {
+                                console.log('[Project] Filtering out orphaned conversation:', convId);
+                                return null; // Will be filtered out
+                            }
+                            return {
+                                id: convId,
+                                title: data.conversation?.title || 'Untitled',
+                                updated: data.conversation?.updatedAt || data.conversation?.createdAt || ''
+                            };
+                        }
+                        return null; // Filter out failed requests
+                    } catch (e) {
+                        console.error('[Project] Error fetching conversation:', convId, e);
+                        return null;
                     }
-                    return { id: convId, title: 'Untitled', updated: '' };
                 });
-                const convos = await Promise.all(convPromises);
+                const allConvos = await Promise.all(convPromises);
+                // Filter out null entries (orphaned/deleted conversations)
+                const convos = allConvos.filter((c): c is ConversationMeta => c !== null);
                 // Sort by updated time (newest first)
                 convos.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 
