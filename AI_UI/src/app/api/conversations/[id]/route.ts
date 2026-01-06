@@ -24,13 +24,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             .eq('id', conversationId)
             .single();
 
+        console.log('[API GET /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
+
         if (convError || !conversation) {
             // Return 200 with exists: false to prevent browser console network errors
+            console.log('[API GET /conversations/[id]] NOT FOUND - error:', convError?.message);
             return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
         // Verify ownership
         if (conversation.user_email !== email) {
+            console.log('[API GET /conversations/[id]] UNAUTHORIZED - convEmail:', conversation.user_email, 'requestEmail:', email);
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
