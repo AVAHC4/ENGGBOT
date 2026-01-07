@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to automatically commit and push changes to GitHub with AI-generated commit messages
+# Script to automatically commit and push changes to GitHub with accurate commit messages
 # Usage: ./scripts/commit_changes_to_github.sh
 
 set -e  # Exit on any error
@@ -26,138 +26,142 @@ echo "$CHANGED_FILES"
 echo ""
 echo "💭 Analyzing changes to generate commit message..."
 
-# Get detailed diff for analysis (limit to prevent huge outputs)
-DIFF_STAT=$(git diff --cached --stat | head -20)
-DIFF_CONTENT=$(git diff --cached --unified=3 | head -100)
+# Get FULL diff for accurate analysis
+DIFF_CONTENT=$(git diff --cached)
 
-# Extract file changes summary
+# Count file change types
 ADDED_FILES=$(echo "$CHANGED_FILES" | grep "^A" | wc -l | tr -d ' ')
 MODIFIED_FILES=$(echo "$CHANGED_FILES" | grep "^M" | wc -l | tr -d ' ')
 DELETED_FILES=$(echo "$CHANGED_FILES" | grep "^D" | wc -l | tr -d ' ')
+TOTAL_FILES=$((ADDED_FILES + MODIFIED_FILES + DELETED_FILES))
 
-# Analyze what kind of changes were made
-COMMIT_MSG=""
-COMMIT_TYPE=""
+# Get list of changed file basenames for the message
+get_changed_basenames() {
+    echo "$CHANGED_FILES" | awk '{print $2}' | xargs -I {} basename {} | sort -u | head -5
+}
 
-# Detect new features
-if [ "$ADDED_FILES" -gt 0 ]; then
-    if echo "$CHANGED_FILES" | grep -q "projects/"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Add ChatGPT-style projects feature with workspaces and custom instructions"
-    elif echo "$CHANGED_FILES" | grep -q "components/.*dialog"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Add new dialog components for enhanced UX"
-    elif echo "$CHANGED_FILES" | grep -q "page\.tsx"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Add new $(echo "$CHANGED_FILES" | grep "page\.tsx" | sed 's/.*app\/\([^/]*\).*/\1/' | head -1) page"
-    elif echo "$CHANGED_FILES" | grep -q "\.tsx\|\.ts"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Add new components and functionality"
-    fi
-fi
+# Extract meaningful changes from diff
+extract_changes() {
+    # Get added lines (excluding import statements and whitespace-only lines)
+    ADDED_LINES=$(echo "$DIFF_CONTENT" | grep "^+" | grep -v "^+++" | grep -v "^+$" | grep -v "^+[[:space:]]*$" | grep -v "^+import" | grep -v "^+[[:space:]]*import" | head -20)
+    
+    # Get removed lines
+    REMOVED_LINES=$(echo "$DIFF_CONTENT" | grep "^-" | grep -v "^---" | grep -v "^-$" | grep -v "^-[[:space:]]*$" | grep -v "^-import" | grep -v "^-[[:space:]]*import" | head -20)
+    
+    echo "$ADDED_LINES"
+}
 
-# Detect fixes
-if echo "$DIFF_CONTENT" | grep -qi "fix\|bug\|error\|issue"; then
-    COMMIT_TYPE="fix"
-    if echo "$DIFF_CONTENT" | grep -qi "calendar"; then
-        COMMIT_MSG="Fix calendar visibility and formatting issues"
-    elif echo "$DIFF_CONTENT" | grep -qi "404\|route\|url"; then
-        COMMIT_MSG="Fix routing and navigation 404 errors"
-    elif echo "$DIFF_CONTENT" | grep -qi "background\|style\|css"; then
-        COMMIT_MSG="Fix styling and background color issues"
+# Detect specific patterns in changes
+detect_change_type() {
+    local diff="$1"
+    
+    # Check for specific code patterns to understand what was changed
+    if echo "$diff" | grep -qi "useState\|useEffect\|useCallback\|useMemo"; then
+        echo "hooks"
+    elif echo "$diff" | grep -qi "fetch\|axios\|api/\|endpoint"; then
+        echo "api"
+    elif echo "$diff" | grep -qi "className\|style=\|css\|backgroundColor\|color:"; then
+        echo "styling"
+    elif echo "$diff" | grep -qi "onClick\|onChange\|onSubmit\|addEventListener"; then
+        echo "events"
+    elif echo "$diff" | grep -qi "function\|const.*=.*=>\|async\|export"; then
+        echo "logic"
+    elif echo "$diff" | grep -qi "interface\|type\|Props"; then
+        echo "types"
     else
-        COMMIT_MSG="Fix bugs and improve stability"
+        echo "general"
     fi
-fi
+}
 
-# Detect refactoring
-if [ "$DELETED_FILES" -gt 0 ] && [ "$ADDED_FILES" -gt 0 ]; then
-    COMMIT_TYPE="refactor"
-    COMMIT_MSG="Refactor code structure and reorganize components"
-elif echo "$DIFF_CONTENT" | grep -qi "refactor\|rename\|move"; then
-    COMMIT_TYPE="refactor"
-    COMMIT_MSG="Refactor codebase for better maintainability"
-fi
-
-# Detect style changes
-if [ -z "$COMMIT_MSG" ] && echo "$CHANGED_FILES" | grep -q "\\.css\|\\.scss"; then
-    COMMIT_TYPE="style"
-    COMMIT_MSG="Update styles and visual design"
-fi
-
-# Detect documentation
-if echo "$CHANGED_FILES" | grep -q "\\.md"; then
-    COMMIT_TYPE="docs"
-    COMMIT_MSG="Update documentation"
-fi
-
-# Detect configuration changes
-if echo "$CHANGED_FILES" | grep -q "package\\.json\|yarn\\.lock\|package-lock\\.json"; then
-    COMMIT_TYPE="chore"
-    COMMIT_MSG="Update dependencies and packages"
-elif echo "$CHANGED_FILES" | grep -q "config\|\.json\|\.env"; then
-    COMMIT_TYPE="chore"
-    COMMIT_MSG="Update configuration files"
-fi
-
-# If still no commit message, analyze the actual diff content
-if [ -z "$COMMIT_MSG" ]; then
-    # Look for common patterns in the diff
-    if echo "$DIFF_CONTENT" | grep -qi "props\|interface\|type"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Update TypeScript interfaces and component props"
-    elif echo "$DIFF_CONTENT" | grep -qi "onClick\|onChange\|onSubmit"; then
-        COMMIT_TYPE="feat"
-        COMMIT_MSG="Improve event handling and user interactions"
-    elif echo "$DIFF_CONTENT" | grep -qi "className\|style=\|bg-\|text-"; then
-        COMMIT_TYPE="style"
-        COMMIT_MSG="Update component styling and layout"
-    elif echo "$DIFF_CONTENT" | grep -qi "import.*from"; then
-        COMMIT_TYPE="refactor"
-        COMMIT_MSG="Update imports and dependencies"
+# Build accurate commit message based on actual changes
+build_commit_message() {
+    local files_changed="$1"
+    local diff="$2"
+    
+    # Get the primary files changed (strip paths, get basenames)
+    PRIMARY_FILES=$(echo "$files_changed" | awk '{print $2}' | xargs -I {} basename {} | sort -u | head -3 | tr '\n' ', ' | sed 's/,$//' | sed 's/,/, /g')
+    
+    # Detect what kind of changes
+    CHANGE_TYPE=$(detect_change_type "$diff")
+    
+    # Determine commit type prefix
+    if [ "$DELETED_FILES" -gt 0 ] && [ "$ADDED_FILES" -eq 0 ] && [ "$MODIFIED_FILES" -eq 0 ]; then
+        PREFIX="remove"
+    elif [ "$ADDED_FILES" -gt 0 ] && [ "$MODIFIED_FILES" -eq 0 ]; then
+        PREFIX="add"
+    elif echo "$diff" | grep -qi "fix\|bug\|error\|issue\|correct\|resolve"; then
+        PREFIX="fix"
+    elif [ "$MODIFIED_FILES" -gt 0 ] && [ "$ADDED_FILES" -eq 0 ]; then
+        PREFIX="update"
     else
-        COMMIT_TYPE="chore"
-        COMMIT_MSG="Update project files"
+        PREFIX="update"
     fi
-fi
+    
+    # Build descriptive message
+    if [ "$TOTAL_FILES" -eq 1 ]; then
+        # Single file - be specific
+        SINGLE_FILE=$(echo "$files_changed" | awk '{print $2}' | head -1)
+        SINGLE_BASENAME=$(basename "$SINGLE_FILE")
+        ACTION=$(echo "$files_changed" | awk '{print $1}' | head -1)
+        
+        case "$ACTION" in
+            A) echo "Add $SINGLE_BASENAME" ;;
+            D) echo "Remove $SINGLE_BASENAME" ;;
+            M) 
+                # Try to describe what was modified
+                case "$CHANGE_TYPE" in
+                    hooks) echo "Update React hooks in $SINGLE_BASENAME" ;;
+                    api) echo "Update API logic in $SINGLE_BASENAME" ;;
+                    styling) echo "Update styling in $SINGLE_BASENAME" ;;
+                    events) echo "Update event handlers in $SINGLE_BASENAME" ;;
+                    types) echo "Update TypeScript types in $SINGLE_BASENAME" ;;
+                    logic) echo "Update logic in $SINGLE_BASENAME" ;;
+                    *) echo "Update $SINGLE_BASENAME" ;;
+                esac
+                ;;
+            *) echo "Update $SINGLE_BASENAME" ;;
+        esac
+    elif [ "$TOTAL_FILES" -le 3 ]; then
+        # 2-3 files - list them
+        echo "$PREFIX: $PRIMARY_FILES"
+    else
+        # Many files - summarize by directory or type
+        # Get the most common directory
+        COMMON_DIR=$(echo "$files_changed" | awk '{print $2}' | xargs -I {} dirname {} | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')
+        DIR_BASENAME=$(basename "$COMMON_DIR")
+        
+        if [ "$DIR_BASENAME" != "." ]; then
+            echo "$PREFIX: $TOTAL_FILES files in $DIR_BASENAME"
+        else
+            echo "$PREFIX: $TOTAL_FILES files ($PRIMARY_FILES)"
+        fi
+    fi
+}
 
-# Add specific context based on changed files
-SCOPE=""
-if echo "$CHANGED_FILES" | grep -q "projects/"; then
-    SCOPE="projects"
-elif echo "$CHANGED_FILES" | grep -q "calendar"; then
-    SCOPE="calendar"
-elif echo "$CHANGED_FILES" | grep -q "sidebar"; then
-    SCOPE="sidebar"
-elif echo "$CHANGED_FILES" | grep -q "chat"; then
-    SCOPE="chat"
-elif echo "$CHANGED_FILES" | grep -q "teams"; then
-    SCOPE="teams"
-elif echo "$CHANGED_FILES" | grep -q "auth"; then
-    SCOPE="auth"
-fi
+# Generate the commit message
+COMMIT_MSG=$(build_commit_message "$CHANGED_FILES" "$DIFF_CONTENT")
 
-# Format final commit message (Conventional Commits style)
-if [ -n "$SCOPE" ]; then
-    FINAL_MSG="$COMMIT_TYPE($SCOPE): $COMMIT_MSG"
-else
-    FINAL_MSG="$COMMIT_TYPE: $COMMIT_MSG"
-fi
+# Capitalize first letter
+COMMIT_MSG="$(echo "${COMMIT_MSG:0:1}" | tr '[:lower:]' '[:upper:]')${COMMIT_MSG:1}"
 
+echo ""
 echo "📝 Generated commit message:"
-echo "   $FINAL_MSG"
+echo "   $COMMIT_MSG"
 echo ""
 
-# Ask for confirmation (optional - comment out if you want auto-commit)
-# read -p "❓ Proceed with this commit message? (y/n) " -n 1 -r
+# Optional: Ask for confirmation
+# Uncomment the following lines if you want to confirm before committing
+# read -p "❓ Proceed with this commit message? (y/n/e for edit) " -n 1 -r
 # echo
-# if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+# if [[ $REPLY =~ ^[Ee]$ ]]; then
+#     read -p "Enter custom commit message: " COMMIT_MSG
+# elif [[ ! $REPLY =~ ^[Yy]$ ]]; then
 #     echo "❌ Commit cancelled"
 #     exit 1
 # fi
 
 echo "💾 Committing changes..."
-git commit -m "$FINAL_MSG"
+git commit -m "$COMMIT_MSG"
 
 echo ""
 echo "🚀 Pushing to origin main..."
@@ -165,4 +169,4 @@ git push origin main
 
 echo ""
 echo "✅ Successfully committed and pushed changes to GitHub!"
-echo "📋 Commit message used: $FINAL_MSG"
+echo "📋 Commit message used: $COMMIT_MSG"

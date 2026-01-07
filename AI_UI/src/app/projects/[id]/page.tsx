@@ -2,10 +2,8 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getProjectAsync } from "@/lib/projects/storage";
-import { Project } from "@/lib/projects/types";
 import { ChatInterface } from "@/components/chat-interface";
-import { ChatProvider, useChat } from "@/context/chat-context";
+import { useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -24,101 +22,172 @@ import {
 interface ConversationMeta {
     id: string;
     title: string;
-    updated: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
-function ProjectConversationsView({
-    project,
-    conversations: initialConversations,
-    onRefresh,
-    onConversationsChange
-}: {
-    project: Project;
-    conversations: ConversationMeta[];
-    onRefresh: () => void;
-    onConversationsChange?: (convos: ConversationMeta[]) => void;
-}) {
+interface ProjectMeta {
+    id: string;
+    name: string;
+    emoji: string;
+}
+
+// Hook to fetch project conversations
+function useProjectConversations(projectId: string | null) {
+    const [project, setProject] = useState<ProjectMeta | null>(null);
+    const [conversations, setConversations] = useState<ConversationMeta[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = useCallback(async () => {
+        if (!projectId || projectId.startsWith('temp_')) {
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            const email = userData?.email || '';
+
+            if (!email) {
+                setError('No user email found');
+                setLoading(false);
+                return;
+            }
+
+            const response = await fetch(
+                `/api/projects/${projectId}/conversations?email=${encodeURIComponent(email)}`
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to fetch project data');
+            }
+
+            const data = await response.json();
+            setProject(data.project);
+            setConversations(data.conversations);
+            setError(null);
+        } catch (err: any) {
+            console.error('[ProjectPage] Error fetching data:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [projectId]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const refetch = useCallback(() => {
+        setLoading(true);
+        fetchData();
+    }, [fetchData]);
+
+    const removeConversation = useCallback((convId: string) => {
+        setConversations(prev => prev.filter(c => c.id !== convId));
+    }, []);
+
+    return { project, conversations, loading, error, refetch, removeConversation };
+}
+
+// Helper to format time
+function formatTime(timestamp: string) {
+    try {
+        return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch {
+        return 'Unknown';
+    }
+}
+
+export default function ProjectPage() {
+    const params = useParams();
     const router = useRouter();
-    const { switchConversation, startNewConversation, conversationId } = useChat();
+    const { setProjectId, switchConversation, startNewConversation } = useChat();
+
+    const [projectId, setLocalProjectId] = useState<string | null>(null);
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-    const [conversations, setConversations] = useState(initialConversations);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState<ConversationMeta | null>(null);
 
-    // Update conversations when initialConversations changes
+    // Extract project ID from params
     useEffect(() => {
-        setConversations(initialConversations);
-    }, [initialConversations]);
+        if (params?.id) {
+            const id = Array.isArray(params.id) ? params.id[0] : params.id;
+            setLocalProjectId(id);
+            setProjectId(id);
+        }
+    }, [params, setProjectId]);
 
+    // Fetch project data
+    const { project, conversations, loading, error, refetch, removeConversation } = useProjectConversations(projectId);
+
+    // Handle conversation selection
     const handleSelectConversation = (convId: string) => {
         switchConversation(convId);
         setSelectedConversationId(convId);
     };
 
+    // Handle new conversation
     const handleNewConversation = () => {
         startNewConversation();
-        // Use the conversationId from context after starting - it will be updated
-        // Wait a tick for the state to update, then select
-        setTimeout(() => {
-            setSelectedConversationId('new');
-        }, 50);
+        setTimeout(() => setSelectedConversationId('new'), 50);
     };
 
+    // Handle back from chat
     const handleBackFromChat = () => {
         setSelectedConversationId(null);
-        // Refresh the conversations list to pick up the new conversation
-        onRefresh();
+        refetch();
     };
 
-    const handleDeleteConversation = (convId: string) => {
-        // Optimistic update - remove from UI immediately
-        const updatedConvos = conversations.filter(c => c.id !== convId);
-        setConversations(updatedConvos);
-        // Update cache immediately
-        onConversationsChange?.(updatedConvos);
+    // Handle delete conversation
+    const handleDeleteConversation = async (convId: string) => {
+        // Optimistic update
+        removeConversation(convId);
 
-        // Delete from backend in background
-        (async () => {
-            try {
-                // Get email from user_data (consistent with rest of app)
-                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                const email = userData?.email || localStorage.getItem('user_email') || '';
-
-                if (!email) {
-                    console.error('No email found for delete operation');
-                    return;
-                }
-
-                console.log('[Delete] Deleting conversation:', convId, 'for email:', email);
-                const response = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`, {
-                    method: 'DELETE',
-                });
-
-                if (response.ok) {
-                    console.log('[Delete] Successfully deleted conversation from database');
-                    // Optionally refresh to ensure sync
-                    onRefresh();
-                } else {
-                    const errorData = await response.json();
-                    console.error('[Delete] Failed to delete:', response.status, errorData);
-                    // Could restore the conversation here if needed
-                }
-            } catch (error) {
-                console.error('Error deleting conversation:', error);
-            }
-        })();
-    };
-
-    // Format timestamp for display
-    const formatTime = (timestamp: string) => {
         try {
-            return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-        } catch {
-            return 'Unknown';
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            const email = userData?.email || '';
+
+            if (!email) return;
+
+            const response = await fetch(
+                `/api/conversations/${convId}?email=${encodeURIComponent(email)}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.ok) {
+                console.error('[ProjectPage] Failed to delete conversation');
+                refetch(); // Restore on failure
+            }
+        } catch (err) {
+            console.error('[ProjectPage] Error deleting conversation:', err);
+            refetch();
         }
     };
 
-    // If a conversation is selected, show the chat interface
+    // Loading state
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error || !project) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+                <h1 className="text-2xl font-bold">Project not found</h1>
+                <p className="text-muted-foreground">{error}</p>
+                <Button onClick={() => router.push("/projects")}>Back to Projects</Button>
+            </div>
+        );
+    }
+
+    // Chat view when conversation is selected
     if (selectedConversationId) {
         const CustomHeader = (
             <div className="flex items-center justify-between w-full px-4 py-2">
@@ -141,9 +210,9 @@ function ProjectConversationsView({
         );
     }
 
-    // Show conversation list
+    // Conversations list view
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-screen">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
@@ -184,9 +253,9 @@ function ProjectConversationsView({
                                         <MessageSquare className="h-5 w-5 text-primary" />
                                     </div>
                                     <div className="flex-1 min-w-0 text-left">
-                                        <h3 className="font-medium truncate">{convo.title || 'Untitled'}</h3>
+                                        <h3 className="font-medium truncate">{convo.title}</h3>
                                         <p className="text-sm text-muted-foreground">
-                                            {formatTime(convo.updated)}
+                                            {formatTime(convo.updatedAt)}
                                         </p>
                                     </div>
                                 </button>
@@ -248,200 +317,3 @@ function ProjectConversationsView({
         </div>
     );
 }
-
-export default function ProjectPage() {
-    const params = useParams();
-    const router = useRouter();
-    const { setProjectId: setContextProjectId } = useChat();
-    const [project, setProject] = useState<Project | null>(null);
-    const [conversations, setConversations] = useState<ConversationMeta[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [localProjectId, setLocalProjectId] = useState<string | null>(null);
-
-    // Handle temporary ID detection and real ID updates
-    useEffect(() => {
-        if (params && params.id) {
-            const id = Array.isArray(params.id) ? params.id[0] : params.id;
-            setLocalProjectId(id); setContextProjectId(id);
-
-            // If this is a temporary ID, create an optimistic project immediately
-            if (id.startsWith('temp_')) {
-                // Get project name from sessionStorage if available
-                const storedName = sessionStorage.getItem(`project_name_${id}`);
-                const optimisticProject: Project = {
-                    id: id,
-                    name: storedName || 'New Project',
-                    emoji: '📁',
-                    created: new Date().toISOString(),
-                    updated: new Date().toISOString(),
-                    conversationIds: [],
-                    fileIds: [],
-                };
-                setProject(optimisticProject);
-                setConversations([]);
-                setLoading(false);
-            }
-        }
-    }, [params]);
-
-    // Listen for project ID updates (when temp ID is replaced with real ID)
-    useEffect(() => {
-        const handleProjectIdUpdate = (event: CustomEvent<{ tempId: string; realId: string }>) => {
-            if (localProjectId && localProjectId === event.detail.tempId) {
-                // Update local state with real ID
-                setLocalProjectId(event.detail.realId); setContextProjectId(event.detail.realId);
-                setProject(prev => prev ? { ...prev, id: event.detail.realId } : null);
-            }
-        };
-
-        window.addEventListener('projectIdUpdated', handleProjectIdUpdate as EventListener);
-        return () => {
-            window.removeEventListener('projectIdUpdated', handleProjectIdUpdate as EventListener);
-        };
-    }, [localProjectId]);
-
-    // Get cache key for project conversations
-    const getProjectConvCacheKey = useCallback((pId: string) => {
-        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-        const email = userData?.email || '';
-        const prefix = email ? btoa(encodeURIComponent(email)).replace(/[^a-z0-9]/gi, '_') : 'default';
-        return `${prefix}_project_convos_${pId}`;
-    }, []);
-
-    // Save project conversations to cache
-    const saveConvosToCache = useCallback((pId: string, convos: ConversationMeta[]) => {
-        try {
-            const cacheKey = getProjectConvCacheKey(pId);
-            localStorage.setItem(cacheKey, JSON.stringify({ convos, timestamp: Date.now() }));
-        } catch (e) {
-            console.warn('[Cache] Failed to save project convos:', e);
-        }
-    }, [getProjectConvCacheKey]);
-
-    // Load project conversations from cache
-    const loadConvosFromCache = useCallback((pId: string): ConversationMeta[] | null => {
-        try {
-            const cacheKey = getProjectConvCacheKey(pId);
-            const cached = localStorage.getItem(cacheKey);
-            if (!cached) return null;
-            const data = JSON.parse(cached);
-            return data.convos || null;
-        } catch (e) {
-            return null;
-        }
-    }, [getProjectConvCacheKey]);
-
-    const loadProjectData = useCallback(async () => {
-        if (!localProjectId) return;
-
-        // Don't try to load from API if this is a temp ID
-        if (localProjectId.startsWith('temp_')) {
-            // Project is already set optimistically, just wait for real ID
-            return;
-        }
-
-        // Step 1: Load from cache FIRST for instant display
-        const cachedConvos = loadConvosFromCache(localProjectId);
-        if (cachedConvos && cachedConvos.length > 0) {
-            setConversations(cachedConvos);
-            setLoading(false);
-        }
-
-        // Step 2: Load project data from API
-        const foundProject = await getProjectAsync(localProjectId);
-        setProject(foundProject);
-
-        // Step 3: Load conversation metadata (in background if we had cache)
-        if (foundProject && foundProject.conversationIds.length > 0) {
-            try {
-                const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                const email = userData?.email || localStorage.getItem('user_email') || '';
-
-                const convPromises = foundProject.conversationIds.map(async (convId) => {
-                    try {
-                        const res = await fetch(`/api/conversations/${convId}?email=${encodeURIComponent(email)}`);
-                        if (res.ok) {
-                            const data = await res.json();
-                            // Check if the conversation actually exists (not deleted/orphaned)
-                            if (data.exists === false) {
-                                console.log('[Project] Filtering out orphaned conversation:', convId);
-                                return null; // Will be filtered out
-                            }
-                            return {
-                                id: convId,
-                                title: data.conversation?.title || 'Untitled',
-                                updated: data.conversation?.updatedAt || data.conversation?.createdAt || ''
-                            };
-                        }
-                        return null; // Filter out failed requests
-                    } catch (e) {
-                        console.error('[Project] Error fetching conversation:', convId, e);
-                        return null;
-                    }
-                });
-                const allConvos = await Promise.all(convPromises);
-                // Filter out null entries (orphaned/deleted conversations)
-                const convos = allConvos.filter((c): c is ConversationMeta => c !== null);
-                // Sort by updated time (newest first)
-                convos.sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
-
-                // Update state and cache
-                setConversations(convos);
-                saveConvosToCache(localProjectId, convos);
-            } catch (error) {
-                console.error('Error loading conversations:', error);
-            }
-        } else {
-            setConversations([]);
-        }
-
-        setLoading(false);
-    }, [localProjectId, loadConvosFromCache, saveConvosToCache]);
-
-    useEffect(() => {
-        if (localProjectId && !localProjectId.startsWith('temp_')) {
-            loadProjectData();
-        }
-    }, [localProjectId, loadProjectData]);
-
-    const handleRefresh = useCallback(() => {
-        // Reload project data to get updated conversationIds
-        loadProjectData();
-    }, [loadProjectData]);
-
-    const handleConversationsChange = useCallback((convos: ConversationMeta[]) => {
-        setConversations(convos);
-        if (localProjectId) {
-            saveConvosToCache(localProjectId, convos);
-        }
-    }, [localProjectId, saveConvosToCache]);
-
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-        );
-    }
-
-    if (!project) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-                <h1 className="text-2xl font-bold">Project not found</h1>
-                <Button onClick={() => router.push("/projects")}>Back to Projects</Button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="relative h-screen w-full overflow-hidden">
-            <ProjectConversationsView
-                project={project}
-                conversations={conversations}
-                onRefresh={handleRefresh}
-                onConversationsChange={handleConversationsChange}
-            />
-        </div>
-    );
-}
-
