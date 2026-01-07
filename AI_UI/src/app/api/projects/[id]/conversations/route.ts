@@ -36,12 +36,21 @@ export async function GET(
         }
 
         // Fetch all conversations for this project in one query
+        // Using explicit project_id match and NOT NULL to ensure we only get project conversations
         const { data: conversations, error: convError } = await supabaseAdmin
             .from('conversations')
-            .select('id, title, created_at, updated_at')
+            .select('id, title, project_id, created_at, updated_at')
             .eq('project_id', projectId)
+            .not('project_id', 'is', null)
             .eq('user_email', email)
             .order('updated_at', { ascending: false });
+
+        console.log('[API] Project conversations query:', {
+            projectId,
+            email,
+            foundCount: conversations?.length || 0,
+            conversationIds: conversations?.map(c => ({ id: c.id.substring(0, 8), project_id: c.project_id }))
+        });
 
         if (convError) {
             console.error('[API] Error fetching project conversations:', convError);
