@@ -42,7 +42,7 @@ export async function GET(
             .select('id, title, project_id, created_at, updated_at')
             .eq('project_id', projectId)
             .not('project_id', 'is', null)
-            .eq('user_email', email)
+            .eq('user_emal', email)
             .order('updated_at', { ascending: false });
 
         console.log('[API] Project conversations query:', {
