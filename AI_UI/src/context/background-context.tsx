@@ -78,7 +78,7 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
     loadBackground();
   }, []);
 
-  // Persist changes
+
   useEffect(() => {
     try {
       if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, background);
