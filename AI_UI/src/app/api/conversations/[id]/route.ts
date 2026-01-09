@@ -76,9 +76,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-// PUT /api/conversations/[id]
-// Update conversation metadata
-// Body: { email: string, title?: string, updatedAt?: string }
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;

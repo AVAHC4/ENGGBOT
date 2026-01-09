@@ -32,7 +32,7 @@ interface ProjectMeta {
     emoji: string;
 }
 
-// Hook to fetch project conversations
+
 function useProjectConversations(projectId: string | null) {
     const [project, setProject] = useState<ProjectMeta | null>(null);
     const [conversations, setConversations] = useState<ConversationMeta[]>([]);
