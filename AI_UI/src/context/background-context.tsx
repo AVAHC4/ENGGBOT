@@ -32,56 +32,45 @@ function getUserEmail(): string | null {
   }
 }
 
-// Get initial background from localStorage synchronously during state init
-function getInitialBackground(): BackgroundOption {
-  if (typeof window === 'undefined') return "flicker";
-
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-
-    // Migrate old values
-    if (saved === "solid-light" || saved === "solid-dark") {
-      localStorage.setItem(STORAGE_KEY, "solid");
-      return "solid";
-    }
-
-    if (saved && VALID_BACKGROUNDS.includes(saved as BackgroundOption)) {
-      return saved as BackgroundOption;
-    }
-  } catch { }
-
-  // Default for new users: "flicker" (black dotted grid)
-  return "flicker";
-}
-
 const BackgroundContext = createContext<BackgroundContextValue | undefined>(undefined);
 
 export function BackgroundProvider({ children }: { children: React.ReactNode }) {
-  // Initialize with localStorage value synchronously to prevent flashing
-  const [background, setBackgroundState] = useState<BackgroundOption>(getInitialBackground);
+  // Always start with "flicker" on both server and client to avoid hydration mismatch
+  const [background, setBackgroundState] = useState<BackgroundOption>("flicker");
 
-  // Track if initial mount is complete
-  const isInitialMount = useRef(true);
-  // Track if DB has been checked
-  const dbChecked = useRef(false);
-  // Store the localStorage value at initial load for comparison (as a ref to persist value)
+  // Track if initial load from localStorage is complete
+  const hasLoadedFromStorage = useRef(false);
+  // Store the localStorage value for comparison during DB sync
   const initialLocalStorageValue = useRef<string | null>(null);
 
-  // Sync with database for logged-in users (runs once after mount)
+  // Load from localStorage first (runs once after hydration)
   useEffect(() => {
-    // Capture the initial localStorage value before any DB sync
-    initialLocalStorageValue.current = typeof window !== 'undefined'
-      ? localStorage.getItem(STORAGE_KEY)
-      : null;
+    if (hasLoadedFromStorage.current) return;
+    hasLoadedFromStorage.current = true;
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      initialLocalStorageValue.current = saved;
+
+      // Migrate old values
+      if (saved === "solid-light" || saved === "solid-dark") {
+        setBackgroundState("solid");
+        localStorage.setItem(STORAGE_KEY, "solid");
+        initialLocalStorageValue.current = "solid";
+      } else if (saved && VALID_BACKGROUNDS.includes(saved as BackgroundOption)) {
+        setBackgroundState(saved as BackgroundOption);
+      }
+    } catch { }
+  }, []);
+
+  // Then sync with database for logged-in users (runs after localStorage load)
+  useEffect(() => {
+    // Wait for localStorage to be loaded first
+    if (!hasLoadedFromStorage.current) return;
 
     const syncWithDatabase = async () => {
       const email = getUserEmail();
-      if (!email) {
-        // No logged in user, just mark as loaded
-        dbChecked.current = true;
-        isInitialMount.current = false;
-        return;
-      }
+      if (!email) return;
 
       try {
         const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`);
@@ -94,9 +83,9 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
             const localValue = initialLocalStorageValue.current;
             const isLocalValueValid = localValue && VALID_BACKGROUNDS.includes(localValue as BackgroundOption);
 
-            // If localStorage has a valid value but DB is different, trust localStorage
-            // (user may have changed it and DB hasn't synced yet)
+            // If localStorage has a valid value but DB has default, trust localStorage
             // If localStorage is empty/invalid, use DB value
+            // If DB has non-default value, use DB (it's the source of truth)
             if (!isLocalValueValid || settings.background !== "flicker") {
               setBackgroundState(settings.background as BackgroundOption);
               localStorage.setItem(STORAGE_KEY, settings.background);
@@ -106,12 +95,11 @@ export function BackgroundProvider({ children }: { children: React.ReactNode }) 
       } catch (e) {
         console.error("Failed to load background from database:", e);
       }
-
-      dbChecked.current = true;
-      isInitialMount.current = false;
     };
 
-    syncWithDatabase();
+    // Small delay to ensure localStorage effect has run
+    const timer = setTimeout(syncWithDatabase, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save to database when background changes (with debounce)
