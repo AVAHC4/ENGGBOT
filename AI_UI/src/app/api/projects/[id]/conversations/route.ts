@@ -35,8 +35,6 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Fetch all conversations for this project in one query
-        // Using explicit project_id match and NOT NULL to ensure we only get project conversations
         const { data: conversations, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id, title, project_id, created_at, updated_at')
