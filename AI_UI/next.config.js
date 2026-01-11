@@ -55,20 +55,6 @@ const nextConfig = {
       },
     ];
   },
-  async redirects() {
-    return [
-      {
-        source: '/project/:id',
-        destination: '/AI_UI/project/:id',
-        permanent: true,
-      },
-      {
-        source: '/project/:projectId/c/:conversationId',
-        destination: '/AI_UI/project/:projectId/c/:conversationId',
-        permanent: true,
-      },
-    ];
-  },
 }
 
 module.exports = nextConfig
