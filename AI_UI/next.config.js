@@ -36,6 +36,11 @@ const nextConfig = {
       "sharp$": false,
       "onnxruntime-node$": false,
     }
+    // Handle .node files (often cause issues with onnxruntime in browser)
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'ignore-loader'
+    });
     return config;
   },
   async headers() {
