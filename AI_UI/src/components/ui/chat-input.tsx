@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
-import {
-  preloadWhisperModel,
-  transcribeAudio,
-  isWhisperModelLoading,
-  isWhisperModelLoaded
-} from "@/lib/whisper-preloader";
+// import {
+//   preloadWhisperModel,
+//   transcribeAudio,
+//   isWhisperModelLoading,
+//   isWhisperModelLoaded
+// } from "@/lib/whisper-preloader";
 
 // Web Speech API types
 interface SpeechRecognitionEvent extends Event {
@@ -96,7 +96,7 @@ export function ChatInput({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isLoadingModel, setIsLoadingModel] = useState(false);
   const [useWhisper, setUseWhisper] = useState(!hasWebSpeechAPI);
-  const [modelLoaded, setModelLoaded] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false); // Stubbed state
 
   // Web Speech API ref
   const webSpeechRef = useRef<SpeechRecognition | null>(null);
@@ -106,26 +106,9 @@ export function ChatInput({
   const audioChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  // Sync Whisper model state
+  // Sync Whisper model state - DISABLED FOR DEBUGGING
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const checkState = () => {
-      setIsLoadingModel(isWhisperModelLoading());
-      setModelLoaded(isWhisperModelLoaded());
-    };
-
-    // Check periodically when loading
-    const interval = setInterval(checkState, 500);
-
-    // Listen for whisper events
-    const handleLoaded = () => setModelLoaded(true);
-    window.addEventListener("whisper-loaded", handleLoaded);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("whisper-loaded", handleLoaded);
-    };
+    // Stubbed effect
   }, []);
 
   // Update internal state when prop changes
@@ -273,117 +256,13 @@ export function ChatInput({
 
   // ========== WHISPER RECORDING (Fallback for Brave/Firefox/Safari) ==========
   const startWhisperRecording = useCallback(async () => {
-    try {
-      // Load model if not already loaded
-      if (!modelLoaded && !isLoadingModel) {
-        setIsLoadingModel(true);
-        console.log("Loading Whisper model... (first time may take 30-60 seconds)");
-        await preloadWhisperModel();
-        setIsLoadingModel(false);
-        setModelLoaded(true);
-      }
-
-      setIsRecording(true);
-      audioChunksRef.current = [];
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 16000,
-        },
-      });
-      mediaStreamRef.current = stream;
-
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4",
-      });
-      mediaRecorderRef.current = mediaRecorder;
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.start(1000); // Collect chunks every second
-      console.log("Whisper recording started");
-    } catch (err: any) {
-      console.error("Failed to start Whisper recording:", err);
-      setIsRecording(false);
-      setIsLoadingModel(false);
-      if (err.name === "NotAllowedError") {
-        alert("Microphone permission denied. Please allow microphone access.");
-      } else {
-        alert(`Failed to start recording: ${err.message}`);
-      }
-    }
+    console.log("Whisper recording temporarily disabled for debugging.");
+    alert("Whisper recording is temporarily unavailable.");
   }, [modelLoaded, isLoadingModel]);
 
   const stopWhisperRecording = useCallback(async () => {
-    try {
-      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
-        setIsRecording(false);
-        return;
-      }
-
-      setIsRecording(false);
-      setIsTranscribing(true);
-
-      // Stop the media recorder and wait for final data
-      await new Promise<void>((resolve) => {
-        if (mediaRecorderRef.current) {
-          mediaRecorderRef.current.onstop = () => resolve();
-          mediaRecorderRef.current.stop();
-        } else {
-          resolve();
-        }
-      });
-
-      // Stop media stream
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
-        mediaStreamRef.current = null;
-      }
-
-      // If no audio recorded, just return
-      if (audioChunksRef.current.length === 0) {
-        setIsTranscribing(false);
-        return;
-      }
-
-      // Convert recorded audio to Float32Array for Whisper
-      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-      const arrayBuffer = await audioBlob.arrayBuffer();
-
-      // Decode audio using AudioContext
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      const audioData = audioBuffer.getChannelData(0);
-
-      console.log("Transcribing with Whisper...");
-
-      // Transcribe with Whisper
-      const transcription = await transcribeAudio(audioData);
-
-      if (transcription && transcription.trim()) {
-        setMessage((prev) => {
-          const cleaned = prev.trim();
-          return cleaned ? `${cleaned} ${transcription.trim()}` : transcription.trim();
-        });
-      }
-
-      audioContext.close();
-      mediaRecorderRef.current = null;
-      audioChunksRef.current = [];
-      setIsTranscribing(false);
-      setTimeout(() => textareaRef.current?.focus(), 50);
-      console.log("Whisper transcription complete");
-    } catch (err) {
-      console.error("Error in Whisper transcription:", err);
-      setIsTranscribing(false);
-      alert("Failed to transcribe audio. Please try again.");
-    }
+    console.log("Whisper recording disabled.");
+    setIsRecording(false);
   }, []);
 
   // ========== HYBRID START/STOP ==========

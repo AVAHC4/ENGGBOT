@@ -32,7 +32,7 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { preloadWhisperModel } from '@/lib/whisper-preloader';
+// import { preloadWhisperModel } from '@/lib/whisper-preloader';
 
 
 function ThinkingAnimation() {
@@ -166,7 +166,9 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     // No Web Speech API (Brave, Firefox, Safari) - preload Whisper in background
     console.log("No Web Speech API - preloading Whisper for offline speech recognition");
     const timer = setTimeout(() => {
-      preloadWhisperModel().catch(console.error);
+      // TEMPORARILY DISABLED TO DEBUG CRASH
+      // preloadWhisperModel().catch(console.error);
+      console.log("Whisper preload disabled for debugging");
     }, 3000); // Delay preload to not block initial render
 
     return () => clearTimeout(timer);
