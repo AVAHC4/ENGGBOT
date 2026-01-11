@@ -3,7 +3,7 @@
  */
 
 export interface SearchResult {
-  title: string;
+  title: string
   snippet: string;
   url: string;
 }
@@ -22,7 +22,7 @@ export async function performWebSearch(query: string): Promise<SearchResult[]> {
     // For speed, always use mock data
     // This makes the search function return almost immediately
     return getMockSearchResults(query);
-    
+
     // Original implementation below - commented out for faster performance
     /*
     // For demo purposes, return mock data if no API key is available
@@ -63,7 +63,7 @@ export async function performWebSearch(query: string): Promise<SearchResult[]> {
  */
 function getMockSearchResults(query: string): SearchResult[] {
   const currentDate = new Date().toLocaleDateString();
-  
+
   // Limit to just two results for speed
   return [
     {
