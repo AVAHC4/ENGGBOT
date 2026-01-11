@@ -435,6 +435,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedProjectIds, isMounted]);
 
   // Toggle project expansion

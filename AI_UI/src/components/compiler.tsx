@@ -224,6 +224,7 @@ export function Compiler() {
         [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedLanguage]);
 
   // Function to run the code
@@ -541,6 +542,7 @@ export function Compiler() {
                   if (line.startsWith('data:image/png;base64,')) {
                     return (
                       <div key={i} className="py-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
                       </div>
                     );

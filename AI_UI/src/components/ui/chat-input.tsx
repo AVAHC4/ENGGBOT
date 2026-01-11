@@ -243,6 +243,7 @@ export function ChatInput({
       console.error("Failed to start Web Speech API:", err);
       return false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stopWebSpeechRecording = useCallback(() => {
@@ -258,7 +259,7 @@ export function ChatInput({
   const startWhisperRecording = useCallback(async () => {
     console.log("Whisper recording temporarily disabled for debugging.");
     alert("Whisper recording is temporarily unavailable.");
-  }, [modelLoaded, isLoadingModel]);
+  }, []);
 
   const stopWhisperRecording = useCallback(async () => {
     console.log("Whisper recording disabled.");
@@ -300,13 +301,15 @@ export function ChatInput({
 
   // Cleanup on unmount
   useEffect(() => {
+    const mediaRecorder = mediaRecorderRef.current;
+    const mediaStream = mediaStreamRef.current;
     return () => {
       stopWebSpeechRecording();
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
       }
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+      if (mediaStream) {
+        mediaStream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
       }
     };
   }, [stopWebSpeechRecording]);
