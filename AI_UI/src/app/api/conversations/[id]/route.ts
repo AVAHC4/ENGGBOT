@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         // First verify the conversation belongs to the user
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
-            .select('id, title, project_id, created_at, updated_at, user_email')
+            .select('id, title, created_at, updated_at, user_email')
             .eq('id', conversationId)
             .single();
 
@@ -65,7 +65,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             conversation: {
                 id: conversation.id,
                 title: conversation.title,
-                projectId: conversation.project_id,
                 createdAt: conversation.created_at,
                 updatedAt: conversation.updated_at,
             },
@@ -108,15 +107,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         if (title !== undefined) {
             updates.title = title;
         }
-        if (body?.projectId !== undefined) {
-            updates.project_id = body.projectId;
-        }
 
         const { data, error } = await supabaseAdmin
             .from('conversations')
             .update(updates)
             .eq('id', conversationId)
-            .select('id, title, project_id, created_at, updated_at')
+            .select('id, title, created_at, updated_at')
             .single();
 
         if (error) {

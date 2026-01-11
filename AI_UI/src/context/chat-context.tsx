@@ -3,7 +3,6 @@
 import React, { createContext, useState, useContext, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { AVAILABLE_MODELS } from '@/lib/ai/openrouter-client';
 import { getAllConversationsMetadata, loadConversation, saveConversation, deleteConversation, getUserPrefix, getConversationList, clearConversationMessages } from "@/lib/storage";
-import { addConversationToProject, removeConversationFromProject } from "@/lib/projects/storage";
 
 export interface Attachment {
   id: string;
@@ -53,13 +52,11 @@ interface ChatContextType {
   togglePrivateMode: () => void;
   engineeringMode: boolean;
   toggleEngineeringMode: () => void;
-  projectId: string | null;
-  setProjectId: (id: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export function ChatProvider({ children, projectId: initialProjectId }: { children: ReactNode; projectId?: string }) {
+export function ChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<ExtendedChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -70,17 +67,6 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [engineeringMode, setEngineeringMode] = useState(false);
-
-  // projectId as state so it can be updated dynamically
-  const [projectId, setProjectIdState] = useState<string | null>(initialProjectId || null);
-
-  // Wrapper for setProjectId that clears messages and triggers reload
-  const setProjectId = useCallback((newProjectId: string | null) => {
-    console.log('[ChatContext] setProjectId called:', newProjectId);
-    // Clear messages when switching projects
-    setMessages([]);
-    setProjectIdState(newProjectId);
-  }, []);
 
   // Track which message IDs have been fully displayed
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
@@ -105,31 +91,23 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
     if (isMounted) {
       // Get user-specific prefix
       const userPrefix = getUserPrefix();
-
-      // Determine the storage key based on whether we're in a project or global
-      const storageKey = projectId
-        ? `${userPrefix}-project-${projectId}-activeConversation`
-        : `${userPrefix}-activeConversation`;
+      const storageKey = `${userPrefix}-activeConversation`;
 
       // Get the stored conversation ID or generate a new one
       const storedId = localStorage.getItem(storageKey);
       if (storedId) {
         setConversationId(storedId);
-      } else if (!projectId) {
-        // Only auto-create a conversation for the global chat, not for projects
-        // Projects should only create conversations when user explicitly starts one
+      } else {
         const newId = crypto.randomUUID();
         setConversationId(newId);
         localStorage.setItem(storageKey, newId);
       }
-      // For projects without a stored conversation, we leave conversationId as is
-      // User will click "New Chat" to start a conversation
     }
-  }, [isMounted, projectId]);
+  }, [isMounted]);
 
   // Load conversation on startup or when switching conversations
   useEffect(() => {
-    console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, projectId });
+    console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode });
     if (isMounted && !isPrivateMode) {
       // Update the ref to match current conversationId
       conversationIdRef.current = conversationId;
@@ -198,7 +176,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
             // Verify order is now User -> AI
             console.log('[ChatContext] Saving healed conversation order');
-            saveConversation(conversationId, sortedMessages, projectId);
+            saveConversation(conversationId, sortedMessages);
           }
 
           setMessages(sortedMessages);
@@ -215,15 +193,11 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
       // Get user-specific prefix
       const userPrefix = getUserPrefix();
-
-      // Save active conversation ID with user-specific key
-      const storageKey = projectId
-        ? `${userPrefix}-project-${projectId}-activeConversation`
-        : `${userPrefix}-activeConversation`;
+      const storageKey = `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, conversationId);
     }
-  }, [conversationId, isMounted, isPrivateMode, projectId]);
+  }, [conversationId, isMounted, isPrivateMode]);
 
   // Save messages when they change (but NOT while AI is generating/streaming)
   // CRITICAL: Only save if messages belong to the current conversation
@@ -231,9 +205,9 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
     // Skip saving while AI is generating - will save when streaming completes
     // Also skip if conversationId doesn't match ref (prevents saving old messages to new conversation)
     if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && conversationIdRef.current === conversationId) {
-      saveConversation(conversationId, messages, projectId);
+      saveConversation(conversationId, messages);
     }
-  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating, projectId]);
+  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
@@ -316,7 +290,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
       // Save conversation after adding user message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, updatedMessages, projectId);
+        saveConversation(conversationId, updatedMessages);
       }
 
       setIsLoading(true);
@@ -415,7 +389,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
               // Save the COMPLETE conversation with the full AI response
               if (typeof window !== 'undefined' && !isPrivateMode) {
-                saveConversation(conversationId, finalMessages, projectId);
+                saveConversation(conversationId, finalMessages);
               }
 
               return finalMessages;
@@ -461,7 +435,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
                     // Save conversation
                     if (typeof window !== 'undefined' && !isPrivateMode) {
-                      saveConversation(conversationId, updatedMessages, projectId);
+                      saveConversation(conversationId, updatedMessages);
                     }
 
                     return updatedMessages;
@@ -529,7 +503,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
       // Save conversation with the error message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, messagesWithError, projectId);
+        saveConversation(conversationId, messagesWithError);
       }
 
       // Reset both states on error
@@ -565,7 +539,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
       const updatedMessages = [...prev, newMessage];
       // Save conversation after adding message
       if (typeof window !== 'undefined' && !isPrivateMode) {
-        saveConversation(conversationId, updatedMessages, projectId);
+        saveConversation(conversationId, updatedMessages);
       }
       return updatedMessages;
     });
@@ -634,7 +608,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
     // Save the conversation state
     if (typeof window !== 'undefined' && !isPrivateMode) {
-      saveConversation(conversationId, updatedMessages, projectId);
+      saveConversation(conversationId, updatedMessages);
     }
 
     try {
@@ -688,7 +662,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
             // Save conversation
             if (typeof window !== 'undefined' && !isPrivateMode) {
-              saveConversation(conversationId, updated, projectId);
+              saveConversation(conversationId, updated);
             }
 
             return updated;
@@ -738,7 +712,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
                   // Save intermediate state periodically
                   if (typeof window !== 'undefined' && !isPrivateMode) {
-                    saveConversation(conversationId, updated, projectId);
+                    saveConversation(conversationId, updated);
                   }
 
                   return updated;
@@ -819,23 +793,17 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
 
     if (isMounted) {
       const userPrefix = getUserPrefix();
-      const storageKey = projectId
-        ? `${userPrefix}-project-${projectId}-activeConversation`
-        : `${userPrefix}-activeConversation`;
+      const storageKey = `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
-      // saveConversation will create the conversation with projectId set
-      // No need to call addConversationToProject separately - it causes a race condition
-      // because the debounced saveConversation hasn't created the conversation yet
-      saveConversation(newId, [], projectId);
+      saveConversation(newId, []);
     }
-  }, [isGenerating, isLoading, stopGeneration, isMounted, projectId]);
+  }, [isGenerating, isLoading, stopGeneration, isMounted]);
 
   // Delete the current conversation
   const deleteCurrentConversation = useCallback(() => {
     if (isMounted) {
       const deletingConversationId = conversationId;
-      const deletingProjectId = projectId;
 
       // Immediately clear messages and switch to new conversation (optimistic update)
       setMessages([]);
@@ -854,11 +822,6 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
           // Delete conversation from backend
           await deleteConversation(deletingConversationId);
 
-          // If in a project, remove the link
-          if (deletingProjectId) {
-            removeConversationFromProject(deletingProjectId, deletingConversationId);
-          }
-
           // Check if there are other conversations to switch to
           const remainingConversations = conversations.filter((id: string) => id !== deletingConversationId);
 
@@ -872,7 +835,7 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
         }
       })();
     }
-  }, [conversationId, switchConversation, isMounted, projectId]);
+  }, [conversationId, switchConversation, isMounted]);
 
   const toggleThinkingMode = useCallback(() => {
     setThinkingMode(prev => !prev);
@@ -940,8 +903,6 @@ export function ChatProvider({ children, projectId: initialProjectId }: { childr
     togglePrivateMode,
     engineeringMode,
     toggleEngineeringMode,
-    projectId,
-    setProjectId,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

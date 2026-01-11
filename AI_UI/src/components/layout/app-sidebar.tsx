@@ -89,8 +89,6 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
-import { getAllProjectsAsync } from "@/lib/projects/storage"
-import { Project } from "@/lib/projects/types"
 import { useLanguage } from "@/context/language-context"
 
 
@@ -173,11 +171,6 @@ const data = {
       title: "Teams",
       url: "/team",
       icon: Users,
-    },
-    {
-      title: "Projects",
-      url: "/projects",
-      icon: Folder,
     }
   ],
   navClouds: [
@@ -249,9 +242,6 @@ const initialFriends: Friend[] = [];
 export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
-  const [projectsExpanded, setProjectsExpanded] = React.useState(false);
-  const [expandedProjectId, setExpandedProjectId] = React.useState<string | null>(null);
-  const [projects, setProjects] = React.useState<Project[]>([]);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
     // Initialize from localStorage if available, otherwise use empty array
     if (typeof window !== 'undefined') {
@@ -277,14 +267,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const router = useRouter();
   const { t } = useLanguage();
 
-  // Project dialogs state
-  const [projectToDelete, setProjectToDelete] = React.useState<Project | null>(null);
-  const [showDeleteProjectDialog, setShowDeleteProjectDialog] = React.useState(false);
-  const [projectToRename, setProjectToRename] = React.useState<Project | null>(null);
-  const [showRenameProjectDialog, setShowRenameProjectDialog] = React.useState(false);
-  const [newProjectName, setNewProjectName] = React.useState('');
-  const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
-  const [newProjectInput, setNewProjectInput] = React.useState('');
+
 
   // Handle conversation switching with navigation
   const handleSwitchConversation = (id: string) => {
@@ -405,26 +388,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
       return () => {
         window.removeEventListener('conversationUpdated', handleConversationUpdate);
-      };
-    }
-  }, [isMounted]);
-
-
-  React.useEffect(() => {
-    if (isMounted) {
-      const loadProjects = async () => {
-        const allProjects = await getAllProjectsAsync();
-        setProjects(allProjects);
-      };
-
-      loadProjects();
-
-      // Listen for project updates
-      const handleProjectUpdate = () => loadProjects();
-      window.addEventListener('projectUpdated', handleProjectUpdate);
-
-      return () => {
-        window.removeEventListener('projectUpdated', handleProjectUpdate);
       };
     }
   }, [isMounted]);
@@ -757,111 +720,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const translationKey = `sidebar.${item.title.toLowerCase()}`;
                     const title = t(translationKey);
 
-                    if (item.title === 'Projects') {
-                      return (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton
-                            onClick={() => setProjectsExpanded(!projectsExpanded)}
-                            className="justify-between"
-                            data-active={isActive}
-                          >
-                            <div className="flex items-center">
-                              <Icon className="h-4 w-4 mr-2" />
-                              <span>{title}</span>
-                            </div>
-                            {projectsExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </SidebarMenuButton>
-
-                          {projectsExpanded && (
-                            <SidebarMenuSub>
-                              {projects.length > 0 ? (
-                                projects.map((project) => (
-                                  <SidebarMenuSubItem key={project.id} className="group">
-                                    <div className="flex items-center w-full">
-                                      <SidebarMenuSubButton
-                                        onClick={() => router.push(`/projects/${project.id}`)}
-                                        className="flex-1"
-                                      >
-                                        <div className="flex items-center">
-                                          <span className="mr-2">{project.emoji}</span>
-                                          <span className="text-xs truncate">{project.name}</span>
-                                        </div>
-                                      </SidebarMenuSubButton>
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <MoreVertical className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-40">
-                                          <DropdownMenuItem
-                                            onClick={() => {
-                                              navigator.clipboard.writeText(`${window.location.origin}/projects/${project.id}`);
-                                              alert('Project link copied to clipboard!');
-                                            }}
-                                          >
-                                            <Share2 className="h-4 w-4 mr-2" />
-                                            Share
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={() => {
-                                              setProjectToRename(project);
-                                              setNewProjectName(project.name);
-                                              setShowRenameProjectDialog(true);
-                                            }}
-                                          >
-                                            <Pencil className="h-4 w-4 mr-2" />
-                                            Rename
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            className="text-destructive focus:text-destructive"
-                                            onClick={() => {
-                                              setProjectToDelete(project);
-                                              setShowDeleteProjectDialog(true);
-                                            }}
-                                          >
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            Delete
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
-                                  </SidebarMenuSubItem>
-                                ))
-                              ) : (
-                                <SidebarMenuSubItem>
-                                  <div className="px-4 py-2 text-xs text-muted-foreground">
-                                    No projects yet
-                                  </div>
-                                </SidebarMenuSubItem>
-                              )}
-                              {/* New Project Button */}
-                              <SidebarMenuSubItem>
-                                <SidebarMenuSubButton
-                                  onClick={() => setShowNewProjectDialog(true)}
-                                  className="w-full text-primary hover:text-primary"
-                                >
-                                  <div className="flex items-center">
-                                    <Plus className="h-3.5 w-3.5 mr-2" />
-                                    <span className="text-xs font-medium">New Project</span>
-                                  </div>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            </SidebarMenuSub>
-                          )}
-                        </SidebarMenuItem>
-                      );
-                    }
-
                     // Regular nav items
                     return (
                       <SidebarMenuItem key={item.title}>
@@ -1072,216 +930,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           </div>
         </div>
       )}
-
-      {/* Project Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteProjectDialog} onOpenChange={setShowDeleteProjectDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &quot;{projectToDelete?.name}&quot;?
-              This will also delete all conversations in this project. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setProjectToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (projectToDelete) {
-                  const deletingProject = projectToDelete;
-
-                  // Optimistic update - remove from UI immediately
-                  setProjects(prev => prev.filter(p => p.id !== deletingProject.id));
-                  setShowDeleteProjectDialog(false);
-                  setProjectToDelete(null);
-
-                  // Delete from backend in background (this will also delete all conversations)
-                  (async () => {
-                    try {
-                      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                      const email = userData?.email || '';
-                      const response = await fetch(`/api/projects/${deletingProject.id}?email=${encodeURIComponent(email)}`, {
-                        method: 'DELETE',
-                      });
-                      if (response.ok) {
-                        const data = await response.json();
-                        console.log(`[Delete Project] Successfully deleted project with ${data.deletedConversations || 0} conversations`);
-                      } else {
-                        console.error('Failed to delete project from backend');
-                      }
-                    } catch (error) {
-                      console.error('Error deleting project:', error);
-                    }
-                  })();
-                } else {
-                  setShowDeleteProjectDialog(false);
-                  setProjectToDelete(null);
-                }
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Project Rename Dialog */}
-      <Dialog open={showRenameProjectDialog} onOpenChange={setShowRenameProjectDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
-            <DialogDescription>
-              Enter a new name for &quot;{projectToRename?.name}&quot;
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={newProjectName}
-            onChange={(e) => setNewProjectName(e.target.value)}
-            placeholder="Project name"
-            className="mt-2"
-          />
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => {
-              setShowRenameProjectDialog(false);
-              setProjectToRename(null);
-              setNewProjectName('');
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={async () => {
-              if (projectToRename && newProjectName.trim()) {
-                try {
-                  const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                  const email = userData?.email || '';
-                  const response = await fetch(`/api/projects/${projectToRename.id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email,
-                      name: newProjectName.trim(),
-                    }),
-                  });
-                  if (response.ok) {
-                    setProjects(prev => prev.map(p =>
-                      p.id === projectToRename.id ? { ...p, name: newProjectName.trim() } : p
-                    ));
-                  }
-                } catch (error) {
-                  console.error('Error renaming project:', error);
-                }
-              }
-              setShowRenameProjectDialog(false);
-              setProjectToRename(null);
-              setNewProjectName('');
-            }}>
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* New Project Dialog */}
-      <Dialog open={showNewProjectDialog} onOpenChange={setShowNewProjectDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Project</DialogTitle>
-            <DialogDescription>
-              Enter a name for your new project
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={newProjectInput}
-            onChange={(e) => setNewProjectInput(e.target.value)}
-            placeholder="Project name"
-            className="mt-2"
-          />
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => {
-              setShowNewProjectDialog(false);
-              setNewProjectInput('');
-            }}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              if (newProjectInput.trim()) {
-                const projectName = newProjectInput.trim();
-
-                // Generate a temporary ID for optimistic update
-                const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-                const now = new Date().toISOString();
-
-                // Create optimistic project immediately
-                const optimisticProject: Project = {
-                  id: tempId,
-                  name: projectName,
-                  emoji: '📁',
-                  created: now,
-                  updated: now,
-                  conversationIds: [],
-                  fileIds: [],
-                };
-
-                // Immediately add to UI
-                setProjects(prev => [...prev, optimisticProject]);
-
-                // Store project name in sessionStorage for project page to use
-                sessionStorage.setItem(`project_name_${tempId}`, projectName);
-
-                // Close dialog and navigate immediately
-                setShowNewProjectDialog(false);
-                setNewProjectInput('');
-                router.push(`/projects/${tempId}`);
-
-                // Sync with Supabase in background
-                (async () => {
-                  try {
-                    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-                    const email = userData?.email || '';
-                    const response = await fetch('/api/projects', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        email,
-                        name: projectName,
-                        emoji: '📁',
-                      }),
-                    });
-                    if (response.ok) {
-                      const data = await response.json();
-                      // Replace temp project with real one from server
-                      setProjects(prev => prev.map(p =>
-                        p.id === tempId ? data.project : p
-                      ));
-                      // Update URL to use real ID (without full page reload)
-                      window.history.replaceState(null, '', `/projects/${data.project.id}`);
-                      // Store mapping in sessionStorage for project page to use
-                      sessionStorage.setItem(`project_id_map_${tempId}`, data.project.id);
-                      // Dispatch event for project page to update its ID
-                      window.dispatchEvent(new CustomEvent('projectIdUpdated', {
-                        detail: { tempId, realId: data.project.id }
-                      }));
-                    } else {
-                      // Remove optimistic project on failure
-                      setProjects(prev => prev.filter(p => p.id !== tempId));
-                      console.error('Failed to create project in database');
-                    }
-                  } catch (error) {
-                    // Remove optimistic project on error
-                    setProjects(prev => prev.filter(p => p.id !== tempId));
-                    console.error('Error creating project:', error);
-                  }
-                })();
-              } else {
-                setShowNewProjectDialog(false);
-                setNewProjectInput('');
-              }
-            }}>
-              Create
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 } 
