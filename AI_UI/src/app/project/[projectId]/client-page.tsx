@@ -122,7 +122,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         if (convo) {
             setConversations(prev => [convo, ...prev]);
             // Navigate to the project conversation
-            router.push(`/project/${projectId}/c/${convo.id}`);
+            router.push(`/AI_UI/project/${projectId}/c/${convo.id}`);
         }
     };
 
@@ -242,8 +242,8 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                         <div
                             key={convo.id}
                             className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                            // Corrected path to root project
-                            onClick={() => router.push(`/project/${projectId}/c/${convo.id}`)}
+                            // Corrected path to AI_UI project
+                            onClick={() => router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
                             <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0" />
