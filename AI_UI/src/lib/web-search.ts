@@ -3,7 +3,7 @@
  */
 
 export interface SearchResult {
-  title: string
+  title: string;
   snippet: string;
   url: string;
 }
