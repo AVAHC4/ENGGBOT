@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['@xenova/transformers'],
   reactStrictMode: true,
   // TEMPORARILY ENABLED FOR DEBUGGING - to be reverted
   // Remove ALL console output in production (completely clean console)
