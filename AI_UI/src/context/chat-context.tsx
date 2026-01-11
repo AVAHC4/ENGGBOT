@@ -52,6 +52,9 @@ interface ChatContextType {
   togglePrivateMode: () => void;
   engineeringMode: boolean;
   toggleEngineeringMode: () => void;
+  setMessages: (messages: ExtendedChatMessage[]) => void;
+  currentProjectId: string | null;
+  setCurrentProjectId: (projectId: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -73,6 +76,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Add conversation management with a default ID that will be updated after client-side mount
   const [conversationId, setConversationId] = useState<string>(crypto.randomUUID());
+
+  // Track if this is a project conversation (when set, skip regular save/load)
+  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
   // Create a ref to track the current request ID
   const currentRequestIdRef = useRef<string | null>(null);
@@ -106,9 +112,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [isMounted]);
 
   // Load conversation on startup or when switching conversations
+  // SKIP if we're in project mode (project page handles its own loading)
   useEffect(() => {
-    console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode });
-    if (isMounted && !isPrivateMode) {
+    console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, currentProjectId });
+    if (isMounted && !isPrivateMode && !currentProjectId) {
       // Update the ref to match current conversationId
       conversationIdRef.current = conversationId;
 
@@ -197,17 +204,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem(storageKey, conversationId);
     }
-  }, [conversationId, isMounted, isPrivateMode]);
+  }, [conversationId, isMounted, isPrivateMode, currentProjectId]);
 
   // Save messages when they change (but NOT while AI is generating/streaming)
   // CRITICAL: Only save if messages belong to the current conversation
+  // SKIP if we're in project mode (project page handles its own saving)
   useEffect(() => {
     // Skip saving while AI is generating - will save when streaming completes
     // Also skip if conversationId doesn't match ref (prevents saving old messages to new conversation)
-    if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && conversationIdRef.current === conversationId) {
+    // Skip if in project mode
+    if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && !currentProjectId && conversationIdRef.current === conversationId) {
       saveConversation(conversationId, messages);
     }
-  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating]);
+  }, [messages, conversationId, isMounted, isPrivateMode, isGenerating, currentProjectId]);
 
   // Update the displayed message IDs when messages change
   useEffect(() => {
@@ -903,6 +912,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     togglePrivateMode,
     engineeringMode,
     toggleEngineeringMode,
+    setMessages,
+    currentProjectId,
+    setCurrentProjectId,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
