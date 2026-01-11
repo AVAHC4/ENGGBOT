@@ -867,15 +867,21 @@ export async function saveProjectConversation(projectId: string, conversationId:
       if (checkResponse.ok) {
         const data = await checkResponse.json();
         if (data.exists === false) {
+          // Generate title from first user message
+          const generatedTitle = generateTitleFromMessage(messages);
           // Create the conversation
           const createResponse = await fetch(`/api/projects/${projectId}/conversations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, id: conversationId, title: 'New Conversation' }),
+            body: JSON.stringify({ email, id: conversationId, title: generatedTitle }),
           });
 
           if (!createResponse.ok) return false;
           dispatchProjectUpdated();
+
+          if (generatedTitle && generatedTitle !== 'New Conversation') {
+            autoTitledProjectConversations.add(conversationId);
+          }
         }
       }
       knownProjectConversations.add(conversationId);
@@ -888,7 +894,57 @@ export async function saveProjectConversation(projectId: string, conversationId:
       body: JSON.stringify({ email, messages }),
     });
 
-    return response.ok;
+    if (!response.ok) return false;
+
+    // Auto-update title based on the first user message once we have one
+    if (messages.some(m => m.isUser) && !autoTitledProjectConversations.has(conversationId)) {
+      autoTitledProjectConversations.add(conversationId);
+      const candidateTitle = generateTitleFromMessage(messages);
+
+      if (candidateTitle && candidateTitle !== 'New Conversation') {
+        // Update the conversation title
+        (async () => {
+          try {
+            const metaRes = await fetch(
+              `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`
+            );
+            let currentTitle: string | null | undefined = undefined;
+
+            if (metaRes.ok) {
+              const data = await metaRes.json();
+              currentTitle = data?.conversation?.title || data?.title;
+            }
+
+            // Only update if still a placeholder title
+            if (metaRes.ok && !isPlaceholderTitle(currentTitle)) {
+              return;
+            }
+
+            const updateResponse = await fetch(
+              `/api/projects/${projectId}/conversations/${conversationId}`,
+              {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, title: candidateTitle }),
+              }
+            );
+
+            if (updateResponse.ok) {
+              dispatchProjectUpdated();
+            } else {
+              autoTitledProjectConversations.delete(conversationId);
+            }
+          } catch (error) {
+            console.error('[DB Save] Failed to auto-title project conversation:', error);
+            autoTitledProjectConversations.delete(conversationId);
+          }
+        })();
+      } else {
+        autoTitledProjectConversations.delete(conversationId);
+      }
+    }
+
+    return true;
   } catch (error) {
     console.error('Error saving project conversation:', error);
     return false;
