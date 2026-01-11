@@ -30,18 +30,12 @@ const nextConfig = {
     buildActivity: false,
   },
   // Webpack configuration for Transformers.js (Whisper)
-  webpack: (config, { isServer }) => {
-    // Externalize onnxruntime-node (Node.js only) - we use onnxruntime-web in browser
-    config.externals = config.externals || [];
-    if (!isServer) {
-      config.externals.push('onnxruntime-node');
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "sharp$": false,
+      "onnxruntime-node$": false,
     }
-    // Handle .node files
-    config.resolve.extensions.push('.node');
-    config.module.rules.push({
-      test: /\.node$/,
-      use: 'ignore-loader'
-    });
     return config;
   },
   async headers() {
