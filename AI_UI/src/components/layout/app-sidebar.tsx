@@ -89,7 +89,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, loadProjects, createProject, deleteProject, renameProject, loadProjectConversations, createProjectConversation, deleteProjectConversation } from "@/lib/storage"
+import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, loadProjects, createProject, deleteProject, renameProject, loadProjectConversations, deleteProjectConversation } from "@/lib/storage"
 import { useLanguage } from "@/context/language-context"
 
 
@@ -516,20 +516,16 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setProjectToDelete(null);
   };
 
-  // Handle creating new conversation in project
+  // Handle creating new conversation in project - LAZY creation
+  // Don't create in database immediately - only generate ID and navigate
   const handleNewProjectConversation = async (projectId: string) => {
-    const convo = await createProjectConversation(projectId);
-    if (convo) {
-      setProjectConversations(prev => ({
-        ...prev,
-        [projectId]: [convo, ...(prev[projectId] || [])],
-      }));
-      // Set as active project conversation
-      setActiveProjectId(projectId);
-      setActiveProjectConversationId(convo.id);
-      // Navigate to chat page
-      router.push(`/AI_UI/project/${projectId}/c/${convo.id}`);
-    }
+    // Generate a new conversation ID locally (UUID v4)
+    const newConversationId = crypto.randomUUID();
+    // Set as active project conversation
+    setActiveProjectId(projectId);
+    setActiveProjectConversationId(newConversationId);
+    // Navigate to chat page - conversation will be created when first message is sent
+    router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
   };
 
   // Handle switching to project conversation

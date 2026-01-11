@@ -12,7 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { loadProjectConversations, createProjectConversation, deleteProjectConversation, renameProject } from '@/lib/storage';
+import { loadProjectConversations, deleteProjectConversation, renameProject } from '@/lib/storage';
 
 interface ProjectConversation {
     id: string;
@@ -116,14 +116,15 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         return () => window.removeEventListener('projectUpdated', handleUpdate);
     }, [projectId]);
 
-    // Handle new conversation in project
+    // Handle new conversation in project - LAZY creation
+    // Don't create in database immediately - only generate ID and navigate
+    // The conversation will be created when the first message is sent
     const handleNewConversation = async () => {
-        const convo = await createProjectConversation(projectId);
-        if (convo) {
-            setConversations(prev => [convo, ...prev]);
-            // Navigate to the project conversation
-            router.push(`/AI_UI/project/${projectId}/c/${convo.id}`);
-        }
+        // Generate a new conversation ID locally (UUID v4)
+        const newConversationId = crypto.randomUUID();
+        // Navigate to the project conversation page without creating in database
+        // The conversation will be persisted when the first message is saved
+        router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
     };
 
     // Handle rename project
