@@ -30,12 +30,25 @@ const nextConfig = {
     buildActivity: false,
   },
   // Webpack configuration for Transformers.js (Whisper)
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // Client-side only polyfills/stubs
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        child_process: false,
+      };
+    }
+
     config.resolve.alias = {
       ...config.resolve.alias,
       "sharp$": false,
       "onnxruntime-node$": false,
     }
+
     // Handle .node files (often cause issues with onnxruntime in browser)
     config.module.rules.push({
       test: /\.node$/,
