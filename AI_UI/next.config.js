@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@xenova/transformers'],
+
   reactStrictMode: true,
   // TEMPORARILY ENABLED FOR DEBUGGING - to be reverted
   // Remove ALL console output in production (completely clean console)
@@ -49,7 +49,7 @@ const nextConfig = {
       "onnxruntime-node$": false,
     }
 
-    // Handle .node files (often cause issues with onnxruntime in browser)
+
     config.module.rules.push({
       test: /\.node$/,
       use: 'ignore-loader'
