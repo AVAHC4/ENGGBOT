@@ -46,32 +46,45 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
     // Load project data
     useEffect(() => {
-        if (!projectId) return;
+        if (!projectId) {
+            console.log('[ProjectPageClient] No project ID provided');
+            return;
+        }
 
         const loadData = async () => {
+            console.log('[ProjectPageClient] Starting loadData for:', projectId);
             setLoading(true);
+            setError(null); // Clear previous errors
 
             // Get project details
-            const email = JSON.parse(localStorage.getItem('user_data') || '{}').email?.toLowerCase() ||
-                localStorage.getItem('user_email')?.toLowerCase();
+            const userDataStr = localStorage.getItem('user_data');
+            const userData = userDataStr ? JSON.parse(userDataStr) : {};
+            const email = userData.email?.toLowerCase() || localStorage.getItem('user_email')?.toLowerCase();
+
+            console.log('[ProjectPageClient] User email:', email);
 
             if (!email) {
-                console.error('No user email found');
+                console.error('[ProjectPageClient] No user email found');
                 setError('Please log in to view this project');
                 setLoading(false);
                 return;
             }
 
             try {
+                console.log('[ProjectPageClient] Fetching project details...');
                 const response = await fetch(`/api/projects/${projectId}?email=${encodeURIComponent(email)}`);
+                console.log('[ProjectPageClient] Project fetch status:', response.status);
+
                 if (!response.ok) {
                     const err = await response.json();
-                    throw new Error(err.error || 'Failed to load project');
+                    throw new Error(err.error || `Failed to load project (Status: ${response.status})`);
                 }
 
                 const data = await response.json();
+                console.log('[ProjectPageClient] Project data received:', data);
+
                 if (!data.project) {
-                    throw new Error('Project data missing');
+                    throw new Error('Project data missing in response');
                 }
 
                 setProject({
@@ -80,20 +93,25 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                     description: data.project.description,
                 });
 
+                console.log('[ProjectPageClient] Fetching conversations...');
                 const convos = await loadProjectConversations(projectId);
+                console.log('[ProjectPageClient] Conversations loaded:', convos.length);
                 setConversations(convos);
             } catch (err: any) {
-                console.error('Error loading project:', err);
+                console.error('[ProjectPageClient] Error loading project:', err);
                 setError(err.message || 'Failed to load project. Please check your connection.');
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         };
 
         loadData();
 
         // Listen for updates
-        const handleUpdate = () => loadData();
+        const handleUpdate = () => {
+            console.log('[ProjectPageClient] projectUpdated event received, reloading...');
+            loadData();
+        };
         window.addEventListener('projectUpdated', handleUpdate);
         return () => window.removeEventListener('projectUpdated', handleUpdate);
     }, [projectId]);
