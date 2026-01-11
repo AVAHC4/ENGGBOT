@@ -527,9 +527,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       setActiveProjectId(projectId);
       setActiveProjectConversationId(convo.id);
       // Navigate to chat page
-      if (pathname !== '/AI_UI') {
-        router.push('/AI_UI');
-      }
+      router.push(`/AI_UI/project/${projectId}/c/${convo.id}`);
     }
   };
 
@@ -539,9 +537,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setActiveProjectConversationId(conversationId);
     // Clear regular conversation selection
     // Note: This should integrate with chat context for full functionality
-    if (pathname !== '/AI_UI') {
-      router.push('/AI_UI');
-    }
+    router.push(`/AI_UI/project/${projectId}/c/${conversationId}`);
   };
 
   // Format timestamp for display
@@ -1053,10 +1049,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           projects.map((project) => (
                             <SidebarMenuSubItem key={project.id}>
                               <SidebarMenuSubButton
-                                onClick={() => router.push(`/project/${project.id}`)}
+                                onClick={() => router.push(`/AI_UI/project/${project.id}`)}
                                 className={cn(
                                   "w-full justify-between group pr-1",
-                                  pathname?.startsWith(`/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
+                                  pathname?.startsWith(`/AI_UI/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
                                 )}
                               >
                                 <div className="flex items-center overflow-hidden">
