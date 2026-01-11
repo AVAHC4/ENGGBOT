@@ -42,6 +42,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     const [newName, setNewName] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState<ProjectConversation | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     // Load project data
     useEffect(() => {
@@ -55,25 +56,36 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                 localStorage.getItem('user_email')?.toLowerCase();
 
             if (!email) {
+                console.error('No user email found');
+                setError('Please log in to view this project');
                 setLoading(false);
                 return;
             }
 
             try {
                 const response = await fetch(`/api/projects/${projectId}?email=${encodeURIComponent(email)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setProject({
-                        id: data.project.id,
-                        name: data.project.name,
-                        description: data.project.description,
-                    });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || 'Failed to load project');
                 }
+
+                const data = await response.json();
+                if (!data.project) {
+                    throw new Error('Project data missing');
+                }
+
+                setProject({
+                    id: data.project.id,
+                    name: data.project.name,
+                    description: data.project.description,
+                });
+
 
                 const convos = await loadProjectConversations(projectId);
                 setConversations(convos);
-            } catch (error) {
-                console.error('Error loading project:', error);
+            } catch (err: any) {
+                console.error('Error loading project:', err);
+                setError(err.message || 'Failed to load project. Please check your connection.');
             }
 
             setLoading(false);
@@ -139,7 +151,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     if (!project) {
         return (
             <div className="flex flex-col items-center justify-center h-full gap-4">
-                <p className="text-muted-foreground">Project not found</p>
+                <p className="text-muted-foreground">{error || 'Project not found'}</p>
                 <Link href="/AI_UI">
                     <Button variant="outline">
                         <ArrowLeft className="h-4 w-4 mr-2" />
