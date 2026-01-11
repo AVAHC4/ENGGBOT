@@ -11,10 +11,12 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
+        // Only get conversations that are NOT part of a project (project_id is null)
         const { data, error } = await supabaseAdmin
             .from('conversations')
-            .select('id, title, created_at, updated_at')
+            .select('id, title, created_at, updated_at, project_id')
             .eq('user_email', email)
+            .is('project_id', null)  // Filter out project conversations
             .order('updated_at', { ascending: false });
 
         if (error) {
