@@ -1,67 +1,107 @@
--- Supabase schema for projects
+-- Supabase schema for projects feature
 -- Run this in Supabase SQL editor
+-- Creates completely separate tables for project conversations (not mixing with regular conversations)
 
-create extension if not exists pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- Drop existing tables if they exist
-drop table if exists public.project_files cascade;
-drop table if exists public.projects cascade;
+-- Drop existing tables if they exist (cascade will drop dependent objects)
+DROP TABLE IF EXISTS public.project_conversation_messages CASCADE;
+DROP TABLE IF EXISTS public.project_conversations CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
 
--- Projects table
-create table public.projects (
-  id uuid primary key default gen_random_uuid(),
-  user_email text not null,
-  name text not null,
-  description text,
-  emoji text default '📁',
-  color text default '#3b82f6',
-  custom_instructions text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+-- Projects table (metadata for each project)
+CREATE TABLE public.projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-create index idx_projects_user_email on public.projects(user_email);
-create index idx_projects_updated on public.projects(updated_at desc);
+CREATE INDEX idx_projects_user_email ON public.projects(user_email);
+CREATE INDEX idx_projects_updated ON public.projects(updated_at DESC);
 
--- Project Files table
-create table public.project_files (
-  id uuid primary key default gen_random_uuid(),
-  project_id uuid not null references public.projects(id) on delete cascade,
-  name text not null,
-  type text, -- mime type
-  size integer,
-  content text, -- for code files, optional
-  upload_date timestamptz not null default now()
+-- Project conversations table (separate from regular conversations)
+CREATE TABLE public.project_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES public.projects(id) ON DELETE CASCADE,
+  user_email TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-create index idx_project_files_project_id on public.project_files(project_id);
+CREATE INDEX idx_project_conversations_project_id ON public.project_conversations(project_id);
+CREATE INDEX idx_project_conversations_user_email ON public.project_conversations(user_email);
+CREATE INDEX idx_project_conversations_updated ON public.project_conversations(updated_at DESC);
 
--- Enable RLS
-alter table public.projects enable row level security;
-alter table public.project_files enable row level security;
+-- Project conversation messages table (separate from regular conversation_messages)
+CREATE TABLE public.project_conversation_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES public.project_conversations(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_user BOOLEAN NOT NULL,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+  attachments JSONB,
+  reply_to_id UUID,
+  metadata JSONB,
+  is_streaming BOOLEAN DEFAULT false
+);
 
--- RLS Policies (Service Role Access Only for API)
-drop policy if exists "service-role full access projects" on public.projects;
-create policy "service-role full access projects" on public.projects
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+CREATE INDEX idx_project_conversation_messages_conv_id ON public.project_conversation_messages(conversation_id);
+CREATE INDEX idx_project_conversation_messages_timestamp ON public.project_conversation_messages(conversation_id, timestamp);
 
-drop policy if exists "service-role full access project_files" on public.project_files;
-create policy "service-role full access project_files" on public.project_files
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+-- Enable RLS (Row Level Security)
+ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.project_conversation_messages ENABLE ROW LEVEL SECURITY;
 
--- Trigger to update updated_at on projects
-create or replace function update_project_timestamp()
-returns trigger as $$
-begin
-  update public.projects
-  set updated_at = now()
-  where id = new.id;
-  return new;
-end;
-$$ language plpgsql;
+-- Service role full access policies
+DROP POLICY IF EXISTS "service-role full access projects" ON public.projects;
+CREATE POLICY "service-role full access projects" ON public.projects
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
 
-drop trigger if exists update_project_timestamp_trigger on public.projects;
-create trigger update_project_timestamp_trigger
-  before update on public.projects
-  for each row
-  execute function update_project_timestamp();
+DROP POLICY IF EXISTS "service-role full access project_conversations" ON public.project_conversations;
+CREATE POLICY "service-role full access project_conversations" ON public.project_conversations
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "service-role full access project_messages" ON public.project_conversation_messages;
+CREATE POLICY "service-role full access project_messages" ON public.project_conversation_messages
+  FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+
+-- Function to automatically update project updated_at timestamp when conversations change
+CREATE OR REPLACE FUNCTION update_project_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.projects
+  SET updated_at = now()
+  WHERE id = NEW.project_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to update project timestamp when conversations are added/modified
+DROP TRIGGER IF EXISTS update_project_timestamp_trigger ON public.project_conversations;
+CREATE TRIGGER update_project_timestamp_trigger
+  AFTER INSERT OR UPDATE ON public.project_conversations
+  FOR EACH ROW
+  EXECUTE FUNCTION update_project_timestamp();
+
+-- Function to automatically update project_conversation updated_at timestamp when messages change
+CREATE OR REPLACE FUNCTION update_project_conversation_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.project_conversations
+  SET updated_at = now()
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to update conversation timestamp when messages are added/modified
+DROP TRIGGER IF EXISTS update_project_conversation_timestamp_trigger ON public.project_conversation_messages;
+CREATE TRIGGER update_project_conversation_timestamp_trigger
+  AFTER INSERT OR UPDATE ON public.project_conversation_messages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_project_conversation_timestamp();

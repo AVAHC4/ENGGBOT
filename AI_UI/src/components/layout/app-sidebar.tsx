@@ -13,6 +13,7 @@ import {
   File,
   FileText,
   Folder,
+  FolderOpen,
   HelpCircle,
   History,
   LayoutDashboard,
@@ -88,7 +89,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
-import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata } from "@/lib/storage"
+import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, loadProjects, createProject, deleteProject, renameProject, loadProjectConversations, createProjectConversation, deleteProjectConversation } from "@/lib/storage"
 import { useLanguage } from "@/context/language-context"
 
 
@@ -242,6 +243,18 @@ const initialFriends: Friend[] = [];
 export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
   const [conversationsExpanded, setConversationsExpanded] = React.useState(false);
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
+  const [projectsExpanded, setProjectsExpanded] = React.useState(false);
+  const [projects, setProjects] = React.useState<any[]>([]);
+  const [expandedProjectIds, setExpandedProjectIds] = React.useState<Set<string>>(new Set());
+  const [projectConversations, setProjectConversations] = React.useState<Record<string, any[]>>({});
+  const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
+  const [newProjectName, setNewProjectName] = React.useState("");
+  const [editingProjectId, setEditingProjectId] = React.useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = React.useState("");
+  const [projectToDelete, setProjectToDelete] = React.useState<{ id: string; name: string } | null>(null);
+  const [showDeleteProjectModal, setShowDeleteProjectModal] = React.useState(false);
+  const [activeProjectId, setActiveProjectId] = React.useState<string | null>(null);
+  const [activeProjectConversationId, setActiveProjectConversationId] = React.useState<string | null>(null);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
     // Initialize from localStorage if available, otherwise use empty array
     if (typeof window !== 'undefined') {
@@ -391,6 +404,145 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       };
     }
   }, [isMounted]);
+
+  // Load projects - only on client side after mounting
+  React.useEffect(() => {
+    if (isMounted) {
+      const loadAllProjects = async () => {
+        const fetchedProjects = await loadProjects();
+        setProjects(fetchedProjects);
+      };
+
+      loadAllProjects();
+
+      // Listen for project updates
+      const handleProjectUpdate = () => loadAllProjects();
+      window.addEventListener('projectUpdated', handleProjectUpdate);
+
+      return () => {
+        window.removeEventListener('projectUpdated', handleProjectUpdate);
+      };
+    }
+  }, [isMounted]);
+
+  // Load conversations for expanded projects
+  React.useEffect(() => {
+    if (isMounted) {
+      expandedProjectIds.forEach(async (projectId) => {
+        if (!projectConversations[projectId]) {
+          const convos = await loadProjectConversations(projectId);
+          setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
+        }
+      });
+    }
+  }, [expandedProjectIds, isMounted]);
+
+  // Toggle project expansion
+  const toggleProjectExpansion = async (projectId: string) => {
+    setExpandedProjectIds(prev => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+
+    // Load conversations if not already loaded
+    if (!projectConversations[projectId]) {
+      const convos = await loadProjectConversations(projectId);
+      setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
+    }
+  };
+
+  // Handle creating new project
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) {
+      setShowNewProjectDialog(false);
+      return;
+    }
+
+    const project = await createProject(newProjectName.trim());
+    if (project) {
+      setProjects(prev => [project, ...prev]);
+    }
+
+    setNewProjectName("");
+    setShowNewProjectDialog(false);
+  };
+
+  // Handle renaming project
+  const handleRenameProject = async (projectId: string) => {
+    if (!editingProjectName.trim()) {
+      setEditingProjectId(null);
+      return;
+    }
+
+    await renameProject(projectId, editingProjectName.trim());
+    setProjects(prev => prev.map(p =>
+      p.id === projectId ? { ...p, name: editingProjectName.trim() } : p
+    ));
+
+    setEditingProjectId(null);
+  };
+
+  // Handle deleting project
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+
+    await deleteProject(projectToDelete.id);
+    setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+
+    // Clear related state
+    setExpandedProjectIds(prev => {
+      const next = new Set(prev);
+      next.delete(projectToDelete.id);
+      return next;
+    });
+    setProjectConversations(prev => {
+      const next = { ...prev };
+      delete next[projectToDelete.id];
+      return next;
+    });
+
+    if (activeProjectId === projectToDelete.id) {
+      setActiveProjectId(null);
+      setActiveProjectConversationId(null);
+    }
+
+    setShowDeleteProjectModal(false);
+    setProjectToDelete(null);
+  };
+
+  // Handle creating new conversation in project
+  const handleNewProjectConversation = async (projectId: string) => {
+    const convo = await createProjectConversation(projectId);
+    if (convo) {
+      setProjectConversations(prev => ({
+        ...prev,
+        [projectId]: [convo, ...(prev[projectId] || [])],
+      }));
+      // Set as active project conversation
+      setActiveProjectId(projectId);
+      setActiveProjectConversationId(convo.id);
+      // Navigate to chat page
+      if (pathname !== '/AI_UI') {
+        router.push('/AI_UI');
+      }
+    }
+  };
+
+  // Handle switching to project conversation
+  const handleSwitchToProjectConversation = (projectId: string, conversationId: string) => {
+    setActiveProjectId(projectId);
+    setActiveProjectConversationId(conversationId);
+    // Clear regular conversation selection
+    // Note: This should integrate with chat context for full functionality
+    if (pathname !== '/AI_UI') {
+      router.push('/AI_UI');
+    }
+  };
 
   // Format timestamp for display
   const formatTime = (timestamp: string) => {
@@ -865,6 +1017,125 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     </SidebarMenuSub>
                   )}
                 </SidebarMenuItem>
+
+                {/* Projects Menu */}
+                {visibleItems.includes('projects') && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => setProjectsExpanded(!projectsExpanded)}
+                      className="justify-between"
+                    >
+                      <div className="flex items-center">
+                        <Folder className="h-4 w-4 mr-2" />
+                        <span>{t('sidebar.projects') || 'Projects'}</span>
+                      </div>
+                      {projectsExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </SidebarMenuButton>
+
+                    {projectsExpanded && (
+                      <SidebarMenuSub>
+                        {/* New Project button */}
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            onClick={() => setShowNewProjectDialog(true)}
+                            className="w-full flex items-center"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5 mr-2" />
+                            <span className="font-medium text-primary">New Project</span>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+
+                        {projects.length > 0 ? (
+                          projects.map((project) => (
+                            <SidebarMenuSubItem key={project.id}>
+                              <SidebarMenuSubButton
+                                onClick={() => router.push(`/project/${project.id}`)}
+                                className={cn(
+                                  "w-full justify-between group pr-1",
+                                  pathname?.startsWith(`/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
+                                )}
+                              >
+                                <div className="flex items-center overflow-hidden">
+                                  <Folder className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
+                                  {editingProjectId === project.id ? (
+                                    <input
+                                      type="text"
+                                      value={editingProjectName}
+                                      onChange={(e) => setEditingProjectName(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleRenameProject(project.id);
+                                        } else if (e.key === 'Escape') {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setEditingProjectId(null);
+                                        }
+                                      }}
+                                      onBlur={() => handleRenameProject(project.id)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      autoFocus
+                                      className="text-xs w-full p-0.5 bg-background border border-input rounded"
+                                    />
+                                  ) : (
+                                    <span className="text-xs truncate">{project.name}</span>
+                                  )}
+                                </div>
+
+                                {/* Project actions */}
+                                {!editingProjectId && (
+                                  <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                        <button className="p-1">
+                                          <MoreVertical className="h-3 w-3" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" side="right">
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingProjectId(project.id);
+                                            setEditingProjectName(project.name);
+                                          }}
+                                        >
+                                          <Pencil className="h-3 w-3 mr-2" />
+                                          Rename
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setProjectToDelete({ id: project.id, name: project.name });
+                                            setShowDeleteProjectModal(true);
+                                          }}
+                                          className="text-destructive focus:text-destructive"
+                                        >
+                                          <Trash2 className="h-3 w-3 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                )}
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))
+                        ) : (
+                          <SidebarMenuSubItem>
+                            <div className="px-4 py-2 text-xs text-muted-foreground">
+                              No projects yet
+                            </div>
+                          </SidebarMenuSubItem>
+                        )}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </div>
             <NavSecondary items={data.navSecondary} className="mt-auto" />
@@ -923,6 +1194,82 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
               <Button
                 variant="destructive"
                 onClick={handleConfirmDelete}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Project Dialog */}
+      {showNewProjectDialog && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => setShowNewProjectDialog(false)}>
+          <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto w-full"
+            onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-4">Create New Project</h2>
+            <input
+              type="text"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleCreateProject();
+                } else if (e.key === 'Escape') {
+                  setShowNewProjectDialog(false);
+                }
+              }}
+              placeholder="Project name..."
+              autoFocus
+              className="w-full p-2 border border-input rounded bg-background text-sm mb-4"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewProjectDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateProject}
+                disabled={!newProjectName.trim()}
+              >
+                Create
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Project Modal */}
+      {showDeleteProjectModal && projectToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => {
+            setShowDeleteProjectModal(false);
+            setProjectToDelete(null);
+          }}>
+          <div className="bg-background p-6 rounded-lg shadow-lg max-w-md mx-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold mb-2">Delete Project?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              The project &quot;{projectToDelete.name}&quot; and all its conversations will be permanently deleted.
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteProjectModal(false);
+                  setProjectToDelete(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteProject}
               >
                 Delete
               </Button>

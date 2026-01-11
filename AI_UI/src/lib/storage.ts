@@ -665,3 +665,257 @@ export async function clearAllConversations() {
     return [];
   }
 }
+
+// ==================== Projects API Functions ====================
+
+// Dispatch project update event (for event-driven UI updates)
+function dispatchProjectUpdated() {
+  if (!isServer()) {
+    window.dispatchEvent(new CustomEvent('projectUpdated'));
+  }
+}
+
+// Cache for project conversations
+const knownProjectConversations = new Set<string>();
+const autoTitledProjectConversations = new Set<string>();
+
+// Load all projects for the user
+export async function loadProjects(): Promise<any[]> {
+  if (isServer()) return [];
+
+  const email = getUserEmail();
+  if (!email) return [];
+
+  try {
+    const response = await fetch(`/api/projects?email=${encodeURIComponent(email)}`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return (data.projects || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+    }));
+  } catch (error) {
+    console.error('Error loading projects:', error);
+    return [];
+  }
+}
+
+// Create a new project
+export async function createProject(name: string, description?: string): Promise<any | null> {
+  if (isServer()) return null;
+
+  const email = getUserEmail();
+  if (!email) return null;
+
+  try {
+    const response = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, description }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    dispatchProjectUpdated();
+    return data.project;
+  } catch (error) {
+    console.error('Error creating project:', error);
+    return null;
+  }
+}
+
+// Delete a project
+export async function deleteProject(projectId: string): Promise<boolean> {
+  if (isServer()) return false;
+
+  const email = getUserEmail();
+  if (!email) return false;
+
+  try {
+    const response = await fetch(`/api/projects/${projectId}?email=${encodeURIComponent(email)}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      dispatchProjectUpdated();
+    }
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error deleting project:', error);
+    return false;
+  }
+}
+
+// Rename a project
+export async function renameProject(projectId: string, newName: string): Promise<boolean> {
+  if (isServer()) return false;
+
+  const email = getUserEmail();
+  if (!email) return false;
+
+  try {
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name: newName }),
+    });
+
+    if (response.ok) {
+      dispatchProjectUpdated();
+    }
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error renaming project:', error);
+    return false;
+  }
+}
+
+// Load conversations for a project
+export async function loadProjectConversations(projectId: string): Promise<any[]> {
+  if (isServer()) return [];
+
+  const email = getUserEmail();
+  if (!email) return [];
+
+  try {
+    const response = await fetch(`/api/projects/${projectId}/conversations?email=${encodeURIComponent(email)}`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return (data.conversations || []).map((c: any) => ({
+      id: c.id,
+      title: c.title,
+      created: c.created_at,
+      updated: c.updated_at,
+    }));
+  } catch (error) {
+    console.error('Error loading project conversations:', error);
+    return [];
+  }
+}
+
+// Create a conversation in a project
+export async function createProjectConversation(projectId: string, title?: string): Promise<any | null> {
+  if (isServer()) return null;
+
+  const email = getUserEmail();
+  if (!email) return null;
+
+  try {
+    const response = await fetch(`/api/projects/${projectId}/conversations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, title: title || 'New Conversation' }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    dispatchProjectUpdated();
+    return data.conversation;
+  } catch (error) {
+    console.error('Error creating project conversation:', error);
+    return null;
+  }
+}
+
+// Load a project conversation with messages
+export async function loadProjectConversation(projectId: string, conversationId: string): Promise<any[]> {
+  if (isServer()) return [];
+
+  const email = getUserEmail();
+  if (!email) return [];
+
+  try {
+    const response = await fetch(
+      `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    if (data.exists === false) return [];
+
+    return data.messages || [];
+  } catch (error) {
+    console.error('Error loading project conversation:', error);
+    return [];
+  }
+}
+
+// Save messages to a project conversation
+export async function saveProjectConversation(projectId: string, conversationId: string, messages: any[]): Promise<boolean> {
+  if (isServer()) return false;
+
+  const email = getUserEmail();
+  if (!email) return false;
+
+  try {
+    // Check if conversation exists, create if not
+    if (!knownProjectConversations.has(conversationId)) {
+      const checkResponse = await fetch(
+        `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`
+      );
+
+      if (checkResponse.ok) {
+        const data = await checkResponse.json();
+        if (data.exists === false) {
+          // Create the conversation
+          const createResponse = await fetch(`/api/projects/${projectId}/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, id: conversationId, title: 'New Conversation' }),
+          });
+
+          if (!createResponse.ok) return false;
+          dispatchProjectUpdated();
+        }
+      }
+      knownProjectConversations.add(conversationId);
+    }
+
+    // Save messages
+    const response = await fetch(`/api/projects/${projectId}/conversations/${conversationId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, messages }),
+    });
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error saving project conversation:', error);
+    return false;
+  }
+}
+
+// Delete a project conversation
+export async function deleteProjectConversation(projectId: string, conversationId: string): Promise<boolean> {
+  if (isServer()) return false;
+
+  const email = getUserEmail();
+  if (!email) return false;
+
+  try {
+    const response = await fetch(
+      `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`,
+      { method: 'DELETE' }
+    );
+
+    if (response.ok) {
+      knownProjectConversations.delete(conversationId);
+      dispatchProjectUpdated();
+    }
+
+    return response.ok;
+  } catch (error) {
+    console.error('Error deleting project conversation:', error);
+    return false;
+  }
+}
