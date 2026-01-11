@@ -75,7 +75,7 @@ export default function ProjectConversationPage() {
     // Custom header with back button
     const customHeader = (
         <div className="flex items-center gap-2 p-4 border-b border-border/50">
-            <Link href={`/project/${projectId}`}>
+            <Link href={`/AI_UI/project/${projectId}`}>
                 <Button variant="ghost" size="sm" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     <span>Back to Project</span>

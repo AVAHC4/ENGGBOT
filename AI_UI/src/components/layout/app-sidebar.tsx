@@ -1053,10 +1053,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           projects.map((project) => (
                             <SidebarMenuSubItem key={project.id}>
                               <SidebarMenuSubButton
-                                onClick={() => router.push(`/project/${project.id}`)}
+                                onClick={() => router.push(`/AI_UI/project/${project.id}`)}
                                 className={cn(
                                   "w-full justify-between group pr-1",
-                                  pathname?.startsWith(`/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
+                                  pathname?.startsWith(`/AI_UI/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
                                 )}
                               >
                                 <div className="flex items-center overflow-hidden">
