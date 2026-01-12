@@ -883,8 +883,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                 setExpandedProjectIds(new Set());
                                 setActiveProjectId(null);
                                 setActiveProjectConversationId(null);
-                                // Start a new conversation to clear any project messages
-                                startNewConversation();
                               }
                             }}
                           >
