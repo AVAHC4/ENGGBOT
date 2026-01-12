@@ -383,13 +383,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     if (isMounted) {
       const loadConversations = async () => {
         const fetchedConversations = await getAllConversationsMetadata();
-
-        // Store all conversations for project display
+        // All conversations from this API are regular (non-project) conversations
+        // Project conversations are loaded separately via loadProjectConversations
         setAllConversations(fetchedConversations);
-
-        // Filter out conversations that belong to projects (have a project_id) for main list
-        const filteredConversations = fetchedConversations.filter((c: any) => !c.projectId);
-        setConversations(filteredConversations);
+        setConversations(fetchedConversations);
       };
 
       // Load once on mount only

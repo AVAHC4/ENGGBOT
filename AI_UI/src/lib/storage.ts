@@ -634,7 +634,6 @@ export async function getAllConversationsMetadata(): Promise<any[]> {
     title: c.title,
     created: c.created_at || c.createdAt,
     updated: c.updated_at || c.updatedAt,
-    projectId: c.project_id || null,
   })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
 }
 
