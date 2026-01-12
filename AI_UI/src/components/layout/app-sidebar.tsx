@@ -877,13 +877,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                             onClick={(e) => {
                               setActivePath(item.url);
-                              // When clicking Chat, collapse projects and clear project-related state
-                              if (item.title === 'Chat') {
-                                setProjectsExpanded(false);
-                                setExpandedProjectIds(new Set());
-                                setActiveProjectId(null);
-                                setActiveProjectConversationId(null);
-                              }
                             }}
                           >
                             <Icon className="h-4 w-4" />
