@@ -124,7 +124,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         const newConversationId = crypto.randomUUID();
         // Navigate to the project conversation page without creating in database
         // The conversation will be persisted when the first message is saved
-        router.push(`/project/${projectId}/c/${newConversationId}`);
+        router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
     };
 
     // Handle rename project
@@ -244,7 +244,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                             key={convo.id}
                             className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                             // Corrected path to AI_UI project
-                            onClick={() => router.push(`/project/${projectId}/c/${convo.id}`)}
+                            onClick={() => router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
                             <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0" />
