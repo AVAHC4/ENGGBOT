@@ -43,6 +43,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState<ProjectConversation | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [navigatingToConversation, setNavigatingToConversation] = useState<string | null>(null);
 
     // Load project data
     useEffect(() => {
@@ -116,18 +117,13 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         return () => window.removeEventListener('projectUpdated', handleUpdate);
     }, [projectId]);
 
-    // Handle new conversation in project - LAZY creation
-    // Don't create in database immediately - only generate ID and navigate
-    // The conversation will be created when the first message is sent
     const handleNewConversation = async () => {
-        // Generate a new conversation ID locally (UUID v4)
+
         const newConversationId = crypto.randomUUID();
-        // Navigate to the project conversation page without creating in database
-        // The conversation will be persisted when the first message is saved
+
         router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
     };
 
-    // Handle rename project
     const handleRename = async () => {
         if (!newName.trim() || !project) {
             setIsRenaming(false);
@@ -242,10 +238,18 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                     conversations.map((convo) => (
                         <div
                             key={convo.id}
-                            className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                            // Corrected path to AI_UI project
-                            onClick={() => router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
+                            className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors relative"
+                            onClick={() => {
+                                setNavigatingToConversation(convo.id);
+                                router.push(`/AI_UI/project/${projectId}/c/${convo.id}`);
+                            }}
                         >
+                            {/* Loading overlay for this specific conversation */}
+                            {navigatingToConversation === convo.id && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-lg z-10">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                                </div>
+                            )}
                             <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
