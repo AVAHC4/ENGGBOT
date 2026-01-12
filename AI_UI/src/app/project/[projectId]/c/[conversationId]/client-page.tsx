@@ -77,7 +77,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
     const customHeader = (
         <div className="flex items-center gap-2 p-4 border-b border-border/50">
             {/* KEEPING AI_UI PREFIX HERE */}
-            <Link href={`/AI_UI/project/${projectId}`}>
+            <Link href={`/project/${projectId}`}>
                 <Button variant="ghost" size="sm" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     <span>Back to Project</span>
