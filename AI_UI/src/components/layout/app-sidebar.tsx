@@ -914,7 +914,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                               onClick={() => handleSwitchConversation(convo.id)}
                               className={cn(
                                 "w-full justify-between group pr-1",
-                                convo.id === conversationId && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
+                                convo.id === conversationId && pathname === '/AI_UI' && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
                               <div className="flex flex-col items-start overflow-hidden">
