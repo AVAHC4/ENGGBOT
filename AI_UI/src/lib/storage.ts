@@ -478,7 +478,17 @@ export async function loadConversation(id: string): Promise<any[]> {
     loadConversationFromDatabase(id).then((dbMessages) => {
       // Check if conversation was deleted from database (404)
       if (dbMessages === CONVERSATION_NOT_FOUND) {
-        // Clear stale cache - conversation no longer exists in DB
+        // FIX: If we have valid local messages, this is likely an unsynced conversation
+        // Instead of deleting local data, we should restore/sync it to the server
+        if (cachedMessages && cachedMessages.length > 0) {
+          console.log('[Storage] Conversation not found in DB but exists locally. Restoring to server:', id.substring(0, 8));
+          // Trigger a save to sync it back to the database
+          saveConversation(id, cachedMessages);
+          return;
+        }
+
+        // Only clear stale cache if we valid local data is empty
+        // conversation no longer exists in DB and we have nothing to save
         console.log('[Storage] Conversation not found in DB, clearing stale cache:', id.substring(0, 8));
         clearCache(id);
         knownConversations.delete(id);

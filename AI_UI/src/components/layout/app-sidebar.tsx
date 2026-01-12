@@ -115,9 +115,9 @@ function getUserData() {
       };
     }
 
-    // Fallback to auth info if available
+
     if (localStorage.getItem('authenticated') === 'true') {
-      // Get user initials from URL if available
+
       const urlParams = new URLSearchParams(window.location.search);
       const userName = urlParams.get('user_name') || localStorage.getItem('user_name') || "User";
       const userEmail = urlParams.get('user_email') || localStorage.getItem('user_email') || "user@example.com";
@@ -280,13 +280,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const router = useRouter();
   const { t } = useLanguage();
 
-
-
-  // Handle conversation switching with navigation
   const handleSwitchConversation = (id: string) => {
     switchConversation(id);
 
-    // If not on the main chat page, navigate to it
+
     if (pathname !== '/AI_UI') {
       router.push('/AI_UI');
     }
