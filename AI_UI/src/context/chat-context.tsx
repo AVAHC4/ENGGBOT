@@ -87,6 +87,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Track the current conversation ID to prevent saving messages to wrong conversation
   const conversationIdRef = useRef<string>(conversationId);
 
+  // Track project mode with a ref to prevent race conditions with async loads
+  const currentProjectIdRef = useRef<string | null>(currentProjectId);
+
+  // Keep the ref in sync with state
+  useEffect(() => {
+    currentProjectIdRef.current = currentProjectId;
+  }, [currentProjectId]);
+
   // Set isMounted flag on client-side
   useEffect(() => {
     setIsMounted(true);
@@ -129,6 +137,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // This prevents race conditions when user switches conversations quickly
         if (conversationIdRef.current !== loadingId) {
           console.log('[ChatContext] Skipping stale load for:', loadingId.substring(0, 8));
+          return;
+        }
+
+        // CRITICAL: Also skip if we've transitioned to project mode while loading
+        // This prevents the async callback from clearing project messages
+        if (currentProjectIdRef.current) {
+          console.log('[ChatContext] Skipping load - now in project mode:', currentProjectIdRef.current.substring(0, 8));
           return;
         }
 
@@ -192,8 +207,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }).catch((error) => {
         console.error('Error loading conversation:', error);
-        // Only clear if still on same conversation
-        if (conversationIdRef.current === loadingId) {
+        // Only clear if still on same conversation and not in project mode
+        if (conversationIdRef.current === loadingId && !currentProjectIdRef.current) {
           setMessages([]);
         }
       });
