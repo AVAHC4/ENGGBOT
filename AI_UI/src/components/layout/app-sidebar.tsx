@@ -276,7 +276,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('');
   const pathname = usePathname();
-  const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation } = useChat();
+  const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation, messages } = useChat();
   const router = useRouter();
   const { t } = useLanguage();
 
@@ -860,11 +860,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const title = t(translationKey);
 
                     // Special handling for "Chat" button - make it start a new conversation
+                    // Only highlight when on /AI_UI AND no messages yet (empty chat state)
                     if (item.title === "Chat") {
+                      const isChatActive = pathname === '/AI_UI' && messages.length === 0;
                       return (
                         <SidebarMenuItem key={item.title}>
                           <SidebarMenuButton
-                            data-active={isActive}
+                            data-active={isChatActive}
                             onClick={() => {
                               startNewConversation();
                               setActivePath(item.url);
@@ -920,12 +922,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
                   {conversationsExpanded && (
                     <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton onClick={handleStartNewConversation} className="w-full flex items-center">
-                          <PlusCircle className="h-3.5 w-3.5 mr-2" />
-                          <span className="font-medium text-primary">{t('sidebar.new_conversation')}</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
 
                       {conversations.length > 0 ? (
                         conversations.map((convo) => (
