@@ -820,7 +820,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const storageKey = `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
-      saveConversation(newId, []);
+      // NOTE: Do NOT save empty conversation here - only save when user sends a message
     }
   }, [isGenerating, isLoading, stopGeneration, isMounted]);
 

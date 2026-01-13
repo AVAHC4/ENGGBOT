@@ -859,6 +859,26 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const translationKey = `sidebar.${item.title.toLowerCase()}`;
                     const title = t(translationKey);
 
+                    // Special handling for "Chat" button - make it start a new conversation
+                    if (item.title === "Chat") {
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton
+                            data-active={isActive}
+                            onClick={() => {
+                              startNewConversation();
+                              setActivePath(item.url);
+                              router.push(item.url);
+                            }}
+                            className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 cursor-pointer"
+                          >
+                            <Icon className="h-4 w-4" />
+                            <span>{title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    }
+
                     // Regular nav items
                     return (
                       <SidebarMenuItem key={item.title}>
