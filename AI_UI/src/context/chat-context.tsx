@@ -787,6 +787,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Switch to an existing conversation
   const switchConversation = useCallback((id: string) => {
+    // Skip if already on this conversation
+    if (id === conversationIdRef.current) {
+      return;
+    }
+
     // Stop any ongoing generation
     if (isGenerating || isLoading) {
       stopGeneration();
