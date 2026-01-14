@@ -253,10 +253,10 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
           <div className="space-y-2 px-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-lg animate-pulse">
-                <div className="w-10 h-10 rounded-full bg-muted" />
+                <div className="w-10 h-10 rounded-full bg-white/10" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded w-24" />
-                  <div className="h-3 bg-muted rounded w-32" />
+                  <div className="h-4 bg-white/10 rounded w-24" />
+                  <div className="h-3 bg-white/10 rounded w-32" />
                 </div>
               </div>
             ))}
@@ -404,12 +404,12 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                 {[1, 2].map((i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="space-y-2 flex-1">
-                      <div className="h-4 bg-muted rounded w-24" />
-                      <div className="h-3 bg-muted rounded w-32" />
+                      <div className="h-4 bg-white/10 rounded w-24" />
+                      <div className="h-3 bg-white/10 rounded w-32" />
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-8 bg-muted rounded w-16" />
-                      <div className="h-8 bg-muted rounded w-16" />
+                      <div className="h-8 bg-white/10 rounded w-16" />
+                      <div className="h-8 bg-white/10 rounded w-16" />
                     </div>
                   </div>
                 ))}

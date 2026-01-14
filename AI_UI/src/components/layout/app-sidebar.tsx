@@ -950,8 +950,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
                               <div className="flex-1 space-y-1.5">
-                                <div className="h-3 bg-muted rounded w-20" />
-                                <div className="h-2 bg-muted rounded w-14" />
+                                <div className="h-3 bg-white/10 rounded w-20" />
+                                <div className="h-2 bg-white/10 rounded w-14" />
                               </div>
                             </div>
                           ))}
@@ -1090,9 +1090,9 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           <div className="space-y-1 px-2">
                             {[1, 2, 3].map((i) => (
                               <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
-                                <div className="h-3.5 w-3.5 bg-muted rounded" />
+                                <div className="h-3.5 w-3.5 bg-white/10 rounded" />
                                 <div className="flex-1 space-y-1.5">
-                                  <div className="h-3 bg-muted rounded w-20" />
+                                  <div className="h-3 bg-white/10 rounded w-20" />
                                 </div>
                               </div>
                             ))}
