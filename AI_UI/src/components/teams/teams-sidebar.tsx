@@ -399,7 +399,22 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
             <DialogTitle>Pending Invitations</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {loadingInvites && <div className="text-sm text-muted-foreground">Loading invites…</div>}
+            {loadingInvites && (
+              <div className="space-y-3 animate-pulse">
+                {[1, 2].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-muted rounded w-24" />
+                      <div className="h-3 bg-muted rounded w-32" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-muted rounded w-16" />
+                      <div className="h-8 bg-muted rounded w-16" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {!loadingInvites && invites.length === 0 && (
               <div className="text-sm text-muted-foreground">No pending invitations</div>
             )}

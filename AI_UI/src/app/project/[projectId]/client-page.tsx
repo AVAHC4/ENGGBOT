@@ -155,8 +155,27 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex flex-col h-full max-w-4xl mx-auto px-4 py-8 animate-pulse">
+                {/* Header skeleton */}
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="h-10 w-10 bg-muted rounded" />
+                    <div className="h-8 w-8 bg-muted rounded" />
+                    <div className="h-8 bg-muted rounded w-48" />
+                </div>
+                {/* New chat input skeleton */}
+                <div className="h-14 bg-muted rounded-xl mb-6" />
+                {/* Conversations list skeleton */}
+                <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex items-center gap-3 p-4 rounded-lg">
+                            <div className="h-5 w-5 bg-muted rounded" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-4 bg-muted rounded w-32" />
+                                <div className="h-3 bg-muted rounded w-20" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

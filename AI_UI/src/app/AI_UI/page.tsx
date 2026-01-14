@@ -21,8 +21,31 @@ export default function Home() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex flex-col min-h-screen p-4 animate-pulse">
+                {/* Header skeleton */}
+                <div className="flex justify-between items-center mb-6">
+                    <div className="h-8 bg-muted rounded w-32" />
+                    <div className="h-8 bg-muted rounded-full w-8" />
+                </div>
+                {/* Chat area skeleton */}
+                <div className="flex-1 space-y-4">
+                    <div className="flex gap-3">
+                        <div className="h-10 w-10 bg-muted rounded-full" />
+                        <div className="flex-1 space-y-2">
+                            <div className="h-4 bg-muted rounded w-3/4" />
+                            <div className="h-4 bg-muted rounded w-1/2" />
+                        </div>
+                    </div>
+                    <div className="flex gap-3 justify-end">
+                        <div className="space-y-2">
+                            <div className="h-4 bg-muted rounded w-48" />
+                            <div className="h-4 bg-muted rounded w-32" />
+                        </div>
+                        <div className="h-10 w-10 bg-muted rounded-full" />
+                    </div>
+                </div>
+                {/* Input skeleton */}
+                <div className="mt-4 h-12 bg-muted rounded-xl" />
             </div>
         );
     }

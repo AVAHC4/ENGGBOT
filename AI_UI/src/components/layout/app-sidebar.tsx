@@ -245,6 +245,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [teamsExpanded, setTeamsExpanded] = React.useState(false);
   const [projectsExpanded, setProjectsExpanded] = React.useState(false);
   const [projects, setProjects] = React.useState<any[]>([]);
+  const [projectsLoading, setProjectsLoading] = React.useState(true);
   const [expandedProjectIds, setExpandedProjectIds] = React.useState<Set<string>>(new Set());
   const [projectConversations, setProjectConversations] = React.useState<Record<string, any[]>>({});
   const [showNewProjectDialog, setShowNewProjectDialog] = React.useState(false);
@@ -346,19 +347,15 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         if (savedItems) {
           try {
             const items = JSON.parse(savedItems);
-            // Migrate 'chat' to 'new chat' for existing users
+
             const migratedItems = items.map((i: string) => i === 'chat' ? 'new chat' : i);
-            // Ensure 'new chat' is present if it was missing or if 'chat' wasn't there but it should be default
+
             if (!migratedItems.includes('new chat') && !migratedItems.includes('chat')) {
-              // If neither exists, we might want to default, but let's stick to simple migration first 
-              // to avoid forcing it if user explicitly hid it (if hiding is possible).
-              // But since 'chat' was default, likely users have it.
+
             }
             setVisibleItems(migratedItems);
 
-            // Should properly save the migration back? 
-            // Maybe not strictly necessary as it will self-heal on next save, 
-            // but let's just update state for now.
+
           } catch (e) {
             console.error("Failed to parse sidebar preferences", e);
           }
@@ -422,8 +419,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   React.useEffect(() => {
     if (isMounted) {
       const loadAllProjects = async () => {
-        const fetchedProjects = await loadProjects();
-        setProjects(fetchedProjects);
+        setProjectsLoading(true);
+        try {
+          const fetchedProjects = await loadProjects();
+          setProjects(fetchedProjects);
+        } finally {
+          setProjectsLoading(false);
+        }
       };
 
       loadAllProjects();
@@ -1083,7 +1085,19 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
 
-                        {projects.length > 0 ? (
+                        {projectsLoading ? (
+                          // Skeleton loading animation
+                          <div className="space-y-1 px-2">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
+                                <div className="h-3.5 w-3.5 bg-muted rounded" />
+                                <div className="flex-1 space-y-1.5">
+                                  <div className="h-3 bg-muted rounded w-20" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : projects.length > 0 ? (
                           projects.map((project) => (
                             <SidebarMenuSubItem key={project.id}>
                               <SidebarMenuSubButton
