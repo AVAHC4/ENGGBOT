@@ -56,9 +56,10 @@ interface TeamsSidebarProps {
   onCreateTeam?: (name: string) => Promise<void>
   onDeleteTeam?: (teamId: string) => Promise<void>
   teams: Team[]
+  isLoading?: boolean
 }
 
-export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDeleteTeam, teams }: TeamsSidebarProps) {
+export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDeleteTeam, teams, isLoading }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [showInvites, setShowInvites] = useState(false)
@@ -247,121 +248,140 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
 
       {/* Teams List */}
       <div className="flex-1 overflow-y-auto py-2">
-        {filteredTeams.map((team) => (
-          <div
-            key={team.id}
-            className={`mx-2 mb-1 rounded-lg transition-all duration-200 ${selectedTeamId === team.id ? 'bg-primary/10 border-l-[3px] border-l-primary' : 'border-l-[3px] border-l-transparent hover:bg-muted/50'}`}
-          >
-            <div className="flex items-center gap-2 px-3 py-3">
-              <button
-                className="flex flex-1 items-center gap-3 text-left"
-                onClick={() => onTeamSelect(team.id)}
-              >
-                {/* Avatar */}
-                <div className="relative flex-shrink-0">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
-                    <AvatarFallback className="font-medium text-sm bg-muted text-muted-foreground">
-                      {team.name
-                        .split(" ")
-                        .map((word) => word[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {team.isOnline && (
-                    <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 border-2 border-background rounded-full" />
-                  )}
+        {isLoading ? (
+          // Skeleton loading animation
+          <div className="space-y-2 px-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-lg animate-pulse">
+                <div className="w-10 h-10 rounded-full bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-24" />
+                  <div className="h-3 bg-muted rounded w-32" />
                 </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <h3 className={`font-semibold text-sm truncate ${selectedTeamId === team.id ? 'text-foreground' : 'text-foreground/90'}`}>
-                      {team.name}
-                    </h3>
-                    <span className="text-xs flex-shrink-0 ml-2 text-muted-foreground">
-                      {team.timestamp}
-                    </span>
-                  </div>
-                  <p className="text-xs truncate text-muted-foreground">
-                    {team.lastMessage || 'No messages yet'}
-                  </p>
-                </div>
-
-                {/* Unread Badge */}
-                {team.unreadCount && team.unreadCount > 0 && (
-                  <Badge
-                    variant="default"
-                    className="h-5 min-w-5 text-xs px-1.5 rounded-full flex-shrink-0"
-                    style={{ background: '#8b5cf6', color: '#fff' }}
-                  >
-                    {team.unreadCount}
-                  </Badge>
-                )}
-              </button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground"
-                  >
-                    <MoreVertical className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start">
-                  <DropdownMenuLabel>{team.name}</DropdownMenuLabel>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem
-                      onSelect={(event) => {
-                        event.preventDefault()
-                        onTeamSelect(team.id)
-                      }}
-                    >
-                      Open
-                      <DropdownMenuShortcut>⏎</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={(event) => {
-                        event.preventDefault()
-                        onTeamSelect(team.id)
-                        setShowAddPeople(true)
-                      }}
-                    >
-                      Add people
-                      <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
-                    </DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>Share team</DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                          <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Copy link</DropdownMenuItem>
-                          <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Send email</DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Settings</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Archive</DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onSelect={(event) => {
-                      event.preventDefault()
-                      setDeleteError(null)
-                      setPendingDelete({ teamId: team.id, teamName: team.name })
-                    }}
-                  >
-                    Delete team
-                    <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+              </div>
+            ))}
           </div>
-        ))}
+        ) : filteredTeams.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            No teams found
+          </div>
+        ) : (
+          filteredTeams.map((team) => (
+            <div
+              key={team.id}
+              className={`mx-2 mb-1 rounded-lg transition-all duration-200 ${selectedTeamId === team.id ? 'bg-primary/10 border-l-[3px] border-l-primary' : 'border-l-[3px] border-l-transparent hover:bg-muted/50'}`}
+            >
+              <div className="flex items-center gap-2 px-3 py-3">
+                <button
+                  className="flex flex-1 items-center gap-3 text-left"
+                  onClick={() => onTeamSelect(team.id)}
+                >
+                  {/* Avatar */}
+                  <div className="relative flex-shrink-0">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
+                      <AvatarFallback className="font-medium text-sm bg-muted text-muted-foreground">
+                        {team.name
+                          .split(" ")
+                          .map((word) => word[0])
+                          .join("")
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {team.isOnline && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 border-2 border-background rounded-full" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <h3 className={`font-semibold text-sm truncate ${selectedTeamId === team.id ? 'text-foreground' : 'text-foreground/90'}`}>
+                        {team.name}
+                      </h3>
+                      <span className="text-xs flex-shrink-0 ml-2 text-muted-foreground">
+                        {team.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-xs truncate text-muted-foreground">
+                      {team.lastMessage || 'No messages yet'}
+                    </p>
+                  </div>
+
+                  {/* Unread Badge */}
+                  {team.unreadCount && team.unreadCount > 0 && (
+                    <Badge
+                      variant="default"
+                      className="h-5 min-w-5 text-xs px-1.5 rounded-full flex-shrink-0"
+                      style={{ background: '#8b5cf6', color: '#fff' }}
+                    >
+                      {team.unreadCount}
+                    </Badge>
+                  )}
+                </button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground"
+                    >
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="start">
+                    <DropdownMenuLabel>{team.name}</DropdownMenuLabel>
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem
+                        onSelect={(event) => {
+                          event.preventDefault()
+                          onTeamSelect(team.id)
+                        }}
+                      >
+                        Open
+                        <DropdownMenuShortcut>⏎</DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={(event) => {
+                          event.preventDefault()
+                          onTeamSelect(team.id)
+                          setShowAddPeople(true)
+                        }}
+                      >
+                        Add people
+                        <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>Share team</DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Copy link</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Send email</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Settings</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Archive</DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onSelect={(event) => {
+                        event.preventDefault()
+                        setDeleteError(null)
+                        setPendingDelete({ teamId: team.id, teamName: team.name })
+                      }}
+                    >
+                      Delete team
+                      <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Add People Dialog */}

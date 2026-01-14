@@ -22,8 +22,10 @@ interface Team {
 export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const loadTeams = useCallback(() => {
+    setIsLoading(true)
     const user = getCurrentUser()
     apiListTeams(user.email)
       .then((list) => {
@@ -43,6 +45,9 @@ export function DesktopTeamsLayout() {
       })
       .catch((e) => {
         console.error("Failed to load teams:", e)
+      })
+      .finally(() => {
+        setIsLoading(false)
       })
   }, [])
 
@@ -136,6 +141,7 @@ export function DesktopTeamsLayout() {
           onCreateTeam={handleCreateTeam}
           onDeleteTeam={handleDeleteTeam}
           teams={teams}
+          isLoading={isLoading}
         />
       </div>
 
