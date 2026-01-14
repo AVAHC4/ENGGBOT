@@ -344,7 +344,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         const savedItems = localStorage.getItem("sidebar_preferences");
         if (savedItems) {
           try {
-            setVisibleItems(JSON.parse(savedItems));
+            const items = JSON.parse(savedItems);
+            // Migrate 'chat' to 'new chat' for existing users
+            const migratedItems = items.map((i: string) => i === 'chat' ? 'new chat' : i);
+            // Ensure 'new chat' is present if it was missing or if 'chat' wasn't there but it should be default
+            if (!migratedItems.includes('new chat') && !migratedItems.includes('chat')) {
+              // If neither exists, we might want to default, but let's stick to simple migration first 
+              // to avoid forcing it if user explicitly hid it (if hiding is possible).
+              // But since 'chat' was default, likely users have it.
+            }
+            setVisibleItems(migratedItems);
+
+            // Should properly save the migration back? 
+            // Maybe not strictly necessary as it will self-heal on next save, 
+            // but let's just update state for now.
           } catch (e) {
             console.error("Failed to parse sidebar preferences", e);
           }
