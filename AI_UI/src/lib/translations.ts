@@ -2,7 +2,7 @@ export type Language = 'en' | 'fr' | 'de' | 'es' | 'pt' | 'ru' | 'ja' | 'ko' | '
 
 export const translations: Record<Language, Record<string, string>> = {
     en: {
-        'sidebar.chat': 'Chat',
+        'sidebar.new_chat': 'New Chat',
         'sidebar.compiler': 'Compiler',
         'sidebar.teams': 'Teams',
         'sidebar.projects': 'Projects',
@@ -17,7 +17,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Manage your account settings and set e-mail preferences.',
     },
     fr: {
-        'sidebar.chat': 'Discussion',
+        'sidebar.new_chat': 'Nouvelle discussion',
         'sidebar.compiler': 'Compilateur',
         'sidebar.teams': 'Équipes',
         'sidebar.projects': 'Projets',
@@ -32,7 +32,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Gérez les paramètres de votre compte et vos préférences de messagerie.',
     },
     de: {
-        'sidebar.chat': 'Chat',
+        'sidebar.new_chat': 'Neuer Chat',
         'sidebar.compiler': 'Compiler',
         'sidebar.teams': 'Teams',
         'sidebar.projects': 'Projekte',
@@ -47,7 +47,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Verwalten Sie Ihre Kontoeinstellungen und E-Mail-Präferenzen.',
     },
     es: {
-        'sidebar.chat': 'Chat',
+        'sidebar.new_chat': 'Nuevo Chat',
         'sidebar.compiler': 'Compilador',
         'sidebar.teams': 'Equipos',
         'sidebar.projects': 'Proyectos',
@@ -62,7 +62,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Administre la configuración de su cuenta y las preferencias de correo electrónico.',
     },
     pt: {
-        'sidebar.chat': 'Chat',
+        'sidebar.new_chat': 'Novo Chat',
         'sidebar.compiler': 'Compilador',
         'sidebar.teams': 'Equipes',
         'sidebar.projects': 'Projetos',
@@ -77,7 +77,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Gerencie as configurações da sua conta e preferências de e-mail.',
     },
     ru: {
-        'sidebar.chat': 'Чат',
+        'sidebar.new_chat': 'Новый чат',
         'sidebar.compiler': 'Компилятор',
         'sidebar.teams': 'Команды',
         'sidebar.projects': 'Проекты',
@@ -92,7 +92,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'Управляйте настройками аккаунта и предпочтениями электронной почты.',
     },
     ja: {
-        'sidebar.chat': 'チャット',
+        'sidebar.new_chat': '新しいチャット',
         'sidebar.compiler': 'コンパイラ',
         'sidebar.teams': 'チーム',
         'sidebar.projects': 'プロジェクト',
@@ -107,7 +107,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': 'アカウント設定とメール設定を管理します。',
     },
     ko: {
-        'sidebar.chat': '채팅',
+        'sidebar.new_chat': '새 채팅',
         'sidebar.compiler': '컴파일러',
         'sidebar.teams': '팀',
         'sidebar.projects': '프로젝트',
@@ -122,7 +122,7 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.description': '계정 설정 및 이메일 환경설정을 관리합니다.',
     },
     zh: {
-        'sidebar.chat': '聊天',
+        'sidebar.new_chat': '新聊天',
         'sidebar.compiler': '编译器',
         'sidebar.teams': '团队',
         'sidebar.projects': '项目',
@@ -134,6 +134,6 @@ export const translations: Record<Language, Record<string, string>> = {
         'settings.notifications': '通知',
         'settings.display': '显示',
         'settings.title': '设置',
-        'settings.description': '管理您的账户设置和电子邮件首选项。',
+        'settings.description': '管理您的账户设置 and 电子邮件首选项。',
     },
 };

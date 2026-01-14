@@ -159,7 +159,7 @@ const data = {
   user: getUserData(),
   navMain: [
     {
-      title: "Chat",
+      title: "New Chat",
       url: "/AI_UI",
       icon: MessageSquare,
     },
@@ -331,7 +331,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   }, []);
 
   // Add state for visible items
-  const [visibleItems, setVisibleItems] = React.useState<string[]>(["chat", "compiler", "teams", "projects"]);
+  const [visibleItems, setVisibleItems] = React.useState<string[]>(["new chat", "compiler", "teams", "projects"]);
 
   // Refresh user data - only run on client side after component is mounted
   React.useEffect(() => {
@@ -856,12 +856,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       (item.url !== '/' && activePath.startsWith(item.url));
 
 
-                    const translationKey = `sidebar.${item.title.toLowerCase()}`;
+                    const translationKey = `sidebar.${item.title.toLowerCase().replace(' ', '_')}`;
                     const title = t(translationKey);
 
-                    // Special handling for "Chat" button - make it start a new conversation
+                    // Special handling for "New Chat" button - make it start a new conversation
                     // Only highlight when on /AI_UI AND no messages yet (empty chat state)
-                    if (item.title === "Chat") {
+                    if (item.title === "New Chat") {
                       const isChatActive = pathname === '/AI_UI' && messages.length === 0;
                       return (
                         <SidebarMenuItem key={item.title}>
