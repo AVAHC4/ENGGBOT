@@ -272,6 +272,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [showAddFriend, setShowAddFriend] = React.useState(false);
   const [newFriendName, setNewFriendName] = React.useState("");
   const [conversations, setConversations] = React.useState<any[]>([]);
+  const [conversationsLoading, setConversationsLoading] = React.useState(true);
   const [allConversations, setAllConversations] = React.useState<any[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [activePath, setActivePath] = React.useState('');
@@ -392,11 +393,16 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   React.useEffect(() => {
     if (isMounted) {
       const loadConversations = async () => {
-        const fetchedConversations = await getAllConversationsMetadata();
-        // All conversations from this API are regular (non-project) conversations
-        // Project conversations are loaded separately via loadProjectConversations
-        setAllConversations(fetchedConversations);
-        setConversations(fetchedConversations);
+        setConversationsLoading(true);
+        try {
+          const fetchedConversations = await getAllConversationsMetadata();
+          // All conversations from this API are regular (non-project) conversations
+          // Project conversations are loaded separately via loadProjectConversations
+          setAllConversations(fetchedConversations);
+          setConversations(fetchedConversations);
+        } finally {
+          setConversationsLoading(false);
+        }
       };
 
       // Load once on mount only
@@ -936,7 +942,19 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   {conversationsExpanded && (
                     <SidebarMenuSub>
 
-                      {conversations.length > 0 ? (
+                      {conversationsLoading ? (
+                        // Skeleton loading animation
+                        <div className="space-y-1 px-2">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
+                              <div className="flex-1 space-y-1.5">
+                                <div className="h-3 bg-muted rounded w-20" />
+                                <div className="h-2 bg-muted rounded w-14" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : conversations.length > 0 ? (
                         conversations.map((convo) => (
                           <SidebarMenuSubItem key={convo.id}>
                             <SidebarMenuSubButton
