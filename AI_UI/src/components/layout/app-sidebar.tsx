@@ -712,12 +712,12 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-  // Function to remove a friend
+
   const handleRemoveFriend = (id: string) => {
     setFriends(friends.filter(friend => friend.id !== id));
   };
 
-  // Save friends to localStorage whenever they change
+
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
