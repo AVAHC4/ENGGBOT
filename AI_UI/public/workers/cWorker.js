@@ -1,9 +1,4 @@
-/**
- * Enhanced C/C++ Worker with Wasmer SDK
- * - IndexedDB persistent bytecode cache
- * - Preloads Clang package for faster compilation
- * - Better error handling and timeouts
- */
+ 
 
 import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
 
@@ -11,7 +6,7 @@ let initialized = false;
 let clangPkg = null;
 let dbPromise = null;
 
-// ============= IndexedDB for persistent bytecode cache =============
+ 
 function openDB() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
@@ -23,7 +18,7 @@ function openDB() {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('bytecode')) {
           const store = db.createObjectStore('bytecode');
-          // Add index for cleanup of old entries
+           
           store.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
@@ -43,7 +38,7 @@ async function getCachedBytecode(key) {
       const req = store.get(key);
       req.onsuccess = () => {
         const result = req.result;
-        // Check if cache is still valid (24 hours)
+         
         if (result && result.timestamp && (Date.now() - result.timestamp < 24 * 60 * 60 * 1000)) {
           resolve(result.bytes);
         } else {
@@ -64,7 +59,7 @@ async function cacheBytecode(key, bytes) {
     const store = tx.objectStore('bytecode');
     store.put({ bytes, timestamp: Date.now() }, key);
 
-    // Cleanup old entries (keep max 50)
+     
     cleanupOldCache(store);
   } catch (e) {
     console.warn('[cWorker] Cache write failed:', e);
@@ -76,11 +71,11 @@ async function cleanupOldCache(store) {
     const countReq = store.count();
     countReq.onsuccess = () => {
       if (countReq.result > 50) {
-        // Delete oldest entries
+         
         const index = store.index('timestamp');
         const cursorReq = index.openCursor();
         let deleted = 0;
-        const toDelete = countReq.result - 40; // Keep 40 entries
+        const toDelete = countReq.result - 40;  
 
         cursorReq.onsuccess = (e) => {
           const cursor = e.target.result;
@@ -92,7 +87,7 @@ async function cleanupOldCache(store) {
         };
       }
     };
-  } catch { /* ignore cleanup errors */ }
+  } catch {   }
 }
 
 async function sha256(text) {
@@ -103,7 +98,7 @@ async function sha256(text) {
   return arr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ============= Wasmer SDK initialization =============
+ 
 async function ensureInit() {
   if (!initialized) {
     console.log('[cWorker] Initializing Wasmer SDK...');
@@ -134,15 +129,15 @@ async function promiseWithTimeout(ms, promise, timeoutValue) {
   }
 }
 
-// ============= Main message handler =============
+ 
 self.addEventListener('message', async (e) => {
   const data = e.data || {};
 
   if (data.type === 'INIT') {
     try {
       await ensureInit();
-      // Preload clang in background (don't wait)
-      ensureClang().catch(() => { /* ignore preload errors */ });
+       
+      ensureClang().catch(() => {   });
       self.postMessage({ type: 'READY' });
     } catch (err) {
       self.postMessage({ type: 'ERROR', error: String(err && err.message || err) });
@@ -177,23 +172,23 @@ self.addEventListener('message', async (e) => {
 
       const args = [
         `/project/${filename}`,
-        "-O2", // Optimization for better performance
+        "-O2",  
         "-o",
         outPath,
       ];
 
       if (lang === 'cpp') {
-        // C++ mode with modern standard
+         
         args.splice(1, 0, "-x", "c++", "-std=c++17");
       } else {
-        // C mode with modern standard
+         
         args.splice(1, 0, "-std=c11");
       }
 
-      // Compute cache key
+       
       const key = await sha256(`${lang}|${code}`);
 
-      // Check persistent cache first
+       
       let wasmBytes = await getCachedBytecode(key);
 
       if (!wasmBytes) {
@@ -213,17 +208,17 @@ self.addEventListener('message', async (e) => {
           return;
         }
 
-        // Read produced wasm from the mounted directory
+         
         wasmBytes = await project.readFile(outName);
 
-        // Cache to IndexedDB for future use
+         
         await cacheBytecode(key, wasmBytes);
         console.log('[cWorker] Compiled and cached');
       } else {
         console.log('[cWorker] Cache hit, using cached bytecode');
       }
 
-      // Execute the compiled program
+       
       const program = await Wasmer.fromFile(wasmBytes);
       const run = await program.entrypoint.run({
         stdin: stdin || ''
@@ -244,6 +239,6 @@ self.addEventListener('message', async (e) => {
   }
 });
 
-// Signal that worker is ready to receive messages
+ 
 self.postMessage({ type: 'BOOT' });
 console.log('[cWorker] Worker booted');

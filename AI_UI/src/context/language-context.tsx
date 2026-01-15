@@ -16,7 +16,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        // Load language from localStorage on mount
+         
         const savedData = localStorage.getItem('user_data');
         if (savedData) {
             try {
@@ -40,9 +40,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage: (lang: Language) => {
             setLanguage(lang);
-            // We don't save to localStorage here because that's handled by the form submit
-            // or we could save it here to be safe, but let's stick to the form logic for now
-            // actually, let's update user_data just in case setLanguage is called from elsewhere
+             
+             
+             
             const savedData = localStorage.getItem('user_data');
             let currentData = {};
             try {

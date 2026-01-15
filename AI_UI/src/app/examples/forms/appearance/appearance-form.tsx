@@ -24,7 +24,7 @@ import { useBackground } from "@/context/background-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
 
-// Helper function to get user email from localStorage
+ 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -86,7 +86,7 @@ export function AppearanceForm() {
         form.setValue("background", background as AppearanceFormValues["background"])
       }
 
-      // Load profile image from localStorage first (for immediate display)
+       
       const savedAvatar = localStorage.getItem('user_avatar');
       if (savedAvatar) {
         setProfileImage(savedAvatar);
@@ -101,7 +101,7 @@ export function AppearanceForm() {
         }
       }
 
-      // Try to load from database
+       
       const email = getUserEmail()
       if (email) {
         try {
@@ -121,7 +121,7 @@ export function AppearanceForm() {
       }
 
       setIsMounted(true);
-      // Wait a bit before allowing auto-save to prevent saving during initial load
+       
       setTimeout(() => {
         isInitialLoadRef.current = false
       }, 1000)
@@ -130,11 +130,11 @@ export function AppearanceForm() {
     loadData()
   }, [theme, background, form]);
 
-  // Auto-save function
+   
   const autoSave = React.useCallback(async (data: AppearanceFormValues, avatar: string) => {
     if (isInitialLoadRef.current) return
 
-    // Save profile image to localStorage for immediate updates
+     
     if (avatar) {
       localStorage.setItem('user_avatar', avatar);
       try {
@@ -147,7 +147,7 @@ export function AppearanceForm() {
       window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
     }
 
-    // Save to database
+     
     const email = getUserEmail()
     if (email) {
       try {
@@ -177,17 +177,17 @@ export function AppearanceForm() {
     })
   }, [toast])
 
-  // Watch for form changes and auto-save with debouncing
+   
   React.useEffect(() => {
     const subscription = form.watch((data) => {
       if (isInitialLoadRef.current || !isMounted) return
 
-      // Clear existing timeout
+       
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
 
-      // Debounce save by 500ms
+       
       saveTimeoutRef.current = setTimeout(() => {
         const formData = data as AppearanceFormValues
         if (formData.theme && formData.font && formData.background) {
@@ -205,7 +205,7 @@ export function AppearanceForm() {
   }, [form, autoSave, profileImage, isMounted])
 
 
-  // Prevent rendering the form until the component is mounted on the client
+   
   if (!isMounted) {
     return null;
   }
@@ -219,7 +219,7 @@ export function AppearanceForm() {
       try {
         const compressedBase64 = await compressImage(file);
         setProfileImage(compressedBase64);
-        // Auto-save after profile image change
+         
         const formData = form.getValues()
         autoSave(formData, compressedBase64)
       } catch (error) {
@@ -344,7 +344,7 @@ export function AppearanceForm() {
           )}
         />
 
-        {/* Backgrounds */}
+        { }
         <FormField
           control={form.control}
           name="background"
@@ -363,7 +363,7 @@ export function AppearanceForm() {
                 defaultValue={field.value}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2"
               >
-                {/* Flickering Grid */}
+                { }
                 <FormItem className="w-full">
                   <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
@@ -376,7 +376,7 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
 
-                {/* Radial Vignette */}
+                { }
                 <FormItem className="w-full">
                   <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
@@ -389,7 +389,7 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
 
-                {/* Sunset Gradient */}
+                { }
                 <FormItem className="w-full">
                   <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
@@ -402,7 +402,7 @@ export function AppearanceForm() {
                   </FormLabel>
                 </FormItem>
 
-                {/* Solid - adapts to theme */}
+                { }
                 <FormItem className="w-full">
                   <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>

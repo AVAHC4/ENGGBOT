@@ -1,17 +1,4 @@
-/**
- * Java Code Executor with hybrid approach:
- * - Primary: Fast Piston API for instant execution
- * - Fallback: CheerpJ if offline or API fails
- *
- * Strategy:
- * 1. Try Piston API first (< 2s, free, no hosting)
- * 2. On failure/offline: use CheerpJ with caching
- *
- * Performance:
- * - Piston API: 500ms - 2s (always fast)
- * - CheerpJ first: 5-10s (downloads, cached after)
- * - CheerpJ cached: < 500ms
- */
+
 
 let isInitialized = false;
 let scriptLoaded = false;
@@ -19,9 +6,9 @@ let loadingPromise = null;
 let currentResolve = null;
 let cancelled = false;
 let dbPromise = null;
-let usePistonFirst = true; // Try Piston API first for speed
+let usePistonFirst = true;
 
-// IndexedDB for bytecode cache
+
 function openDB() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
@@ -59,7 +46,7 @@ async function cacheBytecode(key, data) {
     const tx = db.transaction('bytecode', 'readwrite');
     const store = tx.objectStore('bytecode');
     store.put(data, key);
-  } catch {}
+  } catch { }
 }
 
 async function sha256(text) {
@@ -70,7 +57,7 @@ async function sha256(text) {
   return arr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// --- Lightweight transpiler to Java 8/15-compatible subset ---
+
 function escapeNonAsciiWhole(text) {
   let out = '';
   for (const ch of text) {
@@ -79,7 +66,7 @@ function escapeNonAsciiWhole(text) {
       if (code <= 0xffff) {
         out += `\\u${code.toString(16).padStart(4, '0')}`;
       } else {
-        // surrogate pair
+
         const high = Math.floor((code - 0x10000) / 0x400) + 0xd800;
         const low = ((code - 0x10000) % 0x400) + 0xdc00;
         out += `\\u${high.toString(16)}\\u${low.toString(16)}`;
@@ -92,13 +79,13 @@ function escapeNonAsciiWhole(text) {
 }
 
 function transpilePatternMatching(src) {
-  // if (expr instanceof Type var) { -> if (expr instanceof Type) { Type var = (Type) expr;
+
   return src.replace(/if\s*\(\s*([^\)]+?)\s+instanceof\s+([A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*\{/g,
     (m, expr, type, varname) => `if (${expr} instanceof ${type}) { ${type} ${varname} = (${type}) ${expr};`);
 }
 
 function transpileRecords(src) {
-  // Supports simple 'record Name(type1 f1, type2 f2) { }' => final class
+
   return src.replace(/\brecord\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*\{[^}]*\}/g, (m, name, params) => {
     const fields = params.split(',').map(s => s.trim()).filter(Boolean);
     const decls = fields.map(f => {
@@ -118,12 +105,12 @@ function transpileRecords(src) {
 
 function transpileForCompat(source) {
   let src = String(source || '');
-  // Replace common unicode identifier pi
-  src = src.replace(/\u03C0/g, 'pi'); // π -> pi
-  // Downlevel preview features
+
+  src = src.replace(/\u03C0/g, 'pi');
+
   src = transpilePatternMatching(src);
   src = transpileRecords(src);
-  // Escape any remaining non-ASCII chars to \uXXXX to avoid encoding issues in javac
+
   src = escapeNonAsciiWhole(src);
   return src;
 }
@@ -135,12 +122,12 @@ function needsStdin(src) {
   } catch { return false; }
 }
 
-// Basic source pre-processing
+
 function stripComments(code) {
   let s = String(code || '');
-  // remove block comments
+
   s = s.replace(/\/\*[\s\S]*?\*\//g, '');
-  // remove line comments
+
   s = s.replace(/(^|[^:])\/\/.*$/gm, '$1');
   return s;
 }
@@ -161,28 +148,28 @@ function findInputCalls(code, scannerVars) {
       calls.push({ idx: m.index || 0, method: m[1], var: v });
     }
   }
-  // System.console().readLine(
+
   for (const m of code.matchAll(/System\.console\(\)\.readLine\s*\(/g))
     calls.push({ idx: m.index || 0, method: 'readLine', var: 'console' });
-  // BufferedReader ... readLine(
+
   for (const m of code.matchAll(/\.readLine\s*\(/g))
     calls.push({ idx: m.index || 0, method: 'readLine', var: 'reader' });
-  calls.sort((a,b)=>a.idx-b.idx);
+  calls.sort((a, b) => a.idx - b.idx);
   return calls;
 }
 
 function findPromptBefore(code, pos) {
-  const windowSize = 400; // look back 400 chars
+  const windowSize = 400;
   const start = Math.max(0, pos - windowSize);
   const snippet = code.slice(start, pos);
   const matches = [...snippet.matchAll(/System\.out\.(println|print)\s*\(\s*("(?:[^"\\]|\\.)*")/g)];
   if (!matches.length) return '';
   const last = matches[matches.length - 1][2];
-  try { return JSON.parse(last); } catch { return last.replace(/^"|"$/g,''); }
+  try { return JSON.parse(last); } catch { return last.replace(/^"|"$/g, ''); }
 }
 
 function analyzeInputPrompts(originalSource) {
-  const clean = stripComments(String(originalSource||''));
+  const clean = stripComments(String(originalSource || ''));
   const scannerVars = findScannerVars(clean);
   const calls = findInputCalls(clean, scannerVars);
   const prompts = calls.map(c => findPromptBefore(clean, c.idx) || 'Enter value:');
@@ -232,7 +219,7 @@ function loadCheerpJScript() {
 
 export async function init() {
   if (isInitialized) return;
-  
+
   // Register Service Worker for CheerpJ asset caching
   if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
     try {
@@ -241,7 +228,7 @@ export async function init() {
       console.warn('[JavaExecutor] SW registration failed:', e);
     }
   }
-  
+
   await loadCheerpJScript();
   if (typeof window === 'undefined' || !('cheerpjInit' in window)) {
     throw new Error('CheerpJ not available in this environment');
@@ -252,7 +239,7 @@ export async function init() {
   try {
     // @ts-ignore
     await window.cheerpjCreateDisplay(1, 1);
-  } catch {}
+  } catch { }
   isInitialized = true;
 }
 
@@ -305,7 +292,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
   const lines = [];
   if (prompts.length > 0) {
     for (let i = 0; i < prompts.length; i++) {
-      const p = prompts[i] || `Enter value ${i+1}:`;
+      const p = prompts[i] || `Enter value ${i + 1}:`;
       const ans = await onInputRequest(p);
       if (ans == null) break;
       lines.push(String(ans));
@@ -315,7 +302,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
   }
   // Fallback: collect until empty line, but limit to 10
   for (let i = 0; i < 10; i++) {
-    const ans = await onInputRequest(`Enter line ${i+1} (leave empty to run):`);
+    const ans = await onInputRequest(`Enter line ${i + 1} (leave empty to run):`);
     if (ans == null) break;
     const t = String(ans);
     if (t === '') break;
@@ -326,7 +313,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
 
 export async function execute(code, stdin = '', onInputRequest) {
   cancelled = false;
-  
+
   // Try Piston API first for speed
   if (usePistonFirst) {
     const transpiled = transpileForCompat(code);
@@ -342,7 +329,7 @@ export async function execute(code, stdin = '', onInputRequest) {
     // Piston failed, fall back to CheerpJ
     console.log('[JavaExecutor] Falling back to CheerpJ');
   }
-  
+
   if (!isInitialized) {
     await init();
   }
@@ -356,17 +343,17 @@ export async function execute(code, stdin = '', onInputRequest) {
       try {
         const m = userSource.match(/public\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
         if (m) detected = ensureJavaLikeClassName(m[1]);
-      } catch {}
+      } catch { }
       let className = detected || 'MainUser';
       if (!detected) {
         // Auto-wrap snippet into a minimal class with main()
         userSource = `public class ${className} {\n  public static void main(String[] args) throws Exception {\n    ${userSource}\n  }\n}`;
       }
-      
+
       // Check cache
       const cacheKey = await sha256(userSource);
       const cached = await getCachedBytecode(cacheKey);
-      
+
       const userFile = `/str/${className}.java`;
       const runnerClass = 'Runner';
       const runnerFile = `/str/${runnerClass}.java`;
@@ -392,10 +379,10 @@ export async function execute(code, stdin = '', onInputRequest) {
 
       let compileExit = 0;
       if (!cached) {
-        // Compile sources with javac (com.sun.tools.javac.Main) into /files/bin
-        // @ts-ignore
+
+
         compileExit = await Promise.race([
-          // @ts-ignore
+
           window.cheerpjRunMain(
             'com.sun.tools.javac.Main',
             '/app',
@@ -403,20 +390,20 @@ export async function execute(code, stdin = '', onInputRequest) {
             runnerFile,
             userFile
           ),
-          new Promise((res) => setTimeout(() => res(124), 90000)), // 90s for first-time CheerpJ download
+          new Promise((res) => setTimeout(() => res(124), 90000)),
         ]);
         if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
         if (compileExit !== 0) {
           const errMsg = compileExit === 124 ? 'Java compilation timeout (CheerpJ may be downloading assets on first run)' : `Java compilation failed (exit code ${compileExit}).`;
           return resolve({ output: '', error: errMsg });
         }
-        // Cache compiled bytecode (simplified: just cache success)
+
         await cacheBytecode(cacheKey, { compiled: true, timestamp: Date.now() });
       }
 
-      // Run the compiled Runner class from /files/bin with timeout
+
       const execPromise = (async () => {
-        // @ts-ignore
+
         const exitCode = await window.cheerpjRunMain(runnerClass, outDir);
         return exitCode;
       })();
@@ -425,20 +412,20 @@ export async function execute(code, stdin = '', onInputRequest) {
         new Promise((res) => setTimeout(() => res(124), 45000)),
       ]);
       if (cancelled) return resolve({ output: '', error: 'Execution stopped by user' });
-      // Read stdout/stderr files back
-      // @ts-ignore
+
+
       const outBlob = await window.cjFileBlob(stdoutFile).catch(() => null);
-      // @ts-ignore
+
       const errBlob = await window.cjFileBlob(stderrFile).catch(() => null);
       let output = outBlob ? await outBlob.text() : '';
       let error = errBlob ? await errBlob.text() : '';
-      // Remove duplicated prompts if we pre-collected input based on them
+
       try {
         const prompts = analyzeInputPrompts(code);
         if (prompts && prompts.length) {
           output = stripProgramPrompts(output, prompts);
         }
-      } catch {}
+      } catch { }
       if (!error && runExit !== 0) {
         error = runExit === 124 ? 'Java execution timeout' : `Program exited with code ${runExit}`;
       }

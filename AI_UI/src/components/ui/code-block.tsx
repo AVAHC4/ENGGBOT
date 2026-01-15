@@ -42,17 +42,17 @@ export function CodeBlock({
   const displayTitle = title || language;
 
   return (
-    <div 
+    <div
       className={cn(
         "rounded-lg overflow-hidden border border-border bg-slate-950 text-slate-50",
         className
       )}
     >
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between bg-slate-900 px-4 py-2">
         <span className="text-sm text-slate-400">{displayTitle}</span>
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="ghost"
             size="sm"
             className="action-button"
@@ -70,9 +70,9 @@ export function CodeBlock({
               </>
             )}
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800"
             onClick={handleOpenInCompiler}
             title="Open in Compiler"
@@ -80,9 +80,9 @@ export function CodeBlock({
             <ExternalLink className="h-4 w-4" />
           </Button>
           {onEdit && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-slate-400 hover:text-slate-100 hover:bg-slate-800"
               onClick={onEdit}
             >
@@ -91,10 +91,10 @@ export function CodeBlock({
           )}
         </div>
       </div>
-      
-      {/* Code Content */}
+
+      { }
       <div className="relative overflow-auto">
-        <pre 
+        <pre
           className={cn(
             "p-4 text-sm font-mono overflow-auto",
             showLineNumbers && "pl-12"
@@ -116,31 +116,31 @@ export function CodeBlock({
   );
 }
 
-// Language-specific keywords
+
 const KEYWORDS = {
   java: [
-    'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 
-    'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 
-    'extends', 'final', 'finally', 'float', 'for', 'if', 'implements', 'import', 
-    'instanceof', 'int', 'interface', 'long', 'native', 'new', 'package', 'private', 
-    'protected', 'public', 'return', 'short', 'static', 'strictfp', 'super', 
-    'switch', 'synchronized', 'this', 'throw', 'throws', 'transient', 'try', 
+    'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char',
+    'class', 'const', 'continue', 'default', 'do', 'double', 'else', 'enum',
+    'extends', 'final', 'finally', 'float', 'for', 'if', 'implements', 'import',
+    'instanceof', 'int', 'interface', 'long', 'native', 'new', 'package', 'private',
+    'protected', 'public', 'return', 'short', 'static', 'strictfp', 'super',
+    'switch', 'synchronized', 'this', 'throw', 'throws', 'transient', 'try',
     'void', 'volatile', 'while', 'true', 'false', 'null'
   ],
   python: [
-    'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue', 
-    'def', 'del', 'elif', 'else', 'except', 'False', 'finally', 'for', 'from', 
-    'global', 'if', 'import', 'in', 'is', 'lambda', 'None', 'nonlocal', 'not', 
+    'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
+    'def', 'del', 'elif', 'else', 'except', 'False', 'finally', 'for', 'from',
+    'global', 'if', 'import', 'in', 'is', 'lambda', 'None', 'nonlocal', 'not',
     'or', 'pass', 'raise', 'return', 'True', 'try', 'while', 'with', 'yield'
   ],
   javascript: [
-    'abstract', 'arguments', 'await', 'boolean', 'break', 'byte', 'case', 'catch', 
-    'char', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do', 
-    'double', 'else', 'enum', 'eval', 'export', 'extends', 'false', 'final', 
-    'finally', 'float', 'for', 'function', 'goto', 'if', 'implements', 'import', 
-    'in', 'instanceof', 'int', 'interface', 'let', 'long', 'native', 'new', 'null', 
-    'package', 'private', 'protected', 'public', 'return', 'short', 'static', 
-    'super', 'switch', 'synchronized', 'this', 'throw', 'throws', 'transient', 
+    'abstract', 'arguments', 'await', 'boolean', 'break', 'byte', 'case', 'catch',
+    'char', 'class', 'const', 'continue', 'debugger', 'default', 'delete', 'do',
+    'double', 'else', 'enum', 'eval', 'export', 'extends', 'false', 'final',
+    'finally', 'float', 'for', 'function', 'goto', 'if', 'implements', 'import',
+    'in', 'instanceof', 'int', 'interface', 'let', 'long', 'native', 'new', 'null',
+    'package', 'private', 'protected', 'public', 'return', 'short', 'static',
+    'super', 'switch', 'synchronized', 'this', 'throw', 'throws', 'transient',
     'true', 'try', 'typeof', 'var', 'void', 'volatile', 'while', 'with', 'yield'
   ],
   c: [
@@ -165,15 +165,15 @@ const KEYWORDS = {
     'volatile', 'wchar_t', 'while', 'xor', 'xor_eq'
   ],
   csharp: [
-    'abstract', 'as', 'base', 'bool', 'break', 'byte', 'case', 'catch', 'char', 
-    'checked', 'class', 'const', 'continue', 'decimal', 'default', 'delegate', 
-    'do', 'double', 'else', 'enum', 'event', 'explicit', 'extern', 'false', 
-    'finally', 'fixed', 'float', 'for', 'foreach', 'goto', 'if', 'implicit', 
-    'in', 'int', 'interface', 'internal', 'is', 'lock', 'long', 'namespace', 
-    'new', 'null', 'object', 'operator', 'out', 'override', 'params', 'private', 
-    'protected', 'public', 'readonly', 'ref', 'return', 'sbyte', 'sealed', 
-    'short', 'sizeof', 'stackalloc', 'static', 'string', 'struct', 'switch', 
-    'this', 'throw', 'true', 'try', 'typeof', 'uint', 'ulong', 'unchecked', 
+    'abstract', 'as', 'base', 'bool', 'break', 'byte', 'case', 'catch', 'char',
+    'checked', 'class', 'const', 'continue', 'decimal', 'default', 'delegate',
+    'do', 'double', 'else', 'enum', 'event', 'explicit', 'extern', 'false',
+    'finally', 'fixed', 'float', 'for', 'foreach', 'goto', 'if', 'implicit',
+    'in', 'int', 'interface', 'internal', 'is', 'lock', 'long', 'namespace',
+    'new', 'null', 'object', 'operator', 'out', 'override', 'params', 'private',
+    'protected', 'public', 'readonly', 'ref', 'return', 'sbyte', 'sealed',
+    'short', 'sizeof', 'stackalloc', 'static', 'string', 'struct', 'switch',
+    'this', 'throw', 'true', 'try', 'typeof', 'uint', 'ulong', 'unchecked',
     'unsafe', 'ushort', 'using', 'virtual', 'void', 'volatile', 'while'
   ],
   html: [
@@ -190,39 +190,39 @@ const KEYWORDS = {
   ]
 };
 
-// Improved syntax highlighting function using React components
+
 function formatCodeWithSyntaxHighlighting(code: string, language: string): React.ReactNode {
-  // Normalize language
+
   language = language.toLowerCase();
-  
-  // Split code into lines first
+
+
   const lines = code.split('\n');
-  
-  // Get language-specific keywords or use default empty array
+
+
   const keywords = KEYWORDS[language as keyof typeof KEYWORDS] || [];
-  
-  // Define common patterns for all languages
+
+
   const commonPatterns = [
-    // Keywords
+
     keywords.length > 0 && {
       pattern: new RegExp(`\\b(${keywords.join('|')})\\b`, 'g'),
       render: (match: string) => <span className="text-purple-400">{match}</span>
     },
-    // Numbers
+
     {
       pattern: /\b\d+(\.\d+)?([eE][+-]?\d+)?\b/g,
       render: (match: string) => <span className="text-yellow-400">{match}</span>
     }
   ].filter(Boolean);
-  
-  // Language-specific patterns
+
+
   const languagePatterns: any[] = [];
-  
-  // Add language-specific patterns
+
+
   switch (language) {
     case 'java':
       languagePatterns.push(
-        // Strings
+
         {
           pattern: /"(?:[^"\\]|\\.)*"/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
@@ -242,7 +242,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         }
       );
       break;
-      
+
     case 'python':
       languagePatterns.push(
         // Strings (triple quoted and regular)
@@ -272,7 +272,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         }
       );
       break;
-      
+
     case 'javascript':
     case 'js':
     case 'jsx':
@@ -284,39 +284,39 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
           pattern: /`(?:\\[\s\S]|[^`])*`|"(?:\\[\s\S]|[^"])*"|'(?:\\[\s\S]|[^'])*'/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
         },
-        // Comments (single and multi-line)
+
         {
           pattern: /\/\/.*$|\/\*[\s\S]*?\*\//g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Function declarations
+
         {
           pattern: /\b(function|const|let|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g,
           render: (match: string, group1: string, group2: string) => {
             return (
               <>
-                <span className="text-purple-400">{group1}</span> 
+                <span className="text-purple-400">{group1}</span>
                 <span className="text-blue-300">{group2}</span>
               </>
             );
           }
         },
-        // Method/function calls
+
         {
           pattern: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g,
           render: (match: string) => {
-            const methodName = match.slice(0, -1); // Remove trailing (
+            const methodName = match.slice(0, -1);
             return <><span className="text-blue-400">{methodName}</span>{'('}</>;
           }
         }
       );
       break;
-      
+
     case 'c':
     case 'cpp':
     case 'c++':
       languagePatterns.push(
-        // Strings
+
         {
           pattern: /"(?:[^"\\]|\\.)*"/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
@@ -346,7 +346,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         }
       );
       break;
-      
+
     case 'csharp':
     case 'cs':
       languagePatterns.push(
@@ -370,7 +370,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         }
       );
       break;
-      
+
     case 'html':
     case 'xml':
       languagePatterns.push(
@@ -395,20 +395,20 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         }
       );
       break;
-      
+
     case 'css':
       languagePatterns.push(
-        // Selectors
+
         {
           pattern: /[^{}\s][^{}]*(?=\s*{)/g,
           render: (match: string) => <span className="text-yellow-400">{match}</span>
         },
-        // Properties
+
         {
           pattern: /(\s*[a-zA-Z-]+\s*)(?=:)/g,
           render: (match: string) => <span className="text-blue-400">{match}</span>
         },
-        // Values
+
         {
           pattern: /(:)([^;{}]*)(?=[;{}])/g,
           render: (match: string, colon: string, value: string) => (
@@ -417,7 +417,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
             </>
           )
         },
-        // Comments
+
         {
           pattern: /\/\*[\s\S]*?\*\//g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
@@ -425,11 +425,11 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
       );
       break;
   }
-  
-  // Combine common patterns with language-specific patterns
+
+
   const tokenPatterns = [...commonPatterns, ...languagePatterns];
-  
-  // If no patterns are defined for this language, return plain text
+
+
   if (tokenPatterns.length === 0) {
     return lines.map((line, i) => (
       <div key={i} className="block">
@@ -437,13 +437,13 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
       </div>
     ));
   }
-  
-  // Process each line with the combined patterns
+
+
   return lines.map((line, lineIndex) => {
     const tokens: React.ReactNode[] = [];
     let currentIndex = 0;
     let lastProcessedIndex = 0;
-    
+
     while (lastProcessedIndex < line.length) {
       let bestMatch: {
         start: number;
@@ -452,21 +452,21 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         content: string;
         groups: string[];
       } | null = null;
-      
-      // Find the earliest match across all patterns
+
+
       for (const patternObj of tokenPatterns) {
         if (!patternObj) continue;
-        
+
         const { pattern } = patternObj;
         pattern.lastIndex = lastProcessedIndex;
-        
+
         const match = pattern.exec(line);
         if (!match || match.index < lastProcessedIndex) continue;
-        
+
         if (!bestMatch || match.index < bestMatch.start) {
-          // Extract all capture groups
+
           const groups = match.slice(1);
-          
+
           bestMatch = {
             start: match.index,
             end: match.index + match[0].length,
@@ -476,8 +476,8 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
           };
         }
       }
-      
-      // No more matches found
+
+
       if (!bestMatch) {
         tokens.push(
           <span key={`rest-${lineIndex}-${currentIndex++}`}>
@@ -486,8 +486,8 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         );
         break;
       }
-      
-      // Add any text before this match
+
+
       if (bestMatch.start > lastProcessedIndex) {
         tokens.push(
           <span key={`pre-${lineIndex}-${currentIndex++}`}>
@@ -495,22 +495,22 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
           </span>
         );
       }
-      
-      // Add the highlighted token
+
+
       const renderedToken = bestMatch.pattern.render(
-        bestMatch.content, 
+        bestMatch.content,
         ...bestMatch.groups
       );
-      
+
       tokens.push(
         <React.Fragment key={`token-${lineIndex}-${currentIndex++}`}>
           {renderedToken}
         </React.Fragment>
       );
-      
+
       lastProcessedIndex = bestMatch.end;
     }
-    
+
     return (
       <div key={`line-${lineIndex}`} className="block">
         {tokens.length > 0 ? tokens : line}

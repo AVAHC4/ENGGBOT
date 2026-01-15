@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// GET /api/teams/[id]/members
+ 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teamId = params.id
@@ -27,8 +27,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-// POST /api/teams/[id]/members
-// { email: string, role?: 'admin' | 'moderator' | 'member' }
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teamId = params.id

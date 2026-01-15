@@ -29,7 +29,7 @@ html {
       </head>
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {/* Global animated background for Teams (theme-aware) */}
+          { }
           <div className="fixed inset-0 z-0 pointer-events-none">
             <TeamsFlickerBackground className="absolute inset-0" />
           </div>

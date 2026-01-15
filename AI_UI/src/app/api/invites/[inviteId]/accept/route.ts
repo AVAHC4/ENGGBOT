@@ -3,8 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// POST /api/invites/[inviteId]/accept
-// { email: string }
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { inviteId: string } }) {
   try {
     const inviteId = params.inviteId

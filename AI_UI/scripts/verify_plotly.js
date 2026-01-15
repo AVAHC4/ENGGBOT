@@ -27,7 +27,7 @@ async function verifyPlotly() {
         const reader = response.body;
         let fullText = '';
 
-        // Simple stream reader for Node.js
+         
         for await (const chunk of reader) {
             const text = chunk.toString();
             const lines = text.split('\n');

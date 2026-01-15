@@ -16,8 +16,8 @@ interface Team {
   isOnline?: boolean
 }
 
-// Loaded dynamically from backend
-// lastMessage/timestamp will be filled when message APIs are wired
+ 
+ 
 
 export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export function DesktopTeamsLayout() {
         }))
         setTeams(mapped)
         if (mapped.length > 0) {
-          // Keep current selection if still present; otherwise select first
+           
           setSelectedTeamId((prev) => (prev && mapped.some((t) => t.id === prev) ? prev : mapped[0].id))
         } else {
           setSelectedTeamId(null)
@@ -114,7 +114,7 @@ export function DesktopTeamsLayout() {
     try {
       const user = getCurrentUser()
       await apiLeaveTeam(teamId, user.email)
-      // Remove the team from the list
+       
       setTeams((prev) => {
         const updated = prev.filter((team) => team.id !== teamId)
         setSelectedTeamId((current) => {
@@ -133,7 +133,7 @@ export function DesktopTeamsLayout() {
 
   return (
     <div className="flex h-screen bg-transparent">
-      {/* Teams Sidebar - Left Panel */}
+      { }
       <div className="w-80 flex-shrink-0 ml-3">
         <TeamsSidebar
           selectedTeamId={selectedTeamId}
@@ -145,7 +145,7 @@ export function DesktopTeamsLayout() {
         />
       </div>
 
-      {/* Ultra-subtle Separator - Soft Gradient */}
+      { }
       <div
         className="flex-shrink-0 self-stretch pointer-events-none"
         style={{
@@ -156,7 +156,7 @@ export function DesktopTeamsLayout() {
         }}
       />
 
-      {/* Chat Interface - Right Panel */}
+      { }
       <div className="flex-1">
         <ChatInterface
           selectedTeamId={selectedTeamId}

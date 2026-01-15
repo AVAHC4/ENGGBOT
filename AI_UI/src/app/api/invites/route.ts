@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// GET /api/invites?email=user@example.com
+ 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Attach team names
+     
     const teamIds = Array.from(new Set((invites || []).map((i: any) => i.team_id)))
     let nameById: Record<string, string> = {}
     if (teamIds.length > 0) {

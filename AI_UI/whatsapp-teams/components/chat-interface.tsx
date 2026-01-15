@@ -248,7 +248,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Header */}
+      { }
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -385,7 +385,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         teamName={team?.name || ""}
         teamAvatar={team?.avatar}
         onTeamNameUpdate={onTeamNameUpdate}
-        onTeamAvatarUpdate={onTeamAvatarUpdate} // Added avatar update callback
+        onTeamAvatarUpdate={onTeamAvatarUpdate}  
       />
 
       <AddPeopleDialog

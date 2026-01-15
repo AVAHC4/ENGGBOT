@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; // Anon client
-import { supabaseAdmin } from '@/lib/supabase-admin'; // Service Role client
+import { supabase } from '@/lib/supabase';  
+import { supabaseAdmin } from '@/lib/supabase-admin';  
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -9,30 +9,30 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { email, type } = body;
 
-        // Validate email
+         
         if (!email || !EMAIL_REGEX.test(email)) {
             return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
         }
 
-        // For signup, ensure we don't overwrite an existing user
+         
         if (type === 'signup') {
             const { data: existingUser } = await supabaseAdmin
                 .from('users')
                 .select('id')
                 .eq('email', email.toLowerCase())
-                .single(); // .maybeSingle() is safer but single() throws on 0 rows which catches differently, let's use logic from before
+                .single();  
 
-            // Actually, if single() throws 0 rows, it's fine. If it returns rows, we block.
-            // But standard supabase (single) throws error if no rows.
-            // Let's use maybeSingle() for cleaner code if admin client supports it (it relies on same js lib).
-            // Assuming supabase-js v2.
+             
+             
+             
+             
 
             if (existingUser) {
                 return NextResponse.json({ error: "User already exists. Please sign in." }, { status: 409 });
             }
         }
 
-        // Send OTP via Supabase (Use Anon client for auth flow)
+         
         const { error } = await supabase.auth.signInWithOtp({
             email: email.toLowerCase(),
             options: {

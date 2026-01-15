@@ -1,18 +1,9 @@
-/**
- * JavaScript Code Executor using Sandboxed Iframe
- * 
- * This module provides secure JavaScript code execution in the browser using
- * a sandboxed iframe with postMessage API for communication.
- */
+ 
 
 let executionIframe = null;
 let isInitialized = false;
 
-/**
- * Initialize the JavaScript executor
- * Creates a sandboxed iframe for secure code execution
- * @returns {Promise<void>}
- */
+ 
 export async function init() {
   if (isInitialized) {
     return;
@@ -21,12 +12,12 @@ export async function init() {
   try {
     console.log('[JavaScriptExecutor] Initializing sandbox iframe...');
     
-    // Create a sandboxed iframe for code execution
+     
     executionIframe = document.createElement('iframe');
     executionIframe.style.display = 'none';
     executionIframe.sandbox = 'allow-scripts';
     
-    // Create the sandbox HTML content
+     
     const sandboxHTML = `
 <!DOCTYPE html>
 <html>
@@ -144,11 +135,11 @@ export async function init() {
 </html>
     `;
     
-    // Set the iframe content
+     
     executionIframe.srcdoc = sandboxHTML;
     document.body.appendChild(executionIframe);
     
-    // Wait for the sandbox to be ready
+     
     await new Promise((resolve) => {
       const messageHandler = (event) => {
         if (event.data.type === 'SANDBOX_READY') {
@@ -168,11 +159,7 @@ export async function init() {
   }
 }
 
-/**
- * Execute JavaScript code in the sandboxed iframe
- * @param {string} code - The JavaScript code to execute
- * @returns {Promise<{output: string, error: string}>}
- */
+ 
 export async function execute(code) {
   if (!isInitialized) {
     await init();
@@ -194,20 +181,20 @@ export async function execute(code) {
       
       window.addEventListener('message', messageHandler);
       
-      // Send code to sandbox for execution
+       
       executionIframe.contentWindow.postMessage({
         type: 'EXECUTE_CODE',
         code: code
       }, '*');
       
-      // Set a timeout to prevent hanging
+       
       setTimeout(() => {
         window.removeEventListener('message', messageHandler);
         resolve({
           output: '',
           error: 'Execution timeout: Code took too long to execute'
         });
-      }, 10000); // 10 second timeout
+      }, 10000);  
     });
     
   } catch (error) {
@@ -219,18 +206,12 @@ export async function execute(code) {
   }
 }
 
-/**
- * Check if the JavaScript executor is ready
- * @returns {boolean}
- */
+ 
 export function isReady() {
   return isInitialized;
 }
 
-/**
- * Get information about the JavaScript executor
- * @returns {object}
- */
+ 
 export function getInfo() {
   return {
     name: 'JavaScript Executor',
@@ -240,10 +221,7 @@ export function getInfo() {
   };
 }
 
-/**
- * Clean up the executor (remove iframe)
- * @returns {void}
- */
+ 
 export function cleanup() {
   if (executionIframe && executionIframe.parentNode) {
     executionIframe.parentNode.removeChild(executionIframe);

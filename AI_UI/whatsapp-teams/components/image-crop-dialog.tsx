@@ -28,7 +28,7 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
       const img = imageRef.current
       setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight })
 
-      // Center the crop area
+       
       const centerX = (containerSize.width - crop.size) / 2
       const centerY = (containerSize.height - crop.size) / 2
       setCrop((prev) => ({ ...prev, x: centerX, y: centerY }))
@@ -67,7 +67,7 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
-    // Use high resolution for better quality
+     
     const outputSize = 512
     canvas.width = outputSize
     canvas.height = outputSize
@@ -75,7 +75,7 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
     const img = imageRef.current
     const scaleValue = scale[0]
 
-    // Calculate the actual image display size in the container
+     
     const containerAspect = containerSize.width / containerSize.height
     const imageAspect = imageNaturalSize.width / imageNaturalSize.height
 
@@ -85,23 +85,23 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
       offsetY = 0
 
     if (imageAspect > containerAspect) {
-      // Image is wider - fit to height
+       
       displayHeight = containerSize.height * scaleValue
       displayWidth = displayHeight * imageAspect
       offsetX = (containerSize.width - displayWidth) / 2
     } else {
-      // Image is taller - fit to width
+       
       displayWidth = containerSize.width * scaleValue
       displayHeight = displayWidth / imageAspect
       offsetY = (containerSize.height - displayHeight) / 2
     }
 
-    // Calculate source coordinates in the original image
+     
     const sourceX = ((crop.x - offsetX) / displayWidth) * imageNaturalSize.width
     const sourceY = ((crop.y - offsetY) / displayHeight) * imageNaturalSize.height
     const sourceSize = (crop.size / displayWidth) * imageNaturalSize.width
 
-    // Ensure we don't go outside image bounds
+     
     const clampedSourceX = Math.max(0, Math.min(sourceX, imageNaturalSize.width - sourceSize))
     const clampedSourceY = Math.max(0, Math.min(sourceY, imageNaturalSize.height - sourceSize))
     const clampedSourceSize = Math.min(
@@ -110,11 +110,11 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
       imageNaturalSize.height - clampedSourceY,
     )
 
-    // Enable image smoothing for better quality
+     
     ctx.imageSmoothingEnabled = true
     ctx.imageSmoothingQuality = "high"
 
-    // Draw the cropped image
+     
     ctx.drawImage(
       img,
       clampedSourceX,
@@ -194,7 +194,7 @@ export function ImageCropDialog({ isOpen, onClose, imageUrl, onCropComplete }: I
               }}
             />
 
-            {/* Crop overlay */}
+            { }
             <div
               className="absolute border-2 border-white shadow-lg cursor-move"
               style={{

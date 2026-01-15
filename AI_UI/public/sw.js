@@ -1,4 +1,4 @@
-// Service Worker for aggressive CheerpJ asset caching
+ 
 const CACHE_NAME = 'cheerpj-cache-v1';
 const CHEERPJ_ASSETS = [
   'https://cjrtnc.leaningtech.com/4.2/loader.js',
@@ -18,13 +18,13 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   
-  // Cache CheerpJ CDN resources aggressively
+   
   if (url.includes('cjrtnc.leaningtech.com')) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((response) => {
           if (response) {
-            // Return cached, refresh in background
+             
             fetch(event.request).then(freshResponse => {
               if (freshResponse && freshResponse.ok) {
                 cache.put(event.request, freshResponse.clone());
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (event) => {
             }).catch(() => {});
             return response;
           }
-          // Fetch and cache
+           
           return fetch(event.request).then((response) => {
             if (response && response.ok) {
               cache.put(event.request, response.clone());

@@ -1,25 +1,12 @@
-/**
- * Enhanced C/C++ Executor with hybrid approach:
- * - Primary: Fast Piston API for instant execution (free, no setup)
- * - Fallback: Wasmer SDK WASM for offline/API failure
- *
- * Strategy:
- * 1. Try Piston API first (<2s, free, no hosting needed)
- * 2. On failure/offline: use Wasmer SDK with IndexedDB caching
- *
- * Performance:
- * - Piston API: 500ms - 2s (always fast)
- * - Wasmer first: 5-10s (downloads clang, cached after)
- * - Wasmer cached: <500ms
- */
+
 
 let worker = null;
 let isInitialized = false;
 let initPromise = null;
-let usePistonFirst = true; // Try Piston API first for speed
+let usePistonFirst = true;
 let dbPromise = null;
 
-// ============= IndexedDB for bytecode cache =============
+
 function openDB() {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
@@ -72,7 +59,7 @@ async function sha256(text) {
   return arr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ============= Piston API (fast, free) =============
+
 async function executePiston(code, lang = 'c', stdin = '') {
   const langMap = {
     'c': { language: 'c', version: '10.2.0' },
@@ -121,7 +108,7 @@ async function executePiston(code, lang = 'c', stdin = '') {
   }
 }
 
-// ============= Worker initialization for Wasmer SDK =============
+
 export async function init() {
   if (isInitialized) return;
   if (initPromise) return initPromise;
@@ -162,7 +149,7 @@ export async function init() {
         cleanup();
         initPromise = null;
         reject(new Error('C worker initialization timed out'));
-      }, 20000); // Increased timeout for first-time clang download
+      }, 20000);
     } catch (err) {
       initPromise = null;
       reject(err);
@@ -172,7 +159,7 @@ export async function init() {
   return initPromise;
 }
 
-// ============= Execute via Wasmer Worker =============
+
 async function executeWasmer(code, lang, stdin) {
   if (!isInitialized) {
     await init();
@@ -195,7 +182,7 @@ async function executeWasmer(code, lang, stdin) {
       stdin: stdin || ''
     });
 
-    // Timeout
+
     setTimeout(() => {
       try { worker?.removeEventListener('message', handler); } catch { }
       try { worker?.terminate(); } catch { }
@@ -207,16 +194,13 @@ async function executeWasmer(code, lang, stdin) {
   });
 }
 
-/**
- * Extract prompt messages from printf/cout before scanf/cin
- * Handles: printf("..."), cout << "...", std::cout << "..."
- */
+
 function extractPrompts(code) {
   const prompts = [];
-  // Remove block comments and line comments
-  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
-  // Strategy 1: Match printf("...") - look for any printf before input functions
+  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '');
+
+
   const printfMatches = cleanCode.matchAll(/printf\s*\(\s*"([^"]*?)"/g);
   for (const match of printfMatches) {
     const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
@@ -231,15 +215,12 @@ function extractPrompts(code) {
     if (prompt.trim()) prompts.push(prompt);
   }
 
-  // Deduplicate prompts
+
   return [...new Set(prompts)];
 }
 
 
-/**
- * Strip duplicate program prompts from output
- * Keeps the first occurrence of each prompt but removes subsequent ones
- */
+
 function stripProgramPrompts(text, prompts) {
   if (!text || !prompts || !prompts.length) return text;
 
@@ -248,16 +229,16 @@ function stripProgramPrompts(text, prompts) {
   for (const prompt of prompts) {
     if (!prompt) continue;
 
-    // Escape special regex characters in the prompt
+
     const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // Find all occurrences of the prompt
+
     const regex = new RegExp(escapedPrompt, 'g');
     const matches = [...output.matchAll(regex)];
 
-    // Keep the first occurrence, remove all subsequent ones
+
     if (matches.length > 1) {
-      // Remove all but the first occurrence
+
       let count = 0;
       output = output.replace(regex, (match) => {
         count++;
@@ -266,30 +247,26 @@ function stripProgramPrompts(text, prompts) {
     }
   }
 
-  // Clean up any resulting double newlines or leading whitespace issues
+
   output = output.replace(/\n{3,}/g, '\n\n').trim();
 
   return output;
 }
 
-/**
- * Execute C/C++ code with hybrid approach:
- * 1. Try Piston API first (fast, free)
- * 2. Fall back to Wasmer SDK if Piston fails
- */
+
 export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
   const lang = langId === 'cpp' ? 'cpp' : 'c';
 
-  // Check if program needs input
+
   const needsInput = /\b(scanf|cin|getchar|gets|fgets|getline)\b/.test(code);
 
   let collectedStdin = stdin;
 
   if (needsInput && !stdin && onInputRequest) {
-    // Extract prompts from code statically
+
     const prompts = extractPrompts(code);
 
-    // Collect input for each prompt
+
     const inputs = [];
     for (const prompt of prompts) {
       try {
@@ -300,7 +277,7 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
       }
     }
 
-    // If we didn't find prompts statically, just ask once
+
     if (prompts.length === 0) {
       try {
         const input = await onInputRequest('Enter input:');
@@ -309,21 +286,21 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
         collectedStdin = '';
       }
     } else {
-      // Combine all inputs with newlines
+
       collectedStdin = inputs.join('\n');
     }
   }
 
-  // Extract prompts for stripping from output
+
   const prompts = extractPrompts(code);
 
-  // Strategy 1: Try Piston API first (fast)
+
   if (usePistonFirst) {
     console.log('[cExecutor] Trying Piston API first...');
     const pistonResult = await executePiston(code, lang, collectedStdin);
     if (pistonResult) {
       console.log('[cExecutor] Piston API succeeded');
-      // Strip duplicate prompts from output
+
       if (prompts.length > 0) {
         pistonResult.output = stripProgramPrompts(pistonResult.output, prompts);
       }
@@ -332,11 +309,11 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
     console.log('[cExecutor] Piston failed, falling back to Wasmer...');
   }
 
-  // Strategy 2: Fall back to Wasmer SDK
+
   console.log('[cExecutor] Using Wasmer SDK...');
   const wasmerResult = await executeWasmer(code, lang, collectedStdin);
 
-  // Strip duplicate prompts from output
+
   if (prompts.length > 0) {
     wasmerResult.output = stripProgramPrompts(wasmerResult.output, prompts);
   }
@@ -370,19 +347,14 @@ export async function cancel() {
   }
 }
 
-/**
- * Toggle whether to try Piston API first
- */
+
 export function setUsePistonFirst(value) {
   usePistonFirst = Boolean(value);
 }
 
-/**
- * Preload the Wasmer worker in the background
- * Call this early to reduce first-time latency
- */
+
 export function preload() {
   if (!isInitialized && !initPromise) {
-    init().catch(() => { /* ignore preload errors */ });
+    init().catch(() => { });
   }
 }

@@ -1,24 +1,24 @@
-// Judge0 API integration for code execution
-// API docs: https://ce.judge0.com/
+ 
+ 
 
-// Base URL for Judge0 API (using the RapidAPI endpoint)
+ 
 const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 
-// Language IDs for Judge0 API - Focused on the 5 required languages
+ 
 export const LANGUAGE_IDS = {
-  python: 71,    // Python 3.8.1
-  javascript: 63, // JavaScript (Node.js 12.14.0)
-  java: 91,      // Java 17 (OpenJDK 17.0.1)
-  c: 50,         // C (GCC 9.2.0)
-  cpp: 54,       // C++ (GCC 9.2.0)
+  python: 71,     
+  javascript: 63,  
+  java: 91,       
+  c: 50,          
+  cpp: 54,        
 };
 
-// Map our internal language IDs to Judge0 language IDs
+ 
 export function mapLanguageId(languageId: string): number {
-  return LANGUAGE_IDS[languageId as keyof typeof LANGUAGE_IDS] || 71; // Default to Python
+  return LANGUAGE_IDS[languageId as keyof typeof LANGUAGE_IDS] || 71;  
 }
 
-// Type definitions for Judge0 API responses
+ 
 export interface Submission {
   token: string;
 }
@@ -36,7 +36,7 @@ export interface SubmissionResult {
   memory: number;
 }
 
-// Get Judge0 API headers with environment variable
+ 
 function getApiHeaders() {
   const apiKey = process.env.JUDGE0_API_KEY || process.env.NEXT_PUBLIC_JUDGE0_API_KEY;
   if (!apiKey) {
@@ -49,7 +49,7 @@ function getApiHeaders() {
   };
 }
 
-// Submit code for execution
+ 
 export async function submitCode(code: string, languageId: string): Promise<Submission> {
   const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`;
   const body = JSON.stringify({
@@ -72,7 +72,7 @@ export async function submitCode(code: string, languageId: string): Promise<Subm
   return response.json();
 }
 
-// Get a submission's result
+ 
 export async function getSubmissionResult(token: string): Promise<SubmissionResult> {
   const url = `${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`;
   const apiHeaders = getApiHeaders();
@@ -89,7 +89,7 @@ export async function getSubmissionResult(token: string): Promise<SubmissionResu
   return response.json();
 }
 
-// Status descriptions
+ 
 const STATUS_DESCRIPTIONS = {
   1: 'In Queue',
   2: 'Processing',
@@ -107,15 +107,15 @@ const STATUS_DESCRIPTIONS = {
   14: 'Exec Format Error',
 };
 
-// Helper function to parse the result into a readable format
+ 
 export function parseResult(result: SubmissionResult, language: string = 'default'): string {
   let output = '';
   
-  // Handle different status codes
+   
   if (result.status.id !== 3) {
     output += `Status: ${result.status.description}\n`;
     
-    // Add more details based on status
+     
     if (result.status.id === 6) {
       output += `\nCompilation Error:\n${result.compile_output || ''}`;
     } else if ([7, 8, 9, 10, 11, 12].includes(result.status.id)) {
@@ -125,24 +125,24 @@ export function parseResult(result: SubmissionResult, language: string = 'defaul
     return output;
   }
   
-  // If execution was successful, show stdout
+   
   if (result.stdout) {
     output += result.stdout;
   } else {
     output += "[No output]";
   }
   
-  // Add execution details
+   
   output += `\n\nExecution Time: ${result.time}s`;
   
   return output;
 }
 
-// Helper function to process Java code before submission
+ 
 function processJavaCode(code: string): string {
-  // Check if the code already has a class definition
+   
   if (!/class\s+\w+/.test(code)) {
-    // Wrap the code in a very simple Main class to minimize memory usage
+     
     return `
 public class Main {
     public static void main(String[] args) {
@@ -151,14 +151,14 @@ ${code}
 }`;
   }
   
-  // If there's a class but no main method, try to detect the class name and add a main method
+   
   const classMatch = code.match(/class\s+(\w+)/);
   if (classMatch && !/public\s+static\s+void\s+main/.test(code)) {
     const className = classMatch[1];
-    // Check if the class has opening brace
+     
     const hasOpenBrace = new RegExp(`class\\s+${className}\\s*\\{`).test(code);
     if (hasOpenBrace) {
-      // Insert a simple main method after the opening brace
+       
       return code.replace(
         new RegExp(`(class\\s+${className}\\s*\\{)`), 
         `$1\n    public static void main(String[] args) {\n        // Auto-generated main method\n    }\n`
@@ -169,13 +169,13 @@ ${code}
   return code;
 }
 
-// Execute code and get the result (polls until completion)
+ 
 export async function executeCode(code: string, languageId: string, stdin: string = ''): Promise<string> {
   try {
-    // Process the code if needed
+     
     let processedCode = code;
     
-    // For Java, ensure we have a proper class structure
+     
     if (languageId === 'java' && !/class\s+\w+/.test(code)) {
       processedCode = `
 public class Main {
@@ -185,18 +185,18 @@ ${code}
 }`;
     }
     
-    // Submit the code with wait=true to get the result immediately
+     
     try {
       const url = `${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`;
       const language = languageId as keyof typeof LANGUAGE_IDS;
       
-      // Set memory limits based on language
-      let memoryLimit = 128000; // Default 128MB
+       
+      let memoryLimit = 128000;  
       if (language === 'java') {
-        memoryLimit = 256000; // 256MB for Java - more reasonable limit
+        memoryLimit = 256000;  
       }
       
-      // Check if the language exists in our compiler options
+       
       const compilerOptions = language in COMPILER_OPTIONS ? 
         COMPILER_OPTIONS[language as keyof typeof COMPILER_OPTIONS] : "";
         
@@ -204,7 +204,7 @@ ${code}
 
       let commandLineArgs = language in COMMAND_LINE_ARGS ?
         COMMAND_LINE_ARGS[language as keyof typeof COMMAND_LINE_ARGS] : "";
-      // No extra command line args for Java after using -J flags
+       
 
       
       
@@ -214,7 +214,7 @@ ${code}
         stdin: stdin,
         compiler_options: compilerOptions,
         command_line_arguments: commandLineArgs,
-        // Resource limits - more conservative for stability
+         
         cpu_time_limit: language === 'java' ? 5 : 2,
         cpu_extra_time: language === 'java' ? 1 : 0.5,
         wall_time_limit: language === 'java' ? 10 : 5,
@@ -240,7 +240,7 @@ ${code}
         throw new Error(`API Error: ${response.status} ${response.statusText}\n${responseBody}`);
       }
       
-      // Since we're using wait=true, the result should be included in the response
+       
       const result = await response.json();
       return parseResult(result, languageId);
       
@@ -255,16 +255,16 @@ ${code}
   }
 } 
 
-// Language-specific compiler options
+ 
 export const COMPILER_OPTIONS = {
   c: "-Wall -std=gnu99 -O2 -o a.out source_file.c -lm",
   cpp: "-Wall -std=c++17 -O2 -o a.out source_file.cpp",
   python: "",
   javascript: "",
-  java: "", // Simplified - let Judge0 handle Java compilation with default settings
+  java: "",  
 }; 
 
-// Language-specific command line arguments
+ 
 export const COMMAND_LINE_ARGS = {
   c: "",
   cpp: "",

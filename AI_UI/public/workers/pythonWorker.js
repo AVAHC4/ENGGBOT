@@ -1,32 +1,32 @@
-// Python execution worker with interactive stdin using Pyodide
-// Classic worker script served from /public to avoid bundler issues
+ 
+ 
 
 let pyodide = null;
 let isReady = false;
-let inputSignal = null; // Int32Array on SharedArrayBuffer [flag, length]
-let inputBuffer = null; // SharedArrayBuffer for UTF-8 bytes
+let inputSignal = null;  
+let inputBuffer = null;  
 
 self.onmessage = async (e) => {
   const data = e.data || {};
   if (data.type === 'INIT') {
     try {
-      // Progress: Loading Pyodide
+       
       self.postMessage({ type: 'PROGRESS', stage: 'Loading Python runtime...', progress: 10 });
 
-      // Load Pyodide from jsdelivr (stable version)
+       
       self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js');
 
       self.postMessage({ type: 'PROGRESS', stage: 'Initializing Python...', progress: 30 });
       pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/' });
 
-      // Progress: Loading packages
+       
       self.postMessage({ type: 'PROGRESS', stage: 'Loading numpy...', progress: 50 });
       await pyodide.loadPackage(['numpy']);
 
       self.postMessage({ type: 'PROGRESS', stage: 'Loading matplotlib...', progress: 65 });
       await pyodide.loadPackage(['matplotlib', 'micropip']);
 
-      // Install plotly via micropip  
+       
       self.postMessage({ type: 'PROGRESS', stage: 'Loading plotly...', progress: 80 });
       const micropip = pyodide.pyimport('micropip');
       await micropip.install('plotly');
@@ -34,7 +34,7 @@ self.onmessage = async (e) => {
       self.postMessage({ type: 'PROGRESS', stage: 'Finalizing...', progress: 95 });
       console.log('[PythonWorker] Pyodide and packages loaded successfully');
 
-      // Prepare stdout/stderr capture helpers and matplotlib hook
+       
       await pyodide.runPython(`
 import sys, io, base64, json
 from contextlib import redirect_stdout, redirect_stderr
@@ -113,20 +113,20 @@ builtins.show_plotly = show_plotly
 
       const { codeB64, stdinB64, interactive, sabSignal, sabBuffer } = data;
 
-      // Setup interactive plumbing if requested
+       
       if (interactive) {
         inputSignal = new Int32Array(sabSignal);
-        inputBuffer = sabBuffer; // Uint8Array will be created on demand
-        // Expose a synchronous JS function to Python
+        inputBuffer = sabBuffer;  
+         
         self.getInputSync = (prompt) => {
-          // Notify main thread we need input
+           
           self.postMessage({ type: 'REQUEST_INPUT', prompt: String(prompt || '') });
-          // Reset flag to 0 and wait
+           
           Atomics.store(inputSignal, 0, 0);
-          // Wait until main thread writes and notifies
+           
           Atomics.wait(inputSignal, 0, 0);
           const len = Atomics.load(inputSignal, 1);
-          // TextDecoder cannot decode a SharedArrayBuffer view directly; copy to a normal buffer
+           
           const sharedView = new Uint8Array(inputBuffer, 0, len);
           const bytes = new Uint8Array(len);
           bytes.set(sharedView);
@@ -207,5 +207,5 @@ json.dumps({'stdout': stdout_content, 'stderr': stderr_content, 'plots': plots_c
   }
 };
 
-// Auto-init on load
+ 
 self.postMessage({ type: 'BOOT' });

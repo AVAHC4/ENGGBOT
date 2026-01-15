@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/projects/[id]/conversations/[convId]
-// Get a specific project conversation with all its messages
+ 
+ 
 export async function GET(req: NextRequest, { params }: { params: { id: string; convId: string } }) {
     try {
         const projectId = params.id;
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Get conversation and verify it belongs to the project
+         
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('project_conversations')
             .select('id, title, created_at, updated_at, user_email, project_id')
@@ -29,12 +29,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
             return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
-        // Verify ownership and project membership
+         
         if (conversation.user_email !== email || conversation.project_id !== projectId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Get all messages for this conversation
+         
         const { data: messages, error: msgError } = await supabaseAdmin
             .from('project_conversation_messages')
             .select('id, content, is_user, timestamp, attachments, reply_to_id, metadata, is_streaming')
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
             return NextResponse.json({ error: msgError.message }, { status: 500 });
         }
 
-        // Transform messages from database format to frontend format
+         
         const transformedMessages = (messages || []).map((msg: any) => ({
             id: msg.id,
             content: msg.content,
@@ -71,8 +71,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
     }
 }
 
-// PUT /api/projects/[id]/conversations/[convId]
-// Update a project conversation (e.g., rename)
+ 
+ 
 export async function PUT(req: NextRequest, { params }: { params: { id: string; convId: string } }) {
     try {
         const projectId = params.id;
@@ -85,7 +85,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string; 
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('project_conversations')
             .select('user_email, project_id')
@@ -100,7 +100,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string; 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Update conversation
+         
         const updates: any = { updated_at: new Date().toISOString() };
         if (title !== undefined) {
             updates.title = title;
@@ -123,8 +123,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string; 
     }
 }
 
-// DELETE /api/projects/[id]/conversations/[convId]
-// Delete a project conversation and all its messages
+ 
+ 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string; convId: string } }) {
     try {
         const projectId = params.id;
@@ -136,7 +136,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('project_conversations')
             .select('user_email, project_id')
@@ -151,7 +151,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Delete conversation (messages will cascade delete)
+         
         const { error } = await supabaseAdmin
             .from('project_conversations')
             .delete()

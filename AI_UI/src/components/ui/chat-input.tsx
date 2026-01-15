@@ -6,14 +6,14 @@ import { cn } from "@/lib/utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
-// import {
-//   preloadWhisperModel,
-//   transcribeAudio,
-//   isWhisperModelLoading,
-//   isWhisperModelLoaded
-// } from "@/lib/whisper-preloader";
+ 
+ 
+ 
+ 
+ 
+ 
 
-// Web Speech API types
+ 
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
@@ -49,7 +49,7 @@ declare global {
   }
 }
 
-// Check if Web Speech API is available
+ 
 const hasWebSpeechAPI = typeof window !== "undefined" &&
   (window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -91,32 +91,32 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Speech recognition state (hybrid: Web Speech + Whisper fallback)
+   
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isLoadingModel, setIsLoadingModel] = useState(false);
   const [useWhisper, setUseWhisper] = useState(!hasWebSpeechAPI);
-  const [modelLoaded, setModelLoaded] = useState(false); // Stubbed state
+  const [modelLoaded, setModelLoaded] = useState(false);  
 
-  // Web Speech API ref
+   
   const webSpeechRef = useRef<SpeechRecognition | null>(null);
 
-  // Whisper recording refs
+   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  // Sync Whisper model state - DISABLED FOR DEBUGGING
+   
   useEffect(() => {
-    // Stubbed effect
+     
   }, []);
 
-  // Update internal state when prop changes
+   
   useEffect(() => {
     setAwaitingResponse(isAwaitingResponse);
   }, [isAwaitingResponse]);
 
-  // Focus textarea when reply mode is activated
+   
   useEffect(() => {
     if (replyToMessage && textareaRef.current) {
       textareaRef.current.focus();
@@ -125,16 +125,16 @@ export function ChatInput({
 
   const handleSend = () => {
     if ((message.trim() || attachments.length > 0) && !disabled) {
-      // Set awaiting response to true immediately when sending
+       
       setAwaitingResponse(true);
-      // Pass the replyToId if replying to a message
+       
       onSend(message, attachments, replyToMessage?.id);
       setMessage("");
       setAttachments([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      // Clear reply state after sending
+       
       setReplyToMessage(null);
     }
   };
@@ -142,8 +142,8 @@ export function ChatInput({
   const handleStopGeneration = () => {
     if (onStopGeneration) {
       onStopGeneration();
-      // We don't set awaitingResponse to false here because that should
-      // happen when the isAwaitingResponse prop changes through the context
+       
+       
     }
   };
 
@@ -152,7 +152,7 @@ export function ChatInput({
       e.preventDefault();
       handleSend();
     } else if (e.key === "Escape" && replyToMessage) {
-      // Cancel reply mode with Escape key
+       
       e.preventDefault();
       setReplyToMessage(null);
     }
@@ -165,7 +165,7 @@ export function ChatInput({
     e.target.value = "";
   };
 
-  // ========== WEB SPEECH API (Primary for Chrome/Edge) ==========
+   
   const startWebSpeechRecording = useCallback(() => {
     try {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -211,13 +211,13 @@ export function ChatInput({
         console.error("Web Speech API error:", event.error);
 
         if (event.error === "network") {
-          // Network error - switch to Whisper permanently for this session
+           
           console.log("Web Speech API network error - switching to Whisper");
           setUseWhisper(true);
           webSpeechRef.current = null;
           setIsRecording(false);
           setIsTranscribing(false);
-          // Start Whisper recording after a short delay
+           
           setTimeout(() => startWhisperRecording(), 100);
           return;
         } else if (event.error === "not-allowed") {
@@ -243,7 +243,7 @@ export function ChatInput({
       console.error("Failed to start Web Speech API:", err);
       return false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const stopWebSpeechRecording = useCallback(() => {
@@ -255,7 +255,7 @@ export function ChatInput({
     }
   }, []);
 
-  // ========== WHISPER RECORDING (Fallback for Brave/Firefox/Safari) ==========
+   
   const startWhisperRecording = useCallback(async () => {
     console.log("Whisper recording temporarily disabled for debugging.");
     alert("Whisper recording is temporarily unavailable.");
@@ -266,16 +266,16 @@ export function ChatInput({
     setIsRecording(false);
   }, []);
 
-  // ========== HYBRID START/STOP ==========
+   
   const startRecording = useCallback(async () => {
     if (useWhisper) {
-      // Use Whisper directly (browser doesn't support Web Speech or had network error)
+       
       await startWhisperRecording();
     } else {
-      // Try Web Speech API first
+       
       const started = startWebSpeechRecording();
       if (!started) {
-        // Fall back to Whisper if Web Speech failed to start
+         
         console.log("Web Speech API not available, falling back to Whisper");
         setUseWhisper(true);
         await startWhisperRecording();
@@ -299,7 +299,7 @@ export function ChatInput({
     }
   }, [isRecording, startRecording, stopRecording]);
 
-  // Cleanup on unmount
+   
   useEffect(() => {
     const mediaRecorder = mediaRecorderRef.current;
     const mediaStream = mediaStreamRef.current;
@@ -319,7 +319,7 @@ export function ChatInput({
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);
 
-    // Focus the textarea and adjust its height after adding transcription
+     
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
@@ -331,18 +331,18 @@ export function ChatInput({
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Cancel reply mode
+   
   const cancelReply = () => {
     setReplyToMessage(null);
   };
 
-  // Truncate reply preview text
+   
   const truncateReplyText = (text: string, maxLength = 25) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
-  // Auto resize textarea
+   
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -354,7 +354,7 @@ export function ChatInput({
   return (
     <>
       <div className="flex flex-col w-full max-w-3xl mx-auto px-2 py-1">
-        {/* Reply indicator */}
+        { }
         {replyToMessage && (
           <div className="flex items-center justify-between mb-2 px-3 py-2 rounded-full bg-muted/50 dark:bg-gray-800/50">
             <div className="flex items-start gap-2">
@@ -379,7 +379,7 @@ export function ChatInput({
           </div>
         )}
 
-        {/* Attachment preview */}
+        { }
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-2">
             {attachments.map((file, index) => (
@@ -399,7 +399,7 @@ export function ChatInput({
         )}
 
         <div className="flex items-end gap-1.5 md:gap-2 bg-background dark:bg-gray-800/30 rounded-full px-1.5 md:px-2 py-1">
-          {/* File attachment button */}
+          { }
           <input
             ref={fileInputRef}
             type="file"
@@ -421,7 +421,7 @@ export function ChatInput({
             <Paperclip className="h-5 w-5" />
           </Button>
 
-          {/* Voice input button (Web Speech + Whisper fallback) */}
+          { }
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -461,7 +461,7 @@ export function ChatInput({
             </TooltipContent>
           </Tooltip>
 
-          {/* Web search mode toggle button */}
+          { }
           {onToggleWebSearch && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -486,7 +486,7 @@ export function ChatInput({
             </Tooltip>
           )}
 
-          {/* Thinking mode toggle button */}
+          { }
           {onToggleThinking && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -512,7 +512,7 @@ export function ChatInput({
             </Tooltip>
           )}
 
-          {/* Engineering mode toggle button */}
+          { }
           {onToggleEngineering && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -556,7 +556,7 @@ export function ChatInput({
             rows={1}
           />
 
-          {/* Conditionally render either Send or Stop button */}
+          { }
           {awaitingResponse ? (
             <Button
               onClick={handleStopGeneration}
@@ -585,7 +585,7 @@ export function ChatInput({
         </div>
       </div>
 
-      {/* Voice input modal */}
+      { }
       <VoiceInputModal
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}

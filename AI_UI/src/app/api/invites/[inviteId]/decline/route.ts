@@ -3,12 +3,12 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// POST /api/invites/[inviteId]/decline
-// { email?: string }
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { inviteId: string } }) {
   try {
     const inviteId = params.inviteId
-    // optional email may be passed for auditing later
+     
     if (!inviteId) {
       return NextResponse.json({ error: 'Missing inviteId' }, { status: 400 })
     }

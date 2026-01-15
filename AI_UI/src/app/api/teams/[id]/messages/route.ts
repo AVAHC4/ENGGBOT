@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// GET /api/teams/[id]/messages?limit=200
+ 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teamId = params.id
@@ -37,8 +37,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// POST /api/teams/[id]/messages
-// { content: string, senderEmail: string, senderName?: string }
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teamId = params.id
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Missing teamId, content, or senderEmail' }, { status: 400 })
     }
 
-    // Ensure the sender is a member of the team
+     
     const { data: membership, error: mErr } = await supabaseAdmin
       .from('team_members')
       .select('team_id')

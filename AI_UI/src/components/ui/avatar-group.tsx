@@ -18,7 +18,7 @@ interface AvatarGroupProps {
   size?: "sm" | "md" | "lg";
 }
 
-// Individual Avatar Component
+ 
 const Avatar = ({
   item,
   index,

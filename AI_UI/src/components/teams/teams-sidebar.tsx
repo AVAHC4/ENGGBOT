@@ -142,7 +142,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
   }
 
   useEffect(() => {
-    // Load invites on mount and when dialog opens
+     
     refreshInvites()
     const onSent = () => refreshInvites()
     window.addEventListener('teams:invites:sent', onSent as any)
@@ -154,9 +154,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
       const user = getCurrentUser()
       const res = await acceptInvite(inviteId, user.email)
       await refreshInvites()
-      // Ask parent to refresh teams list via global event
+       
       window.dispatchEvent(new CustomEvent('teams:refresh'))
-      // Select the accepted team
+       
       if (res?.team_id) onTeamSelect(res.team_id)
       setShowInvites(false)
     } catch (e) {
@@ -177,7 +177,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
 
   return (
     <div className="flex flex-col h-full bg-transparent">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between pl-4 pr-0 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
@@ -246,10 +246,10 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
         </div>
       </div>
 
-      {/* Teams List */}
+      { }
       <div className="flex-1 overflow-y-auto py-2">
         {isLoading ? (
-          // Skeleton loading animation
+           
           <div className="space-y-2 px-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-lg animate-pulse">
@@ -276,7 +276,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                   className="flex flex-1 items-center gap-3 text-left"
                   onClick={() => onTeamSelect(team.id)}
                 >
-                  {/* Avatar */}
+                  { }
                   <div className="relative flex-shrink-0">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
@@ -293,7 +293,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                     )}
                   </div>
 
-                  {/* Content */}
+                  { }
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <h3 className={`font-semibold text-sm truncate ${selectedTeamId === team.id ? 'text-foreground' : 'text-foreground/90'}`}>
@@ -308,7 +308,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                     </p>
                   </div>
 
-                  {/* Unread Badge */}
+                  { }
                   {team.unreadCount && team.unreadCount > 0 && (
                     <Badge
                       variant="default"
@@ -384,7 +384,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
         )}
       </div>
 
-      {/* Add People Dialog */}
+      { }
       <AddPeopleDialog
         open={showAddPeople}
         onOpenChange={setShowAddPeople}
@@ -392,7 +392,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
         teamName={selectedTeamId ? teams.find((t) => t.id === selectedTeamId)?.name || "Team" : "Team"}
       />
 
-      {/* Invites Dialog */}
+      { }
       <Dialog open={showInvites} onOpenChange={setShowInvites}>
         <DialogContent className="max-w-xl">
           <DialogHeader>

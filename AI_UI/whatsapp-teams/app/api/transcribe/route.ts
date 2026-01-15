@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Convert to base64 for Bytez API
+     
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
 
@@ -62,11 +62,11 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      // Ask Bytez to return non-streaming JSON
+       
       body: JSON.stringify({ base64, stream: false, json: true }),
     });
 
-    // Read once as text
+     
     const text = await res.text();
     let data: any | undefined;
     try {
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (data) {
-      // Normalize to { error:null, output }
+       
       let output: string | null = null;
       if (typeof data?.output === "string") output = data.output;
       else if (data?.output && typeof data.output?.text === "string") output = data.output.text;

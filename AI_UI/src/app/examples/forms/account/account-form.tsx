@@ -76,10 +76,10 @@ const accountFormSchema = z.object({
 
 type AccountFormValues = z.infer<typeof accountFormSchema>
 
-// This can come from your database or API.
+ 
 const defaultValues: Partial<AccountFormValues> = {
-  // name: "Your name",
-  // dob: new Date("2023-01-23"),
+   
+   
 }
 
 import { supabase } from "@/lib/supabase"
@@ -98,12 +98,12 @@ export function AccountForm() {
     defaultValues,
   })
 
-  // Load user data on mount (from DB or localStorage)
+   
   React.useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
       try {
-        // 1. Try to get data from Supabase if authenticated
+         
         const { data: { user } } = await supabase.auth.getUser()
 
         if (user) {
@@ -118,15 +118,15 @@ export function AccountForm() {
             if (profile.dob) form.setValue("dob", new Date(profile.dob))
             if (profile.language) {
               form.setValue("language", profile.language)
-              // Also set app language immediately if it differs
-              // setLanguage(profile.language as any) // Optional: sync on load? Maybe better not to force it on load to avoid jarring changes if local pref differs
+               
+               
             }
             setIsLoading(false)
             return
           }
         }
 
-        // 2. Fallback to localStorage if no user or DB error
+         
         const savedData = localStorage.getItem("user_data")
         if (savedData) {
           const parsed = JSON.parse(savedData)
@@ -147,10 +147,10 @@ export function AccountForm() {
   async function onConfirmSave(data: AccountFormValues) {
     setOpen(false)
     try {
-      // Update app language immediately
+       
       setLanguage(data.language as any)
 
-      // 1. Save to Supabase if authenticated
+       
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -174,13 +174,13 @@ export function AccountForm() {
         }
       }
 
-      // 2. Always save to localStorage for offline access/sidebar sync
+       
       const savedData = localStorage.getItem("user_data")
       let currentData = {}
       try {
         currentData = savedData ? JSON.parse(savedData) : {}
       } catch (e) {
-        // Ignore error
+         
       }
 
       const newData = {
@@ -193,7 +193,7 @@ export function AccountForm() {
       localStorage.setItem("user_data", JSON.stringify(newData))
       localStorage.setItem("user_name", data.name)
 
-      // Dispatch storage event
+       
       window.dispatchEvent(new Event("storage"))
 
       toast({

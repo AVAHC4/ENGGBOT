@@ -29,7 +29,7 @@ import {
 
 import * as React from "react"
 
-// Helper function to get user email from localStorage
+ 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -71,7 +71,7 @@ const displayFormSchema = z.object({
 
 type DisplayFormValues = z.infer<typeof displayFormSchema>
 
-// This can come from your database or API.
+ 
 const defaultValues: Partial<DisplayFormValues> = {
   items: ["chat", "compiler", "teams", "projects"],
 }
@@ -85,10 +85,10 @@ export function DisplayForm() {
     defaultValues,
   })
 
-  // Load saved preferences on mount
+   
   React.useEffect(() => {
     const loadData = async () => {
-      // Load from localStorage first for immediate display
+       
       const savedItems = localStorage.getItem("sidebar_preferences")
       if (savedItems) {
         try {
@@ -99,7 +99,7 @@ export function DisplayForm() {
         }
       }
 
-      // Then try to load from database
+       
       const email = getUserEmail()
       if (email) {
         try {
@@ -121,11 +121,11 @@ export function DisplayForm() {
 
   async function onConfirmSave(data: DisplayFormValues) {
     setOpen(false)
-    // Save to localStorage for immediate sidebar updates
+     
     localStorage.setItem("sidebar_preferences", JSON.stringify(data.items))
     window.dispatchEvent(new Event("storage"))
 
-    // Save to database
+     
     const email = getUserEmail()
     if (email) {
       try {

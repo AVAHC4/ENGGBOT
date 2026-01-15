@@ -3,7 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Export a nullable client; caller should check for null and fall back to SSE.
+ 
 export const supabaseClient: SupabaseClient | null =
   typeof window !== 'undefined' && SUPABASE_URL && SUPABASE_ANON_KEY
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

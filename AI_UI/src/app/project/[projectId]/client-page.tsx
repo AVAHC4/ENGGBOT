@@ -33,7 +33,7 @@ interface ProjectPageClientProps {
 
 export default function ProjectPageClient({ projectId }: ProjectPageClientProps) {
     const router = useRouter();
-    // Removed useParams as we receive projectId from props
+     
 
     const [project, setProject] = useState<Project | null>(null);
     const [conversations, setConversations] = useState<ProjectConversation[]>([]);
@@ -44,7 +44,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     const [conversationToDelete, setConversationToDelete] = useState<ProjectConversation | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    // Load project data
+     
     useEffect(() => {
         if (!projectId) {
             console.log('[ProjectPageClient] No project ID provided');
@@ -54,9 +54,9 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         const loadData = async () => {
             console.log('[ProjectPageClient] Starting loadData for:', projectId);
             setLoading(true);
-            setError(null); // Clear previous errors
+            setError(null);  
 
-            // Get project details
+             
             const userDataStr = localStorage.getItem('user_data');
             const userData = userDataStr ? JSON.parse(userDataStr) : {};
             const email = userData.email?.toLowerCase() || localStorage.getItem('user_email')?.toLowerCase();
@@ -107,7 +107,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
         loadData();
 
-        // Listen for updates
+         
         const handleUpdate = () => {
             console.log('[ProjectPageClient] projectUpdated event received, reloading...');
             loadData();
@@ -134,7 +134,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         setIsRenaming(false);
     };
 
-    // Handle delete conversation
+     
     const confirmDeleteConversation = async () => {
         if (!conversationToDelete) return;
 
@@ -144,7 +144,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         setConversationToDelete(null);
     };
 
-    // Format timestamp
+     
     const formatTime = (timestamp: string) => {
         try {
             return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -156,15 +156,15 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     if (loading) {
         return (
             <div className="flex flex-col h-full max-w-4xl mx-auto px-4 py-8 animate-pulse">
-                {/* Header skeleton */}
+                { }
                 <div className="flex items-center gap-4 mb-8">
                     <div className="h-10 w-10 bg-white/10 rounded" />
                     <div className="h-8 w-8 bg-white/10 rounded" />
                     <div className="h-8 bg-white/10 rounded w-48" />
                 </div>
-                {/* New chat input skeleton */}
+                { }
                 <div className="h-14 bg-white/10 rounded-xl mb-6" />
-                {/* Conversations list skeleton */}
+                { }
                 <div className="space-y-2">
                     {[1, 2, 3].map((i) => (
                         <div key={i} className="flex items-center gap-3 p-4 rounded-lg">
@@ -196,7 +196,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
     return (
         <div className="flex flex-col h-full max-w-4xl mx-auto px-4 py-8">
-            {/* Project Header */}
+            { }
             <div className="flex items-center gap-4 mb-8">
                 <Link href="/AI_UI">
                     <Button variant="ghost" size="icon" className="mr-2">
@@ -241,7 +241,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                 </DropdownMenu>
             </div>
 
-            {/* New Chat Input */}
+            { }
             <div
                 onClick={handleNewConversation}
                 className="flex items-center gap-3 p-4 mb-6 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-card"
@@ -250,14 +250,14 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                 <span className="text-muted-foreground">New chat in {project.name}</span>
             </div>
 
-            {/* Conversations List */}
+            { }
             <div className="flex flex-col gap-2">
                 {conversations.length > 0 ? (
                     conversations.map((convo) => (
                         <div
                             key={convo.id}
                             className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                            // Corrected path to AI_UI project
+                             
                             onClick={() => router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
                             <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -301,7 +301,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                 )}
             </div>
 
-            {/* Delete Confirmation Modal */}
+            { }
             {showDeleteModal && conversationToDelete && (
                 <div
                     className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"

@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
-// GET /api/teams?email=you@example.com
+ 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 })
     }
 
-    // Find memberships
+     
     const { data: memberships, error: mErr } = await supabaseAdmin
       .from('team_members')
       .select('team_id')
@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/teams
-// { name: string, creatorEmail: string, creatorName?: string }
+ 
+ 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

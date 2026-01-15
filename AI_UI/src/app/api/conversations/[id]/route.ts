@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/conversations/[id]
-// Get a specific conversation with all its messages
+ 
+ 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // First verify the conversation belongs to the user
+         
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id, title, created_at, updated_at, user_email')
@@ -27,18 +27,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         console.log('[API GET /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
 
         if (convError || !conversation) {
-            // Return 200 with exists: false to prevent browser console network errors
+             
             console.log('[API GET /conversations/[id]] NOT FOUND - error:', convError?.message);
             return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
-        // Verify ownership
+         
         if (conversation.user_email !== email) {
             console.log('[API GET /conversations/[id]] UNAUTHORIZED - convEmail:', conversation.user_email, 'requestEmail:', email);
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Get all messages for this conversation
+         
         const { data: messages, error: msgError } = await supabaseAdmin
             .from('conversation_messages')
             .select('id, content, is_user, timestamp, attachments, reply_to_id, metadata, is_streaming')
@@ -49,16 +49,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: msgError.message }, { status: 500 });
         }
 
-        // Transform messages from database format (snake_case) to frontend format (camelCase)
+         
         const transformedMessages = (messages || []).map((msg: any) => ({
             id: msg.id,
             content: msg.content,
-            isUser: msg.is_user, // Transform is_user to isUser
+            isUser: msg.is_user,  
             timestamp: msg.timestamp,
             attachments: msg.attachments,
-            replyToId: msg.reply_to_id, // Transform reply_to_id to replyToId
+            replyToId: msg.reply_to_id,  
             metadata: msg.metadata,
-            isStreaming: msg.is_streaming, // Transform is_streaming to isStreaming
+            isStreaming: msg.is_streaming,  
         }));
 
         return NextResponse.json({
@@ -87,7 +87,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Update conversation
+         
         const updates: any = { updated_at: new Date().toISOString() };
         if (title !== undefined) {
             updates.title = title;
@@ -125,8 +125,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-// DELETE /api/conversations/[id]
-// Delete a conversation and all its messages
+ 
+ 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -137,7 +137,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -152,7 +152,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Delete conversation (messages will cascade delete due to FK constraint)
+         
         const { error } = await supabaseAdmin
             .from('conversations')
             .delete()

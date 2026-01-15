@@ -19,7 +19,7 @@ export default function Home() {
         if (!authenticated) {
             window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
         } else {
-            // Always start with a fresh new chat when opening the website
+             
             startNewConversation();
         }
     }, [startNewConversation]);
@@ -27,12 +27,12 @@ export default function Home() {
     if (isLoading) {
         return (
             <div className="flex flex-col min-h-screen p-4 animate-pulse">
-                {/* Header skeleton */}
+                { }
                 <div className="flex justify-between items-center mb-6">
                     <div className="h-8 bg-white/10 rounded w-32" />
                     <div className="h-8 bg-white/10 rounded-full w-8" />
                 </div>
-                {/* Chat area skeleton */}
+                { }
                 <div className="flex-1 space-y-4">
                     <div className="flex gap-3">
                         <div className="h-10 w-10 bg-white/10 rounded-full" />
@@ -49,7 +49,7 @@ export default function Home() {
                         <div className="h-10 w-10 bg-white/10 rounded-full" />
                     </div>
                 </div>
-                {/* Input skeleton */}
+                { }
                 <div className="mt-4 h-12 bg-white/10 rounded-xl" />
             </div>
         );

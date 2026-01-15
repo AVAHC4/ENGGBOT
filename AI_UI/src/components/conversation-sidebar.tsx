@@ -80,7 +80,7 @@ function ConversationItem({
     if (onShare) {
       onShare(id);
     } else {
-      // Default share behavior - copy conversation link/id to clipboard
+       
       navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
         .then(() => {
           alert('Conversation link copied to clipboard!');
@@ -209,7 +209,7 @@ function ConversationItem({
 import { useRouter, usePathname } from 'next/navigation';
 import { ConversationItemSkeleton } from '@/components/ui/loading';
 
-// ... existing imports ...
+ 
 
 export function ConversationSidebar() {
   const {
@@ -226,7 +226,7 @@ export function ConversationSidebar() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Update conversations list - event-driven, not polling
+   
   useEffect(() => {
     const loadConversations = async () => {
       setIsLoading(true);
@@ -240,10 +240,10 @@ export function ConversationSidebar() {
       }
     };
 
-    // Load once on mount and when conversationId changes
+     
     loadConversations();
 
-    // Listen for custom events when conversations are updated
+     
     const handleConversationUpdate = () => loadConversations();
     window.addEventListener('conversationUpdated', handleConversationUpdate);
 
@@ -252,53 +252,53 @@ export function ConversationSidebar() {
     };
   }, [conversationId]);
 
-  // Filter conversations based on search term
+   
   const filteredConversations = conversations.filter(
     (conversation) => conversation.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Handle conversation deletion
+   
   const handleDelete = (id: string) => {
     if (id === conversationId) {
       deleteCurrentConversation();
     } else {
-      // Update local state to immediately reflect the deletion
+       
       setConversations(conversations.filter(c => c.id !== id));
     }
   };
 
-  // Handle conversation switching with navigation
+   
   const handleSwitchConversation = (id: string) => {
     switchConversation(id);
 
-    // If not on the main chat page, navigate to it
+     
     if (pathname !== '/AI_UI') {
       router.push('/AI_UI');
     }
   };
 
-  // Handle conversation rename
+   
   const handleRename = async (id: string, newTitle: string) => {
-    if (!newTitle.trim()) return; // Don't save empty titles
+    if (!newTitle.trim()) return;  
 
-    // Get existing metadata
+     
     const existingMeta = await getConversationMetadata(id) || {
       title: `Conversation ${id.substring(0, 6)}`,
       created: new Date().toISOString(),
       updated: new Date().toISOString()
     };
 
-    // Update metadata with new title and timestamp
+     
     const updatedMeta = {
       ...existingMeta,
       title: newTitle,
       updated: new Date().toISOString()
     };
 
-    // Save updated metadata
+     
     saveConversationMetadata(id, updatedMeta);
 
-    // Update local state to immediately reflect the change
+     
     setConversations(conversations.map(c =>
       c.id === id
         ? { ...c, title: newTitle, updated: new Date().toISOString() }
@@ -306,12 +306,12 @@ export function ConversationSidebar() {
     ));
   };
 
-  // Handle conversation sharing
+   
   const handleShare = (id: string) => {
-    // Copy conversation link/id to clipboard
+     
     navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
       .then(() => {
-        // Use a more subtle notification approach in a real app
+         
         alert('Conversation link copied to clipboard!');
       })
       .catch(err => {
@@ -321,7 +321,7 @@ export function ConversationSidebar() {
 
   return (
     <div className="flex flex-col h-full border-r border-border dark:border-gray-700 overflow-hidden">
-      {/* Header */}
+      { }
       <div className="p-4 border-b border-border dark:border-gray-700 flex justify-between items-center">
         <h2 className="font-medium">Conversations</h2>
         <Tooltip>
@@ -342,7 +342,7 @@ export function ConversationSidebar() {
         </Tooltip>
       </div>
 
-      {/* Search */}
+      { }
       <div className="p-2">
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -363,11 +363,11 @@ export function ConversationSidebar() {
         </div>
       </div>
 
-      {/* Conversation list */}
+      { }
       <ScrollArea className="flex-1 px-2">
         <div className="space-y-1 py-2">
           {isLoading ? (
-            // Show skeleton loaders while loading
+             
             [...Array(5)].map((_, i) => (
               <ConversationItemSkeleton key={i} />
             ))
@@ -397,7 +397,7 @@ export function ConversationSidebar() {
         </div>
       </ScrollArea>
 
-      {/* Footer */}
+      { }
       <div className="p-4 border-t border-border dark:border-gray-700">
         <Button
           variant="outline"

@@ -31,7 +31,7 @@ export function ScrollProgress({
 
   return (
     <>
-      {/* Base track line */}
+      { }
       <div
         className={cn(
           'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full',
@@ -39,7 +39,7 @@ export function ScrollProgress({
         )}
         aria-hidden
       />
-      {/* Animated progress overlay */}
+      { }
       <motion.div
         className={cn(
           'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full origin-left',

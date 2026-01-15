@@ -15,7 +15,7 @@ interface ProjectConversationPageClientProps {
 }
 
 export default function ProjectConversationPageClient({ projectId, conversationId }: ProjectConversationPageClientProps) {
-    // Removed useParams as we receive projectId from props
+     
 
     const {
         messages,
@@ -27,24 +27,24 @@ export default function ProjectConversationPageClient({ projectId, conversationI
     const [isLoaded, setIsLoaded] = useState(false);
     const prevMessagesLengthRef = useRef(0);
 
-    // Set project mode when entering this page, clear when leaving
+     
     useEffect(() => {
         if (projectId) {
             setCurrentProjectId(projectId);
         }
 
-        // Cleanup: clear project mode when leaving
+         
         return () => {
             setCurrentProjectId(null);
         };
     }, [projectId, setCurrentProjectId]);
 
-    // Load project conversation messages when page loads
+     
     useEffect(() => {
         if (!projectId || !conversationId) return;
 
         const loadMessages = async () => {
-            // Load messages from project conversation API
+             
             const msgs = await loadProjectConversation(projectId, conversationId);
             if (msgs && msgs.length > 0) {
                 setMessages(msgs);
@@ -59,24 +59,24 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         loadMessages();
     }, [projectId, conversationId, setMessages]);
 
-    // Auto-save messages when they change (for project conversations)
-    // Only save when generation is complete and messages have changed
+     
+     
     useEffect(() => {
         if (!isLoaded || !projectId || !conversationId) return;
-        if (isGenerating) return; // Don't save while generating
+        if (isGenerating) return;  
         if (messages.length === 0) return;
 
-        // Only save if messages count changed (new message added)
+         
         if (messages.length !== prevMessagesLengthRef.current) {
             prevMessagesLengthRef.current = messages.length;
             saveProjectConversation(projectId, conversationId, messages);
         }
     }, [messages, projectId, conversationId, isLoaded, isGenerating]);
 
-    // Custom header with back button
+     
     const customHeader = (
         <div className="flex items-center gap-2 p-4 border-b border-border/50">
-            {/* KEEPING AI_UI PREFIX HERE */}
+            { }
             <Link href={`/AI_UI/project/${projectId}`}>
                 <Button variant="ghost" size="sm" className="gap-2">
                     <ArrowLeft className="h-4 w-4" />

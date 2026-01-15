@@ -10,7 +10,7 @@ type Props = {
 export function TeamsFlickerBackground({ className }: Props) {
   const { resolvedTheme } = useTheme();
 
-  // Dark theme: subtle light squares; Light theme: subtle dark squares
+   
   const color = resolvedTheme === "light" ? "#000000" : "#FFFFFF";
 
   return (

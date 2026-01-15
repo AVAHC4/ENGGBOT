@@ -48,25 +48,25 @@ export function LoadingSpinner({
     return spinner;
 }
 
-// Skeleton loaders for different content types
+ 
 export function ProjectCardSkeleton() {
     return (
         <div
             className="flex items-center gap-3 rounded-lg p-3 min-h-[60px] border-l-4 animate-pulse"
             style={{ borderLeftColor: 'rgba(59, 130, 246, 0.3)' }}
         >
-            {/* Emoji placeholder */}
+            { }
             <div className="h-6 w-6 bg-muted/50 rounded-md flex-shrink-0" />
 
-            {/* Content */}
+            { }
             <div className="flex-1 min-w-0">
-                {/* Title row */}
+                { }
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                     <div className="h-4 w-24 bg-muted/50 rounded" />
                     <div className="h-5 w-5 bg-muted/30 rounded opacity-0" />
                 </div>
 
-                {/* Stats row */}
+                { }
                 <div className="flex gap-3">
                     <div className="h-3 w-14 bg-muted/40 rounded" />
                     <div className="h-3 w-12 bg-muted/40 rounded" />
@@ -113,7 +113,7 @@ export function MessageSkeleton() {
     );
 }
 
-// Loading overlay for inline loading states
+ 
 export function LoadingOverlay({ message }: { message?: string }) {
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px] z-10 rounded-lg">

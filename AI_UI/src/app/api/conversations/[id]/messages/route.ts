@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// POST /api/conversations/[id]/messages
-// Save/update messages for a conversation (batch operation)
-// Body: { email: string, messages: Array<{id, content, isUser, timestamp, attachments?, replyToId?, metadata?, isStreaming?}> }
+ 
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: 'Messages must be an array' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Transform messages to database format
+         
         const dbMessages = messages.map((msg: any) => ({
             id: msg.id,
             conversation_id: conversationId,
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             is_streaming: msg.isStreaming || false,
         }));
 
-        // Use upsert to handle both insert and update
+         
         const { data, error } = await supabaseAdmin
             .from('conversation_messages')
             .upsert(dbMessages, { onConflict: 'id' })
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 }
 
-// DELETE /api/conversations/[id]/messages
-// Clear all messages from a conversation
-// Query params: email
+ 
+ 
+ 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -91,7 +91,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Delete all messages for this conversation
+         
         const { error } = await supabaseAdmin
             .from('conversation_messages')
             .delete()

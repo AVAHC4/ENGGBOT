@@ -130,7 +130,7 @@ function getUserData() {
       };
     }
 
-    // Default fallback
+     
     return {
       name: "User",
       email: "user@example.com",
@@ -237,7 +237,7 @@ const data = {
   documents: [],
 }
 
-// Add initial friends data
+ 
 const initialFriends: Friend[] = [];
 
 export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
@@ -257,7 +257,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [activeProjectId, setActiveProjectId] = React.useState<string | null>(null);
   const [activeProjectConversationId, setActiveProjectConversationId] = React.useState<string | null>(null);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
-    // Initialize from localStorage if available, otherwise use empty array
+     
     if (typeof window !== 'undefined') {
       try {
         const savedFriends = localStorage.getItem('sidebar_friends');
@@ -298,28 +298,28 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-  // Use default empty values for initial server-side rendering
+   
   const [userData, setUserData] = React.useState({
     name: "User",
     email: "user@example.com",
     avatar: "",
   });
 
-  // Flag to track if component is mounted (client-side only)
+   
   const [isMounted, setIsMounted] = React.useState(false);
 
-  // Add state for editing conversation title
+   
   const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
   const [newConversationTitle, setNewConversationTitle] = React.useState("");
 
-  // Simple modal state instead of AlertDialog
+   
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [conversationToDelete, setConversationToDelete] = React.useState<{ id: string, title: string } | null>(null);
 
-  // Function to toggle sidebar collapse state
+   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
-    // Add a class to the body to allow the main content to shift
+     
     if (!sidebarCollapsed) {
       document.body.classList.add('sidebar-collapsed');
     } else {
@@ -327,15 +327,15 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-  // Set mounted flag on first render
+   
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Add state for visible items
+   
   const [visibleItems, setVisibleItems] = React.useState<string[]>(["new chat", "compiler", "teams", "projects"]);
 
-  // Refresh user data - only run on client side after component is mounted
+   
   React.useEffect(() => {
     if (isMounted) {
       const refreshUserData = () => {
@@ -362,11 +362,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       };
 
-      // Refresh on mount
+       
       refreshUserData();
       loadVisibleItems();
 
-      // Set up event listener to refresh user data when authentication changes
+       
       window.addEventListener('storage', (event) => {
         if (event.key === 'authenticated' ||
           event.key === 'user_data' ||
@@ -376,25 +376,25 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           refreshUserData();
         }
         if (event.key === 'sidebar_preferences' || event.type === 'storage') {
-          // Note: event.key is null for manually dispatched events in some browsers/contexts, 
-          // but we can just reload on any storage event to be safe, or check specific keys.
-          // For the custom dispatch in display-form, we might not get a key if we just did new Event('storage').
+           
+           
+           
           loadVisibleItems();
         }
       });
     }
   }, [isMounted]);
 
-  // Load conversations - only on client side after mounting
-  // Uses event-driven updates instead of polling (like ChatGPT/Gemini)
+   
+   
   React.useEffect(() => {
     if (isMounted) {
       const loadConversations = async () => {
         setConversationsLoading(true);
         try {
           const fetchedConversations = await getAllConversationsMetadata();
-          // All conversations from this API are regular (non-project) conversations
-          // Project conversations are loaded separately via loadProjectConversations
+           
+           
           setAllConversations(fetchedConversations);
           setConversations(fetchedConversations);
         } finally {
@@ -402,10 +402,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       };
 
-      // Load once on mount only
+       
       loadConversations();
 
-      // Listen for custom events when conversations are updated
+       
       const handleConversationUpdate = () => loadConversations();
       window.addEventListener('conversationUpdated', handleConversationUpdate);
 
@@ -415,7 +415,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [isMounted]);
 
-  // Load projects - only on client side after mounting
+   
   React.useEffect(() => {
     if (isMounted) {
       const loadAllProjects = async () => {
@@ -430,7 +430,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
       loadAllProjects();
 
-      // Listen for project updates
+       
       const handleProjectUpdate = () => loadAllProjects();
       window.addEventListener('projectUpdated', handleProjectUpdate);
 
@@ -440,7 +440,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [isMounted]);
 
-  // Load conversations for expanded projects
+   
   React.useEffect(() => {
     if (isMounted) {
       expandedProjectIds.forEach(async (projectId) => {
@@ -450,10 +450,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [expandedProjectIds, isMounted]);
 
-  // Toggle project expansion
+   
   const toggleProjectExpansion = async (projectId: string) => {
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
@@ -465,14 +465,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       return next;
     });
 
-    // Load conversations if not already loaded
+     
     if (!projectConversations[projectId]) {
       const convos = await loadProjectConversations(projectId);
       setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
     }
   };
 
-  // Handle creating new project
+   
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
       setShowNewProjectDialog(false);
@@ -488,7 +488,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setShowNewProjectDialog(false);
   };
 
-  // Handle renaming project
+   
   const handleRenameProject = async (projectId: string) => {
     if (!editingProjectName.trim()) {
       setEditingProjectId(null);
@@ -503,14 +503,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setEditingProjectId(null);
   };
 
-  // Handle deleting project
+   
   const handleDeleteProject = async () => {
     if (!projectToDelete) return;
 
     await deleteProject(projectToDelete.id);
     setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
 
-    // Clear related state
+     
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
       next.delete(projectToDelete.id);
@@ -531,28 +531,28 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setProjectToDelete(null);
   };
 
-  // Handle creating new conversation in project - LAZY creation
-  // Don't create in database immediately - only generate ID and navigate
+   
+   
   const handleNewProjectConversation = async (projectId: string) => {
-    // Generate a new conversation ID locally (UUID v4)
+     
     const newConversationId = crypto.randomUUID();
-    // Set as active project conversation
+     
     setActiveProjectId(projectId);
     setActiveProjectConversationId(newConversationId);
-    // Navigate to chat page - conversation will be created when first message is sent
+     
     router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
   };
 
-  // Handle switching to project conversation
+   
   const handleSwitchToProjectConversation = (projectId: string, conversationId: string) => {
     setActiveProjectId(projectId);
     setActiveProjectConversationId(conversationId);
-    // Clear regular conversation selection
-    // Note: This should integrate with chat context for full functionality
+     
+     
     router.push(`/AI_UI/project/${projectId}/c/${conversationId}`);
   };
 
-  // Format timestamp for display
+   
   const formatTime = (timestamp: string) => {
     try {
       return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -561,10 +561,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-  // Track active path from Next.js router pathname so Chat doesn't stay highlighted
+   
   React.useEffect(() => {
     if (!pathname) return;
-    // Normalize to known main routes when applicable; otherwise use exact pathname
+     
     if (pathname.startsWith('/team')) {
       setActivePath('/team');
       return;
@@ -719,7 +719,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     };
   }, []);
 
-  // Function to add a new friend
+   
   const handleAddFriend = () => {
     if (newFriendName.trim()) {
       const newFriend: Friend = {
@@ -768,22 +768,22 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         updated: new Date().toISOString()
       };
 
-      // Update metadata with new title and timestamp
+       
       const updatedMeta = {
         ...existingMeta,
         title: newTitle,
         updated: new Date().toISOString()
       };
 
-      // Save updated metadata
+       
       saveConversationMetadata(id, updatedMeta);
 
-      // Force update conversations list to reflect the change
+       
       const updatedConversations = await getAllConversationsMetadata();
       setConversations(updatedConversations);
     }
 
-    // Reset editing state
+     
     setEditingConversationId(null);
   };
 
@@ -807,7 +807,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
-      // Optimistic update - remove from UI immediately
+       
       setConversations(prev => prev.filter(c => c.id !== conversationToDelete.id));
 
       try {
@@ -880,8 +880,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const translationKey = `sidebar.${item.title.toLowerCase().replace(' ', '_')}`;
                     const title = t(translationKey);
 
-                    // Special handling for "New Chat" button - make it start a new conversation
-                    // Only highlight when on /AI_UI AND no messages yet (empty chat state)
+                     
+                     
                     if (item.title === "New Chat") {
                       const isChatActive = pathname === '/AI_UI' && messages.length === 0;
                       return (
@@ -902,7 +902,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       );
                     }
 
-                    // Regular nav items
+                     
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -924,7 +924,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     );
                   })}
 
-                {/* Conversations Menu */}
+                { }
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setConversationsExpanded(!conversationsExpanded)}
@@ -945,7 +945,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     <SidebarMenuSub>
 
                       {conversationsLoading ? (
-                        // Skeleton loading animation
+                         
                         <div className="space-y-1 px-2">
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
@@ -1000,7 +1000,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                 )}
                               </div>
 
-                              {/* Replace direct delete button with dropdown menu */}
+                              { }
                               {!editingConversationId && convo.id === conversationId && (
                                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                                   <DropdownMenu>
@@ -1054,7 +1054,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   )}
                 </SidebarMenuItem>
 
-                {/* Projects Menu */}
+                { }
                 {visibleItems.includes('projects') && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
@@ -1074,7 +1074,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
                     {projectsExpanded && (
                       <SidebarMenuSub>
-                        {/* New Project button */}
+                        { }
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
                             onClick={() => setShowNewProjectDialog(true)}
@@ -1086,7 +1086,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         </SidebarMenuSubItem>
 
                         {projectsLoading ? (
-                          // Skeleton loading animation
+                           
                           <div className="space-y-1 px-2">
                             {[1, 2, 3].map((i) => (
                               <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
@@ -1135,7 +1135,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                   )}
                                 </div>
 
-                                {/* Project actions */}
+                                { }
                                 {!editingProjectId && (
                                   <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                                     <DropdownMenu>
@@ -1205,7 +1205,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           </SidebarFooter>
         </Sidebar>
 
-        {/* Standalone toggle button that will remain visible */}
+        { }
         <Button
           variant="outline"
           size="icon"
@@ -1221,7 +1221,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         </Button>
       </div>
 
-      {/* Simple custom modal instead of AlertDialog */}
+      { }
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
           onClick={handleCancelDelete}>
@@ -1250,7 +1250,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         </div>
       )}
 
-      {/* New Project Dialog */}
+      { }
       {showNewProjectDialog && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
           onClick={() => setShowNewProjectDialog(false)}>
@@ -1291,7 +1291,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         </div>
       )}
 
-      {/* Delete Project Modal */}
+      { }
       {showDeleteProjectModal && projectToDelete && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
           onClick={() => {

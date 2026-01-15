@@ -42,9 +42,9 @@ interface ChatInterfaceProps {
   onLeaveTeam?: (teamId: string) => void
 }
 
-// Messages are now loaded from the backend
+ 
 
-// Member count is now fetched from the API
+ 
 
 const encodeKeyPart = (value: string) => {
   try {
@@ -76,7 +76,7 @@ const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) 
   try {
     localStorage.setItem(getHiddenStorageKey(teamId, email), JSON.stringify(Array.from(ids)))
   } catch {
-    // ignore storage errors
+     
   }
 }
 
@@ -124,7 +124,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }, [])
 
-  // Load messages when team changes
+   
   useEffect(() => {
     if (!selectedTeamId) {
       setMessages([])
@@ -165,7 +165,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
     load()
 
-    // Prefer client-side Supabase realtime for near-zero latency
+     
     let channel: ReturnType<NonNullable<typeof supabaseClient>["channel"]> | null = null
     if (supabaseClient) {
       try {
@@ -197,11 +197,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           )
           .subscribe()
       } catch {
-        // fall back to SSE
+         
       }
     }
 
-    // Setup SSE stream for realtime updates (fallback / older browsers / cross-tab)
+     
     if (sseRef.current) {
       try { sseRef.current.close() } catch { }
       sseRef.current = null
@@ -209,8 +209,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     const es = new EventSource(`/api/teams/${selectedTeamId}/stream`)
     sseRef.current = es
     es.onopen = () => {
-      // Connection established
-      // console.log('[SSE] open')
+       
+       
     }
     es.onmessage = (evt) => {
       try {
@@ -234,11 +234,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       } catch { }
     }
     es.onerror = () => {
-      // keep silent; browser will auto-reconnect; fallback poll handles gaps
-      // console.warn('[SSE] error')
+       
+       
     }
 
-    // Ultra-low-latency polling fallback (works even if WS/SSE blocked by extensions)
+     
     if (pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
@@ -246,7 +246,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     pollRef.current = setInterval(async () => {
       try {
         const now = Date.now()
-        // If no realtime push recently, fetch deltas (aggressive fallback)
+         
         if (now - lastRefreshRef.current > 400) {
           const since = lastServerTsRef.current || undefined
           const u = getCurrentUser()
@@ -272,7 +272,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       } catch { }
     }, 300)
 
-    // When tab regains focus or becomes visible, refresh immediately
+     
     const onFocus = () => load()
     const onVis = () => { if (!document.hidden) load() }
     window.addEventListener('focus', onFocus)
@@ -297,7 +297,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }, [selectedTeamId])
 
-  // Fetch actual member count when team changes
+   
   useEffect(() => {
     if (selectedTeamId) {
       listTeamMembers(selectedTeamId)
@@ -315,7 +315,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     setMessage("")
     try {
       const saved = await sendMessage(selectedTeamId, content, u.email, u.name)
-      // Append if SSE didn't arrive yet
+       
       setMessages((prev) => {
         if (prev.some((p) => p.id === saved.id)) return prev
         return [
@@ -386,7 +386,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     return (
       <div className="flex items-center justify-center h-full bg-transparent">
         <div className="text-center">
-          {/* Large watermark logo */}
+          { }
           <div className="w-40 h-40 mx-auto mb-6 rounded-full flex items-center justify-center opacity-15">
             <div className="w-32 h-32 rounded-full flex items-center justify-center bg-muted">
               <svg className="w-16 h-16 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
@@ -405,7 +405,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   return (
     <div className="flex flex-col h-full bg-transparent">
-      {/* Chat Header */}
+      { }
       <div className="flex items-center justify-between px-6 py-4 bg-transparent border-b border-border">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -424,7 +424,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           >
             <h2 className="font-semibold text-foreground">{team?.name}</h2>
             <div className="flex items-center gap-2">
-              {/* Member Facepile */}
+              { }
               <div className="flex -space-x-2">
                 {[...Array(Math.min(3, teamMembers))].map((_, i) => (
                   <div
@@ -475,7 +475,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
-              {/* Large watermark */}
+              { }
               <div className="w-32 h-32 mx-auto mb-6 rounded-full flex items-center justify-center opacity-15">
                 <div className="w-28 h-28 rounded-full flex items-center justify-center bg-muted">
                   <svg className="w-14 h-14 text-muted-foreground" fill="currentColor" viewBox="0 0 24 24">
@@ -547,7 +547,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       )}
 
-      {/* Floating Pill Input Area */}
+      { }
       <div className="p-4 pb-6 bg-transparent">
         <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-3xl border border-border">
           <Button

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// POST /api/projects/[id]/conversations/[convId]/messages
-// Save/update messages for a project conversation (batch operation)
-// Body: { email: string, messages: Array<{id, content, isUser, timestamp, attachments?, replyToId?, metadata?, isStreaming?}> }
+ 
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string; convId: string } }) {
     try {
         const projectId = params.id;
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
             return NextResponse.json({ error: 'Messages must be an array' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('project_conversations')
             .select('user_email, project_id')
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Transform messages to database format
+         
         const dbMessages = messages.map((msg: any) => ({
             id: msg.id,
             conversation_id: conversationId,
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
             is_streaming: msg.isStreaming || false,
         }));
 
-        // Use upsert to handle both insert and update
+         
         const { data, error } = await supabaseAdmin
             .from('project_conversation_messages')
             .upsert(dbMessages, { onConflict: 'id' })
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string;
     }
 }
 
-// DELETE /api/projects/[id]/conversations/[convId]/messages
-// Clear all messages from a project conversation
+ 
+ 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string; convId: string } }) {
     try {
         const projectId = params.id;
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('project_conversations')
             .select('user_email, project_id')
@@ -92,7 +92,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Delete all messages for this conversation
+         
         const { error } = await supabaseAdmin
             .from('project_conversation_messages')
             .delete()

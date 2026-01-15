@@ -1,26 +1,26 @@
-/* Remove all black overlays that might be covering UI elements */
+ 
 div[style*="position:fixed"][style*="z-index"] {
   z-index: 5 !important;
 }
 
-/* Fix for the fixed-positioned chat input at the bottom */
+ 
 .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   left: var(--sidebar-width, 280px) !important;
   z-index: 5 !important;
 }
 
-/* When sidebar is collapsed */
+ 
 body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   left: 0 !important;
 }
 
-/* Ensure footer elements are always above overlays */
+ 
 [data-sidebar="footer"] {
   z-index: 20 !important;
   position: relative;
 }
 
-/* Profile section enhancements */
+ 
 [data-sidebar="footer"] {
   background-color: transparent !important;
   border-top: 1px solid var(--border);
@@ -31,7 +31,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   right: 0;
 }
 
-/* Fix for the black space at the bottom of the sidebar */
+ 
 [data-sidebar="sidebar"] {
   display: flex;
   flex-direction: column;
@@ -39,7 +39,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   background-color: transparent !important;
 }
 
-/* Ensure the sidebar content takes up proper space */
+ 
 [data-sidebar="content"] {
   flex: 1;
   display: flex;
@@ -47,26 +47,26 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   background-color: transparent !important;
 }
 
-/* Force the last nav item to be followed by the profile */
+ 
 .mt-auto {
   margin-bottom: 10px !important;
 }
 
-/* Clear any background color that might be causing the black space */
+ 
 [data-sidebar="sidebar"]::after,
 [data-sidebar="content"]::after,
 [data-sidebar="menu"]::after {
   display: none !important;
 }
 
-/* Ensure menu items in the footer have proper styling */
+ 
 [data-sidebar="footer"] [data-sidebar="menu-button"] {
   background-color: var(--background) !important;
   position: relative;
   z-index: 20;
 }
 
-/* Specific fix for any user profile buttons */
+ 
 [data-sidebar="footer"] a[href="#user-settings"] {
   z-index: 30 !important;
   position: relative;
@@ -74,7 +74,7 @@ body.sidebar-collapsed .fixed.bottom-0.left-0.right-0.bg-background.z-10 {
   align-items: center !important;
 }
 
-/* Remove any overlay elements that might be covering the profile */
+ 
 .sidebar-container::after,
 .app-layout::after,
 [data-slot="sidebar"]::after,
@@ -90,24 +90,21 @@ div[style*="background:rgb(0,0,0"] {
   visibility: hidden !important;
 }
 
-/* ======================================================================
-   Compiler page & global main layout gap fixes
-   Remove any space between the sidebar and the main content area
-   ====================================================================== */
+ 
 
-/* Ensure the grid between sidebar and main has zero gap */
+ 
 .sidebar-container {
   gap: 0 !important;
   column-gap: 0 !important;
 }
 
-/* Remove any left padding/margin on main */
+ 
 .sidebar-container > main {
   padding-left: 0 !important;
   margin-left: 0 !important;
 }
 
-/* When the compiler page is present, also force full-bleed content */
+ 
 .sidebar-container > main:has(.compiler-page) {
   padding-left: 0 !important;
   margin-left: 0 !important;

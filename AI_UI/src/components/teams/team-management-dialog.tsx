@@ -91,7 +91,7 @@ export function TeamManagementDialog({
         if (cancelled) return
         setMembers(mapMembers(rows))
       } catch (e) {
-        // best effort
+         
         console.error("Failed to load team members", e)
       }
     }
@@ -107,11 +107,11 @@ export function TeamManagementDialog({
           })
           .subscribe()
       } catch {
-        // fall back to poll
+         
       }
     }
 
-    // Light polling fallback while dialog open (helps if realtime blocked)
+     
     poll = setInterval(load, 2000)
 
     return () => {
@@ -364,7 +364,7 @@ export function TeamManagementDialog({
                   className="w-full justify-start bg-transparent"
                   size="lg"
                   onClick={() => {
-                    // Advanced settings - for now just show a toast or alert
+                     
                     alert("Advanced settings coming soon!")
                   }}
                 >

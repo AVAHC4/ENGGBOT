@@ -1,20 +1,20 @@
-// Python execution worker with interactive stdin using Pyodide
-// Classic worker script
+ 
+ 
 
 let pyodide = null;
 let isReady = false;
-let inputSignal = null; // Int32Array on SharedArrayBuffer [flag, length]
-let inputBuffer = null; // SharedArrayBuffer for UTF-8 bytes
+let inputSignal = null;  
+let inputBuffer = null;  
 
 self.onmessage = async (e) => {
   const data = e.data || {};
   if (data.type === 'INIT') {
     try {
-      // Load Pyodide in worker
+       
       self.importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js');
       pyodide = await self.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/' });
 
-      // Prepare stdout/stderr capture helpers
+       
       await pyodide.runPython(`
 import sys, io
 from contextlib import redirect_stdout, redirect_stderr
@@ -49,17 +49,17 @@ def clear_output():
 
       const { codeB64, stdinB64, interactive, sabSignal, sabBuffer } = data;
 
-      // Setup interactive plumbing if requested
+       
       if (interactive) {
         inputSignal = new Int32Array(sabSignal);
-        inputBuffer = sabBuffer; // Uint8Array will be created on demand
-        // Expose a synchronous JS function to Python
+        inputBuffer = sabBuffer;  
+         
         self.getInputSync = (prompt) => {
-          // Notify main thread we need input
+           
           self.postMessage({ type: 'REQUEST_INPUT', prompt: String(prompt || '') });
-          // Reset flag to 0 and wait
+           
           Atomics.store(inputSignal, 0, 0);
-          // Wait until main thread writes and notifies
+           
           Atomics.wait(inputSignal, 0, 0);
           const len = Atomics.load(inputSignal, 1);
           const bytes = new Uint8Array(inputBuffer, 0, len);
@@ -134,5 +134,5 @@ json.dumps({'stdout': stdout_content, 'stderr': stderr_content})
   }
 };
 
-// Auto-init on load
+ 
 self.postMessage({ type: 'BOOT' });

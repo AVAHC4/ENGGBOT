@@ -8,7 +8,7 @@ export default function TermsPage() {
 
   return (
     <div className="relative">
-      {/* Progress bar fixed to the top */}
+      { }
       <ScrollProgress className="fixed left-0 right-0 top-0 z-50 bg-primary" containerRef={containerRef} />
 
       <div className="mx-auto w-full max-w-4xl px-6 pt-0 pb-0">
@@ -18,7 +18,7 @@ export default function TermsPage() {
         </p>
       </div>
 
-      {/* Scrollable content container tracked by ScrollProgress */}
+      { }
       <div
         ref={containerRef}
         className="mx-auto w-full max-w-4xl overflow-y-auto px-6 pb-24"

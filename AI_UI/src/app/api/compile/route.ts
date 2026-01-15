@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     if (!code || !language) {
       return NextResponse.json({ error: 'Missing code or language' }, { status: 400 });
     }
-    // Pass input (stdin) to executeCode, default to empty string if not provided
+     
     const output = await executeCode(code, language, input || '');
     return NextResponse.json({ output });
   } catch (error) {

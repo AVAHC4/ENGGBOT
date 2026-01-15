@@ -1,5 +1,5 @@
-// Interactive C/C++ Worker with stdout streaming and dynamic stdin
-// Uses Wasmer SDK with custom stdin provider for truly interactive execution
+ 
+ 
 
 import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
 
@@ -14,7 +14,7 @@ async function ensureInit() {
     }
 }
 
-// Custom stdin class that can pause and wait for input
+ 
 class InteractiveStdin {
     constructor() {
         this.buffer = '';
@@ -22,18 +22,18 @@ class InteractiveStdin {
         this.position = 0;
     }
 
-    // Called by WASM when it needs input
+     
     read(maxBytes) {
-        // If we have buffered data, return it
+         
         if (this.position < this.buffer.length) {
             const chunk = this.buffer.slice(this.position, this.position + maxBytes);
             this.position += chunk.length;
             return new TextEncoder().encode(chunk);
         }
 
-        // Need to request more input from user
-        // This is where we'd pause, but WASM can't actually pause
-        // So we'll return empty and handle this at a higher level
+         
+         
+         
         return new Uint8Array(0);
     }
 
@@ -66,7 +66,7 @@ self.addEventListener('message', async (e) => {
         try {
             await ensureInit();
 
-            // Compile the code
+             
             const clang = clangPkg || await Wasmer.fromRegistry("clang/clang");
             if (!clangPkg) clangPkg = clang;
 
@@ -88,7 +88,7 @@ self.addEventListener('message', async (e) => {
                 args.splice(1, 0, "-x", "c++", "-std=c++17");
             }
 
-            // Compile
+             
             const compileStart = Date.now();
             const compile = await clang.entrypoint.run({
                 args,
@@ -106,17 +106,17 @@ self.addEventListener('message', async (e) => {
                 return;
             }
 
-            // Read compiled WASM
+             
             const wasmBytes = await project.readFile(outName);
             const program = await Wasmer.fromFile(wasmBytes);
 
-            // Execute with streaming stdout and interactive stdin
+             
             let stdoutBuffer = '';
             let stdinBuffer = initialStdin || '';
             let stdinPosition = 0;
             let waitingForInput = false;
 
-            // Custom stdin provider
+             
             const stdin = {
                 read: (maxBytes) => {
                     if (stdinPosition < stdinBuffer.length) {
@@ -125,27 +125,27 @@ self.addEventListener('message', async (e) => {
                         return new TextEncoder().encode(chunk);
                     }
 
-                    // No more input available - signal that we're waiting
+                     
                     if (!waitingForInput) {
                         waitingForInput = true;
-                        // Send current stdout and request input
+                         
                         self.postMessage({
                             type: 'NEED_INPUT',
                             output: stdoutBuffer
                         });
                     }
 
-                    // Return empty to indicate no data available
+                     
                     return new Uint8Array(0);
                 }
             };
 
-            // Start execution
+             
             const run = await program.entrypoint.run({
                 stdin: stdinBuffer
             });
 
-            // Wait for completion
+             
             const runResult = await Promise.race([
                 run.wait(),
                 new Promise((res) => setTimeout(() => res({ stdout: '', stderr: 'Timeout', ok: false }), 30000))
@@ -170,9 +170,9 @@ self.addEventListener('message', async (e) => {
     }
 
     if (data.type === 'PROVIDE_INPUT') {
-        // This would be used to provide additional stdin
-        // But with current Wasmer SDK, we can't pause/resume WASM execution
-        // This is the fundamental limitation we're working around
+         
+         
+         
         self.postMessage({ type: 'INPUT_RECEIVED' });
     }
 });

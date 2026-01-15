@@ -33,7 +33,7 @@ interface TeamManagementDialogProps {
   teamName: string
   teamAvatar?: string
   onTeamNameUpdate?: (teamId: string, newName: string) => void
-  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void // Added avatar update callback
+  onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void  
 }
 
 export function TeamManagementDialog({
@@ -43,7 +43,7 @@ export function TeamManagementDialog({
   teamName,
   teamAvatar,
   onTeamNameUpdate,
-  onTeamAvatarUpdate, // Added avatar update prop
+  onTeamAvatarUpdate,  
 }: TeamManagementDialogProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedName, setEditedName] = useState(teamName)

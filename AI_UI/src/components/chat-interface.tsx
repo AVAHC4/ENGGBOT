@@ -32,7 +32,7 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-// import { preloadWhisperModel } from '@/lib/whisper-preloader';
+ 
 
 
 function ThinkingAnimation() {
@@ -50,7 +50,7 @@ function ThinkingAnimation() {
   );
 }
 
-// Removed the Initializing AI indicator overlay for cleaner UX
+ 
 
 interface ChatInterfaceProps {
   className?: string;
@@ -80,25 +80,25 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
 
   console.log('[ChatInterface] Render - messages:', messages.length, 'conversationId:', conversationId);
 
-  // Add local loading state to ensure animation shows immediately
+   
   const [localLoading, setLocalLoading] = useState(false);
 
 
-  // Track which messages have already been displayed
+   
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Previous messages count ref to detect new messages
+   
   const previousMessagesCountRef = useRef(messages.length);
 
-  // Keep track of displayed messages
+   
   useEffect(() => {
-    // If we have a new message
+     
     if (messages.length > previousMessagesCountRef.current) {
-      // Mark any existing messages as displayed
+       
       const newDisplayedIds = new Set(displayedMessageIds);
 
-      // Get all messages except the most recent one
+       
       const existingMessages = messages.slice(0, -1);
       existingMessages.forEach(msg => {
         if (!msg.isUser) {
@@ -109,10 +109,10 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       setDisplayedMessageIds(newDisplayedIds);
     }
 
-    // Update the ref for the next comparison
+     
     previousMessagesCountRef.current = messages.length;
 
-    // When generation completes, mark the last message as displayed
+     
     if (!isGenerating && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
 
@@ -122,27 +122,27 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     }
   }, [messages, isGenerating, displayedMessageIds]);
 
-  // Reset displayed messages when conversation is cleared
+   
   useEffect(() => {
     if (messages.length === 0) {
       setDisplayedMessageIds(new Set());
     }
   }, [messages.length]);
 
-  // Avoid smooth scrolling on each token update to prevent jitter
-  // ChatMessageList handles keeping view pinned to bottom when appropriate
-  // If we ever need to force-jump, do it instantly (no smooth)
-  // Chat list manages auto-scroll; no need to force-scroll here
+   
+   
+   
+   
   useEffect(() => {
-    // no-op
+     
   }, [messages.length]);
 
-  // Update local loading state
+   
   useEffect(() => {
     if (isLoading) {
       setLocalLoading(true);
     } else {
-      // Add a small delay before hiding the loading indicator
+       
       const timeout = setTimeout(() => {
         setLocalLoading(false);
       }, 300);
@@ -151,8 +151,8 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     }
   }, [isLoading]);
 
-  // Preload Whisper only for browsers that don't support Web Speech API
-  // Chrome/Edge users don't need model download - they use native Web Speech
+   
+   
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -163,31 +163,31 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       return;
     }
 
-    // No Web Speech API (Brave, Firefox, Safari) - preload Whisper in background
+     
     console.log("No Web Speech API - preloading Whisper for offline speech recognition");
     const timer = setTimeout(() => {
-      // TEMPORARILY DISABLED TO DEBUG CRASH
-      // preloadWhisperModel().catch(console.error);
+       
+       
       console.log("Whisper preload disabled for debugging");
-    }, 3000); // Delay preload to not block initial render
+    }, 3000);  
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Add state to track if sidebar and conversation sidebar are collapsed
+   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Check if sidebar is collapsed
+   
   useEffect(() => {
     const checkSidebarState = () => {
       const isCollapsed = document.body.classList.contains('sidebar-collapsed');
       setIsSidebarCollapsed(isCollapsed);
     };
 
-    // Check on initial load
+     
     checkSidebarState();
 
-    // Create a mutation observer to watch for changes to body class
+     
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
@@ -203,30 +203,30 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     };
   }, []);
 
-  // Format date for display
+   
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Helper to create a wrapped sendMessage that also triggers local loading
+   
   const handleSendMessage = async (content: string, files?: File[], replyToId?: string) => {
     setLocalLoading(true);
 
-    // If web search mode is enabled, perform a search before sending the message
+     
     if (webSearchMode && content.trim()) {
       try {
-        // No need to set searching state visibly anymore
-        // setIsSearching(true);
+         
+         
 
-        // Perform the web search (now returns almost immediately)
+         
         const results = await performWebSearch(content);
 
-        // Add search context to the message that will be passed to the API
+         
         let messageWithContext = content;
 
         if (results.length > 0) {
-          // Format search results as context
+           
           const currentDate = new Date().toLocaleDateString();
           let searchContext = `\n\n[WEB SEARCH RESULTS FROM ${currentDate}]\n`;
 
@@ -236,25 +236,25 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
             searchContext += `URL: ${result.url}\n`;
           });
 
-          // Append search results to the message sent to the API
+           
           messageWithContext = content + "\n\n" + searchContext;
         }
 
-        // Send the message with search context
+         
         await sendMessage(messageWithContext, files, replyToId);
       } catch (error) {
         console.error("Web search failed:", error);
-        // Fall back to sending the original message
+         
         await sendMessage(content, files, replyToId);
       }
     } else {
-      // Normal message sending without web search
+       
       await sendMessage(content, files, replyToId);
     }
   };
 
-  // Helper to check if showing the thinking animation is appropriate
-  // Simple: only show when actively generating AND last message is from user
+   
+   
   const shouldShowThinking = () => {
     return isGenerating && messages.length > 0 && messages[messages.length - 1].isUser;
   };
@@ -297,7 +297,7 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
                 </AlertDialogContent>
               </AlertDialog>
 
-              {/* Private Mode Toggle Button in Header */}
+              { }
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -344,7 +344,7 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
                     />
                   ))}
 
-                  {/* Show thinking animation when waiting for AI response */}
+                  { }
                   {shouldShowThinking() && <ThinkingAnimation />}
                 </>
               )}
@@ -369,9 +369,9 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
             </div>
           </div>
 
-          {/* Removed AI initializing indicator */}
+          { }
 
-          {/* Show private mode indicator */}
+          { }
           {isPrivateMode && (
             <div className="private-mode-indicator">
               <span className="private-mode-text">Private Mode</span>

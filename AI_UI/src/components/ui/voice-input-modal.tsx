@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-// import { AIVoiceInput } from '@/components/ui/ai-voice-input'; // Temporarily commented out due to React type compatibility issues
+ 
 import { Button } from '@/components/ui/button';
 
 interface VoiceInputModalProps {
@@ -18,9 +18,9 @@ export function VoiceInputModal({
   
   if (!isOpen) return null;
   
-  // Mock transcription function - in a real app, this would use a speech recognition API
+   
   const mockTranscribe = (duration: number) => {
-    // Only transcribe if we recorded for at least 1 second
+     
     if (duration < 1) return;
     
     const mockTranscriptions = [
@@ -34,7 +34,7 @@ export function VoiceInputModal({
     const randomIndex = Math.floor(Math.random() * mockTranscriptions.length);
     const transcription = mockTranscriptions[randomIndex];
     
-    // In a real app, we'd get the actual transcription from an API
+     
     onTranscription(transcription);
     onClose();
   };
@@ -59,10 +59,7 @@ export function VoiceInputModal({
         </div>
         
         <div className="p-4">
-          {/* <AIVoiceInput 
-            onStart={handleVoiceStart} 
-            onStop={handleVoiceStop}
-          /> */} {/* Temporarily commented out due to React type compatibility issues */}
+          { } { }
           
           <div className="text-center mt-2 text-sm text-muted-foreground dark:text-gray-400">
             {recording ? 

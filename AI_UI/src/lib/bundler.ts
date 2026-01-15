@@ -1,4 +1,4 @@
-// Simple in-browser bundler service
+ 
 
 type FileMap = Record<string, string>;
 
@@ -7,10 +7,7 @@ interface BundleResult {
   error?: string;
 }
 
-/**
- * Simple bundler that creates a bundle from a set of files
- * This is a simplified version - a real implementation would use a proper bundler like ESBuild
- */
+ 
 export class Bundler {
   private files: FileMap;
 
@@ -23,20 +20,18 @@ export class Bundler {
   }
 
   getFile(path: string): string | null {
-    // Normalize path
+     
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return this.files[normalizedPath] || null;
   }
 
-  /**
-   * Bundle the files and return HTML that can be rendered in an iframe
-   */
+   
   async bundle(): Promise<BundleResult> {
     try {
-      // Get the HTML file
+       
       const htmlFile = this.getFile('/index.html') || this.createDefaultHtml();
       
-      // Process HTML to inject all scripts and styles
+       
       const processedHtml = this.processHtml(htmlFile);
       
       return {
@@ -50,11 +45,9 @@ export class Bundler {
     }
   }
 
-  /**
-   * Process HTML to inject all scripts and styles
-   */
+   
   private processHtml(html: string): string {
-    // Replace script src references with actual script content
+     
     let processedHtml = html.replace(
       /<script\s+src=["']([^"']+)["']><\/script>/g,
       (match, src) => {
@@ -62,11 +55,11 @@ export class Bundler {
         if (scriptContent) {
           return `<script>${scriptContent}</script>`;
         }
-        return match; // Keep original if file not found
+        return match;  
       }
     );
 
-    // Replace link href references with actual style content
+     
     processedHtml = processedHtml.replace(
       /<link\s+rel=["']stylesheet["']\s+href=["']([^"']+)["']\s*\/?>/g,
       (match, href) => {

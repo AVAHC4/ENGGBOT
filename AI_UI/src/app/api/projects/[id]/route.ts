@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/projects/[id]
-// Get a specific project with its conversations
+ 
+ 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const projectId = params.id;
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Get project details
+         
         const { data: project, error: projError } = await supabaseAdmin
             .from('projects')
             .select('id, name, description, created_at, updated_at, user_email')
@@ -28,12 +28,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ exists: false }, { status: 200 });
         }
 
-        // Verify ownership
+         
         if (project.user_email !== email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Get conversations for this project
+         
         const { data: conversations, error: convError } = await supabaseAdmin
             .from('project_conversations')
             .select('id, title, created_at, updated_at')
@@ -59,8 +59,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-// PUT /api/projects/[id]
-// Update a project (rename, update description)
+ 
+ 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const projectId = params.id;
@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing project ID or email' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: project, error: checkError } = await supabaseAdmin
             .from('projects')
             .select('user_email')
@@ -88,7 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Update project
+         
         const updates: any = { updated_at: new Date().toISOString() };
         if (name !== undefined) {
             updates.name = name;
@@ -114,8 +114,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-// DELETE /api/projects/[id]
-// Delete a project and all its conversations
+ 
+ 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const projectId = params.id;
@@ -126,7 +126,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing project ID or email' }, { status: 400 });
         }
 
-        // Verify ownership
+         
         const { data: project, error: checkError } = await supabaseAdmin
             .from('projects')
             .select('user_email')
@@ -141,7 +141,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Delete project (conversations and messages will cascade delete)
+         
         const { error } = await supabaseAdmin
             .from('projects')
             .delete()

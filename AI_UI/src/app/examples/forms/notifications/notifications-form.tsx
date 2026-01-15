@@ -32,7 +32,7 @@ import {
 
 import * as React from "react"
 
-// Helper function to get user email from localStorage
+ 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -60,7 +60,7 @@ const notificationsFormSchema = z.object({
 
 type NotificationsFormValues = z.infer<typeof notificationsFormSchema>
 
-// This can come from your database or API.
+ 
 const defaultValues: Partial<NotificationsFormValues> = {
   communication_emails: false,
   marketing_emails: false,
@@ -78,7 +78,7 @@ export function NotificationsForm() {
     defaultValues,
   })
 
-  // Load data from database on mount
+   
   React.useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)

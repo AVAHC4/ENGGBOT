@@ -77,7 +77,7 @@ export function TeamsSection() {
   return (
     <>
       <div className="max-w-md mx-auto bg-transparent border-x border-border min-h-screen">
-        {/* Header */}
+        { }
         <div className="sticky top-0 bg-transparent border-b border-border px-4 py-3 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-foreground">Teams</h1>
           <DropdownMenu>
@@ -95,14 +95,14 @@ export function TeamsSection() {
           </DropdownMenu>
         </div>
 
-        {/* Teams List */}
+        { }
         <div className="divide-y divide-border">
           {teams.map((team) => (
             <div
               key={team.id}
               className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer transition-colors"
             >
-              {/* Avatar */}
+              { }
               <div className="relative">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
@@ -119,7 +119,7 @@ export function TeamsSection() {
                 )}
               </div>
 
-              {/* Content */}
+              { }
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-medium text-foreground truncate">{team.name}</h3>
@@ -128,7 +128,7 @@ export function TeamsSection() {
                 <p className="text-sm text-muted-foreground truncate">{team.lastMessage}</p>
               </div>
 
-              {/* Unread Badge */}
+              { }
               {team.unreadCount && (
                 <Badge
                   variant="default"

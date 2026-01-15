@@ -8,6 +8,6 @@ interface SidebarWrapperProps {
 }
 
 export function SidebarWrapper({ defaultOpen, className, children }: SidebarWrapperProps) {
-  // @ts-ignore - Ignoring the type compatibility issue
+   
   return <OriginalSidebarProvider defaultOpen={defaultOpen} className={className}>{children}</OriginalSidebarProvider>;
 } 

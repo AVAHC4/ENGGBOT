@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Get all regular conversations (project conversations are stored in project_conversations table)
+         
         const { data, error } = await supabaseAdmin
             .from('conversations')
             .select('id, title, created_at, updated_at')
@@ -28,15 +28,15 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/conversations
-// Create a new conversation
-// Body: { email: string, title?: string }
+ 
+ 
+ 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const email = (body?.email || '').toLowerCase();
         const title = body?.title || 'New Conversation';
-        const id = body?.id; // Accept ID from client
+        const id = body?.id;  
 
         console.log('[API] POST /api/conversations - Creating conversation:', { email, title, id: id?.substring(0, 8) });
 
@@ -44,13 +44,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Prepare insert data
+         
         const insertData: any = {
             user_email: email,
             title,
         };
 
-        // If ID is provided, use it; otherwise let database generate one
+         
         if (id) {
             insertData.id = id;
         }

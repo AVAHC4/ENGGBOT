@@ -1,9 +1,6 @@
-/**
- * This middleware intercepts AI responses and modifies them to maintain the ENGGBOT identity
- * instead of revealing the underlying OpenRouter/Z.AI provider.
- */
+ 
 
-// Bot personality constants
+ 
 export const BOT_CONFIG = {
   NAME: "ENGGBOT",
   PERSONALITY: "helpful, friendly, and enthusiastic engineering assistant",
@@ -18,10 +15,10 @@ export const BOT_CONFIG = {
   }
 };
 
-// Exact identity reply required by product policy
+ 
 export const EXACT_IDENTITY_REPLY = "I'm ENGGBOT, an AI assistant";
 
-// Pattern to identify identity questions
+ 
 const IDENTITY_PATTERNS = [
   /who (are|created|made|developed|built|designed) you/i,
   /what (are|is) you/i,
@@ -57,13 +54,13 @@ const SENSITIVE_KEYWORDS = [
 
 // Check if a message is asking about the AI's identity
 export function isIdentityQuestion(message: string): boolean {
-  // Convert message to lowercase for case-insensitive matching
+   
   const lowercaseMessage = message.toLowerCase();
   
-  // Check against regex patterns
+   
   const matchesPattern = IDENTITY_PATTERNS.some(pattern => pattern.test(lowercaseMessage));
   
-  // Check against keywords
+   
   const containsSensitiveKeyword = SENSITIVE_KEYWORDS.some(keyword => 
     lowercaseMessage.includes(keyword.toLowerCase())
   );
@@ -71,11 +68,11 @@ export function isIdentityQuestion(message: string): boolean {
   return matchesPattern || containsSensitiveKeyword;
 }
 
-// Generate a comprehensive identity response
+ 
 export function generateIdentityResponse(): string {
   const { NAME, PERSONALITY, VERSION, EMOJI } = BOT_CONFIG;
   
-  // Create a clear, fictional identity that doesn't reference any real AI companies
+   
   return `${EMOJI.IDEA} I'm ${NAME} (v${VERSION}), your ${PERSONALITY}! 
 
 I'm a custom-built engineering assistant designed specifically to help with coding, technical problems, and engineering challenges. I'm not based on any existing public AI model or service.
@@ -85,7 +82,7 @@ ${EMOJI.CODE} My focus is on providing practical solutions to engineering proble
 ${EMOJI.DEFAULT} I was built from the ground up as ${NAME} - that's my complete identity! I'm here to assist you with whatever engineering challenges you're facing today.`;
 }
 
-// Generate a provider-specific response for questions about who made the bot
+ 
 export function generateProviderResponse(): string {
   const { NAME, EMOJI } = BOT_CONFIG;
   
@@ -98,7 +95,7 @@ ${EMOJI.CODE} I'm maintained by a dedicated engineering team that continually im
 Is there a specific engineering task or coding challenge I can help you with today?`;
 }
 
-// Generate a system prompt that encourages Markdown formatting
+ 
 export function generateMarkdownSystemPrompt(): string {
   return `You are ${BOT_CONFIG.NAME}, a ${BOT_CONFIG.PERSONALITY}. 
   
@@ -123,29 +120,29 @@ When responding, use Markdown formatting to enhance readability:
 Always maintain this formatting style to ensure your responses are clear, well-structured, and easy to read.`;
 }
 
-// Process an AI response to remove any mentions of underpinning providers
+ 
 export function processAIResponse(response: string, userMessage: string): string {
-  // If it's clearly an identity question, return a custom response
+   
   if (isIdentityQuestion(userMessage)) {
-    // Always return the exact mandated reply with no additions
+     
     return EXACT_IDENTITY_REPLY;
   }
   
-  // Otherwise, sanitize the response to remove provider mentions
+   
   return sanitizeResponse(response);
 }
 
-// Replace provider mentions with ENGGBOT
+ 
 function sanitizeResponse(text: string): string {
   const { NAME, EMOJI } = BOT_CONFIG;
   
-  // Replace only identity-related terms, don't modify the formatting or style
+   
   let sanitized = text
-    // Strip spurious special tokens the model sometimes emits
+     
     .replace(/<\uFF5Cbegin▁of▁sentence\uFF5C>/g, '')
     .replace(/<\|begin▁of▁sentence\|>/g, '')
     .replace(/<\|begin_of_sentence\|>/gi, '')
-    // Specific provider/model mentions
+     
     .replace(/DeepSeek/gi, NAME)
     .replace(/Deep Seek/gi, NAME)
     .replace(/Deepseek AI/gi, NAME)
@@ -175,7 +172,7 @@ function sanitizeResponse(text: string): string {
     .replace(/OpenPipe/gi, NAME)
     .replace(/Vercel( AI)?/gi, NAME)
     .replace(/LangChain/gi, NAME)
-    // Origin phrasing and provider attributions
+     
     .replace(/based in China/gi, "")
     .replace(/from China/gi, "")
     .replace(/Chinese (AI|company|model|assistant)/gi, `${NAME}`)
@@ -186,7 +183,7 @@ function sanitizeResponse(text: string): string {
     .replace(/I('m| am) created by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) made by/gi, `I'm ${NAME}, `);
   
-  // Don't modify formatting or add emojis - preserve the AI's natural style
+   
   
   return sanitized;
 }

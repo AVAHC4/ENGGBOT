@@ -15,7 +15,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check for authentication from the main app
+     
     const authenticated = checkExternalAuth();
     setIsAuthenticated(authenticated);
     setIsLoading(false);
@@ -33,7 +33,7 @@ export default function Home() {
     );
   }
 
-  // Show chat interface if authenticated
+   
   if (isAuthenticated) {
     return (
       <main className="min-h-screen chat-page overflow-hidden">

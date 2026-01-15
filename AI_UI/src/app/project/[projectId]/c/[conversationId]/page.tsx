@@ -1,7 +1,7 @@
 import React from 'react';
 import ProjectConversationPageClient from './client-page';
 
-// Force dynamic rendering
+ 
 export const dynamic = 'force-dynamic';
 
 interface PageProps {

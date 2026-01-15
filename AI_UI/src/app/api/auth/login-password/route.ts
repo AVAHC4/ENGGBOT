@@ -11,13 +11,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
         }
 
-        // Validate email format
+         
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
         }
 
-        // Find user by email
+         
         const { data: user, error: findError } = await supabaseAdmin
             .from('users')
             .select('*')
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
         }
 
-        // Check if user has a password set
+         
         if (!user.password_hash) {
             console.log("User has no password set:", email);
             return NextResponse.json({
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
             }, { status: 401 });
         }
 
-        // Verify password
+         
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
         if (!isValidPassword) {
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
         console.log("Password verified successfully for:", email);
 
-        // Return success with user data
+         
         return NextResponse.json({
             success: true,
             user: {

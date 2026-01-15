@@ -4,30 +4,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomBytes } from 'crypto';
 
-// GET /api/auth/google
-// Initiates Google OAuth by redirecting to Google's consent page.
+ 
+ 
 export async function GET(req: NextRequest) {
   try {
-    // Derive a fixed public base origin for consistent cookies/redirects
-    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://www.enggbot.me/login
+     
+     
     const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET; // not used here, but validate presence early
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;  
     if (!clientId || !clientSecret) {
       return NextResponse.json({ error: 'Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET' }, { status: 500 });
     }
 
     const state = randomBytes(16).toString('hex');
-    // Set short-lived, httpOnly state cookie for CSRF protection
+     
     cookies().set('oauth_state', state, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 10, // 10 minutes
-      // Ensure cookie is scoped to the public domain we're using
+      maxAge: 60 * 10,  
+       
       domain: new URL(baseOrigin).hostname,
     });
 

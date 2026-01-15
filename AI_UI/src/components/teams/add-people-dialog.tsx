@@ -40,7 +40,7 @@ export function AddPeopleDialog({ open, onOpenChange, teamId, teamName }: AddPeo
         setInviteEmail("")
         setInviteMessage("")
         onOpenChange(false)
-        // Optionally signal UI
+         
         window.dispatchEvent(new CustomEvent('teams:invites:sent'))
       })
       .catch((e) => {

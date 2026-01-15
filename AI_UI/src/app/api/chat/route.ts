@@ -7,7 +7,7 @@ import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
-// Simple interface for chat messages
+ 
 export interface ChatMessage {
   id: string;
   content: string;
@@ -15,9 +15,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-/**
- * Format conversation history for the AI
- */
+ 
 function formatConversationHistory(history: ChatMessage[]): Array<{ role: string, content: string }> {
   if (!history || history.length === 0) return [];
 
@@ -27,7 +25,7 @@ function formatConversationHistory(history: ChatMessage[]): Array<{ role: string
   });
 }
 
-// POST handler for chat API
+ 
 export async function POST(request: Request) {
   try {
     const {
@@ -45,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // If the user is asking about identity/origin, return the exact mandated reply
+     
     if (isIdentityQuestion(message)) {
       const chatMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -56,33 +54,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: chatMessage });
     }
 
-    // Ensure the client is initialized
+     
     if (!isClientInitialized()) {
       await initializeAIClient();
     }
 
-    // Instantiate server-side client with secure API key
+     
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }
     const openRouterClient = new OpenRouterClient({ apiKey });
 
-    // Format messages for the API
+     
     const formattedMessages = formatConversationHistory(conversationHistory);
 
-    // Add system message at the beginning
+     
     const systemMessage = {
       role: 'system',
       content: generateMarkdownSystemPrompt()
     };
 
-    // Add the system message at the beginning if it's not already there
+     
     const messages = formattedMessages.length > 0 && formattedMessages[0].role === 'system' ?
       formattedMessages :
       [systemMessage, ...formattedMessages];
 
-    // Add current user message
+     
     messages.push({
       role: 'user',
       content: hasAttachments
@@ -90,11 +88,11 @@ export async function POST(request: Request) {
         : message
     });
 
-    // Always use Grok 4.1 model
+     
     const modelName = AVAILABLE_MODELS["gpt-oss"];
 
     try {
-      // Generate response from the AI
+       
       const response = await openRouterClient.generate({
         prompt: message,
         model: modelName,
@@ -104,10 +102,10 @@ export async function POST(request: Request) {
         messages: messages
       });
 
-      // Process the response for any unwanted AI identity info, using the user's message for context
+       
       const processedResponse = processAIResponse(response, message);
 
-      // Create a message object for the AI response
+       
       const chatMessage: ChatMessage = {
         id: crypto.randomUUID(),
         content: processedResponse,
@@ -120,7 +118,7 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error("Error generating AI response:", error);
 
-      // Create an error message
+       
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         content: "I apologize, but I'm having trouble processing your request right now. Please try again.",

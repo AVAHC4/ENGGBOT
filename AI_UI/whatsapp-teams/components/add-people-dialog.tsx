@@ -68,7 +68,7 @@ export function AddPeopleDialog({ open, onOpenChange, teamId, teamName }: AddPeo
   }
 
   const handleAddSelected = () => {
-    // Here you would typically send the selected people to your backend
+     
     console.log("[v0] Adding people to team:", Array.from(selectedPeople))
     setSelectedPeople(new Set())
     onOpenChange(false)
@@ -76,7 +76,7 @@ export function AddPeopleDialog({ open, onOpenChange, teamId, teamName }: AddPeo
 
   const handleSendInvite = () => {
     if (!inviteEmail.trim()) return
-    // Here you would typically send the invite to your backend
+     
     console.log("[v0] Sending invite to:", inviteEmail, "with role:", inviteRole)
     setInviteEmail("")
     setInviteMessage("")

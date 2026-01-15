@@ -43,8 +43,8 @@ async function fetchGoogleUser(accessToken: string) {
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    // Derive a fixed public base origin for consistent cookie/redirect behavior
-    // e.g. NEXT_PUBLIC_MAIN_APP_URL=https://www.enggbot.me/login
+     
+     
     const configured = process.env.NEXT_PUBLIC_MAIN_APP_URL;
     const baseOrigin = configured ? new URL(configured).origin : req.nextUrl.origin;
 
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${baseOrigin}/login?error=no_code`);
     }
 
-    // Validate state to mitigate CSRF
+     
     const stateCookie = cookies().get('oauth_state');
     if (!stateCookie || stateCookie.value !== stateFromQuery) {
       return NextResponse.redirect(`${baseOrigin}/login?error=invalid_state`);
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     const token = await exchangeCodeForTokens({ code, clientId, clientSecret, redirectUri });
     const profile = await fetchGoogleUser(token.access_token);
 
-    // Build redirect to AI_UI chat with user info
+     
     const aiUiUrl = `${baseOrigin}/AI_UI/?auth_success=true`;
     const userPayload = {
       id: profile.id,
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     const redirectUrl = `${aiUiUrl}&user=${encoded}`;
 
-    // Clear state cookie (best-effort)
+     
     cookies().set('oauth_state', '', { path: '/', maxAge: 0 });
 
     return NextResponse.redirect(redirectUrl);

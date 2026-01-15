@@ -1,10 +1,4 @@
-/**
- * Compresses an image file to a smaller JPEG Base64 string.
- * @param file The image file to compress.
- * @param maxWidth The maximum width of the output image.
- * @param quality The JPEG quality (0 to 1).
- * @returns A promise that resolves to the Base64 string of the compressed image.
- */
+ 
 export const compressImage = (
     file: File,
     maxWidth: number = 500,

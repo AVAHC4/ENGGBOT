@@ -81,12 +81,12 @@ export function DesktopTeamsLayout() {
 
   return (
     <div className="flex h-screen">
-      {/* Teams Sidebar */}
+      { }
       <div className="w-80 border-r border-border flex-shrink-0 -ml-2">
         <TeamsSidebar selectedTeamId={selectedTeamId} onTeamSelect={handleTeamSelect} teams={teams} />
       </div>
 
-      {/* Chat Interface */}
+      { }
       <div className="flex-1">
         <ChatInterface
           selectedTeamId={selectedTeamId}

@@ -24,7 +24,7 @@ async function checkUserExists(email: string): Promise<boolean> {
       .single();
 
     if (error && error.code !== 'PGRST116') {
-      // PGRST116 means no rows found, which is not an error in this case.
+       
       console.error('Error checking user:', error);
       return false;
     }
@@ -52,7 +52,7 @@ export function AddTeamMemberDialog({ open, onOpenChange }: { open: boolean; onO
         title: 'Invitation Sent!',
         description: `An invitation has been sent to ${email}.`,
       });
-      onOpenChange(false); // Close the dialog on success
+      onOpenChange(false);  
     } else {
       toast({
         title: 'User Not Found',
@@ -62,7 +62,7 @@ export function AddTeamMemberDialog({ open, onOpenChange }: { open: boolean; onO
     }
 
     setIsSubmitting(false);
-    setEmail(''); // Reset email input
+    setEmail('');  
   };
 
   return (

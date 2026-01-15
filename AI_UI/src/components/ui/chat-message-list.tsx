@@ -18,15 +18,15 @@ export function ChatMessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom on new messages
+   
   useLayoutEffect(() => {
     if (containerRef.current && bottomRef.current) {
-      // Get the container's scroll height and client height
+       
       const { scrollHeight, clientHeight } = containerRef.current;
-      // Check if the user is close to the bottom
+       
       const isNearBottom = scrollHeight - containerRef.current.scrollTop - clientHeight < 300;
       
-      // Only auto-scroll if near bottom or if no scrollbar
+       
       if (isNearBottom || scrollHeight <= clientHeight) {
         bottomRef.current.scrollIntoView({
           behavior: smooth ? 'smooth' : 'auto',

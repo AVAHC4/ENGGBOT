@@ -15,7 +15,7 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
   const [initialized, setInitialized] = useState(false);
   const [editorValue, setEditorValue] = useState(value);
   
-  // Map our language names to Monaco's language identifiers
+   
   const getMonacoLanguage = (lang: string): string => {
     const languageMap: Record<string, string> = {
       'js': 'javascript',
@@ -33,19 +33,19 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     return languageMap[lang] || 'javascript';
   };
 
-  // Initialize component after mount
+   
   useEffect(() => {
     setInitialized(true);
   }, []);
 
-  // Update editor value when prop changes
+   
   useEffect(() => {
     if (value !== editorValue) {
       setEditorValue(value);
     }
   }, [value, editorValue]);
 
-  // Handle editor change
+   
   const handleEditorChange = (newValue: string | undefined) => {
     if (newValue !== undefined) {
       setEditorValue(newValue);
@@ -53,19 +53,19 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     }
   };
 
-  // Handle cursor position change
+   
   const handleCursorPositionChange = (e: Monaco.editor.ICursorPositionChangedEvent) => {
     if (onCursorPositionChange && e.position) {
       onCursorPositionChange(e.position.lineNumber, e.position.column);
     }
   };
 
-  // Handle editor mount
+   
   const handleEditorMount: OnMount = (editor) => {
     editor.onDidChangeCursorPosition(handleCursorPositionChange);
   };
 
-  // If not initialized yet, show a simple textarea
+   
   if (!initialized) {
     return (
       <textarea

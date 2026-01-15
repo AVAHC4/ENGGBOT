@@ -14,9 +14,9 @@ export function getInitials(name: string): string {
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
-// Language mapping for compiler compatibility
+ 
 const languageMap: Record<string, string> = {
-  // Direct mappings
+   
   "python": "python",
   "javascript": "javascript",
   "js": "javascript",
@@ -29,31 +29,26 @@ const languageMap: Record<string, string> = {
   "html": "html",
   "css": "css",
 
-  // Additional mappings for flexibility
+   
   "typescript": "javascript",
   "ts": "javascript",
   "jsx": "javascript",
   "tsx": "javascript",
-  "text": "javascript", // Default to javascript for plain text
+  "text": "javascript",  
 };
 
-/**
- * Opens the code in the compiler page
- * 
- * @param code The code to be opened in the compiler
- * @param language The programming language of the code
- */
+ 
 export function openInCompiler(code: string, language: string): void {
-  // Normalize language to lowercase
+   
   const normalizedLang = language.toLowerCase();
 
-  // Map the language to one the compiler understands
+   
   const compilerLang = languageMap[normalizedLang] || "javascript";
 
-  // Save code and language to localStorage
+   
   localStorage.setItem('compiler_pending_code', code);
   localStorage.setItem('compiler_pending_language', compilerLang);
 
-  // Open in new tab without query params
+   
   window.open('/compiler', '_blank');
 }

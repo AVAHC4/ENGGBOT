@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
-      // Heartbeat to keep connection alive on some proxies
+       
       heartbeat = setInterval(() => {
         controller.enqueue(encoder.encode(`: ping\n\n`))
       }, 25000)
@@ -41,13 +41,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 created_at: row.created_at,
               })
             } catch (e) {
-              // best-effort
+               
             }
           }
         )
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            // ack open
+             
             controller.enqueue(encoder.encode(`event: open\n` + `data: subscribed\n\n`))
           }
         })

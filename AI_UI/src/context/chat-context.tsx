@@ -11,7 +11,7 @@ export interface Attachment {
   url: string;
 }
 
-// Local base chat message type to avoid importing from server route files
+ 
 export interface ChatMessageBase {
   id: string;
   content: string;
@@ -20,11 +20,11 @@ export interface ChatMessageBase {
 }
 
 export interface ExtendedChatMessage extends ChatMessageBase {
-  isUser: boolean; // Explicit for build-time type safety
+  isUser: boolean;  
   attachments?: Attachment[];
-  replyToId?: string; // ID of the message being replied to
-  metadata?: Record<string, any>; // Add metadata field for additional data like search results
-  isStreaming?: boolean; // Add streaming status indicator
+  replyToId?: string;  
+  metadata?: Record<string, any>;  
+  isStreaming?: boolean;  
 }
 
 interface ChatContextType {
@@ -71,43 +71,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [engineeringMode, setEngineeringMode] = useState(false);
 
-  // Track which message IDs have been fully displayed
+   
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
 
-  // Add conversation management with a default ID that will be updated after client-side mount
+   
+  const conversationsCacheRef = useRef<Record<string, ExtendedChatMessage[]>>({});
+
+   
   const [conversationId, setConversationId] = useState<string>(crypto.randomUUID());
 
-  // Track if this is a project conversation (when set, skip regular save/load)
+   
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
-  // Create a ref to track the current request ID
+   
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
 
-  // Track the current conversation ID to prevent saving messages to wrong conversation
+   
   const conversationIdRef = useRef<string>(conversationId);
 
-  // Track project mode with a ref to prevent race conditions with async loads
+   
   const currentProjectIdRef = useRef<string | null>(currentProjectId);
 
-  // Keep the ref in sync with state
+   
   useEffect(() => {
     currentProjectIdRef.current = currentProjectId;
   }, [currentProjectId]);
 
-  // Set isMounted flag on client-side
+   
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Initialize conversationId after mount
+   
   useEffect(() => {
     if (isMounted) {
-      // Get user-specific prefix
+       
       const userPrefix = getUserPrefix();
       const storageKey = `${userPrefix}-activeConversation`;
 
-      // Get the stored conversation ID or generate a new one
+       
       const storedId = localStorage.getItem(storageKey);
       if (storedId) {
         setConversationId(storedId);
@@ -119,29 +122,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [isMounted]);
 
-  // Load conversation on startup or when switching conversations
-  // SKIP if we're in project mode (project page handles its own loading)
+   
+   
   useEffect(() => {
     console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, currentProjectId });
     if (isMounted && !isPrivateMode && !currentProjectId) {
-      // Update the ref to match current conversationId
+       
       conversationIdRef.current = conversationId;
 
-      // Capture current ID to check for staleness after async load
+       
       const loadingId = conversationId;
 
-      // Load conversation asynchronously
+       
       console.log('[ChatContext] Loading conversation:', conversationId);
       loadConversation(conversationId).then((savedMessages) => {
-        // CRITICAL: Only set messages if we're still on the same conversation
-        // This prevents race conditions when user switches conversations quickly
+         
+         
         if (conversationIdRef.current !== loadingId) {
           console.log('[ChatContext] Skipping stale load for:', loadingId.substring(0, 8));
           return;
         }
 
-        // CRITICAL: Also skip if we've transitioned to project mode while loading
-        // This prevents the async callback from clearing project messages
+         
+         
         if (currentProjectIdRef.current) {
           console.log('[ChatContext] Skipping load - now in project mode:', currentProjectIdRef.current.substring(0, 8));
           return;
@@ -149,34 +152,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
-          // Sort messages by timestamp first
+           
           let sortedMessages = [...savedMessages].sort((a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
 
-          // HEURISTIC FIX: Detect and repair inverted message order (AI appearing before User due to clock skew)
-          // Look for patterns where AI message is immediately followed by a User message with very close timestamp
+           
+           
           let hasModifications = false;
 
           for (let i = 0; i < sortedMessages.length - 1; i++) {
             const current = sortedMessages[i];
             const next = sortedMessages[i + 1];
 
-            // If current is AI and next is User
+             
             if (!current.isUser && next.isUser) {
               const currentTime = new Date(current.timestamp).getTime();
               const nextTime = new Date(next.timestamp).getTime();
 
-              // If they are within 2 seconds of each other (typical race condition window)
-              // We assume this is a flipped pair (User prompt -> AI response)
+               
+               
               if (nextTime - currentTime < 2000) {
                 console.log('[ChatContext] Healing inverted message order:', {
                   ai: current.id, user: next.id, diff: nextTime - currentTime
                 });
 
-                // Fix: Move AI timestamp to be slighty after User timestamp
-                // We construct a new Date object to avoid reference issues
-                const fixedTimestamp = new Date(nextTime + 50).toISOString(); // User time + 50ms
+                 
+                 
+                const fixedTimestamp = new Date(nextTime + 50).toISOString();  
 
                 sortedMessages[i] = {
                   ...current,
@@ -184,36 +187,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 };
 
                 hasModifications = true;
-                // Don't increment i, so we can re-check this new AI message against the *next* one if needed? 
-                // No, just swapping this pair is enough for now.
+                 
+                 
               }
             }
           }
 
-          // If we modified timestamps, re-sort and save back to DB to make it permanent
+           
           if (hasModifications) {
             sortedMessages.sort((a, b) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
 
-            // Verify order is now User -> AI
+             
             console.log('[ChatContext] Saving healed conversation order');
             saveConversation(conversationId, sortedMessages);
           }
 
           setMessages(sortedMessages);
+           
+          conversationsCacheRef.current[conversationId] = sortedMessages;
         } else {
           setMessages([]);
         }
       }).catch((error) => {
         console.error('Error loading conversation:', error);
-        // Only clear if still on same conversation and not in project mode
+         
         if (conversationIdRef.current === loadingId && !currentProjectIdRef.current) {
           setMessages([]);
         }
       });
 
-      // Get user-specific prefix
+       
       const userPrefix = getUserPrefix();
       const storageKey = `${userPrefix}-activeConversation`;
 
@@ -221,24 +226,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [conversationId, isMounted, isPrivateMode, currentProjectId]);
 
-  // Save messages when they change (but NOT while AI is generating/streaming)
-  // CRITICAL: Only save if messages belong to the current conversation
-  // SKIP if we're in project mode (project page handles its own saving)
+   
+   
+   
   useEffect(() => {
-    // Skip saving while AI is generating - will save when streaming completes
-    // Also skip if conversationId doesn't match ref (prevents saving old messages to new conversation)
-    // Skip if in project mode
+     
+     
+     
     if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && !currentProjectId && conversationIdRef.current === conversationId) {
       saveConversation(conversationId, messages);
+       
+      conversationsCacheRef.current[conversationId] = [...messages];
     }
   }, [messages, conversationId, isMounted, isPrivateMode, isGenerating, currentProjectId]);
 
-  // Update the displayed message IDs when messages change
+   
   useEffect(() => {
     setDisplayedMessageIds(new Set(messages.map(m => m.id)));
   }, [messages]);
 
-  // Helper to hide appended technical context from the user message bubble
+   
   const getUserDisplayContent = (text: string) => {
     const markers = ['\n\n[WEB SEARCH RESULTS', '\n\n[FILES CONTEXT]'];
     let cutoff = text.length;
@@ -249,26 +256,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return text.slice(0, cutoff);
   };
 
-  // Helper function to process file attachments
+   
   const processAttachments = (files: File[]): Attachment[] => {
     return files.map(file => ({
       id: crypto.randomUUID(),
       name: file.name,
       type: file.type,
-      // Create a local object URL for the file
+       
       url: URL.createObjectURL(file)
     }));
   };
 
   const stopGeneration = useCallback(() => {
-    // Set canceled flag
+     
     isCanceledRef.current = true;
 
-    // Reset states
+     
     setIsLoading(false);
     setIsGenerating(false);
 
-    // Mark any streaming messages as complete to hide the animation
+     
     setMessages(prev => prev.map(m =>
       m.isStreaming ? { ...m, isStreaming: false } : m
     ));
@@ -276,52 +283,52 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
     try {
-      // Generate a new request ID
+       
       const requestId = crypto.randomUUID();
       currentRequestIdRef.current = requestId;
 
-      // Reset the canceled state
+       
       isCanceledRef.current = false;
 
-      // Process any attachments
+       
       const attachments = files.length > 0 ? processAttachments(files) : undefined;
 
-      // Add user message - remove any appended context for user display
-      // We hide [WEB SEARCH RESULTS] and [FILES CONTEXT] blocks
+       
+       
       const userDisplayContent = getUserDisplayContent(content);
 
-      // Ensure timestamps are monotonic
+       
       const now = new Date();
       const userTimestamp = now.toISOString();
-      // Ensure AI message timestamp is strictly after user message
+       
       const aiTimestamp = new Date(now.getTime() + 50).toISOString();
 
       const userMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
-        content: userDisplayContent, // Only show the user's original message, not the web search data
+        content: userDisplayContent,  
         isUser: true,
         timestamp: userTimestamp,
         attachments,
-        replyToId // Add the reply reference if present
+        replyToId  
       };
 
-      // Update messages state with the new user message
+       
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
 
-      // Clear any reply state
+       
       setReplyToMessage(null);
 
-      // Save conversation after adding user message
+       
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
 
       setIsLoading(true);
-      // Set generating state to true immediately when sending message
+       
       setIsGenerating(true);
 
-      // Build content for API, optionally enriched with processed files context
+       
       let contentForAPI = content;
 
       if (files.length > 0) {
@@ -348,22 +355,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Create a placeholder for the AI response
+       
       const aiMessageId = crypto.randomUUID();
       const aiMessage: ExtendedChatMessage = {
         id: aiMessageId,
         content: "",
         isUser: false,
-        timestamp: aiTimestamp, // Use the strictly ordered timestamp
+        timestamp: aiTimestamp,  
         isStreaming: true
       };
 
-      // Add the placeholder to messages
+       
       const messagesWithPlaceholder = [...updatedMessages, aiMessage];
       setMessages(messagesWithPlaceholder);
 
       try {
-        // Make a fetch request with streaming response instead of EventSource
+         
         const response = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: {
@@ -394,9 +401,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const decoder = new TextDecoder();
         let buffer = "";
 
-        // Process the stream chunks
+         
         while (true) {
-          // Check if the request was canceled
+           
           if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
             reader.cancel();
             break;
@@ -405,13 +412,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const { done, value } = await reader.read();
 
           if (done) {
-            // Update message to mark as no longer streaming AND save complete conversation
+             
             setMessages(prev => {
               const finalMessages = prev.map(m =>
                 m.id === aiMessageId ? { ...m, isStreaming: false } : m
               );
 
-              // Save the COMPLETE conversation with the full AI response
+               
               if (typeof window !== 'undefined' && !isPrivateMode) {
                 saveConversation(conversationId, finalMessages);
               }
@@ -419,35 +426,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               return finalMessages;
             });
 
-            // Reset states
+             
             setIsLoading(false);
             setIsGenerating(false);
             break;
           }
 
-          // Decode and process the chunk
+           
           buffer += decoder.decode(value, { stream: true });
 
-          // Split buffer by lines and process each line
+           
           const lines = buffer.split('\n');
-          buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+          buffer = lines.pop() || '';  
 
           for (const line of lines) {
             if (line.trim() === '') continue;
             if (!line.startsWith('data:')) continue;
 
             try {
-              const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+              const eventData = line.slice(5).trim();  
 
               if (eventData === "[DONE]") {
-                // End of stream, no need to parse as JSON
+                 
                 continue;
               }
 
               try {
                 const data = JSON.parse(eventData);
 
-                // Handle error from server
+                 
                 if (data.error) {
                   console.error("Error from server:", data.error);
                   setMessages(prev => {
@@ -457,7 +464,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         : m
                     );
 
-                    // Save conversation
+                     
                     if (typeof window !== 'undefined' && !isPrivateMode) {
                       saveConversation(conversationId, updatedMessages);
                     }
@@ -465,13 +472,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     return updatedMessages;
                   });
 
-                  // Reset states
+                   
                   setIsLoading(false);
                   setIsGenerating(false);
                   continue;
                 }
 
-                // Update the streaming message (don't save yet - wait for completion)
+                 
                 if (data.text) {
                   setMessages(prev => prev.map(m =>
                     m.id === aiMessageId
@@ -490,7 +497,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error in streaming:", error);
 
-        // Update message to show error
+         
         setMessages(prev => prev.map(m =>
           m.id === aiMessageId
             ? {
@@ -501,20 +508,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             : m
         ));
 
-        // Reset states
+         
         setIsLoading(false);
         setIsGenerating(false);
       }
     } catch (error) {
       console.error('Error sending message:', error);
 
-      // Ignore errors for canceled requests
+       
       if (isCanceledRef.current) {
         console.log('Error occurred, but request was canceled');
         return;
       }
 
-      // Add error message
+       
       const errorMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
         content: 'Sorry, there was an error processing your request.',
@@ -525,12 +532,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const messagesWithError = [...messages, errorMessage];
       setMessages(messagesWithError);
 
-      // Save conversation with the error message
+       
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, messagesWithError);
       }
 
-      // Reset both states on error
+       
       setIsGenerating(false);
       setIsLoading(false);
     }
@@ -539,7 +546,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const clearMessages = useCallback(() => {
     console.log('[ChatContext] clearMessages called:', { conversationId, isPrivateMode });
     setMessages([]);
-    // Clear the conversation messages from database
+     
     if (typeof window !== 'undefined' && !isPrivateMode) {
       console.log('[ChatContext] Calling clearConversationMessages...');
       clearConversationMessages(conversationId).then(success => {
@@ -561,7 +568,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     setMessages(prev => {
       const updatedMessages = [...prev, newMessage];
-      // Save conversation after adding message
+       
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
@@ -569,9 +576,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
   }, [conversationId, isPrivateMode]);
 
-  // Add regenerate function
+   
   const regenerateLastResponse = useCallback(async () => {
-    // Find the last user message
+     
     const lastUserMessageIndex = [...messages].reverse().findIndex(m => m.isUser);
 
     if (lastUserMessageIndex === -1) {
@@ -579,22 +586,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Get the actual index in the messages array (from the end)
+     
     const actualUserIndex = messages.length - 1 - lastUserMessageIndex;
     const lastUserMessage = messages[actualUserIndex];
 
-    // Find the AI response that follows this user message (if any)
+     
     const aiResponseIndex = actualUserIndex + 1;
     const hasAiResponse = aiResponseIndex < messages.length && !messages[aiResponseIndex].isUser;
 
-    // Create a new request ID for this regeneration
+     
     const requestId = crypto.randomUUID();
     currentRequestIdRef.current = requestId;
 
-    // Reset the canceled state
+     
     isCanceledRef.current = false;
 
-    // Set loading states
+     
     setIsLoading(true);
     setIsGenerating(true);
 
@@ -602,10 +609,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     let updatedMessages;
 
     if (hasAiResponse) {
-      // Use the existing AI message ID
+       
       aiMessageId = messages[aiResponseIndex].id;
 
-      // Update the existing AI message to show it's streaming again
+       
       updatedMessages = [...messages];
       updatedMessages[aiResponseIndex] = {
         ...updatedMessages[aiResponseIndex],
@@ -613,7 +620,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isStreaming: true
       };
     } else {
-      // Create a new AI message
+       
       aiMessageId = crypto.randomUUID();
       const aiMessage = {
         id: aiMessageId,
@@ -623,20 +630,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isStreaming: true
       };
 
-      // Add the new AI message after the user message
+       
       updatedMessages = [...messages.slice(0, actualUserIndex + 1), aiMessage];
     }
 
-    // Update the messages state
+     
     setMessages(updatedMessages);
 
-    // Save the conversation state
+     
     if (typeof window !== 'undefined' && !isPrivateMode) {
       saveConversation(conversationId, updatedMessages);
     }
 
     try {
-      // Make a fetch request with streaming response
+       
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
@@ -667,9 +674,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const decoder = new TextDecoder();
       let buffer = "";
 
-      // Process the stream chunks
+       
       while (true) {
-        // Check if the request was canceled
+         
         if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
           reader.cancel();
           break;
@@ -678,13 +685,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const { done, value } = await reader.read();
 
         if (done) {
-          // Update message to mark as no longer streaming
+           
           setMessages(prev => {
             const updated = prev.map(m =>
               m.id === aiMessageId ? { ...m, isStreaming: false } : m
             );
 
-            // Save conversation
+             
             if (typeof window !== 'undefined' && !isPrivateMode) {
               saveConversation(conversationId, updated);
             }
@@ -692,49 +699,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             return updated;
           });
 
-          // Reset states
+           
           setIsLoading(false);
           setIsGenerating(false);
           break;
         }
 
-        // Decode and process the chunk
+         
         buffer += decoder.decode(value, { stream: true });
 
-        // Split buffer by lines and process each line
+         
         const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep the last potentially incomplete line in buffer
+        buffer = lines.pop() || '';  
 
         for (const line of lines) {
           if (line.trim() === '') continue;
           if (!line.startsWith('data:')) continue;
 
           try {
-            const eventData = line.slice(5).trim(); // Remove 'data: ' prefix
+            const eventData = line.slice(5).trim();  
 
             if (eventData === "[DONE]") {
-              // End of stream, no need to parse as JSON
+               
               continue;
             }
 
             try {
               const data = JSON.parse(eventData);
 
-              // Update the streaming message
+               
               if (data.text) {
                 setMessages(prev => {
-                  // Find the message with the matching ID
+                   
                   const messageIndex = prev.findIndex(m => m.id === aiMessageId);
                   if (messageIndex === -1) return prev;
 
-                  // Create a new array with the updated message
+                   
                   const updated = [...prev];
                   updated[messageIndex] = {
                     ...updated[messageIndex],
                     content: updated[messageIndex].content + data.text
                   };
 
-                  // Save intermediate state periodically
+                   
                   if (typeof window !== 'undefined' && !isPrivateMode) {
                     saveConversation(conversationId, updated);
                   }
@@ -753,7 +760,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error in streaming:", error);
 
-      // Update message to show error
+       
       setMessages(prev => {
         const messageIndex = prev.findIndex(m => m.id === aiMessageId);
         if (messageIndex === -1) return prev;
@@ -768,13 +775,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return updated;
       });
 
-      // Reset states
+       
       setIsLoading(false);
       setIsGenerating(false);
     }
   }, [messages, conversationId, currentModel, thinkingMode, engineeringMode, isPrivateMode]);
 
-  // Helper function to handle timestamp conversion
+   
   const getTimestamp = (timestamp: any): string => {
     if (typeof timestamp === 'string') {
       return timestamp;
@@ -785,37 +792,50 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return new Date().toISOString();
   };
 
-  // Switch to an existing conversation
+   
   const switchConversation = useCallback((id: string) => {
-    // Skip if already on this conversation
+     
     if (id === conversationIdRef.current) {
       return;
     }
 
-    // Stop any ongoing generation
+     
     if (isGenerating || isLoading) {
       stopGeneration();
     }
 
-    // Clear messages immediately BEFORE changing conversationId
-    // This prevents the save effect from saving old messages to the new conversation
-    setMessages([]);
+     
+    if (conversationIdRef.current && messages.length > 0) {
+      conversationsCacheRef.current[conversationIdRef.current] = [...messages];
+    }
 
-    // Update the ref BEFORE setting state to prevent race conditions
+     
     conversationIdRef.current = id;
-    setConversationId(id);
-  }, [isGenerating, isLoading, stopGeneration]);
 
-  // Start a new conversation
+     
+    const cachedMessages = conversationsCacheRef.current[id];
+    if (cachedMessages && cachedMessages.length > 0) {
+       
+      setMessages(cachedMessages);
+      setConversationId(id);
+      return;
+    }
+
+     
+    setMessages([]);
+    setConversationId(id);
+  }, [isGenerating, isLoading, stopGeneration, messages]);
+
+   
   const startNewConversation = useCallback(() => {
-    // Stop any ongoing generation
+     
     if (isGenerating || isLoading) {
       stopGeneration();
     }
 
     const newId = crypto.randomUUID();
 
-    // Clear messages and update ref BEFORE changing conversationId
+     
     setMessages([]);
     conversationIdRef.current = newId;
     setConversationId(newId);
@@ -825,40 +845,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const storageKey = `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
-      // NOTE: Do NOT save empty conversation here - only save when user sends a message
+       
     }
   }, [isGenerating, isLoading, stopGeneration, isMounted]);
 
-  // Delete the current conversation
+   
   const deleteCurrentConversation = useCallback(() => {
     if (isMounted) {
       const deletingConversationId = conversationId;
 
-      // Immediately clear messages and switch to new conversation (optimistic update)
+       
       setMessages([]);
 
-      // Start a new conversation immediately
+       
       const newId = crypto.randomUUID();
       conversationIdRef.current = newId;
       setConversationId(newId);
 
-      // Delete from backend in background
+       
       (async () => {
         try {
-          // Get conversation list
+           
           const conversations = await getConversationList();
 
-          // Delete conversation from backend
+           
           await deleteConversation(deletingConversationId);
 
-          // Check if there are other conversations to switch to
+           
+          delete conversationsCacheRef.current[deletingConversationId];
+
+           
           const remainingConversations = conversations.filter((id: string) => id !== deletingConversationId);
 
           if (remainingConversations.length > 0) {
-            // Switch to the first remaining conversation
+             
             switchConversation(remainingConversations[0]);
           }
-          // If no remaining, we already created a new one above
+           
         } catch (error) {
           console.error('Error deleting conversation:', error);
         }
@@ -874,16 +897,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setWebSearchMode(prev => !prev);
   }, []);
 
-  // Toggle private mode
+   
   const togglePrivateMode = useCallback(() => {
     setIsPrivateMode(prev => {
       const newValue = !prev;
 
       if (newValue) {
-        // When enabling private mode, clear the current conversation
+         
         setMessages([]);
       } else {
-        // When disabling private mode, load the saved conversation
+         
         loadConversation(conversationId).then((savedMessages) => {
           if (savedMessages?.length) {
             setMessages(savedMessages);
@@ -899,14 +922,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setEngineeringMode(prev => !prev);
   }, []);
 
-  // Add useEffect to clean up resources on unmount
+   
   useEffect(() => {
     return () => {
-      // Nothing to clean up with the fetch-based approach
+       
     };
   }, []);
 
-  // Return context value
+   
   const value = {
     messages,
     isLoading,

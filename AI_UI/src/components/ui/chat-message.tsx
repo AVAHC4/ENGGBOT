@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
-// We intentionally use native <img> tags for markdown content to preserve default browser behaviors (right-click/save, blob URLs).
+ 
+ 
 import React, { useEffect, useState } from "react";
 import { cn, openInCompiler } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
@@ -80,67 +80,67 @@ export function ChatMessage({
   const [codeExecutionResults, setCodeExecutionResults] = useState<Map<string, any>>(new Map());
   const [executingCode, setExecutingCode] = useState<Set<string>>(new Set());
 
-  // Get the message being replied to if replyToId exists
+   
   const replyToMessage = messageData.replyToId
     ? messages.find(msg => msg.id === messageData.replyToId)
     : null;
 
-  // Determine if this message is currently streaming
+   
   const isStreaming = messageData.isStreaming === true;
 
-  // Extract thinking content if present
+   
   let thinkingContent = null;
   let mainContent = message;
 
-  // Regex to find <think> block at the start
-  // Handles both complete <think>...</think> and incomplete <think>... (streaming)
+   
+   
   const thinkMatch = /^(<think>)([\s\S]*?)(?:<\/think>|$)/.exec(message);
 
   if (thinkMatch && !isUser) {
     thinkingContent = thinkMatch[2];
-    // If the tag is closed, the main content is everything after </think>
-    // If not closed (streaming), main content is empty or we might want to show nothing yet
+     
+     
     if (message.includes('</think>')) {
       mainContent = message.split('</think>')[1] || '';
-      // Trim leading newlines from main content
+       
       mainContent = mainContent.replace(/^\n+/, '');
     } else {
-      mainContent = ''; // Still thinking
+      mainContent = '';  
     }
   }
 
-  // Function to copy message content to clipboard
+   
   const handleCopy = () => {
     navigator.clipboard.writeText(message).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000);  
     });
   };
 
-  // Function to copy code block content
+   
   const handleCopyCode = (code: string, blockId: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCodeCopied(blockId.toString());
-      setTimeout(() => setCodeCopied(null), 2000); // Reset after 2 seconds
+      setTimeout(() => setCodeCopied(null), 2000);  
     });
   };
 
-  // Function to open code in compiler
+   
   const handleOpenInCompiler = (code: string, language: string) => {
-    // Replace '/compiler' with the actual path to your compiler page
-    // Include the language parameter in the URL
+     
+     
     const compilerUrl = `/compiler?code=${encodeURIComponent(code)}&language=${encodeURIComponent(language)}`;
     window.open(compilerUrl, '_blank');
   };
 
-  // Function to handle regeneration of AI response
+   
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     await regenerateLastResponse();
     setIsRegenerating(false);
   };
 
-  // Function to determine the appropriate icon based on file type
+   
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
     if (type.startsWith("audio/")) return <FileAudio className="h-4 w-4" />;
@@ -149,11 +149,11 @@ export function ChatMessage({
   };
 
 
-  // Auto-execute Python visualization code when message loads
+   
   useEffect(() => {
-    if (isUser) return; // Don't auto-execute user messages
+    if (isUser) return;  
 
-    // Parse code blocks directly
+     
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     let match;
     let index = 0;
@@ -168,7 +168,7 @@ export function ChatMessage({
       const currentlyExecuting = executingCode.has(codeKey);
 
       if (hasVisualization && !alreadyExecuted && !currentlyExecuting) {
-        // Execute the code
+         
         const executeCode = async () => {
           setExecutingCode(prev => new Set(prev).add(codeKey));
           try {
@@ -194,7 +194,7 @@ export function ChatMessage({
   }, [mainContent, messageData.id, isUser, codeExecutionResults, executingCode]);
 
 
-  // Render attachments based on type
+   
   const renderAttachments = () => {
     if (!attachments || !attachments.length) return null;
 
@@ -237,13 +237,13 @@ export function ChatMessage({
     );
   };
 
-  // Truncate reply preview text to a reasonable length
+   
   const truncateReplyText = (text: string, maxLength = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
-  // Render the reply quote if there's a replyToId
+   
   const renderReplyQuote = () => {
     if (!replyToMessage) return null;
 
@@ -265,7 +265,7 @@ export function ChatMessage({
     );
   };
 
-  // Render streaming indicator if message is being streamed
+   
   const renderStreamingIndicator = () => {
     if (!isStreaming) return null;
 
@@ -276,16 +276,16 @@ export function ChatMessage({
     );
   };
 
-  // Detect and process code blocks and headings in the message
+   
   const processMessageContent = (content: string) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
 
-    // First process code blocks
+     
     while ((match = codeBlockRegex.exec(content)) !== null) {
-      // Add text before the code block
+       
       if (match.index > lastIndex) {
         parts.push({
           type: 'text',
@@ -293,7 +293,7 @@ export function ChatMessage({
         });
       }
 
-      // Add the code block
+       
       const language = match[1] || 'text';
       const code = match[2];
       parts.push({
@@ -305,7 +305,7 @@ export function ChatMessage({
       lastIndex = match.index + match[0].length;
     }
 
-    // Add remaining text after the last code block
+     
     if (lastIndex < content.length) {
       parts.push({
         type: 'text',
@@ -313,7 +313,7 @@ export function ChatMessage({
       });
     }
 
-    // If no code blocks were found, return the entire message as text
+     
     if (parts.length === 0) {
       return [{
         type: 'text',
@@ -324,7 +324,7 @@ export function ChatMessage({
     return parts;
   };
 
-  // Render the message content with code blocks
+   
   const renderMessageContent = (content: string, skipAnim = skipGeneration || isUser) => {
     const parts = processMessageContent(content);
 
@@ -413,7 +413,7 @@ export function ChatMessage({
               {part.content}
             </SyntaxHighlighter>
 
-            {/* Render execution results */}
+            { }
             {executionResult && (() => {
               console.log('[ChatMessage] Execution Result:', {
                 hasOutput: !!executionResult.output,
@@ -443,7 +443,7 @@ export function ChatMessage({
           </div>
         );
       } else {
-        // Use streaming effect for AI messages that aren't being skipped or streaming
+         
         const shouldUseStreamingEffect = !skipAnim && !isUser && !isStreaming;
 
         return shouldUseStreamingEffect ? (
@@ -468,7 +468,7 @@ export function ChatMessage({
                     );
                   }
 
-                  return null; // Non-inline code blocks are handled separately
+                  return null;  
                 },
                 a: ({ node, ...props }) => (
                   <a
@@ -478,7 +478,7 @@ export function ChatMessage({
                     rel="noopener noreferrer"
                   />
                 ),
-                // Handle images in markdown content
+                 
                 img: ({ node, alt, ...props }) => (
                   <img
                     {...props}
@@ -492,7 +492,7 @@ export function ChatMessage({
                     }}
                   />
                 ),
-                // Add explicit table components to ensure proper rendering
+                 
                 table: ({ node, ...props }) => (
                   <table {...props} />
                 ),
@@ -545,7 +545,7 @@ export function ChatMessage({
           </div>
           {timestamp && <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>}
 
-          {/* Action buttons (visible on hover) */}
+          { }
           <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
             {!isUser && (
               <>

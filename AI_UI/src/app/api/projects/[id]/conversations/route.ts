@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// GET /api/projects/[id]/conversations
-// List all conversations in a project
+ 
+ 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const projectId = params.id;
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Verify project ownership
+         
         const { data: project, error: projError } = await supabaseAdmin
             .from('projects')
             .select('user_email')
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Get conversations
+         
         const { data, error } = await supabaseAdmin
             .from('project_conversations')
             .select('id, title, created_at, updated_at')
@@ -49,16 +49,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-// POST /api/projects/[id]/conversations
-// Create a new conversation in a project
-// Body: { email: string, title?: string, id?: string }
+ 
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const projectId = params.id;
         const body = await req.json();
         const email = (body?.email || '').toLowerCase();
         const title = body?.title || 'New Conversation';
-        const id = body?.id; // Accept ID from client
+        const id = body?.id;  
 
         if (!projectId) {
             return NextResponse.json({ error: 'Missing project ID' }, { status: 400 });
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        // Verify project ownership
+         
         const { data: project, error: projError } = await supabaseAdmin
             .from('projects')
             .select('user_email')
@@ -83,14 +83,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-        // Prepare insert data
+         
         const insertData: any = {
             project_id: projectId,
             user_email: email,
             title,
         };
 
-        // If ID is provided, use it
+         
         if (id) {
             insertData.id = id;
         }

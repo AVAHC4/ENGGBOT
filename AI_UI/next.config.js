@@ -1,14 +1,14 @@
-/** @type {import('next').NextConfig} */
+ 
 const nextConfig = {
 
   reactStrictMode: true,
-  // TEMPORARILY ENABLED FOR DEBUGGING - to be reverted
-  // Remove ALL console output in production (completely clean console)
+   
+   
   compiler: {
-    // removeConsole: process.env.NODE_ENV === 'production',
+     
     removeConsole: false,
   },
-  // Disable Vercel deployment badge/logo (the "N" circle)
+   
   images: {
     disableStaticImages: true,
     remotePatterns: [
@@ -25,13 +25,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // This ensures the Vercel logo is not displayed and disables the loading indicator
+   
   devIndicators: {
     buildActivity: false,
   },
-  // Webpack configuration for Transformers.js (Whisper)
+   
   webpack: (config, { isServer }) => {
-    // Client-side only polyfills/stubs
+     
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,

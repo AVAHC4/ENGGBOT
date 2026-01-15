@@ -11,9 +11,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
       enableColorScheme
-      // Suppress hydration warnings from next-themes
+       
       storageKey="ui-theme"
-      // Force identical server/client output until hydrated
+       
       forcedTheme={typeof window === "undefined" ? "system" : undefined}
     >
       {children}

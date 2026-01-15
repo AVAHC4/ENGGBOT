@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 
-// Dynamically import Plotly to avoid SSR issues
+ 
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 import { Bundler } from '@/lib/bundler';
 import { ClientCodeEditor } from './client-code-editor';
@@ -17,7 +17,7 @@ import * as cExecutor from '@/lib/executors/cExecutor';
 import * as rustExecutor from '@/lib/executors/rustExecutor';
 import * as javaExecutor from '@/lib/executors/javaExecutor';
 
-// Supported languages
+ 
 const LANGUAGES = [
   { id: 'c', name: 'C', extension: '.c', defaultCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}' },
   { id: 'cpp', name: 'C++', extension: '.cpp', defaultCode: '#include <cstdio>\n\nint main() {\n    std::printf("Hello, World!\\n");\n    return 0;\n}' },
@@ -26,7 +26,7 @@ const LANGUAGES = [
   { id: 'java', name: 'Java', extension: '.java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' },
 ];
 
-// Map languages to their executors
+ 
 const EXECUTORS: Record<string, any> = {
   javascript: javascriptExecutor,
   python: pythonExecutor,
@@ -36,13 +36,13 @@ const EXECUTORS: Record<string, any> = {
   rust: rustExecutor,
 };
 
-// Main component for the GDB-like compiler
+ 
 export function Compiler() {
-  // Use a ref to track if component is mounted to prevent hydration issues
+   
   const isMounted = useRef(false);
   const shouldIgnoreLanguageChange = useRef(false);
 
-  // Default to JavaScript (index 2)
+   
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
   const initialLanguageRef = useRef(LANGUAGES[2]);
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
@@ -58,12 +58,12 @@ export function Compiler() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [inlineInput, setInlineInput] = useState('');
   const consoleRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null); // legacy, unused for inline input
+  const inputRef = useRef<HTMLInputElement>(null);  
   const bundlerRef = useRef<Bundler | null>(null);
   const pendingInputResolve = useRef<((v: string) => void) | null>(null);
   const [pythonBooting, setPythonBooting] = useState(false);
   const [pythonLoadingProgress, setPythonLoadingProgress] = useState({ stage: '', progress: 0 });
-  // Track prompts and user inputs to merge into final stdout
+   
   const echoPromptsRef = useRef<string[]>([]);
   const echoInputsRef = useRef<string[]>([]);
 
@@ -71,21 +71,21 @@ export function Compiler() {
   const { resolvedTheme } = useTheme();
   const isLightMode = resolvedTheme === 'light';
 
-  // Initialize bundler after component mounts to prevent hydration issues
+   
   useEffect(() => {
     isMounted.current = true;
 
-    // Check for pending code/language in localStorage
+     
     const pendingCode = localStorage.getItem('compiler_pending_code');
     const pendingLanguage = localStorage.getItem('compiler_pending_language');
 
-    // Clear localStorage immediately to avoid re-using old code on refresh if not desired
-    // But keeping it might be better for refresh. Let's keep it for now or clear it?
-    // If we clear it, refreshing the page will lose the code.
-    // Let's clear it to avoid "stuck" code if the user opens the compiler manually later.
-    // Actually, let's NOT clear it immediately, so refresh works.
-    // But we should probably clear it when the component unmounts? No, because we might want to come back.
-    // Let's leave it.
+     
+     
+     
+     
+     
+     
+     
 
     let initialLanguage = initialLanguageRef.current;
     let initialCode = initialLanguage.defaultCode;
@@ -111,13 +111,13 @@ export function Compiler() {
       [`/main${initialLanguage.extension}`]: initialCode
     });
 
-    // Pre-warm ONLY the selected language executor to speed up initial load
-    // Lazy load others later or on demand
+     
+     
     (async () => {
       try {
         if (initialLanguage.id === 'python') {
           setPythonBooting(true);
-          // Set up progress callback for visual feedback
+           
           pythonExecutor.setProgressCallback((stage: string, progress: number) => {
             setPythonLoadingProgress({ stage, progress });
           });
@@ -129,8 +129,8 @@ export function Compiler() {
           try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
         }
 
-        // Preload Python in background after a short delay if not already loaded
-        // This ensures Python is ready when user switches to it
+         
+         
         setTimeout(() => {
           if (initialLanguage.id !== 'python') {
             pythonExecutor.setProgressCallback((stage: string, progress: number) => {
@@ -140,8 +140,8 @@ export function Compiler() {
           }
         }, 2000);
 
-        // We can optionally warm up others in the background after a delay
-        // but for "fast as hell", let's skip aggressive pre-warming of unused languages
+         
+         
       } catch (e) {
         console.warn('[Compiler] Executor init failed:', e);
       }
@@ -150,37 +150,37 @@ export function Compiler() {
     return () => {
       isMounted.current = false;
     };
-  }, []); // Run once on mount
+  }, []);  
 
-  // Update bundler when language changes
+   
   useEffect(() => {
     if (isMounted.current && bundlerRef.current) {
-      // If we just set the language from localStorage during init, don't reset the code
+       
       if (shouldIgnoreLanguageChange.current) {
         shouldIgnoreLanguageChange.current = false;
         return;
       }
 
-      // Check if we have pending code for this language in localStorage
-      // This handles the case where we might have switched languages and want to see if there's code waiting
-      // But primarily, we just want to set the default code if it's a manual switch
+       
+       
+       
 
       const pendingCode = localStorage.getItem('compiler_pending_code');
       const pendingLanguage = localStorage.getItem('compiler_pending_language');
 
-      // If the selected language matches the pending language, use the pending code
+       
       if (pendingLanguage && pendingCode &&
         (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase())) {
 
-        // Only use pending code if we haven't already modified the code? 
-        // Or just assume if we switched back to this language we want the pending code?
-        // Let's be safe: if the current code is the default for the language, replace it.
-        // Or just always replace it?
+         
+         
+         
+         
 
-        // Actually, simpler: just set the file in bundler.
-        // But we need to update the editor content (code state) too.
+         
+         
 
-        // If code state is already pendingCode, we are good.
+         
         if (code === pendingCode) {
           bundlerRef.current.setFiles({
             [`/main${selectedLanguage.extension}`]: code
@@ -189,26 +189,26 @@ export function Compiler() {
         }
       }
 
-      // Default behavior: reset to template on language switch
-      // UNLESS we are in the initial load phase which is handled by the first useEffect.
-      // But this effect runs on mount too if selectedLanguage changes?
-      // No, initial state is set. If we call setSelectedLanguage in the first useEffect, this runs.
+       
+       
+       
+       
 
-      // We need to avoid overwriting the code we just set in the first useEffect.
-      // The first useEffect runs, sets selectedLanguage (triggering this effect), AND sets code.
-      // This effect runs. We need to know if we should reset.
+       
+       
+       
 
-      // If we just mounted, we shouldn't reset.
-      // But we can't easily detect "just mounted" inside this effect vs "user changed dropdown".
+       
+       
 
-      // Let's use a ref to skip the first run if it was triggered by mount?
-      // Or just check if the code matches the default code.
+       
+       
 
-      // Actually, if we set code in the first useEffect, `code` state will be updated.
-      // In this effect, `code` will be the new value.
-      // So if we reset it here, we undo the first useEffect.
+       
+       
+       
 
-      // Fix: Don't reset code here if it already matches pendingCode for this language.
+       
       if (pendingLanguage && pendingCode &&
         (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase()) &&
         code === pendingCode) {
@@ -224,10 +224,10 @@ export function Compiler() {
         [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [selectedLanguage]);
 
-  // Function to run the code
+   
   const runCode = async () => {
     if (!bundlerRef.current) return;
 
@@ -236,11 +236,11 @@ export function Compiler() {
     setConsoleOutput([]);
     setIsWaitingForInput(false);
 
-    // Do not print extra compilation/runtime logs
+     
 
     try {
       setIsCompiling(false);
-      // Do not print extra runtime logs
+       
 
       const executor = EXECUTORS[selectedLanguage.id];
       if (!executor || typeof executor.execute !== 'function') {
@@ -248,7 +248,7 @@ export function Compiler() {
         return;
       }
 
-      // Show a status hint for heavy toolchains on first run
+       
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
         setConsoleOutput(prev => [...prev, '[C/C++] First run can take a few seconds please wait...']);
       } else if (selectedLanguage.id === 'java') {
@@ -259,11 +259,11 @@ export function Compiler() {
         code,
         '',
         async (prompt: string) => {
-          // Show prompt as a console line and capture keystrokes inline
+           
           const p = String(prompt || '');
 
-          // For C programs, the prompt already comes from the code
-          // Add it to console output so it appears before input request
+           
+           
           if (p) {
             setConsoleOutput(prev => [...prev, p.replace(/\n$/, '')]);
           }
@@ -272,13 +272,13 @@ export function Compiler() {
           setInlineInput('');
           setInputPrompt(p);
           setIsWaitingForInput(true);
-          // Focus the console for typing
+           
           setTimeout(() => consoleRef.current?.focus(), 0);
           return await new Promise<string>((resolve) => {
             (pendingInputResolve.current as any) = resolve;
           });
         },
-        // Language hint for executors that support multiple langs (e.g., c vs cpp)
+         
         selectedLanguage.id
       );
 
@@ -286,7 +286,7 @@ export function Compiler() {
       const err = (result.error ?? '').toString();
 
       if (err.trim().length > 0) {
-        // Print error first
+         
         const errLines = err.split('\n').filter((l: string) => l !== '');
         setConsoleOutput(prev => [...prev, ...errLines.map((l: string) => `Error: ${l}`)]);
         setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
@@ -294,38 +294,38 @@ export function Compiler() {
         if (out.trim().length > 0) {
           let lines = out.split('\n');
 
-          // Split lines that have concatenated outputs (WASM fgets doesn't capture newlines properly)
-          // Pattern: "Name: valueGender: M" should become two lines
+           
+           
           lines = lines.flatMap((line: string) => {
-            // Match pattern: text ends with a lowercase/digit, then immediately starts with uppercase letter + colon
-            // This catches "jkjGender:" or "valueWord:"
+             
+             
             const pattern = /([a-z0-9])([A-Z][a-z]*:)/g;
             if (pattern.test(line)) {
-              // Split at the boundary
+               
               const parts = line.split(/(?=[A-Z][a-z]*:\s)/);
               return parts;
             }
             return [line];
           });
 
-          // For C programs, only remove lines that are EXACTLY one of the prompts we showed
+           
           if (echoPromptsRef.current.length > 0) {
             const promptSet = new Set(echoPromptsRef.current.map((p: string) => p.trim()));
 
             lines = lines.filter((line: string) => {
               const trimmed = line.trim();
 
-              // Keep empty lines - they're important for formatting
+               
               if (trimmed === '') {
                 return true;
               }
 
-              // Remove if it's exactly a prompt we displayed
+               
               if (promptSet.has(trimmed)) {
                 return false;
               }
 
-              // Keep everything else
+               
               return true;
             });
           }
@@ -337,13 +337,13 @@ export function Compiler() {
           }
         }
 
-        // Handle plots
+         
         if (result.plots && result.plots.length > 0) {
           const plotImages = result.plots.map((p: string) => `data:image/png;base64,${p}`);
           setConsoleOutput(prev => [...prev, ...plotImages]);
         }
 
-        // Handle Plotly charts
+         
         if (result.plotly && result.plotly.length > 0) {
           setConsoleOutput(prev => [...prev, ...result.plotly.map((json: string) => ({ type: 'plotly', data: json }))]);
         }
@@ -354,23 +354,23 @@ export function Compiler() {
       setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
     } finally {
       setIsRunning(false);
-      // Reset echo trackers for next run
+       
       echoPromptsRef.current = [];
       echoInputsRef.current = [];
 
-      // Scroll to bottom of console
+       
       if (consoleRef.current) {
         consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
       }
     }
 
-    // Scroll to bottom of console
+     
     if (consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
   };
 
-  // Stop current execution (generic)
+   
   const stopExecution = async () => {
     try {
       const ex = EXECUTORS[selectedLanguage.id];
@@ -378,7 +378,7 @@ export function Compiler() {
         await ex.cancel();
       }
     } catch (e) {
-      // ignore
+       
     } finally {
       setIsWaitingForInput(false);
       setInlineInput('');
@@ -388,14 +388,14 @@ export function Compiler() {
     }
   };
 
-  // Handle language change
+   
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const langId = e.target.value;
     const language = LANGUAGES.find(lang => lang.id === langId) || LANGUAGES[0];
     setSelectedLanguage(language);
   };
 
-  // Get language from file extension
+   
   const getLanguageFromExtension = (extension: string): string => {
     switch (extension) {
       case '.js': return 'js';
@@ -406,19 +406,19 @@ export function Compiler() {
     }
   };
 
-  // Handle cursor position change
+   
   const handleCursorPositionChange = (line: number, column: number) => {
     setCursorPosition({ line, column });
   };
 
-  // Handle user input submission
-  // Inline key handling for terminal-like input
+   
+   
   const handleConsoleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isWaitingForInput) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       const toSend = inlineInput;
-      // Commit typed text to the last console line next to the prompt
+       
       setConsoleOutput(prev => {
         const arr = [...prev];
         if (arr.length > 0) {
@@ -459,7 +459,7 @@ export function Compiler() {
 
   return (
     <div className={cn("flex flex-col h-screen", isLightMode ? "bg-white text-black" : "bg-[#1e1e1e] text-white")}>
-      {/* Header */}
+      { }
       <div className={cn("relative flex items-center px-4 py-2 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
         <div className="flex items-center space-x-4">
           <span className="text-sm font-medium">Online Compiler</span>
@@ -496,11 +496,11 @@ export function Compiler() {
         </div>
       </div>
 
-      {/* Floating Run/Stop removed to avoid duplication; use header buttons above */}
+      { }
 
-      {/* Main content */}
+      { }
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Code editor */}
+        { }
         <div className="flex-1 overflow-auto">
           <ClientCodeEditor
             value={code}
@@ -510,7 +510,7 @@ export function Compiler() {
           />
         </div>
 
-        {/* Console output */}
+        { }
         <div className={cn("h-1/3 border-t flex flex-col", isLightMode ? "bg-gray-50 border-gray-200" : "bg-black border-[#3c3c3c]")}>
           <div className={cn("flex items-center justify-between px-4 py-1 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
             <span className="text-xs font-medium">Console</span>
@@ -542,7 +542,7 @@ export function Compiler() {
                   if (line.startsWith('data:image/png;base64,')) {
                     return (
                       <div key={i} className="py-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        { }
                         <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
                       </div>
                     );
@@ -591,11 +591,11 @@ export function Compiler() {
             )}
           </div>
 
-          {/* No separate input box; typing happens inline in the console */}
+          { }
         </div>
       </div>
 
-      {/* Status bar */}
+      { }
       <div className="flex items-center justify-between px-4 py-1 bg-[#007acc] text-white text-xs">
         <div className="flex items-center space-x-4">
           <span>{selectedLanguage.name}</span>

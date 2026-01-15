@@ -64,7 +64,7 @@ const profileFormSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
-// Helper function to get user email from localStorage
+ 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -101,7 +101,7 @@ export function ProfileForm() {
     control: form.control,
   })
 
-  // Load data from database on mount
+   
   React.useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
@@ -112,10 +112,10 @@ export function ProfileForm() {
           return
         }
 
-        // Load email selector value
+         
         form.setValue("email", email)
 
-        // Try to load from database
+         
         const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
         if (response.ok) {
           const { settings } = await response.json()
@@ -150,7 +150,7 @@ export function ProfileForm() {
         return
       }
 
-      // Save to database
+       
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -166,13 +166,13 @@ export function ProfileForm() {
         throw new Error('Failed to save to database')
       }
 
-      // Also save to localStorage for offline access
+       
       const savedData = localStorage.getItem("user_data")
       let currentData: any = {}
       try {
         currentData = savedData ? JSON.parse(savedData) : {}
       } catch {
-        // Ignore parse errors
+         
       }
       localStorage.setItem("user_data", JSON.stringify({
         ...currentData,

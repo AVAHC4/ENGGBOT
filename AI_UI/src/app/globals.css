@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Custom scrollbar for chat interface */
+ 
 .chat-messages-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -11,13 +11,13 @@
 
 .chat-messages-container::-webkit-scrollbar-thumb {
   background-color: #555;
-  /* A medium grey */
+   
   border-radius: 4px;
 }
 
 .chat-messages-container::-webkit-scrollbar-thumb:hover {
   background-color: #777;
-  /* Lighter grey on hover */
+   
 }
 
 @import "tw-animate-css";
@@ -64,7 +64,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Scrollbar custom variables */
+   
   --scrollbar-size: 6px;
   --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(0, 0, 0, 0.2);
@@ -139,13 +139,12 @@
   --sidebar-border: rgba(255, 255, 255, 0.03);
   --sidebar-ring: transparent;
 
-  /* Dark mode scrollbar colors */
+   
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 }
 
-/* When using Solid Light background, force text variables to dark so text remains visible
-   even if the theme is dark. This class is toggled on <html> by BackgroundRenderer. */
+ 
 .bg-solid-light-text {
   --foreground: oklch(0.145 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -202,7 +201,7 @@
     cursor: text;
   }
 
-  /* Make text selection show the right cursor */
+   
   p,
   h1,
   h2,
@@ -216,7 +215,7 @@
     cursor: default;
   }
 
-  /* Main page scrollbar styles */
+   
   html::-webkit-scrollbar,
   body::-webkit-scrollbar {
     width: var(--scrollbar-size);
@@ -240,7 +239,7 @@
     background: var(--scrollbar-thumb-hover);
   }
 
-  /* Firefox scrollbar for the main page */
+   
   html,
   body {
     scrollbar-width: thin;
@@ -249,9 +248,9 @@
 
 
 
-  /* Adjust pages for collapsed sidebar */
+   
 
-  /* Adjust chat container position based on sidebar state (desktop only) */
+   
   @media (min-width: 1024px) {
     body:not(.sidebar-collapsed) .chatgpt-container {
       left: 280px;
@@ -272,7 +271,7 @@
 
 }
 
-/* Remove borders from sidebar components */
+ 
 [data-slot="sidebar"],
 [data-slot="sidebar-header"],
 [data-slot="sidebar-content"],
@@ -287,7 +286,7 @@
   outline: none !important;
 }
 
-/* Remove outline from all sidebar navigation items */
+ 
 [data-slot="sidebar"] a,
 [data-slot="sidebar"] button,
 [data-slot="sidebar-menu-button"],
@@ -298,7 +297,7 @@
   box-shadow: none !important;
 }
 
-/* Hide Vercel deployment badge (N logo in black circle) */
+ 
 .vercel {
   display: none !important;
   visibility: hidden !important;
@@ -306,29 +305,29 @@
   pointer-events: none !important;
 }
 
-/* Target N logo specifically by common class patterns */
+ 
 [data-vercel-badge] {
   display: none !important;
 }
 
-/* Hide any elements with these attributes that may contain the Vercel badge */
+ 
 [data-testid="speedInsights"] {
   display: none !important;
 }
 
-/* Target any fixed positioned elements in the bottom right corner that might be the badge */
+ 
 div[style*="position:fixed"][style*="bottom:0"][style*="right:0"],
 div[style*="position:fixed"][style*="z-index:2147483647"] {
   display: none !important;
 }
 
-/* Additional coverage for any new badge formats */
+ 
 a[href*="vercel.com"],
 a[href*="vercel.app"] {
   display: none !important;
 }
 
-/* Add styles for markdown headings */
+ 
 h1,
 .heading-1 {
   font-size: 1.75rem !important;
@@ -379,7 +378,7 @@ h3,
   margin: 1rem 0 0.5rem;
 }
 
-/* Force scrolling to work properly */
+ 
 html,
 body,
 #__next,
@@ -392,18 +391,18 @@ main {
   overflow: hidden;
 }
 
-/* Chat page should not scroll */
+ 
 .chat-page {
   overflow: hidden !important;
 }
 
-/* Make sure the output section is scrollable too */
+ 
 .bg-muted.font-mono.text-sm.rounded-md.p-4.min-h-\[500px\].border.overflow-auto {
   max-height: 500px;
   overflow-y: auto !important;
 }
 
-/* Align user messages to the right */
+ 
 .user-message {
   display: flex !important;
   justify-content: flex-end !important;

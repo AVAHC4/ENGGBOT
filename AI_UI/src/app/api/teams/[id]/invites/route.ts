@@ -4,8 +4,8 @@ import { randomUUID } from 'crypto'
 
 export const runtime = 'nodejs'
 
-// POST /api/teams/[id]/invites
-// { inviteeEmail: string, role?: 'admin' | 'moderator' | 'member', message?: string, invitedByEmail?: string }
+ 
+ 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const teamId = params.id
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Missing teamId or inviteeEmail' }, { status: 400 })
     }
 
-    // If a pending invite already exists, return it
+     
     const { data: existing, error: eErr } = await supabaseAdmin
       .from('team_invites')
       .select('id, team_id, invitee_email, role, message, invited_by_email, status, created_at')

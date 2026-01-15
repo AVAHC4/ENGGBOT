@@ -32,15 +32,15 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
-  // React 19 + TS JSX type mismatch workaround for lucide-react icons in this file
-  // Casting to any ensures these are treated as valid JSX components by TS.
-  // Runtime behavior is unchanged.
+   
+   
+   
   const SearchIcon: any = Search
   const MoreVerticalIcon: any = MoreVertical
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between px-0 py-3 border-b border-border">
         <h1 className="text-xl font-semibold text-foreground">Teams</h1>
         <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
         </div>
       </div>
 
-      {/* Search */}
+      { }
       <div className="px-0 py-3 border-b border-border">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -73,7 +73,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
         </div>
       </div>
 
-      {/* Teams List */}
+      { }
       <div className="flex-1 overflow-y-auto">
         {filteredTeams.map((team) => (
           <div
@@ -83,7 +83,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
               selectedTeamId === team.id ? "bg-muted" : ""
             }`}
           >
-            {/* Avatar */}
+            { }
             <div className="relative">
               <Avatar className="h-12 w-12">
                 <AvatarImage src={team.avatar || "/placeholder.svg"} alt={team.name} />
@@ -100,7 +100,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
               )}
             </div>
 
-            {/* Content */}
+            { }
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-medium text-foreground truncate">{team.name}</h3>
@@ -109,7 +109,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
               <p className="text-sm text-muted-foreground truncate">{team.lastMessage}</p>
             </div>
 
-            {/* Unread Badge */}
+            { }
             {team.unreadCount && team.unreadCount > 0 && (
               <Badge
                 variant="default"
@@ -122,7 +122,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, teams }: TeamsSideb
         ))}
       </div>
 
-      {/* Add People Dialog */}
+      { }
       <AddPeopleDialog
         open={showAddPeople}
         onOpenChange={setShowAddPeople}

@@ -3,15 +3,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Prism from 'prismjs';
 
-// Import Prism CSS themes - you can choose a different theme
+ 
 import 'prismjs/themes/prism-tomorrow.css';
-// Import languages
+ 
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-jsx';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-tsx';
 import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-markup'; // HTML
+import 'prismjs/components/prism-markup';  
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
 import 'prismjs/components/prism-python';
@@ -31,12 +31,12 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const [isMounted, setIsMounted] = useState(false);
   
-  // Set mounted state after component mounts to prevent hydration mismatch
+   
   useEffect(() => {
     setIsMounted(true);
   }, []);
   
-  // Handle language mapping for Prism
+   
   const getLanguage = (lang: string): string => {
     const languageMap: Record<string, string> = {
       'js': 'javascript',
@@ -54,7 +54,7 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
     return languageMap[lang] || 'javascript';
   };
 
-  // Sync scroll between textarea and highlighted code
+   
   const syncScroll = () => {
     if (preRef.current && textareaRef.current) {
       preRef.current.scrollTop = textareaRef.current.scrollTop;
@@ -62,7 +62,7 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
     }
   };
 
-  // Update highlighted code when value changes
+   
   useEffect(() => {
     if (highlightedRef.current && isMounted) {
       highlightedRef.current.textContent = value;
@@ -70,14 +70,14 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
     }
   }, [value, isMounted]);
 
-  // Initialize Prism highlighting
+   
   useEffect(() => {
     if (highlightedRef.current && isMounted) {
       Prism.highlightElement(highlightedRef.current);
     }
   }, [language, isMounted]);
 
-  // Calculate cursor position (line and column)
+   
   const calculateCursorPosition = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
     const cursorIndex = textarea.selectionStart;
@@ -93,18 +93,18 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
     }
   };
 
-  // Handle tab key
+   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Tab') {
       e.preventDefault();
       const start = e.currentTarget.selectionStart;
       const end = e.currentTarget.selectionEnd;
       
-      // Insert 2 spaces for indentation
+       
       const newValue = value.substring(0, start) + '  ' + value.substring(end);
       onChange(newValue);
       
-      // Move cursor position after the inserted tab
+       
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
@@ -112,7 +112,7 @@ export function CodeEditor({ value, onChange, language, onCursorPositionChange }
       }, 0);
     }
     
-    // Update cursor position
+     
     calculateCursorPosition(e);
   };
 

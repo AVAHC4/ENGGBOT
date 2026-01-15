@@ -1,13 +1,13 @@
-/* ChatGPT-like UI Theme */
+ 
 
-/* --- Main Chat Container & Theme --- */
+ 
 .chatgpt-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* fallback */
-  height: 100dvh; /* mobile-safe */
-  max-height: 100vh; /* fallback */
-  max-height: 100dvh; /* mobile-safe */
+  height: 100vh;  
+  height: 100dvh;  
+  max-height: 100vh;  
+  max-height: 100dvh;  
   font-family: "Sohne", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Ubuntu", "Cantarell", "Noto Sans", "sans-serif", "Helvetica Neue", "Arial", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   overflow: hidden;
 }
@@ -20,15 +20,15 @@
   position: sticky;
   top: 0;
   z-index: 5;
-  /* Remove blur to avoid the darker band effect and show the grid clearly */
+   
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  background-color: transparent !important; /* keep the flickering grid visible */
+  background-color: transparent !important;  
   box-shadow: none;
   border: none;
 }
 
-/* Ensure no pseudo elements add an overlay */
+ 
 .chatgpt-header::before,
 .chatgpt-header::after {
   content: none !important;
@@ -37,7 +37,7 @@
   border: none !important;
 }
 
-/* Ensure the immediate header content wrapper is transparent */
+ 
 .header-actions {
   background: transparent !important;
 }
@@ -53,7 +53,7 @@
   font-size: 0.75rem;
   padding: 0.25rem 0.75rem;
   border-radius: 0.25rem;
-  background-color: transparent; /* let background show through */
+  background-color: transparent;  
   border: 1px solid rgba(255,255,255,0.15);
   transition: border-color 0.2s, opacity 0.2s;
 }
@@ -64,7 +64,7 @@
   opacity: 0.95;
 }
 
-/* No separate dark fill needed; border scales fine on dark backgrounds */
+ 
 
 .chatgpt-messages {
   flex: 1;
@@ -91,7 +91,7 @@
 .chatgpt-input-container {
   padding: 1rem;
   position: sticky;
-  bottom: 0; /* anchor to bottom */
+  bottom: 0;  
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   background-color: transparent;
   z-index: 10;
@@ -103,7 +103,7 @@
   margin: 0 auto;
 }
 
-/* --- Message Container Styling --- */
+ 
 .message-container {
   width: 100%;
   padding: 0.75rem 0;
@@ -125,19 +125,19 @@
   background-color: transparent;
 }
 
-/* --- Base Message Styling --- */
+ 
 .message-wrapper {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
   max-width: 90rem;
   margin: 0 auto;
-  padding: 0 1rem; /* tighter on mobile */
+  padding: 0 1rem;  
 }
 
 @media (min-width: 1024px) {
   .message-wrapper {
-    padding: 0 3rem; /* spacious on desktop */
+    padding: 0 3rem;  
   }
 }
 
@@ -171,7 +171,7 @@
   max-width: 80ch;
 }
 
-/* Prevent overflow on narrow screens */
+ 
 .markdown-content,
 .message-content {
   word-break: break-word;
@@ -182,7 +182,7 @@
   position: relative;
 }
 
-/* --- Reply Quote Styling --- */
+ 
 .reply-quote {
   display: flex;
   align-items: flex-start;
@@ -234,7 +234,7 @@
   text-overflow: ellipsis;
 }
 
-/* --- Typography Hierarchy --- */
+ 
 .markdown-content h1,
 .markdown-content h3 {
   font-weight: 600;
@@ -254,7 +254,7 @@
 }
 .markdown-content h3 { font-size: 1.25em; }
 
-/* Dark mode styling for h2 separator */
+ 
 .dark .markdown-content h2,
 .dark .message-content h2 {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -268,51 +268,51 @@
   font-weight: 600;
 }
 
-/* --- ChatGPT Table Styling --- */
+ 
 .message-content table,
 .markdown-content table {
   width: 100%;
-  border-collapse: collapse; /* Essential for clean borders */
+  border-collapse: collapse;  
   margin: 1.5em 0;
-  font-size: 0.9em; /* Tables use a slightly smaller font */
-  border: 1px solid #e5e5e5; /* Outer border */
+  font-size: 0.9em;  
+  border: 1px solid #e5e5e5;  
 }
 
-/* --- Table Header Styling --- */
+ 
 .message-content thead,
 .markdown-content thead {
-  background-color: #f7f7f7; /* Light gray header background */
+  background-color: #f7f7f7;  
 }
 
 .message-content th,
 .markdown-content th {
-  font-weight: 600; /* Bold header text */
+  font-weight: 600;  
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 2px solid #e5e5e5; /* Heavier border below header */
+  border-bottom: 2px solid #e5e5e5;  
 }
 
-/* --- Table Cell & Body Styling --- */
+ 
 .message-content td,
 .markdown-content td {
   padding: 10px 12px;
-  border: 1px solid #e5e5e5; /* Light gray borders for all cells */
+  border: 1px solid #e5e5e5;  
   text-align: left;
 }
 
-/* Zebra-striping for table rows for readability */
+ 
 .message-content tbody tr:nth-of-type(even),
 .markdown-content tbody tr:nth-of-type(even) {
-  background-color: #f7f7f7; /* Light gray for even rows */
+  background-color: #f7f7f7;  
 }
 
-/* Optional: Add a hover effect for better interactivity */
+ 
 .message-content tbody tr:hover,
 .markdown-content tbody tr:hover {
-  background-color: #efefef; /* Slightly darker gray on hover */
+  background-color: #efefef;  
 }
 
-/* Dark mode table styling */
+ 
 .dark .message-content table,
 .dark .markdown-content table {
   border-color: rgba(255, 255, 255, 0.1);
@@ -345,7 +345,7 @@
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* --- List Styling --- */
+ 
 .markdown-content ul,
 .markdown-content ol {
   padding-left: 1.5rem;
@@ -356,7 +356,7 @@
   margin-bottom: 0.5em;
 }
 
-/* --- Code Block Styling --- */
+ 
 .code-block-wrapper {
   margin: 0.75em 0;
   width: 100%;
@@ -383,14 +383,14 @@
   font-family: monospace;
 }
 
-/* New styles for code actions container */
+ 
 .code-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* 8px gap between buttons */
+  gap: 0.5rem;  
 }
 
-/* Updated button styling for code actions */
+ 
 .code-action-button {
   background: none;
   border: none;
@@ -398,23 +398,23 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem; /* Gap between icon and text */
+  gap: 0.5rem;  
   padding: 4px 8px;
   border-radius: 5px;
   transition: background-color 0.2s, color 0.2s;
 }
 
 .code-action-button:hover {
-  background-color: #4a4b52; /* Hover effect */
+  background-color: #4a4b52;  
   color: #FFFFFF;
 }
 
-/* Hide the text on the copy button */
+ 
 .code-action-button[aria-label="Copy code"] span {
   display: none;
 }
 
-/* Copied indicator styling */
+ 
 .copied-indicator {
   display: flex;
   align-items: center;
@@ -427,14 +427,14 @@
 }
 
 .copied-indicator svg {
-  color: #10b981; /* Green color for check mark */
+  color: #10b981;  
 }
 
 .copied-indicator span {
   display: inline !important;
 }
 
-/* Existing styles for copy button - can be removed if not used elsewhere */
+ 
 .copy-code-button {
   background: none;
   border: none;
@@ -454,10 +454,10 @@
   margin-top: 0 !important;
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
-  overflow-x: auto; /* allow horizontal scroll for long lines */
+  overflow-x: auto;  
 }
 
-/* --- Inline Code Styling --- */
+ 
 .inline-code {
   font-family: monospace;
   background-color: rgba(15, 23, 42, 0.08);
@@ -492,7 +492,7 @@
   border-color: rgba(148, 163, 184, 0.2);
 }
 
-/* --- Attachments Styling --- */
+ 
 .attachments-container {
   display: flex;
   flex-direction: column;
@@ -567,7 +567,7 @@
   height: 0.875rem;
 }
 
-/* --- Action Buttons --- */
+ 
 .message-actions {
   display: flex;
   justify-content: flex-end;
@@ -601,7 +601,7 @@
   margin-right: 0.25rem;
 }
 
-/* --- Typing Indicator --- */
+ 
 .typing-indicator {
   display: flex;
   align-items: center;
@@ -641,7 +641,7 @@
   }
 }
 
-/* --- Initializing Indicator --- */
+ 
 .initializing-indicator {
   position: absolute;
   bottom: 5rem;
@@ -687,7 +687,7 @@
   }
 }
 
-/* --- Private Mode Indicator --- */
+ 
 .private-mode-indicator {
   position: absolute;
   bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
@@ -732,39 +732,39 @@
   }
 }
 
-/* --- Custom Scrollbar for Chat Messages --- */
+ 
 .chatgpt-messages::-webkit-scrollbar {
-  width: 8px; /* Width of the scrollbar */
+  width: 8px;  
 }
 
 .chatgpt-messages::-webkit-scrollbar-track {
-  background: transparent; /* Transparent track */
+  background: transparent;  
 }
 
 .chatgpt-messages::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2); /* Scrollbar color */
+  background-color: rgba(255, 255, 255, 0.2);  
   border-radius: 20px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 .chatgpt-messages::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.4); /* Hover color */
+  background-color: rgba(255, 255, 255, 0.4);  
 }
 
-/* For Firefox */
+ 
 .chatgpt-messages {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-/* Contain overscroll bounce within the message list */
+ 
 .message-list {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Make tables scroll on very small screens instead of overflowing */
+ 
 @media (max-width: 480px) {
   .message-content table,
   .markdown-content table {
