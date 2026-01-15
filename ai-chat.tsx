@@ -8,20 +8,25 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import DocumentGenerator from './client/components/DocumentGenerator'
 
-// Mock implementations for missing modules
-// Utility function to replace missing cn
-const cn = (...classes) => classes.filter(Boolean).join(" ")
 
-// Motion div component replacement
+const cn = (...classes: (string | undefined | boolean)[]) => classes.filter(Boolean).join(" ")
+
+
 const motion = {
-  div: ({ initial, animate, transition, className, children }) => (
+  div: ({ initial, animate, transition, className, children }: {
+    initial?: Record<string, unknown>;
+    animate?: Record<string, unknown>;
+    transition?: Record<string, unknown>;
+    className?: string;
+    children?: React.ReactNode;
+  }) => (
     <div className={className}>
       {children}
     </div>
   ),
 }
 
-// Message type definition
+
 type Message = {
   id: string
   content: string
@@ -41,7 +46,7 @@ export default function AiChat() {
   const [selectedModel, setSelectedModel] = useState<string>('default')
   const [thinkingMode, setThinkingMode] = useState<boolean>(false)
 
-  // Clean up event source on component unmount
+
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -50,9 +55,8 @@ export default function AiChat() {
     }
   }, [])
 
-  // Function to handle streaming response
   const handleStreamResponse = (content: string, model: string) => {
-    // Create a placeholder for the streaming response
+
     const streamingMessageId = Date.now().toString()
     const streamingMessage: Message = {
       id: streamingMessageId,
@@ -62,36 +66,36 @@ export default function AiChat() {
       timestamp: new Date(),
       isStreaming: true
     }
-    
-    // Add the streaming message placeholder to the messages
+
+
     setMessages(prev => [...prev, streamingMessage])
-    
-    // Close any existing EventSource
+
+
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
     }
-    
-    // Connect to the streaming chat endpoint with timestamp to prevent caching
+
+
     const timestamp = Date.now()
     const eventSource = new EventSource(`/api/chat/stream?message=${encodeURIComponent(content)}&model=${encodeURIComponent(model)}&t=${timestamp}`)
     eventSourceRef.current = eventSource
-    
-    // Listen for connection open event
+
+
     eventSource.onopen = () => {
       console.log("EventSource connection opened")
     }
-    
-    // Listen for message events
+
+
     eventSource.onmessage = (event) => {
       console.log("Received event data:", event.data)
-      
+
       if (event.data === "[DONE]") {
-        // End of stream
+
         console.log("Stream complete")
-        setMessages(prev => 
-          prev.map(m => 
-            m.id === streamingMessageId 
-              ? { ...m, isStreaming: false } 
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === streamingMessageId
+              ? { ...m, isStreaming: false }
               : m
           )
         )
@@ -100,20 +104,20 @@ export default function AiChat() {
         setIsLoading(false)
         return
       }
-      
+
       try {
         const data = JSON.parse(event.data)
         console.log("Parsed data:", data)
-        
-        // Update the streaming message with new content
+
+
         setMessages(prev => {
-          // Find the current message
+
           const currentMessage = prev.find(m => m.id === streamingMessageId)
-          // Only append if the content is new
+
           if (currentMessage) {
-            return prev.map(m => 
-              m.id === streamingMessageId 
-                ? { ...m, content: m.content + data.text } 
+            return prev.map(m =>
+              m.id === streamingMessageId
+                ? { ...m, content: m.content + data.text }
                 : m
             )
           }
@@ -123,22 +127,19 @@ export default function AiChat() {
         console.error("Error parsing stream data:", error)
       }
     }
-    
-    // Handle errors
+
     eventSource.onerror = (error) => {
       console.error("EventSource error:", error)
-      // Try to reconnect a few times before giving up
       setTimeout(() => {
         if (eventSourceRef.current === eventSource) {
           eventSource.close()
           eventSourceRef.current = null
           setIsLoading(false)
-          
-          // Mark the message as no longer streaming
-          setMessages(prev => 
-            prev.map(m => 
-              m.id === streamingMessageId 
-                ? { ...m, isStreaming: false, content: m.content + " [Stream error - connection lost]" } 
+
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === streamingMessageId
+                ? { ...m, isStreaming: false, content: m.content + " [Stream error - connection lost]" }
                 : m
             )
           )
@@ -147,13 +148,12 @@ export default function AiChat() {
     }
   }
 
-  // Function to handle document generation request
   const handleDocumentGeneration = (content: string) => {
     setDocumentContent(content)
     setShowDocumentGenerator(true)
   }
 
-  // Function to detect document generation intent in user message
+
   const detectDocumentIntent = (message: string): boolean => {
     const documentKeywords = [
       'create a document', 'generate a document', 'make a document',
@@ -168,9 +168,9 @@ export default function AiChat() {
     return documentKeywords.some(keyword => lowercaseMessage.includes(keyword))
   }
 
-  // Mock AI response function
+
   const getAIResponse = async (message: string, thinking: boolean, model: string): Promise<string> => {
-    // In a real implementation, this would call your backend API
+
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(`# Response to: "${message}"
@@ -197,16 +197,16 @@ In a real implementation, this would be replaced with an actual API call to the 
     })
   }
 
-  // Function to handle new message submission
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!input.trim()) return
-    
-    // Check if the user is requesting document generation
+
+
     const isDocumentRequest = detectDocumentIntent(input)
-    
-    // Add user message to chat
+
+
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input,
@@ -214,21 +214,21 @@ In a real implementation, this would be replaced with an actual API call to the 
       model: "user",
       timestamp: new Date()
     }
-    
+
     setMessages(prev => [...prev, userMessage])
     setIsLoading(true)
-    
-    // Check if the user wants to use streaming response
+
+
     if (input.toLowerCase().includes("stream") || "streaming" === "streaming") {
       handleStreamResponse(input, "streaming")
       return
     }
-    
+
     try {
-      // Get AI response
+
       const response = await getAIResponse(input, thinkingMode, selectedModel)
-      
-      // Add AI response to chat
+
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: response,
@@ -236,19 +236,19 @@ In a real implementation, this would be replaced with an actual API call to the 
         model: "user",
         timestamp: new Date()
       }
-      
+
       setMessages(prev => [...prev, userMessage, aiMessage])
-      
-      // If this was a document request, offer to generate a document
+
+
       if (isDocumentRequest) {
-        // Wait a moment to ensure the message is displayed
+
         setTimeout(() => {
           handleDocumentGeneration(response)
         }, 500)
       }
     } catch (error) {
       console.error("Error getting AI response:", error)
-      // Handle error (add error message to chat)
+
       setMessages(prev => [
         ...prev,
         userMessage,
@@ -299,8 +299,8 @@ In a real implementation, this would be replaced with an actual API call to the 
                 key={message.id}
                 className={cn(
                   "flex items-start gap-3 p-4 rounded-lg",
-                  message.role === "user" 
-                    ? "bg-zinc-800/50 ml-6" 
+                  message.role === "user"
+                    ? "bg-zinc-800/50 ml-6"
                     : "bg-zinc-900/70 border border-zinc-800 mr-6"
                 )}
               >
@@ -338,7 +338,7 @@ In a real implementation, this would be replaced with an actual API call to the 
                 </div>
               </div>
             ))}
-            
+
             {isLoading && !messages.some(m => m.isStreaming) && (
               <div className="flex items-start gap-3 p-4 rounded-lg bg-zinc-900/70 border border-zinc-800 mr-6">
                 <div className="shrink-0 w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
@@ -366,12 +366,12 @@ In a real implementation, this would be replaced with an actual API call to the 
           className="w-full max-w-3xl px-4 md:px-0 mt-auto"
         >
           <div className="relative backdrop-blur-xl rounded-xl">
-            <MultimodalInput 
-              onSubmit={(content) => {
+            <MultimodalInput
+              onSubmit={(content: string) => {
                 setInput(content)
                 handleSubmit(new Event('submit') as any)
-              }} 
-              isLoading={isLoading} 
+              }}
+              isLoading={isLoading}
             />
           </div>
         </motion.div>
