@@ -184,7 +184,7 @@ Thank you for your message! Here's a sample response with Markdown formatting:
 
 ### Code Example
 \`\`\`javascript
-// This is a code block
+
 function greet(name) {
   return \`Hello, ${name}!\`;
 }
@@ -377,7 +377,6 @@ In a real implementation, this would be replaced with an actual API call to the 
         </motion.div>
       </div>
 
-      {/* Document Generator Modal */}
       {showDocumentGenerator && (
         <DocumentGenerator
           aiOutput={documentContent}

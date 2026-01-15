@@ -3,7 +3,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { supabase } from "../lib/supabase";
 
-// Extend session type
+
 declare module 'express-session' {
   interface SessionData {
     oauthState?: string;
@@ -12,14 +12,14 @@ declare module 'express-session' {
   }
 }
 
-// Track if strategy is already registered to avoid duplicates
+
 let strategyRegistered = false;
 
-// Initialize Google auth routes
+
 export const initGoogleAuth = (app: any) => {
   console.log("Initializing Google Auth routes");
 
-  // Read environment variables NOW (after dotenv has loaded)
+
   const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
   const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
@@ -27,14 +27,14 @@ export const initGoogleAuth = (app: any) => {
   console.log("GOOGLE_CLIENT_ID from env:", CLIENT_ID ? "Set" : "Not set");
   console.log("GOOGLE_CLIENT_SECRET from env:", CLIENT_SECRET ? "Set" : "Not set");
 
-  // Check if credentials are available
+
   if (!CLIENT_ID || !CLIENT_SECRET) {
     console.warn("WARNING: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not set. Google OAuth will not work.");
     console.warn("Please ensure these are set in your .env file or environment.");
-    return; // Don't register routes without credentials
+    return;
   }
 
-  // Configure URLs
+
   const BASE_URL = process.env.NODE_ENV === 'production'
     ? 'https://www.enggbot.me'
     : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
@@ -53,7 +53,7 @@ export const initGoogleAuth = (app: any) => {
   console.log("Current NODE_ENV:", process.env.NODE_ENV);
   console.log("Using CLIENT_ID:", CLIENT_ID.substring(0, 8) + "...");
 
-  // Register passport strategy (only once)
+
   if (!strategyRegistered) {
     passport.use(
       new GoogleStrategy(
@@ -97,13 +97,13 @@ export const initGoogleAuth = (app: any) => {
       )
     );
 
-    // Serialize user for the session
+
     passport.serializeUser((user: any, done) => {
       console.log("Serializing user:", user.id);
       done(null, user.id);
     });
 
-    // Deserialize user from the session
+
     passport.deserializeUser(async (id: string, done) => {
       try {
         console.log(`Deserializing user with ID: ${id}`);
@@ -135,7 +135,7 @@ export const initGoogleAuth = (app: any) => {
     console.log("Google OAuth strategy registered successfully");
   }
 
-  // Google auth route
+
   app.get("/api/auth/google", (req: Request, res: Response, next: NextFunction) => {
     console.log("Google auth route hit - redirecting to Google");
     const routeStart = Date.now();
@@ -143,19 +143,19 @@ export const initGoogleAuth = (app: any) => {
       console.log(`[TIMER] /api/auth/google completed in ${Date.now() - routeStart}ms`);
     });
 
-    // Ensure session is created and saved before proceeding
+
     if (!req.session.id) {
       console.log("No session ID found - initializing session");
     }
 
-    // Generate a random state parameter for security
+
     const state = Math.random().toString(36).substring(2, 15);
     req.session.oauthState = state;
 
     console.log("Session ID before redirect:", req.session.id);
     console.log("OAuth state set:", state);
 
-    // Authenticate and redirect to Google; session middleware will persist on response end
+
     return passport.authenticate("google", {
       scope: ["profile", "email"],
       prompt: "select_account",
@@ -163,7 +163,7 @@ export const initGoogleAuth = (app: any) => {
     })(req, res, next);
   });
 
-  // Google callback route
+
   app.get(
     "/api/auth/google/callback",
     (req: Request, res: Response, next: NextFunction) => {
@@ -173,7 +173,7 @@ export const initGoogleAuth = (app: any) => {
         console.log(`[TIMER] /api/auth/google/callback completed in ${Date.now() - cbStart}ms`);
       });
 
-      // Check if session exists
+
       if (!req.session) {
         console.error("No session found in callback");
         return res.status(500).send(`
@@ -191,12 +191,12 @@ export const initGoogleAuth = (app: any) => {
 
       console.log("Session cookie received in callback, ID:", req.session.id);
 
-      // Check if oauthState exists in session
+
       if (!req.session.oauthState) {
         console.error("No oauthState found in session");
         console.log("Session keys available:", Object.keys(req.session));
         console.log("Proceeding without state verification - first login");
-        // Don't fail, continue with the flow
+
       } else {
         console.log("OAuth state in session:", req.session.oauthState);
         console.log("OAuth state in query:", req.query.state);
@@ -219,16 +219,16 @@ export const initGoogleAuth = (app: any) => {
         return res.redirect('/login?error=no_code');
       }
 
-      // Log critical values for debugging
+
       console.log("Callback URL being used:", CALLBACK_URL);
       console.log("Session state:", req.session.oauthState);
       console.log("Query state:", req.query.state);
 
-      // Proceed to authentication; session will be persisted by middleware
+
       return next();
     },
     (req: Request, res: Response, next: NextFunction) => {
-      // Custom token exchange with explicit error handling
+
       passport.authenticate('google', { session: true }, (err, user, info) => {
         console.log("Passport authenticate callback triggered");
 
@@ -266,10 +266,10 @@ export const initGoogleAuth = (app: any) => {
           return res.redirect('/login?error=no_user');
         }
 
-        // Log successful authentication
+
         console.log("Authentication successful, user object received:", user.id);
 
-        // Log in the user to the session
+
         req.login(user, (loginErr) => {
           if (loginErr) {
             console.error("Session login error:", loginErr);
@@ -283,15 +283,15 @@ export const initGoogleAuth = (app: any) => {
     (req: Request, res: Response) => {
       console.log("Authentication successful, attempting redirect to AI_UI chat interface");
 
-      // For optimal performance, use a minimal HTML response that focuses on speed
-      // The AI_UI chat interface runs on port 3001 in development
+
+
       const redirectUrl = process.env.NODE_ENV === 'production'
         ? `${BASE_URL}/AI_UI/?auth_success=true`
         : AUTH_REDIRECT_URL;
 
       console.log("Redirecting authenticated user to:", redirectUrl);
 
-      // Set multiple cookies for redundancy but keep it lightweight
+
       res.cookie('auth_success', 'true', {
         maxAge: 10000,
         httpOnly: false,
@@ -300,18 +300,18 @@ export const initGoogleAuth = (app: any) => {
         path: '/'
       });
 
-      // Set session flag and additional auth cookies
+
       if (req.session) {
         req.session.authenticated = true;
         console.log("Session authenticated flag set");
       }
 
-      // Prepare user data for redirect
+
       const userData = req.user ? JSON.stringify(req.user) : '';
       const encodedUserData = req.user ? encodeURIComponent(JSON.stringify(req.user)) : '';
 
       if (req.user) {
-        // Use a safer way to log user info to avoid TypeScript errors
+
         const userObj = req.user as Record<string, any>;
         console.log("User data available for redirect:", {
           id: userObj.id,
@@ -320,27 +320,27 @@ export const initGoogleAuth = (app: any) => {
         });
       }
 
-      // Build the redirect URL with user data
+
       let finalRedirectUrl = redirectUrl;
       if (encodedUserData) {
-        // Add the user parameter to the URL
+
         finalRedirectUrl += (finalRedirectUrl.includes('?') ? '&' : '?') + `user=${encodedUserData}`;
       }
 
       console.log("Final redirect URL (params only):", finalRedirectUrl.split('?')[1] || 'No params');
 
-      // Send a minimal, performance-optimized HTML response
+
       res.send(`
         <!DOCTYPE html>
         <html>
           <head>
             <title>Redirecting...</title>
             <script>
-              // Store auth in multiple places for redundancy
+
               localStorage.setItem("authenticated", "true");
               sessionStorage.setItem("authenticated", "true");
               
-              // Store user data if available
+
               const userData = ${userData ? `'${encodedUserData}'` : 'null'};
               if (userData) {
                 try {
@@ -353,10 +353,10 @@ export const initGoogleAuth = (app: any) => {
                 }
               }
               
-              // Log redirect
+
               console.log("Redirecting to:", "${finalRedirectUrl}");
               
-              // Immediately redirect - don't wait
+
               window.location.replace("${finalRedirectUrl}");
             </script>
           </head>
@@ -369,7 +369,7 @@ export const initGoogleAuth = (app: any) => {
     }
   );
 
-  // Test route to check authentication
+
   app.get("/api/auth/status", (req: Request, res: Response) => {
     console.log("Auth status route hit");
     console.log("Session ID:", req.session.id);
@@ -382,7 +382,7 @@ export const initGoogleAuth = (app: any) => {
     }
   });
 
-  // Logout route
+
   app.get("/api/auth/logout", (req: Request, res: Response) => {
     req.logout(() => {
       res.redirect("/");

@@ -2,11 +2,11 @@
 
 import React from "react"
 import { useEffect, useRef } from "react"
-// @ts-ignore - Ignore the missing type declarations for framer-motion
+
 import { motion } from "framer-motion"
 
-// Local utility for classname merging
-const cn = (...classes: (string | undefined)[]) => 
+
+const cn = (...classes: (string | undefined)[]) =>
   classes.filter(Boolean).join(' ')
 
 interface AnimatedGradientBackgroundProps {
@@ -98,12 +98,12 @@ export default function BeamsBackground({ className, intensity = "strong" }: Ani
       ctx.translate(beam.x, beam.y)
       ctx.rotate((beam.angle * Math.PI) / 180)
 
-      // Calculate pulsing opacity
+
       const pulsingOpacity = beam.opacity * (0.8 + Math.sin(beam.pulse) * 0.2) * opacityMap[intensity]
 
       const gradient = ctx.createLinearGradient(0, 0, 0, beam.length)
 
-      // Enhanced gradient with multiple color stops
+
       gradient.addColorStop(0, `hsla(${beam.hue}, 85%, 65%, 0)`)
       gradient.addColorStop(0.1, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity * 0.5})`)
       gradient.addColorStop(0.4, `hsla(${beam.hue}, 85%, 65%, ${pulsingOpacity})`)
@@ -127,7 +127,6 @@ export default function BeamsBackground({ className, intensity = "strong" }: Ani
         beam.y -= beam.speed
         beam.pulse += beam.pulseSpeed
 
-        // Reset beam when it goes off screen
         if (beam.y + beam.length < -100) {
           resetBeam(beam, index, totalBeams)
         }

@@ -227,12 +227,12 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
           pattern: /"(?:[^"\\]|\\.)*"/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
         },
-        // Single line comments
+
         {
           pattern: /\/\/.*$/g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Method calls
+
         {
           pattern: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g,
           render: (match: string) => {
@@ -245,24 +245,24 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
 
     case 'python':
       languagePatterns.push(
-        // Strings (triple quoted and regular)
+
         {
           pattern: /"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
         },
-        // Comments
+
         {
           pattern: /#.*$/g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Function definitions
+
         {
           pattern: /\bdef\s+([a-zA-Z_][a-zA-Z0-9_]*)/g,
           render: (match: string, group: string) => {
             return <><span className="text-purple-400">def</span> <span className="text-blue-400">{group}</span></>;
           }
         },
-        // Method calls
+
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
@@ -279,7 +279,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
     case 'ts':
     case 'typescript':
       languagePatterns.push(
-        // Strings (template literals, double and single quotes)
+
         {
           pattern: /`(?:\\[\s\S]|[^`])*`|"(?:\\[\s\S]|[^"])*"|'(?:\\[\s\S]|[^'])*'/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
@@ -321,22 +321,21 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
           pattern: /"(?:[^"\\]|\\.)*"/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
         },
-        // Single line comments
         {
           pattern: /\/\/.*$/g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Multi-line comments
+
         {
           pattern: /\/\*[\s\S]*?\*\//g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Preprocessor directives
+
         {
           pattern: /^\s*#\w+.*/gm,
           render: (match: string) => <span className="text-pink-400">{match}</span>
         },
-        // Function calls
+
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
@@ -350,17 +349,17 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
     case 'csharp':
     case 'cs':
       languagePatterns.push(
-        // Strings
+
         {
           pattern: /@"(?:[^"]|"")*"|"(?:[^"\\]|\\.)*"/g,
           render: (match: string) => <span className="text-green-400">{match}</span>
         },
-        // Comments
+
         {
           pattern: /\/\/.*$|\/\*[\s\S]*?\*\//g,
           render: (match: string) => <span className="text-slate-500">{match}</span>
         },
-        // Method calls
+
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
@@ -374,12 +373,12 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
     case 'html':
     case 'xml':
       languagePatterns.push(
-        // Tags
+
         {
           pattern: /<\/?([a-zA-Z][a-zA-Z0-9_:-]*)(?:\s[^>]*)?>/g,
           render: (match: string) => <span className="text-blue-400">{match}</span>
         },
-        // Attributes
+
         {
           pattern: /(\s[a-zA-Z][a-zA-Z0-9_:-]*)\s*=\s*("[^"]*"|'[^']*')/g,
           render: (match: string, attr: string, value: string) => (
@@ -388,7 +387,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
             </>
           )
         },
-        // Comments
+
         {
           pattern: /<!--[\s\S]*?-->/g,
           render: (match: string) => <span className="text-slate-500">{match}</span>

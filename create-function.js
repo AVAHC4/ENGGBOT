@@ -1,10 +1,8 @@
 import fetch from 'node-fetch';
 
-// Use environment variables for Supabase credentials
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// This SQL creates a function that can be called to insert a user
 const createFunctionSQL = `
 CREATE OR REPLACE FUNCTION public.insert_user(
   user_email TEXT,
@@ -30,7 +28,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.insert_user TO anon, authenticated, service_role;
 `;
 
-// Function to execute SQL directly via REST API
 async function executeSql(sql) {
   console.log('Executing SQL via REST API...');
 
@@ -62,13 +59,12 @@ async function executeSql(sql) {
   }
 }
 
-// Create the function using direct SQL
+
 async function createFunction() {
   console.log('Creating Supabase function for inserting users...');
   return await executeSql(createFunctionSQL);
 }
 
-// Run the SQL creation
 async function main() {
   const success = await createFunction();
 
