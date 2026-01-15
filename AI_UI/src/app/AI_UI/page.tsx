@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { checkExternalAuth } from "@/lib/auth-helpers";
+import { useChat } from "@/context/chat-context";
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const { startNewConversation } = useChat();
 
     useEffect(() => {
 
@@ -16,8 +18,11 @@ export default function Home() {
 
         if (!authenticated) {
             window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
+        } else {
+            // Always start with a fresh new chat when opening the website
+            startNewConversation();
         }
-    }, []);
+    }, [startNewConversation]);
 
     if (isLoading) {
         return (
