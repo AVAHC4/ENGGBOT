@@ -32,13 +32,7 @@ export function ScrollProgress({
   return (
     <>
       { }
-      <div
-        className={cn(
-          'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full',
-          'bg-transparent dark:bg-[#111111]',
-        )}
-        aria-hidden
-      />
+
       { }
       <motion.div
         className={cn(
