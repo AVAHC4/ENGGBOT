@@ -48,7 +48,7 @@ export function CodeBlock({
         className
       )}
     >
-      { }
+
       <div className="flex items-center justify-between bg-slate-900 px-4 py-2">
         <span className="text-sm text-slate-400">{displayTitle}</span>
         <div className="flex gap-2">
@@ -92,7 +92,7 @@ export function CodeBlock({
         </div>
       </div>
 
-      { }
+
       <div className="relative overflow-auto">
         <pre
           className={cn(
@@ -236,7 +236,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         {
           pattern: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g,
           render: (match: string) => {
-            const methodName = match.slice(0, -1); // Remove trailing (
+            const methodName = match.slice(0, -1);
             return <><span className="text-blue-400">{methodName}</span>{'('}</>;
           }
         }
@@ -266,7 +266,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
-            const methodName = match.slice(0, -1); // Remove trailing (
+            const methodName = match.slice(0, -1);
             return <><span className="text-blue-400">{methodName}</span>{'('}</>;
           }
         }
@@ -339,7 +339,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
-            const functionName = match.slice(0, -1); // Remove trailing (
+            const functionName = match.slice(0, -1);
             return <><span className="text-blue-400">{functionName}</span>{'('}</>;
           }
         }
@@ -363,7 +363,7 @@ function formatCodeWithSyntaxHighlighting(code: string, language: string): React
         {
           pattern: /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g,
           render: (match: string) => {
-            const methodName = match.slice(0, -1); // Remove trailing (
+            const methodName = match.slice(0, -1);
             return <><span className="text-blue-400">{methodName}</span>{'('}</>;
           }
         }

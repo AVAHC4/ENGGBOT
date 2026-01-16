@@ -2,11 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-// Supabase configuration - use environment variables
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Create Supabase client with service role key
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: {
     autoRefreshToken: false,
@@ -16,17 +16,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 
 async function createTeamTables() {
   try {
-    // Read the SQL file
+
     const sqlPath = path.join(process.cwd(), 'create-team-tables.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
 
     console.log('Creating team tables and functions...');
 
-    // Execute the SQL
+
     const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
 
     if (error) {
-      // If exec_sql doesn't exist, try direct query
+
       console.log('Trying direct SQL execution...');
       const { error: directError } = await supabase.from('_supabase_migrations').select('*').limit(1);
 
@@ -40,7 +40,7 @@ async function createTeamTables() {
 
     console.log('✅ Team tables created successfully!');
 
-    // Test the tables by inserting a sample team
+
     console.log('Testing table creation...');
 
     const { data: testData, error: testError } = await supabase
@@ -62,7 +62,7 @@ async function createTeamTables() {
   }
 }
 
-// Run the function
+
 createTeamTables().then(success => {
   if (success) {
     console.log('\n🎉 Team invitation system is ready!');
