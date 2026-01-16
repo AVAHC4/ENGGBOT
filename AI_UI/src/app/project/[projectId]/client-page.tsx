@@ -12,7 +12,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { loadProjectConversations, deleteProjectConversation, renameProject } from '@/lib/storage';
+import { loadProjectConversations, deleteProjectConversation, renameProject, renameProjectConversation } from '@/lib/storage';
 
 interface ProjectConversation {
     id: string;
@@ -33,7 +33,7 @@ interface ProjectPageClientProps {
 
 export default function ProjectPageClient({ projectId }: ProjectPageClientProps) {
     const router = useRouter();
-     
+
 
     const [project, setProject] = useState<Project | null>(null);
     const [conversations, setConversations] = useState<ProjectConversation[]>([]);
@@ -43,8 +43,10 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState<ProjectConversation | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+    const [editingConversationTitle, setEditingConversationTitle] = useState('');
 
-     
+
     useEffect(() => {
         if (!projectId) {
             console.log('[ProjectPageClient] No project ID provided');
@@ -54,9 +56,9 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         const loadData = async () => {
             console.log('[ProjectPageClient] Starting loadData for:', projectId);
             setLoading(true);
-            setError(null);  
+            setError(null);
 
-             
+
             const userDataStr = localStorage.getItem('user_data');
             const userData = userDataStr ? JSON.parse(userDataStr) : {};
             const email = userData.email?.toLowerCase() || localStorage.getItem('user_email')?.toLowerCase();
@@ -107,7 +109,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
         loadData();
 
-         
+
         const handleUpdate = () => {
             console.log('[ProjectPageClient] projectUpdated event received, reloading...');
             loadData();
@@ -134,7 +136,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         setIsRenaming(false);
     };
 
-     
+
     const confirmDeleteConversation = async () => {
         if (!conversationToDelete) return;
 
@@ -144,7 +146,21 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
         setConversationToDelete(null);
     };
 
-     
+    // Handle conversation rename
+    const handleRenameConversation = async (conversationId: string, newTitle: string) => {
+        if (!newTitle.trim()) {
+            setEditingConversationId(null);
+            return;
+        }
+
+        await renameProjectConversation(projectId, conversationId, newTitle.trim());
+        setConversations(prev =>
+            prev.map(c => c.id === conversationId ? { ...c, title: newTitle.trim() } : c)
+        );
+        setEditingConversationId(null);
+    };
+
+
     const formatTime = (timestamp: string) => {
         try {
             return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -256,14 +272,33 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                     conversations.map((convo) => (
                         <div
                             key={convo.id}
-                            className="group flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                             
-                            onClick={() => router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
+                            className="group flex items-center justify-between p-4 rounded-lg border border-transparent hover:border-primary/40 hover:bg-muted/50 cursor-pointer transition-all"
+                            onClick={() => !editingConversationId && router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
                             <div className="flex items-start gap-3 flex-1 min-w-0">
                                 <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{convo.title}</p>
+                                    {editingConversationId === convo.id ? (
+                                        <input
+                                            type="text"
+                                            value={editingConversationTitle}
+                                            onChange={(e) => setEditingConversationTitle(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleRenameConversation(convo.id, editingConversationTitle);
+                                                } else if (e.key === 'Escape') {
+                                                    setEditingConversationId(null);
+                                                }
+                                            }}
+                                            onBlur={() => handleRenameConversation(convo.id, editingConversationTitle)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            autoFocus
+                                            className="w-full p-1 bg-background border border-input rounded text-sm font-medium"
+                                        />
+                                    ) : (
+                                        <p className="font-medium truncate">{convo.title}</p>
+                                    )}
                                     <p className="text-sm text-muted-foreground truncate">
                                         {formatTime(convo.updated || convo.created)}
                                     </p>
@@ -277,6 +312,16 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditingConversationId(convo.id);
+                                            setEditingConversationTitle(convo.title);
+                                        }}
+                                    >
+                                        <Pencil className="h-4 w-4 mr-2" />
+                                        Edit name
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.stopPropagation();
