@@ -77,7 +77,7 @@ export function TeamManagementDialog({
 
   const [members, setMembers] = useState<TeamMemberUI[]>([])
 
-  // Get current user email on mount
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user_data')
@@ -92,14 +92,14 @@ export function TeamManagementDialog({
     }
   }, [])
 
-  // Get current user's role
+
   const getCurrentUserRole = () => {
     if (!currentUserEmail) return null
     const currentMember = members.find(m => m.email.toLowerCase() === currentUserEmail)
     return currentMember?.role || null
   }
 
-  // Handle removing a member from the team
+
   const handleRemoveMember = async (memberEmail: string) => {
     const member = members.find(m => m.email === memberEmail)
     if (!member) return
@@ -107,24 +107,24 @@ export function TeamManagementDialog({
     setShowRemoveDialog(true)
   }
 
-  // Confirm and execute member removal
+
   const confirmRemoveMember = async () => {
     if (!memberToRemove) return
 
-    // Store values locally before any state changes
+
     const emailToRemove = memberToRemove.email
     const isRemovingSelf = emailToRemove.toLowerCase() === currentUserEmail
 
-    // Close dialog first
+
     setShowRemoveDialog(false)
     setMemberToRemove(null)
 
     try {
       await leaveTeam(teamId, emailToRemove)
-      // Update local state immediately
+
       setMembers(prev => prev.filter(m => m.email !== emailToRemove))
 
-      // If user removed themselves, close the main dialog
+
       if (isRemovingSelf && onLeaveTeam) {
         onLeaveTeam(teamId)
         onOpenChange(false)
@@ -375,7 +375,7 @@ export function TeamManagementDialog({
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-xs ${getRoleBadge(member.role)}`}>{member.role}</Badge>
-                      {/* Show remove button: for admins (can remove others) or for current user (can leave) */}
+
                       {member.role !== "admin" && (
                         (getCurrentUserRole() === 'admin' || member.email.toLowerCase() === currentUserEmail) && (
                           <Button
@@ -499,7 +499,7 @@ export function TeamManagementDialog({
         onCropComplete={handleCropComplete}
       />
 
-      {/* Remove Member Confirmation Dialog */}
+
       <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

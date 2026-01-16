@@ -24,7 +24,7 @@ BEGIN
 END;
 $$;
 
--- Grant execute permissions
+
 GRANT EXECUTE ON FUNCTION public.insert_user TO anon, authenticated, service_role;
 `;
 
