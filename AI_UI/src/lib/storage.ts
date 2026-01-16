@@ -982,7 +982,7 @@ export async function deleteProjectConversation(projectId: string, conversationI
   }
 }
 
-// Rename a project conversation
+
 export async function renameProjectConversation(projectId: string, conversationId: string, newTitle: string): Promise<boolean> {
   if (isServer()) return false;
 
@@ -998,10 +998,6 @@ export async function renameProjectConversation(projectId: string, conversationI
         body: JSON.stringify({ email, title: newTitle }),
       }
     );
-
-    if (response.ok) {
-      dispatchProjectUpdated();
-    }
 
     return response.ok;
   } catch (error) {
