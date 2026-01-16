@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Crown, Shield, User, UserMinus, Settings, Archive, Edit3, Save, X, Camera } from "lucide-react"
-import { listTeamMembers, type TeamMember as ApiTeamMember } from "@/lib/teams-api"
+import { listTeamMembers, leaveTeam, type TeamMember as ApiTeamMember } from "@/lib/teams-api"
 import { supabaseClient } from "@/lib/supabase-client"
 import { ImageCropDialog } from "@/components/teams/image-crop-dialog"
 
@@ -61,8 +61,58 @@ export function TeamManagementDialog({
   )
   const [notifications, setNotifications] = useState(true)
   const [allowMemberInvites, setAllowMemberInvites] = useState(false)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
 
   const [members, setMembers] = useState<TeamMemberUI[]>([])
+
+  // Get current user email on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user_data')
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData)
+          setCurrentUserEmail(parsed.email?.toLowerCase() || null)
+        } catch {
+          setCurrentUserEmail(null)
+        }
+      }
+    }
+  }, [])
+
+  // Get current user's role
+  const getCurrentUserRole = () => {
+    if (!currentUserEmail) return null
+    const currentMember = members.find(m => m.email.toLowerCase() === currentUserEmail)
+    return currentMember?.role || null
+  }
+
+  // Handle removing a member from the team
+  const handleRemoveMember = async (memberEmail: string) => {
+    const memberToRemove = members.find(m => m.email === memberEmail)
+    if (!memberToRemove) return
+
+    const isRemovingSelf = memberEmail.toLowerCase() === currentUserEmail
+    const confirmMessage = isRemovingSelf
+      ? `Are you sure you want to leave this team?`
+      : `Are you sure you want to remove ${memberToRemove.name} from this team?`
+
+    if (!confirm(confirmMessage)) return
+
+    try {
+      await leaveTeam(teamId, memberEmail)
+      // Update local state immediately
+      setMembers(prev => prev.filter(m => m.email !== memberEmail))
+
+      // If user removed themselves, close the dialog
+      if (isRemovingSelf && onLeaveTeam) {
+        onLeaveTeam(teamId)
+        onOpenChange(false)
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to remove member')
+    }
+  }
 
   const mapMembers = (rows: ApiTeamMember[]): TeamMemberUI[] => {
     return rows.map((m) => {
@@ -91,7 +141,7 @@ export function TeamManagementDialog({
         if (cancelled) return
         setMembers(mapMembers(rows))
       } catch (e) {
-         
+
         console.error("Failed to load team members", e)
       }
     }
@@ -107,11 +157,11 @@ export function TeamManagementDialog({
           })
           .subscribe()
       } catch {
-         
+
       }
     }
 
-     
+
     poll = setInterval(load, 2000)
 
     return () => {
@@ -305,10 +355,18 @@ export function TeamManagementDialog({
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-xs ${getRoleBadge(member.role)}`}>{member.role}</Badge>
+                      {/* Show remove button: for admins (can remove others) or for current user (can leave) */}
                       {member.role !== "admin" && (
-                        <Button variant="ghost" size="sm">
-                          <UserMinus className="h-4 w-4" />
-                        </Button>
+                        (getCurrentUserRole() === 'admin' || member.email.toLowerCase() === currentUserEmail) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMember(member.email)}
+                            title={member.email.toLowerCase() === currentUserEmail ? "Leave team" : "Remove member"}
+                          >
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        )
                       )}
                     </div>
                   </div>
@@ -364,7 +422,7 @@ export function TeamManagementDialog({
                   className="w-full justify-start bg-transparent"
                   size="lg"
                   onClick={() => {
-                     
+
                     alert("Advanced settings coming soon!")
                   }}
                 >
