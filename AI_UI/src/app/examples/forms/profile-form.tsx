@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useFieldArray, useForm } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { cn } from "@/lib/utils"
@@ -53,18 +53,11 @@ const profileFormSchema = z.object({
     })
     .email(),
   bio: z.string().max(160).min(4),
-  urls: z
-    .array(
-      z.object({
-        value: z.string().url({ message: "Please enter a valid URL." }),
-      })
-    )
-    .optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
- 
+
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -91,17 +84,13 @@ export function ProfileForm() {
       username: "",
       email: "",
       bio: "I own a computer.",
-      urls: [{ value: "" }],
     },
     mode: "onChange",
   })
 
-  const { fields, append } = useFieldArray({
-    name: "urls",
-    control: form.control,
-  })
 
-   
+
+
   React.useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
@@ -112,19 +101,16 @@ export function ProfileForm() {
           return
         }
 
-         
+
         form.setValue("email", email)
 
-         
+
         const response = await fetch(`/api/settings?email=${encodeURIComponent(email)}`)
         if (response.ok) {
           const { settings } = await response.json()
           if (settings) {
             if (settings.username) form.setValue("username", settings.username)
             if (settings.bio) form.setValue("bio", settings.bio)
-            if (settings.urls && Array.isArray(settings.urls)) {
-              form.setValue("urls", settings.urls)
-            }
           }
         }
       } catch (e) {
@@ -150,7 +136,7 @@ export function ProfileForm() {
         return
       }
 
-       
+
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +144,6 @@ export function ProfileForm() {
           email,
           username: data.username,
           bio: data.bio,
-          urls: data.urls,
         }),
       })
 
@@ -166,22 +151,26 @@ export function ProfileForm() {
         throw new Error('Failed to save to database')
       }
 
-       
+
       const savedData = localStorage.getItem("user_data")
       let currentData: any = {}
       try {
         currentData = savedData ? JSON.parse(savedData) : {}
       } catch {
-         
+
       }
       localStorage.setItem("user_data", JSON.stringify({
         ...currentData,
         username: data.username,
         bio: data.bio,
-        urls: data.urls,
       }))
       localStorage.setItem("user_name", data.username)
-      window.dispatchEvent(new Event("storage"))
+
+      // Dispatch storage event with the key so sidebar can detect the change in the same tab
+      window.dispatchEvent(new StorageEvent("storage", {
+        key: "user_name",
+        newValue: data.username,
+      }))
 
       toast({
         title: "Profile updated",
@@ -267,38 +256,6 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
-        <div>
-          {fields.map((field, index) => (
-            <FormField
-              control={form.control}
-              key={field.id}
-              name={`urls.${index}.value`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className={cn(index !== 0 && "sr-only")}>
-                    URLs
-                  </FormLabel>
-                  <FormDescription className={cn(index !== 0 && "sr-only")}>
-                    Add links to your website, blog, or social media profiles.
-                  </FormDescription>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => append({ value: "" })}
-          >
-            Add URL
-          </Button>
-        </div>
         <Button type="submit">Update profile</Button>
       </form>
 

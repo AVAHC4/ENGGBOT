@@ -106,10 +106,10 @@ function getUserData() {
 
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
 
-
-    if (userData && userData.name) {
+    // Prioritize saved username from profile settings over Google profile name
+    if (userData && (userData.username || userData.name)) {
       return {
-        name: userData.name || "User",
+        name: userData.username || userData.name || "User",
         email: userData.email || "user@example.com",
         avatar: userData.avatar || "",
       };
@@ -130,7 +130,7 @@ function getUserData() {
       };
     }
 
-     
+
     return {
       name: "User",
       email: "user@example.com",
@@ -237,7 +237,7 @@ const data = {
   documents: [],
 }
 
- 
+
 const initialFriends: Friend[] = [];
 
 export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutRef<typeof Sidebar>) {
@@ -257,7 +257,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const [activeProjectId, setActiveProjectId] = React.useState<string | null>(null);
   const [activeProjectConversationId, setActiveProjectConversationId] = React.useState<string | null>(null);
   const [friends, setFriends] = React.useState<Friend[]>(() => {
-     
+
     if (typeof window !== 'undefined') {
       try {
         const savedFriends = localStorage.getItem('sidebar_friends');
@@ -298,28 +298,28 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-   
+
   const [userData, setUserData] = React.useState({
     name: "User",
     email: "user@example.com",
     avatar: "",
   });
 
-   
+
   const [isMounted, setIsMounted] = React.useState(false);
 
-   
+
   const [editingConversationId, setEditingConversationId] = React.useState<string | null>(null);
   const [newConversationTitle, setNewConversationTitle] = React.useState("");
 
-   
+
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [conversationToDelete, setConversationToDelete] = React.useState<{ id: string, title: string } | null>(null);
 
-   
+
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
-     
+
     if (!sidebarCollapsed) {
       document.body.classList.add('sidebar-collapsed');
     } else {
@@ -327,15 +327,15 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-   
+
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
-   
+
   const [visibleItems, setVisibleItems] = React.useState<string[]>(["new chat", "compiler", "teams", "projects"]);
 
-   
+
   React.useEffect(() => {
     if (isMounted) {
       const refreshUserData = () => {
@@ -362,11 +362,35 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       };
 
-       
+
       refreshUserData();
       loadVisibleItems();
 
-       
+      // Fetch saved username from settings database on mount
+      const userEmail = localStorage.getItem('user_email');
+      if (userEmail) {
+        fetch(`/api/settings?email=${encodeURIComponent(userEmail)}`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.settings?.username) {
+              localStorage.setItem('user_name', data.settings.username);
+              const currentData = localStorage.getItem('user_data');
+              if (currentData) {
+                try {
+                  const parsed = JSON.parse(currentData);
+                  if (parsed.username !== data.settings.username) {
+                    parsed.username = data.settings.username;
+                    localStorage.setItem('user_data', JSON.stringify(parsed));
+                    refreshUserData();
+                  }
+                } catch { }
+              }
+            }
+          })
+          .catch(e => console.error("Failed to fetch settings:", e));
+      }
+
+
       window.addEventListener('storage', (event) => {
         if (event.key === 'authenticated' ||
           event.key === 'user_data' ||
@@ -376,25 +400,25 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
           refreshUserData();
         }
         if (event.key === 'sidebar_preferences' || event.type === 'storage') {
-           
-           
-           
+
+
+
           loadVisibleItems();
         }
       });
     }
   }, [isMounted]);
 
-   
-   
+
+
   React.useEffect(() => {
     if (isMounted) {
       const loadConversations = async () => {
         setConversationsLoading(true);
         try {
           const fetchedConversations = await getAllConversationsMetadata();
-           
-           
+
+
           setAllConversations(fetchedConversations);
           setConversations(fetchedConversations);
         } finally {
@@ -402,10 +426,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       };
 
-       
+
       loadConversations();
 
-       
+
       const handleConversationUpdate = () => loadConversations();
       window.addEventListener('conversationUpdated', handleConversationUpdate);
 
@@ -415,7 +439,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [isMounted]);
 
-   
+
   React.useEffect(() => {
     if (isMounted) {
       const loadAllProjects = async () => {
@@ -430,7 +454,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
       loadAllProjects();
 
-       
+
       const handleProjectUpdate = () => loadAllProjects();
       window.addEventListener('projectUpdated', handleProjectUpdate);
 
@@ -440,7 +464,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   }, [isMounted]);
 
-   
+
   React.useEffect(() => {
     if (isMounted) {
       expandedProjectIds.forEach(async (projectId) => {
@@ -450,10 +474,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         }
       });
     }
-     
+
   }, [expandedProjectIds, isMounted]);
 
-   
+
   const toggleProjectExpansion = async (projectId: string) => {
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
@@ -465,14 +489,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       return next;
     });
 
-     
+
     if (!projectConversations[projectId]) {
       const convos = await loadProjectConversations(projectId);
       setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
     }
   };
 
-   
+
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
       setShowNewProjectDialog(false);
@@ -488,7 +512,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setShowNewProjectDialog(false);
   };
 
-   
+
   const handleRenameProject = async (projectId: string) => {
     if (!editingProjectName.trim()) {
       setEditingProjectId(null);
@@ -503,14 +527,14 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setEditingProjectId(null);
   };
 
-   
+
   const handleDeleteProject = async () => {
     if (!projectToDelete) return;
 
     await deleteProject(projectToDelete.id);
     setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
 
-     
+
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
       next.delete(projectToDelete.id);
@@ -531,28 +555,28 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setProjectToDelete(null);
   };
 
-   
-   
+
+
   const handleNewProjectConversation = async (projectId: string) => {
-     
+
     const newConversationId = crypto.randomUUID();
-     
+
     setActiveProjectId(projectId);
     setActiveProjectConversationId(newConversationId);
-     
+
     router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
   };
 
-   
+
   const handleSwitchToProjectConversation = (projectId: string, conversationId: string) => {
     setActiveProjectId(projectId);
     setActiveProjectConversationId(conversationId);
-     
-     
+
+
     router.push(`/AI_UI/project/${projectId}/c/${conversationId}`);
   };
 
-   
+
   const formatTime = (timestamp: string) => {
     try {
       return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
@@ -561,10 +585,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     }
   };
 
-   
+
   React.useEffect(() => {
     if (!pathname) return;
-     
+
     if (pathname.startsWith('/team')) {
       setActivePath('/team');
       return;
@@ -719,7 +743,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     };
   }, []);
 
-   
+
   const handleAddFriend = () => {
     if (newFriendName.trim()) {
       const newFriend: Friend = {
@@ -768,22 +792,22 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         updated: new Date().toISOString()
       };
 
-       
+
       const updatedMeta = {
         ...existingMeta,
         title: newTitle,
         updated: new Date().toISOString()
       };
 
-       
+
       saveConversationMetadata(id, updatedMeta);
 
-       
+
       const updatedConversations = await getAllConversationsMetadata();
       setConversations(updatedConversations);
     }
 
-     
+
     setEditingConversationId(null);
   };
 
@@ -807,7 +831,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
   const handleConfirmDelete = () => {
     if (conversationToDelete) {
-       
+
       setConversations(prev => prev.filter(c => c.id !== conversationToDelete.id));
 
       try {
@@ -880,8 +904,8 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     const translationKey = `sidebar.${item.title.toLowerCase().replace(' ', '_')}`;
                     const title = t(translationKey);
 
-                     
-                     
+
+
                     if (item.title === "New Chat") {
                       const isChatActive = pathname === '/AI_UI' && messages.length === 0;
                       return (
@@ -902,7 +926,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                       );
                     }
 
-                     
+
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -945,7 +969,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     <SidebarMenuSub>
 
                       {conversationsLoading ? (
-                         
+
                         <div className="space-y-1 px-2">
                           {[1, 2, 3].map((i) => (
                             <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
@@ -1086,7 +1110,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         </SidebarMenuSubItem>
 
                         {projectsLoading ? (
-                           
+
                           <div className="space-y-1 px-2">
                             {[1, 2, 3].map((i) => (
                               <div key={i} className="flex items-center gap-2 px-2 py-2 animate-pulse">
