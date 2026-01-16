@@ -4,6 +4,16 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -62,6 +72,8 @@ export function TeamManagementDialog({
   const [notifications, setNotifications] = useState(true)
   const [allowMemberInvites, setAllowMemberInvites] = useState(false)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
+  const [memberToRemove, setMemberToRemove] = useState<TeamMemberUI | null>(null)
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false)
 
   const [members, setMembers] = useState<TeamMemberUI[]>([])
 
@@ -89,20 +101,22 @@ export function TeamManagementDialog({
 
   // Handle removing a member from the team
   const handleRemoveMember = async (memberEmail: string) => {
-    const memberToRemove = members.find(m => m.email === memberEmail)
+    const member = members.find(m => m.email === memberEmail)
+    if (!member) return
+    setMemberToRemove(member)
+    setShowRemoveDialog(true)
+  }
+
+  // Confirm and execute member removal
+  const confirmRemoveMember = async () => {
     if (!memberToRemove) return
 
-    const isRemovingSelf = memberEmail.toLowerCase() === currentUserEmail
-    const confirmMessage = isRemovingSelf
-      ? `Are you sure you want to leave this team?`
-      : `Are you sure you want to remove ${memberToRemove.name} from this team?`
-
-    if (!confirm(confirmMessage)) return
+    const isRemovingSelf = memberToRemove.email.toLowerCase() === currentUserEmail
 
     try {
-      await leaveTeam(teamId, memberEmail)
+      await leaveTeam(teamId, memberToRemove.email)
       // Update local state immediately
-      setMembers(prev => prev.filter(m => m.email !== memberEmail))
+      setMembers(prev => prev.filter(m => m.email !== memberToRemove.email))
 
       // If user removed themselves, close the dialog
       if (isRemovingSelf && onLeaveTeam) {
@@ -111,6 +125,9 @@ export function TeamManagementDialog({
       }
     } catch (error: any) {
       alert(error.message || 'Failed to remove member')
+    } finally {
+      setShowRemoveDialog(false)
+      setMemberToRemove(null)
     }
   }
 
@@ -478,6 +495,35 @@ export function TeamManagementDialog({
         imageUrl={selectedImageUrl}
         onCropComplete={handleCropComplete}
       />
+
+      {/* Remove Member Confirmation Dialog */}
+      <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {memberToRemove?.email.toLowerCase() === currentUserEmail
+                ? "Leave Team?"
+                : "Remove Member?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {memberToRemove?.email.toLowerCase() === currentUserEmail
+                ? "Are you sure you want to leave this team? You'll need to be invited again to rejoin."
+                : `Are you sure you want to remove ${memberToRemove?.name || memberToRemove?.email} from this team? They will need to be invited again to rejoin.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setMemberToRemove(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveMember}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {memberToRemove?.email.toLowerCase() === currentUserEmail ? "Leave" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
