@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 
- 
+
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false });
 import { Bundler } from '@/lib/bundler';
 import { ClientCodeEditor } from './client-code-editor';
@@ -17,7 +17,7 @@ import * as cExecutor from '@/lib/executors/cExecutor';
 import * as rustExecutor from '@/lib/executors/rustExecutor';
 import * as javaExecutor from '@/lib/executors/javaExecutor';
 
- 
+
 const LANGUAGES = [
   { id: 'c', name: 'C', extension: '.c', defaultCode: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}' },
   { id: 'cpp', name: 'C++', extension: '.cpp', defaultCode: '#include <cstdio>\n\nint main() {\n    std::printf("Hello, World!\\n");\n    return 0;\n}' },
@@ -26,7 +26,7 @@ const LANGUAGES = [
   { id: 'java', name: 'Java', extension: '.java', defaultCode: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}' },
 ];
 
- 
+
 const EXECUTORS: Record<string, any> = {
   javascript: javascriptExecutor,
   python: pythonExecutor,
@@ -36,13 +36,13 @@ const EXECUTORS: Record<string, any> = {
   rust: rustExecutor,
 };
 
- 
+
 export function Compiler() {
-   
+
   const isMounted = useRef(false);
   const shouldIgnoreLanguageChange = useRef(false);
 
-   
+
   const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[2]);
   const initialLanguageRef = useRef(LANGUAGES[2]);
   const [code, setCode] = useState(LANGUAGES[2].defaultCode);
@@ -58,12 +58,12 @@ export function Compiler() {
   const [inputPrompt, setInputPrompt] = useState('');
   const [inlineInput, setInlineInput] = useState('');
   const consoleRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);  
+  const inputRef = useRef<HTMLInputElement>(null);
   const bundlerRef = useRef<Bundler | null>(null);
   const pendingInputResolve = useRef<((v: string) => void) | null>(null);
   const [pythonBooting, setPythonBooting] = useState(false);
   const [pythonLoadingProgress, setPythonLoadingProgress] = useState({ stage: '', progress: 0 });
-   
+
   const echoPromptsRef = useRef<string[]>([]);
   const echoInputsRef = useRef<string[]>([]);
 
@@ -71,21 +71,21 @@ export function Compiler() {
   const { resolvedTheme } = useTheme();
   const isLightMode = resolvedTheme === 'light';
 
-   
+
   useEffect(() => {
     isMounted.current = true;
 
-     
+
     const pendingCode = localStorage.getItem('compiler_pending_code');
     const pendingLanguage = localStorage.getItem('compiler_pending_language');
 
-     
-     
-     
-     
-     
-     
-     
+
+
+
+
+
+
+
 
     let initialLanguage = initialLanguageRef.current;
     let initialCode = initialLanguage.defaultCode;
@@ -111,13 +111,13 @@ export function Compiler() {
       [`/main${initialLanguage.extension}`]: initialCode
     });
 
-     
-     
+
+
     (async () => {
       try {
         if (initialLanguage.id === 'python') {
           setPythonBooting(true);
-           
+
           pythonExecutor.setProgressCallback((stage: string, progress: number) => {
             setPythonLoadingProgress({ stage, progress });
           });
@@ -129,8 +129,8 @@ export function Compiler() {
           try { await javaExecutor.init(); } catch (e) { console.warn('[Compiler] Java init failed:', e); }
         }
 
-         
-         
+
+
         setTimeout(() => {
           if (initialLanguage.id !== 'python') {
             pythonExecutor.setProgressCallback((stage: string, progress: number) => {
@@ -140,8 +140,8 @@ export function Compiler() {
           }
         }, 2000);
 
-         
-         
+
+
       } catch (e) {
         console.warn('[Compiler] Executor init failed:', e);
       }
@@ -150,37 +150,37 @@ export function Compiler() {
     return () => {
       isMounted.current = false;
     };
-  }, []);  
+  }, []);
 
-   
+
   useEffect(() => {
     if (isMounted.current && bundlerRef.current) {
-       
+
       if (shouldIgnoreLanguageChange.current) {
         shouldIgnoreLanguageChange.current = false;
         return;
       }
 
-       
-       
-       
+
+
+
 
       const pendingCode = localStorage.getItem('compiler_pending_code');
       const pendingLanguage = localStorage.getItem('compiler_pending_language');
 
-       
+
       if (pendingLanguage && pendingCode &&
         (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase())) {
 
-         
-         
-         
-         
 
-         
-         
 
-         
+
+
+
+
+
+
+
         if (code === pendingCode) {
           bundlerRef.current.setFiles({
             [`/main${selectedLanguage.extension}`]: code
@@ -189,26 +189,26 @@ export function Compiler() {
         }
       }
 
-       
-       
-       
-       
 
-       
-       
-       
 
-       
-       
 
-       
-       
 
-       
-       
-       
 
-       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       if (pendingLanguage && pendingCode &&
         (selectedLanguage.id === pendingLanguage || selectedLanguage.name.toLowerCase() === pendingLanguage.toLowerCase()) &&
         code === pendingCode) {
@@ -224,10 +224,10 @@ export function Compiler() {
         [`/main${selectedLanguage.extension}`]: selectedLanguage.defaultCode
       });
     }
-     
+
   }, [selectedLanguage]);
 
-   
+
   const runCode = async () => {
     if (!bundlerRef.current) return;
 
@@ -236,11 +236,11 @@ export function Compiler() {
     setConsoleOutput([]);
     setIsWaitingForInput(false);
 
-     
+
 
     try {
       setIsCompiling(false);
-       
+
 
       const executor = EXECUTORS[selectedLanguage.id];
       if (!executor || typeof executor.execute !== 'function') {
@@ -248,7 +248,7 @@ export function Compiler() {
         return;
       }
 
-       
+
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
         setConsoleOutput(prev => [...prev, '[C/C++] First run can take a few seconds please wait...']);
       } else if (selectedLanguage.id === 'java') {
@@ -259,11 +259,11 @@ export function Compiler() {
         code,
         '',
         async (prompt: string) => {
-           
+
           const p = String(prompt || '');
 
-           
-           
+
+
           if (p) {
             setConsoleOutput(prev => [...prev, p.replace(/\n$/, '')]);
           }
@@ -272,13 +272,13 @@ export function Compiler() {
           setInlineInput('');
           setInputPrompt(p);
           setIsWaitingForInput(true);
-           
+
           setTimeout(() => consoleRef.current?.focus(), 0);
           return await new Promise<string>((resolve) => {
             (pendingInputResolve.current as any) = resolve;
           });
         },
-         
+
         selectedLanguage.id
       );
 
@@ -286,7 +286,7 @@ export function Compiler() {
       const err = (result.error ?? '').toString();
 
       if (err.trim().length > 0) {
-         
+
         const errLines = err.split('\n').filter((l: string) => l !== '');
         setConsoleOutput(prev => [...prev, ...errLines.map((l: string) => `Error: ${l}`)]);
         setConsoleOutput(prev => [...prev, `Program exited with code 1`]);
@@ -294,38 +294,23 @@ export function Compiler() {
         if (out.trim().length > 0) {
           let lines = out.split('\n');
 
-           
-           
-          lines = lines.flatMap((line: string) => {
-             
-             
-            const pattern = /([a-z0-9])([A-Z][a-z]*:)/g;
-            if (pattern.test(line)) {
-               
-              const parts = line.split(/(?=[A-Z][a-z]*:\s)/);
-              return parts;
-            }
-            return [line];
-          });
-
-           
+          // Filter out echoed prompts from output (only exact line matches)
           if (echoPromptsRef.current.length > 0) {
             const promptSet = new Set(echoPromptsRef.current.map((p: string) => p.trim()));
 
             lines = lines.filter((line: string) => {
               const trimmed = line.trim();
 
-               
+              // Keep non-empty content
               if (trimmed === '') {
                 return true;
               }
 
-               
+              // Filter out lines that are exact matches of prompts
               if (promptSet.has(trimmed)) {
                 return false;
               }
 
-               
               return true;
             });
           }
@@ -337,13 +322,13 @@ export function Compiler() {
           }
         }
 
-         
+
         if (result.plots && result.plots.length > 0) {
           const plotImages = result.plots.map((p: string) => `data:image/png;base64,${p}`);
           setConsoleOutput(prev => [...prev, ...plotImages]);
         }
 
-         
+
         if (result.plotly && result.plotly.length > 0) {
           setConsoleOutput(prev => [...prev, ...result.plotly.map((json: string) => ({ type: 'plotly', data: json }))]);
         }
@@ -354,23 +339,23 @@ export function Compiler() {
       setConsoleOutput(prev => [...prev, `Error: ${String(error)}`]);
     } finally {
       setIsRunning(false);
-       
+
       echoPromptsRef.current = [];
       echoInputsRef.current = [];
 
-       
+
       if (consoleRef.current) {
         consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
       }
     }
 
-     
+
     if (consoleRef.current) {
       consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
     }
   };
 
-   
+
   const stopExecution = async () => {
     try {
       const ex = EXECUTORS[selectedLanguage.id];
@@ -378,7 +363,7 @@ export function Compiler() {
         await ex.cancel();
       }
     } catch (e) {
-       
+
     } finally {
       setIsWaitingForInput(false);
       setInlineInput('');
@@ -388,14 +373,14 @@ export function Compiler() {
     }
   };
 
-   
+
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const langId = e.target.value;
     const language = LANGUAGES.find(lang => lang.id === langId) || LANGUAGES[0];
     setSelectedLanguage(language);
   };
 
-   
+
   const getLanguageFromExtension = (extension: string): string => {
     switch (extension) {
       case '.js': return 'js';
@@ -406,19 +391,19 @@ export function Compiler() {
     }
   };
 
-   
+
   const handleCursorPositionChange = (line: number, column: number) => {
     setCursorPosition({ line, column });
   };
 
-   
-   
+
+
   const handleConsoleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isWaitingForInput) return;
     if (e.key === 'Enter') {
       e.preventDefault();
       const toSend = inlineInput;
-       
+
       setConsoleOutput(prev => {
         const arr = [...prev];
         if (arr.length > 0) {

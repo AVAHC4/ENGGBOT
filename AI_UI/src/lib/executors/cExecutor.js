@@ -195,32 +195,35 @@ async function executeWasmer(code, lang, stdin) {
 }
 
 
+// Extract prompts that appear BEFORE input operations (not all output statements)
 function extractPrompts(code) {
   const prompts = [];
 
-  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Remove comments
+  const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
+  // Strategy: Only extract cout/printf that appear on lines BEFORE cin/scanf/getline
+  // Look for patterns where output is followed by input on the next line
 
-  const printfMatches = cleanCode.matchAll(/printf\s*\(\s*"([^"]*?)"/g);
-  for (const match of printfMatches) {
+  // Match printf followed by scanf on same or next statement
+  const printfPromptMatches = cleanCode.matchAll(/printf\s*\(\s*"([^"]*?)"\s*\)\s*;[\s\n]*(?:scanf|fgets|gets|getchar)/g);
+  for (const match of printfPromptMatches) {
     const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
     if (prompt.trim()) prompts.push(prompt);
   }
 
-  // Strategy 2: Match cout << "..." or std::cout << "..." 
-  // Use [\s\S] to match across newlines
-  const coutMatches = cleanCode.matchAll(/(?:std::)?cout\s*<<\s*"([^"]+)"/g);
-  for (const match of coutMatches) {
+  // Match cout << "..." followed by cin/getline on same or next statement
+  const coutPromptMatches = cleanCode.matchAll(/(?:std::)?cout\s*<<\s*"([^"]+)"[^;]*;[\s\n]*(?:(?:std::)?(?:cin|getline))/g);
+  for (const match of coutPromptMatches) {
     const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
     if (prompt.trim()) prompts.push(prompt);
   }
-
 
   return [...new Set(prompts)];
 }
 
 
-
+// Strip all prompt text from output since we already displayed them during input
 function stripProgramPrompts(text, prompts) {
   if (!text || !prompts || !prompts.length) return text;
 
@@ -229,25 +232,15 @@ function stripProgramPrompts(text, prompts) {
   for (const prompt of prompts) {
     if (!prompt) continue;
 
-
+    // Escape special regex characters
     const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-
+    // Remove ALL occurrences of each prompt
     const regex = new RegExp(escapedPrompt, 'g');
-    const matches = [...output.matchAll(regex)];
-
-
-    if (matches.length > 1) {
-
-      let count = 0;
-      output = output.replace(regex, (match) => {
-        count++;
-        return count === 1 ? match : '';
-      });
-    }
+    output = output.replace(regex, '');
   }
 
-
+  // Clean up multiple newlines and trim
   output = output.replace(/\n{3,}/g, '\n\n').trim();
 
   return output;

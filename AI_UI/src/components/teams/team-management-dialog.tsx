@@ -111,23 +111,26 @@ export function TeamManagementDialog({
   const confirmRemoveMember = async () => {
     if (!memberToRemove) return
 
-    const isRemovingSelf = memberToRemove.email.toLowerCase() === currentUserEmail
+    // Store values locally before any state changes
+    const emailToRemove = memberToRemove.email
+    const isRemovingSelf = emailToRemove.toLowerCase() === currentUserEmail
+
+    // Close dialog first
+    setShowRemoveDialog(false)
+    setMemberToRemove(null)
 
     try {
-      await leaveTeam(teamId, memberToRemove.email)
+      await leaveTeam(teamId, emailToRemove)
       // Update local state immediately
-      setMembers(prev => prev.filter(m => m.email !== memberToRemove.email))
+      setMembers(prev => prev.filter(m => m.email !== emailToRemove))
 
-      // If user removed themselves, close the dialog
+      // If user removed themselves, close the main dialog
       if (isRemovingSelf && onLeaveTeam) {
         onLeaveTeam(teamId)
         onOpenChange(false)
       }
     } catch (error: any) {
       alert(error.message || 'Failed to remove member')
-    } finally {
-      setShowRemoveDialog(false)
-      setMemberToRemove(null)
     }
   }
 
