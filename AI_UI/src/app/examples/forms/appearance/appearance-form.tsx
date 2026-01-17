@@ -24,7 +24,7 @@ import { useBackground } from "@/context/background-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
 
- 
+
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null
   try {
@@ -86,7 +86,7 @@ export function AppearanceForm() {
         form.setValue("background", background as AppearanceFormValues["background"])
       }
 
-       
+
       const savedAvatar = localStorage.getItem('user_avatar');
       if (savedAvatar) {
         setProfileImage(savedAvatar);
@@ -101,7 +101,7 @@ export function AppearanceForm() {
         }
       }
 
-       
+
       const email = getUserEmail()
       if (email) {
         try {
@@ -121,7 +121,7 @@ export function AppearanceForm() {
       }
 
       setIsMounted(true);
-       
+
       setTimeout(() => {
         isInitialLoadRef.current = false
       }, 1000)
@@ -130,11 +130,11 @@ export function AppearanceForm() {
     loadData()
   }, [theme, background, form]);
 
-   
+
   const autoSave = React.useCallback(async (data: AppearanceFormValues, avatar: string) => {
     if (isInitialLoadRef.current) return
 
-     
+
     if (avatar) {
       localStorage.setItem('user_avatar', avatar);
       try {
@@ -147,7 +147,7 @@ export function AppearanceForm() {
       window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
     }
 
-     
+
     const email = getUserEmail()
     if (email) {
       try {
@@ -177,17 +177,17 @@ export function AppearanceForm() {
     })
   }, [toast])
 
-   
+
   React.useEffect(() => {
     const subscription = form.watch((data) => {
       if (isInitialLoadRef.current || !isMounted) return
 
-       
+
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
 
-       
+
       saveTimeoutRef.current = setTimeout(() => {
         const formData = data as AppearanceFormValues
         if (formData.theme && formData.font && formData.background) {
@@ -205,7 +205,7 @@ export function AppearanceForm() {
   }, [form, autoSave, profileImage, isMounted])
 
 
-   
+
   if (!isMounted) {
     return null;
   }
@@ -219,7 +219,7 @@ export function AppearanceForm() {
       try {
         const compressedBase64 = await compressImage(file);
         setProfileImage(compressedBase64);
-         
+
         const formData = form.getValues()
         autoSave(formData, compressedBase64)
       } catch (error) {

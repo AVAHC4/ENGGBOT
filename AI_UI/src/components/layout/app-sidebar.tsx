@@ -366,7 +366,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       refreshUserData();
       loadVisibleItems();
 
-      // Fetch saved username from settings database on mount
+
       const userEmail = localStorage.getItem('user_email');
       if (userEmail) {
         fetch(`/api/settings?email=${encodeURIComponent(userEmail)}`)
