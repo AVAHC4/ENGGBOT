@@ -8,10 +8,11 @@ import { SidebarWrapper } from "@/components/blocks/sidebar-wrapper";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ChatProvider } from "@/context/chat-context";
 import { ProfileVisibilityFixer } from "@/components/layout/profile-visibility-fixer";
- 
+
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
 import { BackgroundProvider } from "@/context/background-context";
+import { AvatarProvider } from "@/context/avatar-context";
 import { Analytics } from "@vercel/analytics/react";
 import { BackgroundRenderer } from "@/components/background/background-renderer";
 import { LanguageProvider } from "@/context/language-context";
@@ -43,15 +44,17 @@ export default function RootLayout({
             <BackgroundProvider>
               { }
               <BackgroundRenderer />
-              <ChatProvider>
-                <SidebarWrapper defaultOpen={true}>
-                  <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
-                    <AppSidebar className="hidden lg:block border-none" />
-                    <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
-                  </div>
-                  <ProfileVisibilityFixer />
-                </SidebarWrapper>
-              </ChatProvider>
+              <AvatarProvider>
+                <ChatProvider>
+                  <SidebarWrapper defaultOpen={true}>
+                    <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
+                      <AppSidebar className="hidden lg:block border-none" />
+                      <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
+                    </div>
+                    <ProfileVisibilityFixer />
+                  </SidebarWrapper>
+                </ChatProvider>
+              </AvatarProvider>
             </BackgroundProvider>
           </LanguageProvider>
         </ThemeProvider>

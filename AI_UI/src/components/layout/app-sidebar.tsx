@@ -89,6 +89,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
+import { useAvatar } from "@/context/avatar-context"
 import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, loadProjects, createProject, deleteProject, renameProject, loadProjectConversations, deleteProjectConversation } from "@/lib/storage"
 import { useLanguage } from "@/context/language-context"
 
@@ -281,6 +282,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const { conversationId, switchConversation, startNewConversation, deleteCurrentConversation, messages } = useChat();
   const router = useRouter();
   const { t } = useLanguage();
+  const { avatar: contextAvatar } = useAvatar();
 
   const handleSwitchConversation = (id: string) => {
     switchConversation(id);
@@ -1225,7 +1227,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
               padding: '12px'
             }}
           >
-            <NavUser user={userData} />
+            <NavUser user={{ ...userData, avatar: contextAvatar || userData.avatar }} />
           </SidebarFooter>
         </Sidebar>
 

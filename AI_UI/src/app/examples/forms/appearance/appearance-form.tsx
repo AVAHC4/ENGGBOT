@@ -21,6 +21,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { useBackground } from "@/context/background-context"
+import { useAvatar } from "@/context/avatar-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
 
@@ -62,7 +63,7 @@ export function AppearanceForm() {
   const { toast } = useToast()
   const [isMounted, setIsMounted] = React.useState(false);
   const { background, setBackground, options } = useBackground()
-  const [profileImage, setProfileImage] = React.useState<string>("");
+  const { avatar: profileImage, setAvatar: setProfileImage } = useAvatar()
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
   const isInitialLoadRef = React.useRef(true)
@@ -87,19 +88,7 @@ export function AppearanceForm() {
       }
 
 
-      const savedAvatar = localStorage.getItem('user_avatar');
-      if (savedAvatar) {
-        setProfileImage(savedAvatar);
-      } else {
-        try {
-          const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-          if (userData.avatar) {
-            setProfileImage(userData.avatar);
-          }
-        } catch (e) {
-          console.error("Error parsing user data", e);
-        }
-      }
+
 
 
       const email = getUserEmail()
@@ -112,7 +101,6 @@ export function AppearanceForm() {
               if (settings.theme) form.setValue("theme", settings.theme)
               if (settings.font) form.setValue("font", settings.font)
               if (settings.background) form.setValue("background", settings.background)
-              if (settings.avatar) setProfileImage(settings.avatar)
             }
           }
         } catch (e) {
@@ -131,22 +119,8 @@ export function AppearanceForm() {
   }, [theme, background, form]);
 
 
-  const autoSave = React.useCallback(async (data: AppearanceFormValues, avatar: string) => {
+  const autoSave = React.useCallback(async (data: AppearanceFormValues) => {
     if (isInitialLoadRef.current) return
-
-
-    if (avatar) {
-      localStorage.setItem('user_avatar', avatar);
-      try {
-        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-        userData.avatar = avatar;
-        localStorage.setItem('user_data', JSON.stringify(userData));
-      } catch (e) {
-        console.error("Error updating user data", e);
-      }
-      window.dispatchEvent(new StorageEvent('storage', { key: 'user_avatar' }));
-    }
-
 
     const email = getUserEmail()
     if (email) {
@@ -159,7 +133,6 @@ export function AppearanceForm() {
             theme: data.theme,
             font: data.font,
             background: data.background,
-            avatar: avatar || null,
           }),
         })
 
@@ -191,7 +164,7 @@ export function AppearanceForm() {
       saveTimeoutRef.current = setTimeout(() => {
         const formData = data as AppearanceFormValues
         if (formData.theme && formData.font && formData.background) {
-          autoSave(formData, profileImage)
+          autoSave(formData)
         }
       }, 500)
     })
@@ -202,7 +175,7 @@ export function AppearanceForm() {
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [form, autoSave, profileImage, isMounted])
+  }, [form, autoSave, isMounted])
 
 
 
@@ -219,9 +192,10 @@ export function AppearanceForm() {
       try {
         const compressedBase64 = await compressImage(file);
         setProfileImage(compressedBase64);
-
-        const formData = form.getValues()
-        autoSave(formData, compressedBase64)
+        toast({
+          title: "Profile picture updated!",
+          description: "Your changes have been saved.",
+        });
       } catch (error) {
         console.error("Error compressing image:", error);
         toast({
