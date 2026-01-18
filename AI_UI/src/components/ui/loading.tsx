@@ -48,7 +48,7 @@ export function LoadingSpinner({
     return spinner;
 }
 
- 
+
 export function ProjectCardSkeleton() {
     return (
         <div
@@ -56,20 +56,20 @@ export function ProjectCardSkeleton() {
             style={{ borderLeftColor: 'rgba(59, 130, 246, 0.3)' }}
         >
             { }
-            <div className="h-6 w-6 bg-muted/50 rounded-md flex-shrink-0" />
+            <div className="h-6 w-6 bg-neutral-200 dark:bg-neutral-700 rounded-md flex-shrink-0" />
 
             { }
             <div className="flex-1 min-w-0">
                 { }
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <div className="h-4 w-24 bg-muted/50 rounded" />
-                    <div className="h-5 w-5 bg-muted/30 rounded opacity-0" />
+                    <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                    <div className="h-5 w-5 bg-neutral-100 dark:bg-neutral-800 rounded opacity-0" />
                 </div>
 
                 { }
                 <div className="flex gap-3">
-                    <div className="h-3 w-14 bg-muted/40 rounded" />
-                    <div className="h-3 w-12 bg-muted/40 rounded" />
+                    <div className="h-3 w-14 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                    <div className="h-3 w-12 bg-neutral-200 dark:bg-neutral-700 rounded" />
                 </div>
             </div>
         </div>
@@ -79,10 +79,10 @@ export function ProjectCardSkeleton() {
 export function ConversationItemSkeleton() {
     return (
         <div className="flex items-center gap-3 p-3 rounded-lg animate-pulse">
-            <div className="h-8 w-8 bg-muted rounded-full" />
+            <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded-full" />
             <div className="flex-1">
-                <div className="h-4 w-24 bg-muted rounded mb-2" />
-                <div className="h-3 w-32 bg-muted rounded" />
+                <div className="h-4 w-24 bg-neutral-200 dark:bg-neutral-700 rounded mb-2" />
+                <div className="h-3 w-32 bg-neutral-200 dark:bg-neutral-700 rounded" />
             </div>
         </div>
     );
@@ -91,10 +91,10 @@ export function ConversationItemSkeleton() {
 export function TeamMemberSkeleton() {
     return (
         <div className="flex items-center gap-3 p-2 animate-pulse">
-            <div className="h-10 w-10 bg-muted rounded-full" />
+            <div className="h-10 w-10 bg-neutral-200 dark:bg-neutral-700 rounded-full" />
             <div className="flex-1">
-                <div className="h-4 w-28 bg-muted rounded mb-1" />
-                <div className="h-3 w-20 bg-muted rounded" />
+                <div className="h-4 w-28 bg-neutral-200 dark:bg-neutral-700 rounded mb-1" />
+                <div className="h-3 w-20 bg-neutral-200 dark:bg-neutral-700 rounded" />
             </div>
         </div>
     );
@@ -103,17 +103,17 @@ export function TeamMemberSkeleton() {
 export function MessageSkeleton() {
     return (
         <div className="flex gap-3 p-4 animate-pulse">
-            <div className="h-8 w-8 bg-muted rounded-full shrink-0" />
+            <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded-full shrink-0" />
             <div className="flex-1 space-y-2">
-                <div className="h-4 w-3/4 bg-muted rounded" />
-                <div className="h-4 w-1/2 bg-muted rounded" />
-                <div className="h-4 w-2/3 bg-muted rounded" />
+                <div className="h-4 w-3/4 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                <div className="h-4 w-1/2 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                <div className="h-4 w-2/3 bg-neutral-200 dark:bg-neutral-700 rounded" />
             </div>
         </div>
     );
 }
 
- 
+
 export function LoadingOverlay({ message }: { message?: string }) {
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px] z-10 rounded-lg">
