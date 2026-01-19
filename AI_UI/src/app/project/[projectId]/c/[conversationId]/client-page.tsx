@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChatInterface } from '@/components/chat-interface';
 import { useChat } from '@/context/chat-context';
 import { loadProjectConversation, saveProjectConversation } from '@/lib/storage';
-import { ChatLoadingAnimation } from '@/components/ui/loading';
+import { Loader } from '@/components/ui/loader';
 
 interface ProjectConversationPageClientProps {
     projectId: string;
@@ -86,7 +86,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
                 <div className="flex-1 flex flex-col">
                     {customHeader}
                     <div className="flex-1 flex items-center justify-center">
-                        <ChatLoadingAnimation />
+                        <Loader variant="bars" size="xl" intent="primary" />
                     </div>
                 </div>
             </main>
