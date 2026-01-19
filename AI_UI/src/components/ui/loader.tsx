@@ -1,6 +1,6 @@
 "use client"
 
-import { IconLoader } from "@intentui/icons"
+
 import { ProgressBar } from "react-aria-components"
 import { twMerge } from "tailwind-merge"
 import type { VariantProps } from "tailwind-variants"
@@ -133,7 +133,24 @@ const Bars = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
         </rect>
     </svg>
 )
-const Ring = (props: React.SVGProps<SVGSVGElement>) => <IconLoader {...props} />
+const Ring = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
+    <svg
+        className={twMerge("size-4", className)}
+        data-slot="icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+    >
+        <path
+            d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 9.23858 19.7614 7 17 7"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+)
 const Spin = ({ className, ...props }: React.SVGProps<SVGSVGElement>) => (
     <svg
         className={twMerge("size-4", className)}

@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
-    "@intentui/icons": "^1.11.0",
     "@langchain/core": "^0.3.56",
     "@langchain/openai": "^0.5.10",
     "@monaco-editor/react": "^4.7.0",
