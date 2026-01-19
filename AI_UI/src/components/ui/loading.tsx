@@ -153,6 +153,27 @@ export function ChatConversationSkeleton() {
     );
 }
 
+export function ChatLoadingAnimation() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-6">
+            <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 animate-spin" style={{ animationDuration: '2s' }}>
+                    <div className="absolute inset-1 rounded-full bg-background" />
+                </div>
+                <div className="absolute inset-0 w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-xl animate-pulse" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+                <p className="text-lg font-medium text-foreground">Loading conversation</p>
+                <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-pink-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 export function LoadingOverlay({ message }: { message?: string }) {
     return (
