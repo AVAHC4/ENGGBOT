@@ -36,9 +36,8 @@ export function ScrollProgress({
 
       <motion.div
         className={cn(
-          'pointer-events-none absolute left-0 right-0 top-0 h-0.5 w-full origin-left',
-          'bg-[linear-gradient(to_right,rgba(0,0,0,0),#111111_75%,#111111_100%)]',
-          'dark:bg-[linear-gradient(to_right,rgba(255,255,255,0),#ffffff_75%,#ffffff_100%)]',
+          'pointer-events-none absolute left-0 right-0 top-0 h-1 w-full origin-left z-50',
+          'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500',
           className,
         )}
         style={{
