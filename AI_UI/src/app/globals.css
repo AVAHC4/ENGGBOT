@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
- 
+
 .chat-messages-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -11,13 +11,13 @@
 
 .chat-messages-container::-webkit-scrollbar-thumb {
   background-color: #555;
-   
+
   border-radius: 4px;
 }
 
 .chat-messages-container::-webkit-scrollbar-thumb:hover {
   background-color: #777;
-   
+
 }
 
 @import "tw-animate-css";
@@ -64,7 +64,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-   
+
   --scrollbar-size: 6px;
   --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(0, 0, 0, 0.2);
@@ -102,7 +102,7 @@
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: rgba(0, 0, 0, 0.02);
+  --sidebar-border: rgba(0, 0, 0, 0.3);
   --sidebar-ring: transparent;
 }
 
@@ -139,12 +139,12 @@
   --sidebar-border: rgba(255, 255, 255, 0.03);
   --sidebar-ring: transparent;
 
-   
+
   --scrollbar-thumb: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 }
 
- 
+
 .bg-solid-light-text {
   --foreground: oklch(0.145 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -201,7 +201,7 @@
     cursor: text;
   }
 
-   
+
   p,
   h1,
   h2,
@@ -215,7 +215,7 @@
     cursor: default;
   }
 
-   
+
   html::-webkit-scrollbar,
   body::-webkit-scrollbar {
     width: var(--scrollbar-size);
@@ -239,7 +239,7 @@
     background: var(--scrollbar-thumb-hover);
   }
 
-   
+
   html,
   body {
     scrollbar-width: thin;
@@ -248,9 +248,9 @@
 
 
 
-   
 
-   
+
+
   @media (min-width: 1024px) {
     body:not(.sidebar-collapsed) .chatgpt-container {
       left: 280px;
@@ -271,7 +271,7 @@
 
 }
 
- 
+
 [data-slot="sidebar"],
 [data-slot="sidebar-header"],
 [data-slot="sidebar-content"],
@@ -286,7 +286,7 @@
   outline: none !important;
 }
 
- 
+
 [data-slot="sidebar"] a,
 [data-slot="sidebar"] button,
 [data-slot="sidebar-menu-button"],
@@ -297,7 +297,7 @@
   box-shadow: none !important;
 }
 
- 
+
 .vercel {
   display: none !important;
   visibility: hidden !important;
@@ -305,29 +305,29 @@
   pointer-events: none !important;
 }
 
- 
+
 [data-vercel-badge] {
   display: none !important;
 }
 
- 
+
 [data-testid="speedInsights"] {
   display: none !important;
 }
 
- 
+
 div[style*="position:fixed"][style*="bottom:0"][style*="right:0"],
 div[style*="position:fixed"][style*="z-index:2147483647"] {
   display: none !important;
 }
 
- 
+
 a[href*="vercel.com"],
 a[href*="vercel.app"] {
   display: none !important;
 }
 
- 
+
 h1,
 .heading-1 {
   font-size: 1.75rem !important;
@@ -378,7 +378,7 @@ h3,
   margin: 1rem 0 0.5rem;
 }
 
- 
+
 html,
 body,
 #__next,
@@ -391,18 +391,18 @@ main {
   overflow: hidden;
 }
 
- 
+
 .chat-page {
   overflow: hidden !important;
 }
 
- 
+
 .bg-muted.font-mono.text-sm.rounded-md.p-4.min-h-\[500px\].border.overflow-auto {
   max-height: 500px;
   overflow-y: auto !important;
 }
 
- 
+
 .user-message {
   display: flex !important;
   justify-content: flex-end !important;
