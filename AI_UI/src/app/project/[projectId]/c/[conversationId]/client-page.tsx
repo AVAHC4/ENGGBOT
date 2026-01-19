@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChatInterface } from '@/components/chat-interface';
 import { useChat } from '@/context/chat-context';
 import { loadProjectConversation, saveProjectConversation } from '@/lib/storage';
-import { MessageSkeleton } from '@/components/ui/loading';
+import { ChatConversationSkeleton } from '@/components/ui/loading';
 
 interface ProjectConversationPageClientProps {
     projectId: string;
@@ -85,10 +85,8 @@ export default function ProjectConversationPageClient({ projectId, conversationI
             <main className="min-h-screen chat-page overflow-hidden">
                 <div className="flex-1 flex flex-col">
                     {customHeader}
-                    <div className="flex-1 p-4 space-y-4">
-                        <MessageSkeleton />
-                        <MessageSkeleton />
-                        <MessageSkeleton />
+                    <div className="flex-1 p-4">
+                        <ChatConversationSkeleton />
                     </div>
                 </div>
             </main>

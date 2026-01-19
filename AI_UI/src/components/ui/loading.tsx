@@ -113,6 +113,46 @@ export function MessageSkeleton() {
     );
 }
 
+export function UserMessageSkeleton() {
+    return (
+        <div className="flex justify-end p-4 animate-pulse">
+            <div className="flex gap-3 max-w-[70%]">
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 w-full bg-neutral-300 dark:bg-neutral-600 rounded" />
+                    <div className="h-4 w-3/4 bg-neutral-300 dark:bg-neutral-600 rounded ml-auto" />
+                </div>
+                <div className="h-8 w-8 bg-neutral-300 dark:bg-neutral-600 rounded-full shrink-0" />
+            </div>
+        </div>
+    );
+}
+
+export function AIMessageSkeleton() {
+    return (
+        <div className="flex justify-start p-4 animate-pulse">
+            <div className="flex gap-3 max-w-[85%]">
+                <div className="h-8 w-8 bg-neutral-200 dark:bg-neutral-700 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                    <div className="h-4 w-full bg-neutral-200 dark:bg-neutral-700 rounded" />
+                    <div className="h-4 w-4/5 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                    <div className="h-4 w-2/3 bg-neutral-200 dark:bg-neutral-700 rounded" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function ChatConversationSkeleton() {
+    return (
+        <div className="flex flex-col space-y-2">
+            <UserMessageSkeleton />
+            <AIMessageSkeleton />
+            <UserMessageSkeleton />
+            <AIMessageSkeleton />
+        </div>
+    );
+}
+
 
 export function LoadingOverlay({ message }: { message?: string }) {
     return (
