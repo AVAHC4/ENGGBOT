@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChatInterface } from '@/components/chat-interface';
 import { useChat } from '@/context/chat-context';
 import { loadProjectConversation, saveProjectConversation } from '@/lib/storage';
+import { MessageSkeleton } from '@/components/ui/loading';
 
 interface ProjectConversationPageClientProps {
     projectId: string;
@@ -15,7 +16,6 @@ interface ProjectConversationPageClientProps {
 }
 
 export default function ProjectConversationPageClient({ projectId, conversationId }: ProjectConversationPageClientProps) {
-     
 
     const {
         messages,
@@ -27,24 +27,22 @@ export default function ProjectConversationPageClient({ projectId, conversationI
     const [isLoaded, setIsLoaded] = useState(false);
     const prevMessagesLengthRef = useRef(0);
 
-     
     useEffect(() => {
         if (projectId) {
             setCurrentProjectId(projectId);
         }
 
-         
         return () => {
             setCurrentProjectId(null);
         };
     }, [projectId, setCurrentProjectId]);
 
-     
     useEffect(() => {
         if (!projectId || !conversationId) return;
 
+        setIsLoaded(false);
+
         const loadMessages = async () => {
-             
             const msgs = await loadProjectConversation(projectId, conversationId);
             if (msgs && msgs.length > 0) {
                 setMessages(msgs);
@@ -59,21 +57,17 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         loadMessages();
     }, [projectId, conversationId, setMessages]);
 
-     
-     
     useEffect(() => {
         if (!isLoaded || !projectId || !conversationId) return;
-        if (isGenerating) return;  
+        if (isGenerating) return;
         if (messages.length === 0) return;
 
-         
         if (messages.length !== prevMessagesLengthRef.current) {
             prevMessagesLengthRef.current = messages.length;
             saveProjectConversation(projectId, conversationId, messages);
         }
     }, [messages, projectId, conversationId, isLoaded, isGenerating]);
 
-     
     const customHeader = (
         <div className="flex items-center gap-2 p-4 border-b border-border/50">
             { }
@@ -85,6 +79,21 @@ export default function ProjectConversationPageClient({ projectId, conversationI
             </Link>
         </div>
     );
+
+    if (!isLoaded) {
+        return (
+            <main className="min-h-screen chat-page overflow-hidden">
+                <div className="flex-1 flex flex-col">
+                    {customHeader}
+                    <div className="flex-1 p-4 space-y-4">
+                        <MessageSkeleton />
+                        <MessageSkeleton />
+                        <MessageSkeleton />
+                    </div>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen chat-page overflow-hidden">
