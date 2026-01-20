@@ -26,7 +26,7 @@ SUPABASE_SERVICE_KEY=your-supabase-service-key
 JUDGE0_API_KEY=your-judge0-api-key
 ```
 
-## Steps to Configur
+## Steps to Configure
 
 1. Create a `.env` file in the project root
 2. Copy the contents from the template above
