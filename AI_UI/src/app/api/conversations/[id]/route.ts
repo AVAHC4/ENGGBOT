@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             .eq('id', conversationId)
             .single();
 
-        console.log('[API GE /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
+        console.log('[API GET /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
 
         if (convError || !conversation) {
 
