@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
- 
- 
+
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -17,28 +17,28 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-         
+
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id, title, created_at, updated_at, user_email')
             .eq('id', conversationId)
             .single();
 
-        console.log('[API GET /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
+        console.log('[API GE /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
 
         if (convError || !conversation) {
-             
+
             console.log('[API GET /conversations/[id]] NOT FOUND - error:', convError?.message);
             return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
-         
+
         if (conversation.user_email !== email) {
             console.log('[API GET /conversations/[id]] UNAUTHORIZED - convEmail:', conversation.user_email, 'requestEmail:', email);
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
+
         const { data: messages, error: msgError } = await supabaseAdmin
             .from('conversation_messages')
             .select('id, content, is_user, timestamp, attachments, reply_to_id, metadata, is_streaming')
@@ -49,16 +49,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: msgError.message }, { status: 500 });
         }
 
-         
+
         const transformedMessages = (messages || []).map((msg: any) => ({
             id: msg.id,
             content: msg.content,
-            isUser: msg.is_user,  
+            isUser: msg.is_user,
             timestamp: msg.timestamp,
             attachments: msg.attachments,
-            replyToId: msg.reply_to_id,  
+            replyToId: msg.reply_to_id,
             metadata: msg.metadata,
-            isStreaming: msg.is_streaming,  
+            isStreaming: msg.is_streaming,
         }));
 
         return NextResponse.json({
@@ -87,7 +87,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
         }
 
-         
+
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
+
         const updates: any = { updated_at: new Date().toISOString() };
         if (title !== undefined) {
             updates.title = title;
@@ -125,8 +125,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
- 
- 
+
+
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
         const conversationId = params.id;
@@ -137,7 +137,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
         }
 
-         
+
         const { data: conversation, error: checkError } = await supabaseAdmin
             .from('conversations')
             .select('user_email')
@@ -152,7 +152,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
+
         const { error } = await supabaseAdmin
             .from('conversations')
             .delete()

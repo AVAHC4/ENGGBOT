@@ -11,7 +11,7 @@ export interface Attachment {
   url: string;
 }
 
- 
+
 export interface ChatMessageBase {
   id: string;
   content: string;
@@ -20,11 +20,11 @@ export interface ChatMessageBase {
 }
 
 export interface ExtendedChatMessage extends ChatMessageBase {
-  isUser: boolean;  
+  isUser: boolean;
   attachments?: Attachment[];
-  replyToId?: string;  
-  metadata?: Record<string, any>;  
-  isStreaming?: boolean;  
+  replyToId?: string;
+  metadata?: Record<string, any>;
+  isStreaming?: boolean;
 }
 
 interface ChatContextType {
@@ -71,46 +71,46 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isPrivateMode, setIsPrivateMode] = useState(false);
   const [engineeringMode, setEngineeringMode] = useState(false);
 
-   
+
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
 
-   
+
   const conversationsCacheRef = useRef<Record<string, ExtendedChatMessage[]>>({});
 
-   
+
   const [conversationId, setConversationId] = useState<string>(crypto.randomUUID());
 
-   
+
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
 
-   
+
   const currentRequestIdRef = useRef<string | null>(null);
   const isCanceledRef = useRef<boolean>(false);
 
-   
+
   const conversationIdRef = useRef<string>(conversationId);
 
-   
+
   const currentProjectIdRef = useRef<string | null>(currentProjectId);
 
-   
+
   useEffect(() => {
     currentProjectIdRef.current = currentProjectId;
   }, [currentProjectId]);
 
-   
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-   
+
   useEffect(() => {
     if (isMounted) {
-       
+
       const userPrefix = getUserPrefix();
       const storageKey = `${userPrefix}-activeConversation`;
 
-       
+
       const storedId = localStorage.getItem(storageKey);
       if (storedId) {
         setConversationId(storedId);
@@ -122,29 +122,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [isMounted]);
 
-   
-   
+
+
   useEffect(() => {
     console.log('[ChatContext] useEffect triggered:', { conversationId, isMounted, isPrivateMode, currentProjectId });
     if (isMounted && !isPrivateMode && !currentProjectId) {
-       
+
       conversationIdRef.current = conversationId;
 
-       
+
       const loadingId = conversationId;
 
-       
+
       console.log('[ChatContext] Loading conversation:', conversationId);
       loadConversation(conversationId).then((savedMessages) => {
-         
-         
+
+
         if (conversationIdRef.current !== loadingId) {
           console.log('[ChatContext] Skipping stale load for:', loadingId.substring(0, 8));
           return;
         }
 
-         
-         
+
+
         if (currentProjectIdRef.current) {
           console.log('[ChatContext] Skipping load - now in project mode:', currentProjectIdRef.current.substring(0, 8));
           return;
@@ -152,34 +152,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         console.log('[ChatContext] Loaded messages:', savedMessages?.length || 0, 'messages');
         if (savedMessages && savedMessages.length) {
-           
+
           let sortedMessages = [...savedMessages].sort((a, b) =>
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
 
-           
-           
+
+
           let hasModifications = false;
 
           for (let i = 0; i < sortedMessages.length - 1; i++) {
             const current = sortedMessages[i];
             const next = sortedMessages[i + 1];
 
-             
+
             if (!current.isUser && next.isUser) {
               const currentTime = new Date(current.timestamp).getTime();
               const nextTime = new Date(next.timestamp).getTime();
 
-               
-               
+
+
               if (nextTime - currentTime < 2000) {
                 console.log('[ChatContext] Healing inverted message order:', {
                   ai: current.id, user: next.id, diff: nextTime - currentTime
                 });
 
-                 
-                 
-                const fixedTimestamp = new Date(nextTime + 50).toISOString();  
+
+
+                const fixedTimestamp = new Date(nextTime + 50).toISOString();
 
                 sortedMessages[i] = {
                   ...current,
@@ -187,38 +187,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 };
 
                 hasModifications = true;
-                 
-                 
+
+
               }
             }
           }
 
-           
+
           if (hasModifications) {
             sortedMessages.sort((a, b) =>
               new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
 
-             
+
             console.log('[ChatContext] Saving healed conversation order');
             saveConversation(conversationId, sortedMessages);
           }
 
           setMessages(sortedMessages);
-           
+
           conversationsCacheRef.current[conversationId] = sortedMessages;
         } else {
           setMessages([]);
         }
       }).catch((error) => {
         console.error('Error loading conversation:', error);
-         
+
         if (conversationIdRef.current === loadingId && !currentProjectIdRef.current) {
           setMessages([]);
         }
       });
 
-       
+
       const userPrefix = getUserPrefix();
       const storageKey = `${userPrefix}-activeConversation`;
 
@@ -226,26 +226,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [conversationId, isMounted, isPrivateMode, currentProjectId]);
 
-   
-   
-   
+
+
+
   useEffect(() => {
-     
-     
-     
+
+
+
     if (isMounted && messages.length > 0 && !isPrivateMode && !isGenerating && !currentProjectId && conversationIdRef.current === conversationId) {
       saveConversation(conversationId, messages);
-       
+
       conversationsCacheRef.current[conversationId] = [...messages];
     }
   }, [messages, conversationId, isMounted, isPrivateMode, isGenerating, currentProjectId]);
 
-   
+
   useEffect(() => {
     setDisplayedMessageIds(new Set(messages.map(m => m.id)));
   }, [messages]);
 
-   
+
   const getUserDisplayContent = (text: string) => {
     const markers = ['\n\n[WEB SEARCH RESULTS', '\n\n[FILES CONTEXT]'];
     let cutoff = text.length;
@@ -256,26 +256,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return text.slice(0, cutoff);
   };
 
-   
+
   const processAttachments = (files: File[]): Attachment[] => {
     return files.map(file => ({
       id: crypto.randomUUID(),
       name: file.name,
       type: file.type,
-       
+
       url: URL.createObjectURL(file)
     }));
   };
 
   const stopGeneration = useCallback(() => {
-     
+
     isCanceledRef.current = true;
 
-     
+
     setIsLoading(false);
     setIsGenerating(false);
 
-     
+
     setMessages(prev => prev.map(m =>
       m.isStreaming ? { ...m, isStreaming: false } : m
     ));
@@ -283,52 +283,52 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const sendMessage = useCallback(async (content: string, files: File[] = [], replyToId?: string) => {
     try {
-       
+
       const requestId = crypto.randomUUID();
       currentRequestIdRef.current = requestId;
 
-       
+
       isCanceledRef.current = false;
 
-       
+
       const attachments = files.length > 0 ? processAttachments(files) : undefined;
 
-       
-       
+
+
       const userDisplayContent = getUserDisplayContent(content);
 
-       
+
       const now = new Date();
       const userTimestamp = now.toISOString();
-       
+
       const aiTimestamp = new Date(now.getTime() + 50).toISOString();
 
       const userMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
-        content: userDisplayContent,  
+        content: userDisplayContent,
         isUser: true,
         timestamp: userTimestamp,
         attachments,
-        replyToId  
+        replyToId
       };
 
-       
+
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
 
-       
+
       setReplyToMessage(null);
 
-       
+
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
 
       setIsLoading(true);
-       
+
       setIsGenerating(true);
 
-       
+
       let contentForAPI = content;
 
       if (files.length > 0) {
@@ -355,22 +355,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
       }
 
-       
+
       const aiMessageId = crypto.randomUUID();
       const aiMessage: ExtendedChatMessage = {
         id: aiMessageId,
         content: "",
         isUser: false,
-        timestamp: aiTimestamp,  
+        timestamp: aiTimestamp,
         isStreaming: true
       };
 
-       
+
       const messagesWithPlaceholder = [...updatedMessages, aiMessage];
       setMessages(messagesWithPlaceholder);
 
       try {
-         
+
         const response = await fetch('/api/chat/stream', {
           method: 'POST',
           headers: {
@@ -401,9 +401,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const decoder = new TextDecoder();
         let buffer = "";
 
-         
+
         while (true) {
-           
+
           if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
             reader.cancel();
             break;
@@ -412,13 +412,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           const { done, value } = await reader.read();
 
           if (done) {
-             
+
             setMessages(prev => {
               const finalMessages = prev.map(m =>
                 m.id === aiMessageId ? { ...m, isStreaming: false } : m
               );
 
-               
+
               if (typeof window !== 'undefined' && !isPrivateMode) {
                 saveConversation(conversationId, finalMessages);
               }
@@ -426,35 +426,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               return finalMessages;
             });
 
-             
+
             setIsLoading(false);
             setIsGenerating(false);
             break;
           }
 
-           
+
           buffer += decoder.decode(value, { stream: true });
 
-           
+
           const lines = buffer.split('\n');
-          buffer = lines.pop() || '';  
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.trim() === '') continue;
             if (!line.startsWith('data:')) continue;
 
             try {
-              const eventData = line.slice(5).trim();  
+              const eventData = line.slice(5).trim();
 
               if (eventData === "[DONE]") {
-                 
+
                 continue;
               }
 
               try {
                 const data = JSON.parse(eventData);
 
-                 
+
                 if (data.error) {
                   console.error("Error from server:", data.error);
                   setMessages(prev => {
@@ -464,7 +464,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         : m
                     );
 
-                     
+
                     if (typeof window !== 'undefined' && !isPrivateMode) {
                       saveConversation(conversationId, updatedMessages);
                     }
@@ -472,13 +472,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     return updatedMessages;
                   });
 
-                   
+
                   setIsLoading(false);
                   setIsGenerating(false);
                   continue;
                 }
 
-                 
+
                 if (data.text) {
                   setMessages(prev => prev.map(m =>
                     m.id === aiMessageId
@@ -497,7 +497,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error in streaming:", error);
 
-         
+
         setMessages(prev => prev.map(m =>
           m.id === aiMessageId
             ? {
@@ -508,20 +508,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             : m
         ));
 
-         
+
         setIsLoading(false);
         setIsGenerating(false);
       }
     } catch (error) {
       console.error('Error sending message:', error);
 
-       
+
       if (isCanceledRef.current) {
         console.log('Error occurred, but request was canceled');
         return;
       }
 
-       
+
       const errorMessage: ExtendedChatMessage = {
         id: crypto.randomUUID(),
         content: 'Sorry, there was an error processing your request.',
@@ -532,12 +532,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const messagesWithError = [...messages, errorMessage];
       setMessages(messagesWithError);
 
-       
+
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, messagesWithError);
       }
 
-       
+
       setIsGenerating(false);
       setIsLoading(false);
     }
@@ -546,7 +546,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const clearMessages = useCallback(() => {
     console.log('[ChatContext] clearMessages called:', { conversationId, isPrivateMode });
     setMessages([]);
-     
+
     if (typeof window !== 'undefined' && !isPrivateMode) {
       console.log('[ChatContext] Calling clearConversationMessages...');
       clearConversationMessages(conversationId).then(success => {
@@ -568,7 +568,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     setMessages(prev => {
       const updatedMessages = [...prev, newMessage];
-       
+
       if (typeof window !== 'undefined' && !isPrivateMode) {
         saveConversation(conversationId, updatedMessages);
       }
@@ -576,9 +576,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     });
   }, [conversationId, isPrivateMode]);
 
-   
+
   const regenerateLastResponse = useCallback(async () => {
-     
+
     const lastUserMessageIndex = [...messages].reverse().findIndex(m => m.isUser);
 
     if (lastUserMessageIndex === -1) {
@@ -586,22 +586,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-     
+
     const actualUserIndex = messages.length - 1 - lastUserMessageIndex;
     const lastUserMessage = messages[actualUserIndex];
 
-     
+
     const aiResponseIndex = actualUserIndex + 1;
     const hasAiResponse = aiResponseIndex < messages.length && !messages[aiResponseIndex].isUser;
 
-     
+
     const requestId = crypto.randomUUID();
     currentRequestIdRef.current = requestId;
 
-     
+
     isCanceledRef.current = false;
 
-     
+
     setIsLoading(true);
     setIsGenerating(true);
 
@@ -609,10 +609,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     let updatedMessages;
 
     if (hasAiResponse) {
-       
+
       aiMessageId = messages[aiResponseIndex].id;
 
-       
+
       updatedMessages = [...messages];
       updatedMessages[aiResponseIndex] = {
         ...updatedMessages[aiResponseIndex],
@@ -620,7 +620,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isStreaming: true
       };
     } else {
-       
+
       aiMessageId = crypto.randomUUID();
       const aiMessage = {
         id: aiMessageId,
@@ -630,20 +630,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isStreaming: true
       };
 
-       
+
       updatedMessages = [...messages.slice(0, actualUserIndex + 1), aiMessage];
     }
 
-     
+
     setMessages(updatedMessages);
 
-     
+
     if (typeof window !== 'undefined' && !isPrivateMode) {
       saveConversation(conversationId, updatedMessages);
     }
 
     try {
-       
+
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: {
@@ -674,9 +674,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const decoder = new TextDecoder();
       let buffer = "";
 
-       
+
       while (true) {
-         
+
         if (isCanceledRef.current || currentRequestIdRef.current !== requestId) {
           reader.cancel();
           break;
@@ -685,13 +685,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         const { done, value } = await reader.read();
 
         if (done) {
-           
+
           setMessages(prev => {
             const updated = prev.map(m =>
               m.id === aiMessageId ? { ...m, isStreaming: false } : m
             );
 
-             
+
             if (typeof window !== 'undefined' && !isPrivateMode) {
               saveConversation(conversationId, updated);
             }
@@ -699,49 +699,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             return updated;
           });
 
-           
+
           setIsLoading(false);
           setIsGenerating(false);
           break;
         }
 
-         
+
         buffer += decoder.decode(value, { stream: true });
 
-         
+
         const lines = buffer.split('\n');
-        buffer = lines.pop() || '';  
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.trim() === '') continue;
           if (!line.startsWith('data:')) continue;
 
           try {
-            const eventData = line.slice(5).trim();  
+            const eventData = line.slice(5).trim();
 
             if (eventData === "[DONE]") {
-               
+
               continue;
             }
 
             try {
               const data = JSON.parse(eventData);
 
-               
+
               if (data.text) {
                 setMessages(prev => {
-                   
+
                   const messageIndex = prev.findIndex(m => m.id === aiMessageId);
                   if (messageIndex === -1) return prev;
 
-                   
+
                   const updated = [...prev];
                   updated[messageIndex] = {
                     ...updated[messageIndex],
                     content: updated[messageIndex].content + data.text
                   };
 
-                   
+
                   if (typeof window !== 'undefined' && !isPrivateMode) {
                     saveConversation(conversationId, updated);
                   }
@@ -760,7 +760,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error in streaming:", error);
 
-       
+
       setMessages(prev => {
         const messageIndex = prev.findIndex(m => m.id === aiMessageId);
         if (messageIndex === -1) return prev;
@@ -775,13 +775,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         return updated;
       });
 
-       
+
       setIsLoading(false);
       setIsGenerating(false);
     }
   }, [messages, conversationId, currentModel, thinkingMode, engineeringMode, isPrivateMode]);
 
-   
+
   const getTimestamp = (timestamp: any): string => {
     if (typeof timestamp === 'string') {
       return timestamp;
@@ -792,50 +792,50 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return new Date().toISOString();
   };
 
-   
+
   const switchConversation = useCallback((id: string) => {
-     
+
     if (id === conversationIdRef.current) {
       return;
     }
 
-     
+
     if (isGenerating || isLoading) {
       stopGeneration();
     }
 
-     
+
     if (conversationIdRef.current && messages.length > 0) {
       conversationsCacheRef.current[conversationIdRef.current] = [...messages];
     }
 
-     
+
     conversationIdRef.current = id;
 
-     
+
     const cachedMessages = conversationsCacheRef.current[id];
     if (cachedMessages && cachedMessages.length > 0) {
-       
+
       setMessages(cachedMessages);
       setConversationId(id);
       return;
     }
 
-     
+
     setMessages([]);
     setConversationId(id);
   }, [isGenerating, isLoading, stopGeneration, messages]);
 
-   
+
   const startNewConversation = useCallback(() => {
-     
+
     if (isGenerating || isLoading) {
       stopGeneration();
     }
 
     const newId = crypto.randomUUID();
 
-     
+
     setMessages([]);
     conversationIdRef.current = newId;
     setConversationId(newId);
@@ -845,43 +845,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const storageKey = `${userPrefix}-activeConversation`;
 
       localStorage.setItem(storageKey, newId);
-       
+
     }
   }, [isGenerating, isLoading, stopGeneration, isMounted]);
 
-   
+
   const deleteCurrentConversation = useCallback(() => {
     if (isMounted) {
       const deletingConversationId = conversationId;
 
-       
+
       setMessages([]);
 
-       
+
       const newId = crypto.randomUUID();
       conversationIdRef.current = newId;
       setConversationId(newId);
 
-       
+
       (async () => {
         try {
-           
+
           const conversations = await getConversationList();
 
-           
+
           await deleteConversation(deletingConversationId);
 
-           
+
           delete conversationsCacheRef.current[deletingConversationId];
 
-           
+
           const remainingConversations = conversations.filter((id: string) => id !== deletingConversationId);
 
           if (remainingConversations.length > 0) {
-             
+
             switchConversation(remainingConversations[0]);
           }
-           
+
         } catch (error) {
           console.error('Error deleting conversation:', error);
         }
@@ -897,16 +897,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setWebSearchMode(prev => !prev);
   }, []);
 
-   
+
   const togglePrivateMode = useCallback(() => {
     setIsPrivateMode(prev => {
       const newValue = !prev;
 
       if (newValue) {
-         
+
         setMessages([]);
       } else {
-         
+
         loadConversation(conversationId).then((savedMessages) => {
           if (savedMessages?.length) {
             setMessages(savedMessages);
@@ -922,14 +922,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setEngineeringMode(prev => !prev);
   }, []);
 
-   
+
   useEffect(() => {
     return () => {
-       
+
     };
   }, []);
 
-   
+
   const value = {
     messages,
     isLoading,
