@@ -1019,9 +1019,6 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                 ) : (
                                   <>
                                     <span className="text-xs truncate w-full text-left">{convo.title}</span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {formatTime(convo.updated)}
-                                    </span>
                                   </>
                                 )}
                               </div>
