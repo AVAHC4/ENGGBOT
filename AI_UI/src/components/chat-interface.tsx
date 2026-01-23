@@ -273,7 +273,7 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
         {customHeader ? (
           <div className="flex items-center justify-between">
             <div className="flex-1">{customHeader}</div>
-            <div className="header-actions pr-[20%]">
+            <div className="header-actions pr-[70%]">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
