@@ -32,7 +32,7 @@ import { performWebSearch, SearchResult } from '@/lib/web-search';
 import { EnggBotLogo } from '@/components/ui/enggbot-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
- 
+
 
 
 function ThinkingAnimation() {
@@ -50,7 +50,7 @@ function ThinkingAnimation() {
   );
 }
 
- 
+
 
 interface ChatInterfaceProps {
   className?: string;
@@ -80,25 +80,25 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
 
   console.log('[ChatInterface] Render - messages:', messages.length, 'conversationId:', conversationId);
 
-   
+
   const [localLoading, setLocalLoading] = useState(false);
 
 
-   
+
   const [displayedMessageIds, setDisplayedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-   
+
   const previousMessagesCountRef = useRef(messages.length);
 
-   
+
   useEffect(() => {
-     
+
     if (messages.length > previousMessagesCountRef.current) {
-       
+
       const newDisplayedIds = new Set(displayedMessageIds);
 
-       
+
       const existingMessages = messages.slice(0, -1);
       existingMessages.forEach(msg => {
         if (!msg.isUser) {
@@ -109,10 +109,10 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       setDisplayedMessageIds(newDisplayedIds);
     }
 
-     
+
     previousMessagesCountRef.current = messages.length;
 
-     
+
     if (!isGenerating && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
 
@@ -122,27 +122,27 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     }
   }, [messages, isGenerating, displayedMessageIds]);
 
-   
+
   useEffect(() => {
     if (messages.length === 0) {
       setDisplayedMessageIds(new Set());
     }
   }, [messages.length]);
 
-   
-   
-   
-   
+
+
+
+
   useEffect(() => {
-     
+
   }, [messages.length]);
 
-   
+
   useEffect(() => {
     if (isLoading) {
       setLocalLoading(true);
     } else {
-       
+
       const timeout = setTimeout(() => {
         setLocalLoading(false);
       }, 300);
@@ -151,8 +151,8 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     }
   }, [isLoading]);
 
-   
-   
+
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -163,31 +163,31 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       return;
     }
 
-     
+
     console.log("No Web Speech API - preloading Whisper for offline speech recognition");
     const timer = setTimeout(() => {
-       
-       
+
+
       console.log("Whisper preload disabled for debugging");
-    }, 3000);  
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
-   
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-   
+
   useEffect(() => {
     const checkSidebarState = () => {
       const isCollapsed = document.body.classList.contains('sidebar-collapsed');
       setIsSidebarCollapsed(isCollapsed);
     };
 
-     
+
     checkSidebarState();
 
-     
+
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
@@ -203,30 +203,30 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
     };
   }, []);
 
-   
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-   
+
   const handleSendMessage = async (content: string, files?: File[], replyToId?: string) => {
     setLocalLoading(true);
 
-     
+
     if (webSearchMode && content.trim()) {
       try {
-         
-         
 
-         
+
+
+
         const results = await performWebSearch(content);
 
-         
+
         let messageWithContext = content;
 
         if (results.length > 0) {
-           
+
           const currentDate = new Date().toLocaleDateString();
           let searchContext = `\n\n[WEB SEARCH RESULTS FROM ${currentDate}]\n`;
 
@@ -236,25 +236,25 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
             searchContext += `URL: ${result.url}\n`;
           });
 
-           
+
           messageWithContext = content + "\n\n" + searchContext;
         }
 
-         
+
         await sendMessage(messageWithContext, files, replyToId);
       } catch (error) {
         console.error("Web search failed:", error);
-         
+
         await sendMessage(content, files, replyToId);
       }
     } else {
-       
+
       await sendMessage(content, files, replyToId);
     }
   };
 
-   
-   
+
+
   const shouldShowThinking = () => {
     return isGenerating && messages.length > 0 && messages[messages.length - 1].isUser;
   };
@@ -270,10 +270,10 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       )}
     >
       <div className="flex flex-col h-full bg-transparent">
-        {customHeader}
-        <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
-          <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
-            <div className="header-actions">
+        {customHeader ? (
+          <div className="flex items-center justify-between">
+            <div className="flex-1">{customHeader}</div>
+            <div className="header-actions pr-4">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
@@ -297,7 +297,6 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
                 </AlertDialogContent>
               </AlertDialog>
 
-              { }
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -320,6 +319,57 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
               </Tooltip>
             </div>
           </div>
+        ) : null}
+        <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
+          {!customHeader && (
+            <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
+              <div className="header-actions">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
+                      <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
+                      <span className="hidden md:inline">Clear chat</span>
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action will permanently delete all messages in the current conversation. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={clearMessages} className="bg-red-600 hover:bg-red-700 text-white">
+                        Clear Chat
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "ml-2 h-8 w-8 rounded-full",
+                        isPrivateMode && "text-red-500 dark:text-red-400"
+                      )}
+                      onClick={togglePrivateMode}
+                    >
+                      <EyeOff className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">
+                      {isPrivateMode ? "Private mode enabled" : "Enable private mode"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </div>
+          )}
 
           <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
             <ChatMessageListCompact
