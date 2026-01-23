@@ -272,7 +272,7 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       <div className="flex flex-col h-full bg-transparent">
         {customHeader}
         <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
-          <div className="chatgpt-header pt-1 px-2 md:pt-2 md:px-4 lg:pt-3 lg:px-6 bg-transparent">
+          <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
             <div className="header-actions">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
