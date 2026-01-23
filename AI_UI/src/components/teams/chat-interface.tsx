@@ -42,9 +42,9 @@ interface ChatInterfaceProps {
   onLeaveTeam?: (teamId: string) => void
 }
 
- 
 
- 
+
+
 
 const encodeKeyPart = (value: string) => {
   try {
@@ -76,7 +76,7 @@ const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) 
   try {
     localStorage.setItem(getHiddenStorageKey(teamId, email), JSON.stringify(Array.from(ids)))
   } catch {
-     
+
   }
 }
 
@@ -124,7 +124,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }, [])
 
-   
+
   useEffect(() => {
     if (!selectedTeamId) {
       setMessages([])
@@ -165,7 +165,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
     load()
 
-     
+
     let channel: ReturnType<NonNullable<typeof supabaseClient>["channel"]> | null = null
     if (supabaseClient) {
       try {
@@ -197,11 +197,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           )
           .subscribe()
       } catch {
-         
+
       }
     }
 
-     
+
     if (sseRef.current) {
       try { sseRef.current.close() } catch { }
       sseRef.current = null
@@ -209,8 +209,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     const es = new EventSource(`/api/teams/${selectedTeamId}/stream`)
     sseRef.current = es
     es.onopen = () => {
-       
-       
+
+
     }
     es.onmessage = (evt) => {
       try {
@@ -234,11 +234,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       } catch { }
     }
     es.onerror = () => {
-       
-       
+
+
     }
 
-     
+
     if (pollRef.current) {
       clearInterval(pollRef.current)
       pollRef.current = null
@@ -246,7 +246,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     pollRef.current = setInterval(async () => {
       try {
         const now = Date.now()
-         
+
         if (now - lastRefreshRef.current > 400) {
           const since = lastServerTsRef.current || undefined
           const u = getCurrentUser()
@@ -272,7 +272,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       } catch { }
     }, 300)
 
-     
+
     const onFocus = () => load()
     const onVis = () => { if (!document.hidden) load() }
     window.addEventListener('focus', onFocus)
@@ -297,7 +297,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     }
   }, [selectedTeamId])
 
-   
+
   useEffect(() => {
     if (selectedTeamId) {
       listTeamMembers(selectedTeamId)
@@ -315,7 +315,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     setMessage("")
     try {
       const saved = await sendMessage(selectedTeamId, content, u.email, u.name)
-       
+
       setMessages((prev) => {
         if (prev.some((p) => p.id === saved.id)) return prev
         return [
@@ -419,7 +419,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             </AvatarFallback>
           </Avatar>
           <div
-            className="cursor-pointer rounded-md p-2 -m-2 transition-colors hover:bg-muted/50"
+            className="cursor-pointer rounded-md py-2 px-4 -my-2 transition-colors hover:bg-muted/50 flex-1 mr-4"
             onClick={() => setShowTeamManagement(true)}
           >
             <h2 className="font-semibold text-foreground">{team?.name}</h2>
