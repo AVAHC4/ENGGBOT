@@ -270,10 +270,10 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
       )}
     >
       <div className="flex flex-col h-full bg-transparent">
-        {customHeader ? (
-          <div className="flex items-center justify-between">
-            <div className="flex-1">{customHeader}</div>
-            <div className="header-actions pr-[70%]">
+        {customHeader}
+        <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
+          <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
+            <div className="header-actions">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
@@ -297,6 +297,7 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
                 </AlertDialogContent>
               </AlertDialog>
 
+              { }
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -319,57 +320,6 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
               </Tooltip>
             </div>
           </div>
-        ) : null}
-        <div className="relative grid flex-1 grid-rows-[auto_1fr_auto] min-h-0 bg-transparent">
-          {!customHeader && (
-            <div className="chatgpt-header p-2 md:p-4 lg:p-6 bg-transparent">
-              <div className="header-actions">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
-                      <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
-                      <span className="hidden md:inline">Clear chat</span>
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action will permanently delete all messages in the current conversation. This cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={clearMessages} className="bg-red-600 hover:bg-red-700 text-white">
-                        Clear Chat
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "ml-2 h-8 w-8 rounded-full",
-                        isPrivateMode && "text-red-500 dark:text-red-400"
-                      )}
-                      onClick={togglePrivateMode}
-                    >
-                      <EyeOff className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-xs">
-                      {isPrivateMode ? "Private mode enabled" : "Enable private mode"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </div>
-          )}
 
           <div className="chat-messages-container relative overflow-hidden min-h-0" style={{ background: 'transparent' }}>
             <ChatMessageListCompact
