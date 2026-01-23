@@ -407,8 +407,11 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     <div className="flex flex-col h-full bg-transparent">
       { }
       <div className="flex items-center justify-between px-6 py-4 bg-transparent border-b border-border">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
+        <div
+          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-muted/50 flex-1 flex items-center gap-3 mr-4"
+          onClick={() => setShowTeamManagement(true)}
+        >
+          <Avatar className="h-10 w-10 flex-shrink-0">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
             <AvatarFallback className="font-medium bg-muted text-muted-foreground">
               {team?.name
@@ -418,10 +421,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 .slice(0, 2)}
             </AvatarFallback>
           </Avatar>
-          <div
-            className="cursor-pointer rounded-md py-2 px-4 -my-2 transition-colors hover:bg-muted/50 flex-1 mr-4"
-            onClick={() => setShowTeamManagement(true)}
-          >
+          <div>
             <h2 className="font-semibold text-foreground">{team?.name}</h2>
             <div className="flex items-center gap-2">
               { }
