@@ -992,7 +992,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                 convo.id === conversationId && pathname === '/AI_UI' && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
-                              <div className="flex flex-col items-start overflow-hidden">
+                              <div className="flex flex-col items-start overflow-hidden cursor-pointer">
                                 {editingConversationId === convo.id ? (
                                   <input
                                     type="text"
@@ -1018,7 +1018,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                   />
                                 ) : (
                                   <>
-                                    <span className="text-xs truncate w-full text-left">{convo.title}</span>
+                                    <span className="text-xs truncate w-full text-left cursor-pointer">{convo.title}</span>
                                   </>
                                 )}
                               </div>
