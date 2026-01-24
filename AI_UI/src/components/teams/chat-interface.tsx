@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreVertical, Search, Send, Paperclip, Smile, Plus, X } from "lucide-react"
+import { MoreVertical, Search, Paperclip, Smile, Plus, X, Sparkles } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
@@ -409,9 +409,12 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   return (
     <div className="flex flex-col h-full bg-transparent">
       { }
-      <div className="flex items-center justify-between px-6 py-4 bg-transparent border-b border-border">
+      <div
+        className="flex items-center justify-between px-6 py-4 border-b border-white/10 backdrop-blur-md rounded-t-xl"
+        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
+      >
         <div
-          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-muted/50 flex-1 flex items-center gap-3 mr-4"
+          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-white/5 flex-1 flex items-center gap-3 mr-4"
           onClick={() => setShowTeamManagement(true)}
         >
           <Avatar className="h-10 w-10 flex-shrink-0">
@@ -562,11 +565,12 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
                   {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
                   <div
-                    className={`rounded-lg px-3 py-2 ${msg.isOwn ? "bg-foreground text-background ml-auto" : "bg-transparent border border-border"
+                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border ${msg.isOwn ? "bg-white/10 border-white/15 text-foreground ml-auto" : "bg-white/8 border-white/10 text-foreground"
                       }`}
+                    style={{ background: msg.isOwn ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)' }}
                   >
                     <p className="text-sm">{msg.content}</p>
-                    <p className={`text-xs mt-1 ${msg.isOwn ? "text-background/70" : "text-muted-foreground"}`}>
+                    <p className="text-xs mt-1 text-muted-foreground">
                       {msg.timestamp}
                     </p>
                   </div>
@@ -602,7 +606,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
       { }
       <div className="p-4 pb-6 bg-transparent">
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-3xl border border-border">
+        <div
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 backdrop-blur-md"
+          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
+        >
           <Button
             variant="ghost"
             size="icon"
@@ -625,14 +632,17 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           >
             <Smile className="h-4 w-4" />
           </Button>
-          <Button
+          <button
             onClick={handleSendMessage}
             disabled={!message.trim()}
-            size="icon"
-            className={`h-9 w-9 flex-shrink-0 rounded-full ${message.trim() ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+            className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-200"
+            style={{
+              background: message.trim() ? 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)' : 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}
           >
-            <Send className="h-4 w-4" />
-          </Button>
+            <Sparkles className={`h-5 w-5 ${message.trim() ? 'text-foreground' : 'text-muted-foreground'}`} />
+          </button>
         </div>
       </div>
 

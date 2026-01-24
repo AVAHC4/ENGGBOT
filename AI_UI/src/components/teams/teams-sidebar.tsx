@@ -142,7 +142,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
   }
 
   useEffect(() => {
-     
+
     refreshInvites()
     const onSent = () => refreshInvites()
     window.addEventListener('teams:invites:sent', onSent as any)
@@ -154,9 +154,9 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
       const user = getCurrentUser()
       const res = await acceptInvite(inviteId, user.email)
       await refreshInvites()
-       
+
       window.dispatchEvent(new CustomEvent('teams:refresh'))
-       
+
       if (res?.team_id) onTeamSelect(res.team_id)
       setShowInvites(false)
     } catch (e) {
@@ -249,7 +249,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
       { }
       <div className="flex-1 overflow-y-auto py-2">
         {isLoading ? (
-           
+
           <div className="space-y-2 px-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-lg animate-pulse">
@@ -269,7 +269,8 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
           filteredTeams.map((team) => (
             <div
               key={team.id}
-              className={`mx-2 mb-1 rounded-lg transition-all duration-200 ${selectedTeamId === team.id ? 'bg-primary/10 border-l-[3px] border-l-primary' : 'border-l-[3px] border-l-transparent hover:bg-muted/50'}`}
+              className={`mx-2 mb-2 rounded-xl transition-all duration-200 backdrop-blur-md border ${selectedTeamId === team.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/15'}`}
+              style={{ background: selectedTeamId === team.id ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
             >
               <div className="flex items-center gap-2 px-3 py-3">
                 <button
@@ -295,15 +296,10 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
 
                   { }
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <h3 className={`font-semibold text-sm truncate ${selectedTeamId === team.id ? 'text-foreground' : 'text-foreground/90'}`}>
-                        {team.name}
-                      </h3>
-                      <span className="text-xs flex-shrink-0 ml-2 text-muted-foreground">
-                        {team.timestamp}
-                      </span>
-                    </div>
-                    <p className="text-xs truncate text-muted-foreground">
+                    <h3 className="font-semibold text-sm truncate text-foreground">
+                      {team.name}
+                    </h3>
+                    <p className="text-xs truncate text-muted-foreground mt-0.5">
                       {team.lastMessage || 'No messages yet'}
                     </p>
                   </div>
