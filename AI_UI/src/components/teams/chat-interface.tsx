@@ -92,6 +92,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [searchQuery, setSearchQuery] = useState("")
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sseRef = useRef<EventSource | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -608,10 +609,22 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         <div
           className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/15 backdrop-blur-md bg-black/[0.02] dark:bg-white/[0.05]"
         >
+          <input
+            type="file"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                setMessage((prev) => prev + ` [Attachment: ${file.name}]`)
+              }
+            }}
+          />
           <Button
             variant="ghost"
             size="icon"
             className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="h-4 w-4" />
           </Button>
