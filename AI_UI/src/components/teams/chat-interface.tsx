@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreVertical, Search, Send, Paperclip, Smile, Plus } from "lucide-react"
+import { MoreVertical, Search, Send, Paperclip, Smile, Plus, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
@@ -88,6 +88,9 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message } | null>(null)
   const [teamMembers, setTeamMembers] = useState(0)
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const sseRef = useRef<EventSource | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -442,7 +445,19 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-9 w-9 ${showSearch ? 'text-primary' : 'text-muted-foreground'}`}
+            onClick={() => {
+              setShowSearch(!showSearch)
+              if (!showSearch) {
+                setTimeout(() => searchInputRef.current?.focus(), 100)
+              } else {
+                setSearchQuery("")
+              }
+            }}
+          >
             <Search className="h-4 w-4" />
           </Button>
           <DropdownMenu>
@@ -471,6 +486,35 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       </div>
 
+      {showSearch && (
+        <div className="px-6 py-3 border-b border-border bg-muted/30">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()) || m.sender.toLowerCase().includes(searchQuery.toLowerCase())).length} results found
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -488,38 +532,44 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}
-              onContextMenu={(event) => handleContextMenu(event, msg)}
-            >
-              {!msg.isOwn && (
-                <Avatar className="h-8 w-8 mt-1">
-                  <AvatarImage src={msg.avatar || "/placeholder.svg"} alt={msg.sender} />
-                  <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                    {msg.sender
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)}
-                  </AvatarFallback>
-                </Avatar>
-              )}
-              <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
-                {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
-                <div
-                  className={`rounded-lg px-3 py-2 ${msg.isOwn ? "bg-foreground text-background ml-auto" : "bg-transparent border border-border"
-                    }`}
-                >
-                  <p className="text-sm">{msg.content}</p>
-                  <p className={`text-xs mt-1 ${msg.isOwn ? "text-background/70" : "text-muted-foreground"}`}>
-                    {msg.timestamp}
-                  </p>
+          messages
+            .filter((msg) => {
+              if (!searchQuery) return true
+              const query = searchQuery.toLowerCase()
+              return msg.content.toLowerCase().includes(query) || msg.sender.toLowerCase().includes(query)
+            })
+            .map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}
+                onContextMenu={(event) => handleContextMenu(event, msg)}
+              >
+                {!msg.isOwn && (
+                  <Avatar className="h-8 w-8 mt-1">
+                    <AvatarImage src={msg.avatar || "/placeholder.svg"} alt={msg.sender} />
+                    <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                      {msg.sender
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
+                  {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
+                  <div
+                    className={`rounded-lg px-3 py-2 ${msg.isOwn ? "bg-foreground text-background ml-auto" : "bg-transparent border border-border"
+                      }`}
+                  >
+                    <p className="text-sm">{msg.content}</p>
+                    <p className={`text-xs mt-1 ${msg.isOwn ? "text-background/70" : "text-muted-foreground"}`}>
+                      {msg.timestamp}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))
         )}
       </div>
 
