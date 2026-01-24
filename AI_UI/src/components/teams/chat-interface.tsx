@@ -90,6 +90,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [teamMembers, setTeamMembers] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const sseRef = useRef<EventSource | null>(null)
@@ -622,13 +623,34 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             onKeyPress={handleKeyPress}
             className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground"
-          >
-            <Smile className="h-4 w-4" />
-          </Button>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            >
+              <Smile className="h-4 w-4" />
+            </Button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 right-0 z-50 bg-popover border border-border rounded-xl shadow-lg p-3 min-w-[280px]">
+                <div className="grid grid-cols-8 gap-1">
+                  {['😀', '😂', '😍', '🥰', '😊', '😎', '🤔', '😅', '😭', '😤', '🥳', '🤩', '😇', '🙄', '😏', '😴', '👍', '👎', '❤️', '🔥', '✨', '🎉', '💯', '👀', '🙌', '💪', '🤝', '👋', '✅', '❌', '⭐', '💡'].map((emoji) => (
+                    <button
+                      key={emoji}
+                      className="h-8 w-8 flex items-center justify-center text-xl hover:bg-muted rounded transition-colors"
+                      onClick={() => {
+                        setMessage((prev) => prev + emoji)
+                        setShowEmojiPicker(false)
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
