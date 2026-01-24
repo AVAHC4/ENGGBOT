@@ -988,7 +988,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             <SidebarMenuSubButton
                               onClick={() => handleSwitchConversation(convo.id)}
                               className={cn(
-                                "w-full justify-between group pr-1",
+                                "w-full justify-between group pr-1 cursor-pointer",
                                 convo.id === conversationId && pathname === '/AI_UI' && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
