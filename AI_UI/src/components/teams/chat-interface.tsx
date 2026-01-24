@@ -611,7 +611,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground"
+            className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground cursor-pointer"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -627,7 +627,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground"
+              className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground cursor-pointer"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
               <Smile className="h-4 w-4" />
@@ -638,7 +638,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                   {['😀', '😂', '😍', '🥰', '😊', '😎', '🤔', '😅', '😭', '😤', '🥳', '🤩', '😇', '🙄', '😏', '😴', '👍', '👎', '❤️', '🔥', '✨', '🎉', '💯', '👀', '🙌', '💪', '🤝', '👋', '✅', '❌', '⭐', '💡'].map((emoji) => (
                     <button
                       key={emoji}
-                      className="h-8 w-8 flex items-center justify-center text-xl hover:bg-muted rounded transition-colors"
+                      className="h-8 w-8 flex items-center justify-center text-xl hover:bg-muted rounded transition-colors cursor-pointer"
                       onClick={() => {
                         setMessage((prev) => prev + emoji)
                         setShowEmojiPicker(false)
