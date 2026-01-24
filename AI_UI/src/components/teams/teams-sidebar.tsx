@@ -269,8 +269,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
           filteredTeams.map((team) => (
             <div
               key={team.id}
-              className={`mx-2 mb-2 rounded-xl transition-all duration-200 backdrop-blur-md border ${selectedTeamId === team.id ? 'bg-white/10 border-white/20 shadow-lg' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/15'}`}
-              style={{ background: selectedTeamId === team.id ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.05) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
+              className={`mx-2 mb-2 rounded-xl transition-all duration-200 backdrop-blur-md border ${selectedTeamId === team.id ? 'bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/20 shadow-lg' : 'bg-black/[0.02] dark:bg-white/5 border-black/5 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10 hover:border-black/10 dark:hover:border-white/15'}`}
             >
               <div className="flex items-center gap-2 px-3 py-3">
                 <button

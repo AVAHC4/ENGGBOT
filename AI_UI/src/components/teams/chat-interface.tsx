@@ -410,11 +410,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     <div className="flex flex-col h-full bg-transparent">
       { }
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-white/10 backdrop-blur-md rounded-t-xl"
-        style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
+        className="flex items-center justify-between px-6 py-4 border-b border-black/10 dark:border-white/10 backdrop-blur-md rounded-t-xl bg-black/[0.02] dark:bg-white/[0.05]"
       >
         <div
-          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-white/5 flex-1 flex items-center gap-3 mr-4"
+          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 flex-1 flex items-center gap-3 mr-4"
           onClick={() => setShowTeamManagement(true)}
         >
           <Avatar className="h-10 w-10 flex-shrink-0">
@@ -565,9 +564,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
                   {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
                   <div
-                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border ${msg.isOwn ? "bg-white/10 border-white/15 text-foreground ml-auto" : "bg-white/8 border-white/10 text-foreground"
+                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border ${msg.isOwn ? "bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/15 text-foreground ml-auto" : "bg-black/[0.03] dark:bg-white/8 border-black/5 dark:border-white/10 text-foreground"
                       }`}
-                    style={{ background: msg.isOwn ? 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%)' : 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)' }}
                   >
                     <p className="text-sm">{msg.content}</p>
                     <p className="text-xs mt-1 text-muted-foreground">
@@ -607,8 +605,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       { }
       <div className="p-4 pb-6 bg-transparent">
         <div
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/15 backdrop-blur-md"
-          style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)' }}
+          className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/15 backdrop-blur-md bg-black/[0.02] dark:bg-white/[0.05]"
         >
           <Button
             variant="ghost"
@@ -635,11 +632,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           <button
             onClick={handleSendMessage}
             disabled={!message.trim()}
-            className="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-200"
-            style={{
-              background: message.trim() ? 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)' : 'transparent',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}
+            className={`h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-200 border border-black/10 dark:border-white/10 ${message.trim() ? 'bg-black/5 dark:bg-white/15' : 'bg-transparent'}`}
           >
             <Sparkles className={`h-5 w-5 ${message.trim() ? 'text-foreground' : 'text-muted-foreground'}`} />
           </button>
