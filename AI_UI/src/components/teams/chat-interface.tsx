@@ -629,13 +629,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           >
             <Smile className="h-4 w-4" />
           </Button>
-          <button
-            onClick={handleSendMessage}
-            disabled={!message.trim()}
-            className={`h-10 w-10 flex-shrink-0 flex items-center justify-center rounded-full transition-all duration-200 border border-black/10 dark:border-white/10 ${message.trim() ? 'bg-black/5 dark:bg-white/15' : 'bg-transparent'}`}
-          >
-            <Sparkles className={`h-5 w-5 ${message.trim() ? 'text-foreground' : 'text-muted-foreground'}`} />
-          </button>
         </div>
       </div>
 
