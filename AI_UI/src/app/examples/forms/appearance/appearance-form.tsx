@@ -258,7 +258,7 @@ export function AppearanceForm() {
                   field.onChange(value)
                   setTheme(value)
                 }}
-                value={field.value}
+                defaultValue={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
               >
                 <FormItem>
@@ -334,7 +334,7 @@ export function AppearanceForm() {
                   field.onChange(value)
                   setBackground(value as typeof field.value)
                 }}
-                value={field.value}
+                defaultValue={field.value}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2"
               >
                 { }
