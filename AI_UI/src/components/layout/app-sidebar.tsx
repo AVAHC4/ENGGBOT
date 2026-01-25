@@ -710,25 +710,36 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
         color: var(--accent-foreground);
       }
       
-      /* Fix for cursor types in sidebar */
+      /* Fix for cursor types in sidebar - force pointer on all clickable elements */
       [data-slot="sidebar"] a,
-      [data-slot="sidebar"] button,
-      [data-slot="sidebar"] [role="button"],
-      [data-slot="sidebar-menu-button"],
-      [data-slot="sidebar-menu-sub-button"],
-      [data-slot="sidebar-menu"] a,
-      [data-slot="sidebar-menu"] button,
-      [data-slot="sidebar-menu-sub"] a,
-      [data-slot="sidebar-menu-item"] a,
-      [data-slot="sidebar-menu-sub-item"] a {
-        cursor: pointer !important;
-      }
-      
-      /* Ensure text within elements has text cursor */
       [data-slot="sidebar"] a *,
+      [data-slot="sidebar"] button,
       [data-slot="sidebar"] button *,
-      [data-slot="sidebar"] [role="button"] * {
-        cursor: inherit;
+      [data-slot="sidebar"] [role="button"],
+      [data-slot="sidebar"] [role="button"] *,
+      [data-slot="sidebar-menu-button"],
+      [data-slot="sidebar-menu-button"] *,
+      [data-slot="sidebar-menu-sub-button"],
+      [data-slot="sidebar-menu-sub-button"] *,
+      [data-slot="sidebar-menu"] a,
+      [data-slot="sidebar-menu"] a *,
+      [data-slot="sidebar-menu"] button,
+      [data-slot="sidebar-menu"] button *,
+      [data-slot="sidebar-menu-sub"] a,
+      [data-slot="sidebar-menu-sub"] a *,
+      [data-slot="sidebar-menu-item"],
+      [data-slot="sidebar-menu-item"] *,
+      [data-slot="sidebar-menu-sub-item"],
+      [data-slot="sidebar-menu-sub-item"] *,
+      [data-slot="sidebar-footer"] a,
+      [data-slot="sidebar-footer"] a *,
+      [data-slot="sidebar-footer"] button,
+      [data-slot="sidebar-footer"] button *,
+      [data-slot="sidebar-footer"] [role="button"],
+      [data-slot="sidebar-footer"] [role="button"] *,
+      [data-slot="sidebar-content"] [class*="cursor-pointer"],
+      [data-slot="sidebar-content"] [class*="cursor-pointer"] * {
+        cursor: pointer !important;
       }
       
       @media (max-width: 1024px) {
@@ -922,7 +933,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 cursor-pointer"
                           >
                             <Icon className="h-4 w-4" />
-                            <span>{title}</span>
+                            <span className="cursor-pointer">{title}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
                       );
@@ -937,13 +948,13 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         >
                           <Link
                             href={item.url}
-                            className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                            className="flex items-center focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 cursor-pointer"
                             onClick={(e) => {
                               setActivePath(item.url);
                             }}
                           >
                             <Icon className="h-4 w-4" />
-                            <span>{title}</span>
+                            <span className="cursor-pointer">{title}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -954,11 +965,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setConversationsExpanded(!conversationsExpanded)}
-                    className="justify-between"
+                    className="justify-between cursor-pointer"
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center cursor-pointer">
                       <History className="h-4 w-4 mr-2" />
-                      <span>{t('sidebar.conversations')}</span>
+                      <span className="cursor-pointer">{t('sidebar.conversations')}</span>
                     </div>
                     {conversationsExpanded ? (
                       <ChevronDown className="h-4 w-4" />
@@ -1082,11 +1093,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => setProjectsExpanded(!projectsExpanded)}
-                      className="justify-between"
+                      className="justify-between cursor-pointer"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center cursor-pointer">
                         <Folder className="h-4 w-4 mr-2" />
-                        <span>{t('sidebar.projects') || 'Projects'}</span>
+                        <span className="cursor-pointer">{t('sidebar.projects') || 'Projects'}</span>
                       </div>
                       {projectsExpanded ? (
                         <ChevronDown className="h-4 w-4" />
@@ -1101,10 +1112,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
                             onClick={() => setShowNewProjectDialog(true)}
-                            className="w-full flex items-center"
+                            className="w-full flex items-center cursor-pointer"
                           >
                             <PlusCircle className="h-3.5 w-3.5 mr-2" />
-                            <span className="font-medium text-primary">New Project</span>
+                            <span className="font-medium text-primary cursor-pointer">New Project</span>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
 
@@ -1126,11 +1137,11 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                               <SidebarMenuSubButton
                                 onClick={() => router.push(`/AI_UI/project/${project.id}`)}
                                 className={cn(
-                                  "w-full justify-between group pr-1",
+                                  "w-full justify-between group pr-1 cursor-pointer",
                                   pathname?.startsWith(`/AI_UI/project/${project.id}`) && "bg-neutral-700 text-white hover:bg-neutral-700"
                                 )}
                               >
-                                <div className="flex items-center overflow-hidden">
+                                <div className="flex items-center overflow-hidden cursor-pointer">
                                   <Folder className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
                                   {editingProjectId === project.id ? (
                                     <input
@@ -1154,7 +1165,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                       className="text-xs w-full p-0.5 bg-background border border-input rounded"
                                     />
                                   ) : (
-                                    <span className="text-xs truncate">{project.name}</span>
+                                    <span className="text-xs truncate cursor-pointer">{project.name}</span>
                                   )}
                                 </div>
 
