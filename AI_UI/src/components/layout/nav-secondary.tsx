@@ -27,10 +27,10 @@ export function NavSecondary({ items, className, ...props }: NavSecondaryProps) 
           const isActive = !!pathname && (pathname === item.url || (item.url !== '/' && pathname.startsWith(item.url)));
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive} className={item.highlight ? 'text-primary' : ''}>
-                <Link href={item.url} aria-current={isActive ? 'page' : undefined} className="flex items-center">
+              <SidebarMenuButton asChild isActive={isActive} className={item.highlight ? 'text-primary cursor-pointer' : 'cursor-pointer'}>
+                <Link href={item.url} aria-current={isActive ? 'page' : undefined} className="flex items-center cursor-pointer">
                   <Icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
+                  <span className="cursor-pointer">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
