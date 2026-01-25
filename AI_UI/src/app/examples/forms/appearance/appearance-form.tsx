@@ -78,23 +78,14 @@ export function AppearanceForm() {
   })
 
 
-  // Sync form with current theme state
   React.useEffect(() => {
-    if (theme) {
-      form.setValue("theme", theme as "light" | "dark", { shouldDirty: false });
-    }
-  }, [theme, form]);
-
-  // Sync form with current background state
-  React.useEffect(() => {
-    if (background) {
-      form.setValue("background", background as AppearanceFormValues["background"], { shouldDirty: false })
-    }
-  }, [background, form]);
-
-  // Initial Data Load from DB
-  React.useEffect(() => {
-    const loadFromDb = async () => {
+    const loadData = async () => {
+      if (theme) {
+        form.setValue("theme", theme as "light" | "dark");
+      }
+      if (background) {
+        form.setValue("background", background as AppearanceFormValues["background"])
+      }
 
 
 
@@ -107,10 +98,9 @@ export function AppearanceForm() {
           if (response.ok) {
             const { settings } = await response.json()
             if (settings) {
-              // Apply settings to context - trigger side effects
-              if (settings.theme) setTheme(settings.theme)
-              if (settings.background) setBackground(settings.background)
+              if (settings.theme) form.setValue("theme", settings.theme)
               if (settings.font) form.setValue("font", settings.font)
+              if (settings.background) form.setValue("background", settings.background)
             }
           }
         } catch (e) {
@@ -125,8 +115,8 @@ export function AppearanceForm() {
       }, 1000)
     }
 
-    loadFromDb()
-  }, []);
+    loadData()
+  }, [theme, background, form]);
 
 
   const autoSave = React.useCallback(async (data: AppearanceFormValues) => {
