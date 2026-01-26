@@ -34,6 +34,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { getCurrentUser } from "@/lib/user"
 import { acceptInvite, declineInvite, listInvites, type Invite } from "@/lib/teams-api"
+import { ArchivedTeamsDialog } from "@/components/teams/archived-teams-dialog"
 
 type PendingDeleteState = {
   teamId: string
@@ -72,6 +73,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
   const [pendingDelete, setPendingDelete] = useState<PendingDeleteState>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [showArchivedTeams, setShowArchivedTeams] = useState(false)
 
   const filteredTeams = teams.filter((team) => team.name.toLowerCase().includes(searchQuery.toLowerCase()))
 
@@ -201,7 +203,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Archive</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowArchivedTeams(true)}>Archive</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -466,6 +468,15 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ArchivedTeamsDialog
+        open={showArchivedTeams}
+        onOpenChange={setShowArchivedTeams}
+        onTeamRestored={() => {
+          // Trigger teams refresh event
+          window.dispatchEvent(new CustomEvent('teams:refresh'))
+        }}
+      />
     </div>
   )
 }

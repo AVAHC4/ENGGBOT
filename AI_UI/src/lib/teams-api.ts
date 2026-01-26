@@ -13,6 +13,21 @@ export async function archiveTeam(teamId: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text())
 }
 
+export async function unarchiveTeam(teamId: string): Promise<void> {
+  const res = await fetch(`/api/teams/${teamId}/unarchive`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error(await res.text())
+}
+
+export async function listArchivedTeams(email: string): Promise<Team[]> {
+  const url = `/api/teams/archived?email=${encodeURIComponent(email)}`
+  const res = await fetch(url, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`Failed to load archived teams: ${res.status}`)
+  const json = await res.json()
+  return json.teams || []
+}
+
 export type Message = {
   id: string
   team_id: string
