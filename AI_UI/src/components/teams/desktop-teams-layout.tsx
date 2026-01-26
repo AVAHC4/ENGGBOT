@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
 import { getCurrentUser } from "@/lib/user"
-import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam, leaveTeam as apiLeaveTeam } from "@/lib/teams-api"
+import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam, leaveTeam as apiLeaveTeam, archiveTeam as apiArchiveTeam } from "@/lib/teams-api"
 
 interface Team {
   id: string
@@ -16,8 +16,8 @@ interface Team {
   isOnline?: boolean
 }
 
- 
- 
+
+
 
 export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export function DesktopTeamsLayout() {
         }))
         setTeams(mapped)
         if (mapped.length > 0) {
-           
+
           setSelectedTeamId((prev) => (prev && mapped.some((t) => t.id === prev) ? prev : mapped[0].id))
         } else {
           setSelectedTeamId(null)
@@ -114,7 +114,7 @@ export function DesktopTeamsLayout() {
     try {
       const user = getCurrentUser()
       await apiLeaveTeam(teamId, user.email)
-       
+
       setTeams((prev) => {
         const updated = prev.filter((team) => team.id !== teamId)
         setSelectedTeamId((current) => {
@@ -128,6 +128,26 @@ export function DesktopTeamsLayout() {
     } catch (e) {
       console.error("Failed to leave team:", e)
       alert("Failed to leave team. Please try again.")
+    }
+  }
+
+  const handleArchiveTeam = async (teamId: string) => {
+    try {
+      await apiArchiveTeam(teamId)
+      // Remove from local list since archived teams are filtered out
+      setTeams((prev) => {
+        const updated = prev.filter((team) => team.id !== teamId)
+        setSelectedTeamId((current) => {
+          if (current === teamId) {
+            return updated.length > 0 ? updated[0].id : null
+          }
+          return current
+        })
+        return updated
+      })
+    } catch (e) {
+      console.error("Failed to archive team:", e)
+      alert("Failed to archive team. Please try again.")
     }
   }
 
@@ -164,6 +184,7 @@ export function DesktopTeamsLayout() {
           onTeamNameUpdate={updateTeamName}
           onTeamAvatarUpdate={updateTeamAvatar}
           onLeaveTeam={handleLeaveTeam}
+          onArchiveTeam={handleArchiveTeam}
         />
       </div>
     </div>

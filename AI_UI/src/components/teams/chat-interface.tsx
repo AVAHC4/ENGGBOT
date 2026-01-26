@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
-import { deleteTeamMessage, fetchMessages, sendMessage, listTeamMembers } from "@/lib/teams-api"
+import { deleteTeamMessage, fetchMessages, sendMessage, listTeamMembers, archiveTeam } from "@/lib/teams-api"
 import { supabaseClient } from "@/lib/supabase-client"
 
 interface Message {
@@ -40,6 +40,7 @@ interface ChatInterfaceProps {
   onTeamNameUpdate: (teamId: string, newName: string) => void
   onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void
   onLeaveTeam?: (teamId: string) => void
+  onArchiveTeam?: (teamId: string) => void
 }
 
 
@@ -80,7 +81,7 @@ const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) 
   }
 }
 
-export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate, onLeaveTeam }: ChatInterfaceProps) {
+export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate, onLeaveTeam, onArchiveTeam }: ChatInterfaceProps) {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [showTeamManagement, setShowTeamManagement] = useState(false)
@@ -676,6 +677,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         onTeamNameUpdate={onTeamNameUpdate}
         onTeamAvatarUpdate={onTeamAvatarUpdate}
         onLeaveTeam={onLeaveTeam}
+        onArchiveTeam={onArchiveTeam}
       />
 
       <AddPeopleDialog
