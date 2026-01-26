@@ -3,6 +3,14 @@ export type Team = {
   name: string
   created_at?: string
   created_by_email?: string
+  is_archived?: boolean
+}
+
+export async function archiveTeam(teamId: string): Promise<void> {
+  const res = await fetch(`/api/teams/${teamId}/archive`, {
+    method: 'POST',
+  })
+  if (!res.ok) throw new Error(await res.text())
 }
 
 export type Message = {

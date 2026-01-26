@@ -3,7 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
- 
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing email' }, { status: 400 })
     }
 
-     
+
     const { data: memberships, error: mErr } = await supabaseAdmin
       .from('team_members')
       .select('team_id')
@@ -29,8 +29,9 @@ export async function GET(req: NextRequest) {
 
     const { data: teams, error: tErr } = await supabaseAdmin
       .from('teams')
-      .select('id, name, created_at, created_by_email')
+      .select('id, name, created_at, created_by_email, is_archived')
       .in('id', teamIds)
+      .eq('is_archived', false)
       .order('created_at', { ascending: false })
 
     if (tErr) {
@@ -43,8 +44,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
- 
- 
+
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

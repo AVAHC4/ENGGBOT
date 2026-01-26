@@ -9,8 +9,11 @@ create table if not exists public.teams (
   name text not null,
   created_by_email text not null,
   created_by_name text,
+  is_archived boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS is_archived boolean NOT NULL DEFAULT false;
 
 -- Team members
 create table if not exists public.team_members (
