@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MoreVertical, Search, Paperclip, Smile, Plus, X, Sparkles } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
 import { getCurrentUser } from "@/lib/user"
 import { deleteTeamMessage, fetchMessages, sendMessage, listTeamMembers, archiveTeam } from "@/lib/teams-api"
@@ -40,7 +41,6 @@ interface ChatInterfaceProps {
   onTeamAvatarUpdate?: (teamId: string, newAvatar: string) => void
   onLeaveTeam?: (teamId: string) => void
   onArchiveTeam?: (teamId: string) => void
-  onOpenTeamSettings?: (teamId: string) => void
 }
 
 
@@ -81,9 +81,10 @@ const persistHiddenMessages = (teamId: string, email: string, ids: Set<string>) 
   }
 }
 
-export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate, onLeaveTeam, onArchiveTeam, onOpenTeamSettings }: ChatInterfaceProps) {
+export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamAvatarUpdate, onLeaveTeam, onArchiveTeam }: ChatInterfaceProps) {
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
+  const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message } | null>(null)
@@ -416,7 +417,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
       >
         <div
           className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 flex-1 flex items-center gap-3 mr-4"
-          onClick={() => selectedTeamId && onOpenTeamSettings?.(selectedTeamId)}
+          onClick={() => setShowTeamManagement(true)}
         >
           <Avatar className="h-10 w-10 flex-shrink-0">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
@@ -481,9 +482,9 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => selectedTeamId && onOpenTeamSettings?.(selectedTeamId)}>Team Info</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Team Info</DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add Members</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => selectedTeamId && onOpenTeamSettings?.(selectedTeamId)}>Manage Team</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Manage Team</DropdownMenuItem>
               <DropdownMenuItem>Archive Team</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -667,7 +668,17 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       </div>
 
-
+      <TeamManagementDialog
+        open={showTeamManagement}
+        onOpenChange={setShowTeamManagement}
+        teamId={selectedTeamId}
+        teamName={team?.name || ""}
+        teamAvatar={team?.avatar}
+        onTeamNameUpdate={onTeamNameUpdate}
+        onTeamAvatarUpdate={onTeamAvatarUpdate}
+        onLeaveTeam={onLeaveTeam}
+        onArchiveTeam={onArchiveTeam}
+      />
 
       <AddPeopleDialog
         open={showAddPeople}

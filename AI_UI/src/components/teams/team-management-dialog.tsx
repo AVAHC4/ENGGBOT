@@ -24,7 +24,7 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Crown, Shield, User, UserMinus, Settings, Archive, Edit3, Save, X, Camera } from "lucide-react"
-import { listTeamMembers, leaveTeam, updateTeam, updateTeamMemberSettings, type TeamMember as ApiTeamMember } from "@/lib/teams-api"
+import { listTeamMembers, leaveTeam, type TeamMember as ApiTeamMember } from "@/lib/teams-api"
 import { supabaseClient } from "@/lib/supabase-client"
 import { ImageCropDialog } from "@/components/teams/image-crop-dialog"
 
@@ -66,7 +66,9 @@ export function TeamManagementDialog({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showCropDialog, setShowCropDialog] = useState(false)
   const [selectedImageUrl, setSelectedImageUrl] = useState("")
-  const [description, setDescription] = useState("")
+  const [description, setDescription] = useState(
+    "A collaborative space for our design team to share ideas, feedback, and updates.",
+  )
   const [notifications, setNotifications] = useState(true)
   const [allowMemberInvites, setAllowMemberInvites] = useState(false)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
@@ -90,79 +92,6 @@ export function TeamManagementDialog({
     }
   }, [])
 
-
-  const [loadingSettings, setLoadingSettings] = useState(false)
-  const [savingSettings, setSavingSettings] = useState(false)
-
-  // Load team settings when dialog opens
-  useEffect(() => {
-    if (open && teamId) {
-      setLoadingSettings(true)
-      const loadSettings = async () => {
-        if (!supabaseClient) return
-
-        try {
-          const { data: teamData, error: teamError } = await supabaseClient
-            .from('teams')
-            .select('description, allow_member_invites')
-            .eq('id', teamId)
-            .single()
-
-          if (teamError) throw teamError
-          if (teamData) {
-            setDescription(teamData.description || "")
-            setAllowMemberInvites(teamData.allow_member_invites || false)
-          }
-
-          if (currentUserEmail) {
-            const { data: memberData, error: memberError } = await supabaseClient
-              .from('team_members')
-              .select('notifications_enabled')
-              .eq('team_id', teamId)
-              .ilike('member_email', currentUserEmail)
-              .single()
-
-            if (!memberError && memberData) {
-              setNotifications(memberData.notifications_enabled !== false) // Default to true if null
-            }
-          }
-        } catch (e) {
-          console.error("Failed to load settings:", e)
-        } finally {
-          setLoadingSettings(false)
-        }
-      }
-      loadSettings()
-    }
-  }, [open, teamId, currentUserEmail])
-
-  const handleSaveSettings = async () => {
-    if (!teamId) return
-    setSavingSettings(true)
-    try {
-      await updateTeam(teamId, {
-        description: description,
-        allow_member_invites: allowMemberInvites
-      })
-    } catch (e) {
-      console.error("Failed to save settings:", e)
-      alert("Failed to save settings")
-    } finally {
-      setSavingSettings(false)
-    }
-  }
-
-  const handleNotificationsChange = async (checked: boolean) => {
-    if (!teamId || !currentUserEmail) return
-    setNotifications(checked)
-    try {
-      await updateTeamMemberSettings(teamId, currentUserEmail, { notifications_enabled: checked })
-    } catch (e) {
-      console.error("Failed to update notification settings:", e)
-      // Revert UI on error
-      setNotifications(!checked)
-    }
-  }
 
   const getCurrentUserRole = () => {
     if (!currentUserEmail) return null
@@ -466,77 +395,44 @@ export function TeamManagementDialog({
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
-              {loadingSettings ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="description">Team Description</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe what this team is about..."
+                    className="mt-1"
+                  />
+                </div>
+
+                <Separator />
+
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-                    <div className="h-20 w-full bg-muted rounded animate-pulse" />
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-                    <div className="h-10 w-full bg-muted rounded animate-pulse" />
+                  <h4 className="font-medium">Notifications</h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Team notifications</p>
+                      <p className="text-sm text-muted-foreground">Receive notifications for this team</p>
+                    </div>
+                    <Switch checked={notifications} onCheckedChange={setNotifications} />
                   </div>
                 </div>
-              ) : (
+
+                <Separator />
+
                 <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="description">Team Description</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Describe what this team is about..."
-                      className="mt-1"
-                    />
-                    <div className="flex justify-end mt-2">
-                      <Button size="sm" onClick={handleSaveSettings} disabled={savingSettings}>
-                        {savingSettings ? "Saving..." : "Save Description"}
-                      </Button>
+                  <h4 className="font-medium">Permissions</h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Allow member invites</p>
+                      <p className="text-sm text-muted-foreground">Let members invite others to this team</p>
                     </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Notifications</h4>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Team notifications</p>
-                        <p className="text-sm text-muted-foreground">Receive notifications for this team</p>
-                      </div>
-                      <Switch
-                        checked={notifications}
-                        onCheckedChange={handleNotificationsChange}
-                        disabled={savingSettings}
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <h4 className="font-medium">Permissions</h4>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Allow member invites</p>
-                        <p className="text-sm text-muted-foreground">Let members invite others to this team</p>
-                      </div>
-                      <Switch
-                        checked={allowMemberInvites}
-                        onCheckedChange={(checked) => {
-                          setAllowMemberInvites(checked)
-                          // Auto-save this setting for better UX
-                          if (teamId) {
-                            updateTeam(teamId, { allow_member_invites: checked }).catch(console.error)
-                          }
-                        }}
-                        disabled={savingSettings || getCurrentUserRole() !== 'admin'}
-                      />
-                    </div>
+                    <Switch checked={allowMemberInvites} onCheckedChange={setAllowMemberInvites} />
                   </div>
                 </div>
-              )}
+              </div>
             </TabsContent>
 
             <TabsContent value="actions" className="space-y-4">

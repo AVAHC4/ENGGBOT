@@ -76,13 +76,10 @@ begin
       where table_schema = 'public' and table_name = 'messages' and column_name = 'created_at'
     ) then
       alter table public.messages add column created_at timestamptz;
-
--- 2024-05-24: Add team settings
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS description text;
-ALTER TABLE public.teams ADD COLUMN IF NOT EXISTS allow_member_invites boolean NOT NULL DEFAULT true;
-
--- 2024-05-24: Add per-user team settings
-ALTER TABLE public.team_members ADD COLUMN IF NOT EXISTS notifications_enabled boolean NOT NULL DEFAULT true;
+    end if;
+  end if;
+end
+$$;
 
 -- Ensure constraints/defaults on messages for legacy tables
 do $$

@@ -1,8 +1,6 @@
 export type Team = {
   id: string
   name: string
-  description?: string
-  allow_member_invites?: boolean
   created_at?: string
   created_by_email?: string
   is_archived?: boolean
@@ -55,7 +53,6 @@ export type TeamMember = {
   member_email: string
   role: string
   joined_at: string
-  notifications_enabled?: boolean
 }
 
 export async function listTeams(email: string): Promise<Team[]> {
@@ -75,27 +72,6 @@ export async function createTeam(name: string, creatorEmail: string, creatorName
   if (!res.ok) throw new Error(await res.text())
   const json = await res.json()
   return json.team as Team
-}
-
-export async function updateTeam(teamId: string, updates: Partial<Team>) {
-  const res = await fetch(`/api/teams/${teamId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  })
-  if (!res.ok) throw new Error(await res.text())
-  const json = await res.json()
-  return json.team as Team
-}
-
-export async function updateTeamMemberSettings(teamId: string, email: string, settings: { notifications_enabled: boolean }) {
-  // We'll use a new endpoint for member settings to keep it clean
-  const res = await fetch(`/api/teams/${teamId}/members/settings`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, ...settings }),
-  })
-  if (!res.ok) throw new Error(await res.text())
 }
 
 export async function fetchMessages(teamId: string, limit = 200, since?: string) {

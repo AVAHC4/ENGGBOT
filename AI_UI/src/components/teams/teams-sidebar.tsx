@@ -57,12 +57,10 @@ interface TeamsSidebarProps {
   onCreateTeam?: (name: string) => Promise<void>
   onDeleteTeam?: (teamId: string) => Promise<void>
   teams: Team[]
-
-  onOpenTeamSettings?: (teamId: string) => void
   isLoading?: boolean
 }
 
-export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDeleteTeam, teams, onOpenTeamSettings, isLoading }: TeamsSidebarProps) {
+export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDeleteTeam, teams, isLoading }: TeamsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [showInvites, setShowInvites] = useState(false)
@@ -204,13 +202,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                   New Team
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  if (selectedTeamId && onOpenTeamSettings) {
-                    onOpenTeamSettings(selectedTeamId)
-                  } else if (!selectedTeamId) {
-                    alert("Please select a team first")
-                  }
-                }}>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setShowArchivedTeams(true)}>Archive</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -368,16 +360,7 @@ export function TeamsSidebar({ selectedTeamId, onTeamSelect, onCreateTeam, onDel
                       </DropdownMenuSub>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={(event) => {
-                        event.preventDefault()
-                        if (onOpenTeamSettings) {
-                          onOpenTeamSettings(team.id)
-                        }
-                      }}
-                    >
-                      Settings
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Settings</DropdownMenuItem>
                     <DropdownMenuItem onSelect={(event) => event.preventDefault()}>Archive</DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"

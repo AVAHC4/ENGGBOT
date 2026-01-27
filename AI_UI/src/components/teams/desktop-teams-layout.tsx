@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { TeamsSidebar } from "@/components/teams/teams-sidebar"
 import { ChatInterface } from "@/components/teams/chat-interface"
-import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { getCurrentUser } from "@/lib/user"
 import { listTeams as apiListTeams, createTeam as apiCreateTeam, deleteTeam as apiDeleteTeam, leaveTeam as apiLeaveTeam, archiveTeam as apiArchiveTeam } from "@/lib/teams-api"
 
@@ -24,12 +23,6 @@ export function DesktopTeamsLayout() {
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null)
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showTeamSettings, setShowTeamSettings] = useState(false)
-
-  const handleOpenTeamSettings = (teamId: string, section?: string) => {
-    setSelectedTeamId(teamId)
-    setShowTeamSettings(true)
-  }
 
   const loadTeams = useCallback(() => {
     setIsLoading(true)
