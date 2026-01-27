@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const { data: teams, error: tErr } = await supabaseAdmin
       .from('teams')
-      .select('id, name, created_at, created_by_email, is_archived')
+      .select('id, name, created_at, created_by_email, is_archived, description, allow_member_invites')
       .in('id', teamIds)
       .eq('is_archived', false)
       .order('created_at', { ascending: false })
