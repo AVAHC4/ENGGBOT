@@ -275,7 +275,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                             className="group flex items-center justify-between p-4 rounded-lg border border-transparent hover:border-primary/40 hover:bg-muted/50 cursor-pointer transition-all"
                             onClick={() => !editingConversationId && router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
-                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="flex items-start gap-3 flex-1 min-w-0 cursor-pointer">
                                 <MessageSquare className="h-5 w-5 mt-0.5 text-muted-foreground flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                     {editingConversationId === convo.id ? (
@@ -297,9 +297,9 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                                             className="w-full p-1 bg-background border border-input rounded text-sm font-medium"
                                         />
                                     ) : (
-                                        <p className="font-medium truncate">{convo.title}</p>
+                                        <p className="font-medium truncate cursor-pointer">{convo.title}</p>
                                     )}
-                                    <p className="text-sm text-muted-foreground truncate">
+                                    <p className="text-sm text-muted-foreground truncate cursor-pointer">
                                         {formatTime(convo.updated || convo.created)}
                                     </p>
                                 </div>
