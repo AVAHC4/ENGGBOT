@@ -263,7 +263,7 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                 className="flex items-center gap-3 p-4 mb-6 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors bg-card"
             >
                 <Plus className="h-5 w-5 text-primary" />
-                <span className="text-muted-foreground">New chat in {project.name}</span>
+                <span className="text-muted-foreground cursor-pointer">New chat in {project.name}</span>
             </div>
 
             { }
