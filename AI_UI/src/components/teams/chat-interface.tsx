@@ -87,7 +87,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [showTeamManagement, setShowTeamManagement] = useState(false)
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message; isOwn: boolean } | null>(null)
   const [teamMembers, setTeamMembers] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -356,9 +356,10 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
     const target = event.currentTarget
     const rect = target.getBoundingClientRect()
     setContextMenu({
-      x: rect.left,
+      x: msg.isOwn ? rect.left : rect.right,
       y: rect.top + rect.height / 2,
       message: msg,
+      isOwn: msg.isOwn,
     })
   }
 
@@ -550,7 +551,6 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
               <div
                 key={msg.id}
                 className={`flex gap-3 ${msg.isOwn ? "justify-end" : "justify-start"}`}
-                onContextMenu={(event) => handleContextMenu(event, msg)}
               >
                 {!msg.isOwn && (
                   <Avatar className="h-8 w-8 mt-1">
@@ -567,8 +567,9 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
                   {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
                   <div
-                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border ${msg.isOwn ? "bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/15 text-foreground ml-auto" : "bg-black/[0.03] dark:bg-white/8 border-black/5 dark:border-white/10 text-foreground"
+                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border cursor-pointer ${msg.isOwn ? "bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/15 text-foreground ml-auto" : "bg-black/[0.03] dark:bg-white/8 border-black/5 dark:border-white/10 text-foreground"
                       }`}
+                    onContextMenu={(event) => handleContextMenu(event, msg)}
                   >
                     <p className="text-sm">{msg.content}</p>
                     <p className="text-xs mt-1 text-muted-foreground">
@@ -586,8 +587,8 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           className="fixed z-50 min-w-[180px] rounded-md border border-border bg-popover text-popover-foreground shadow-lg"
           style={{
             top: contextMenu.y,
-            left: contextMenu.x - 8,
-            transform: 'translate(-100%, -50%)',
+            left: contextMenu.isOwn ? contextMenu.x - 8 : contextMenu.x + 8,
+            transform: contextMenu.isOwn ? 'translate(-100%, -50%)' : 'translate(0%, -50%)',
           }}
         >
           <button
