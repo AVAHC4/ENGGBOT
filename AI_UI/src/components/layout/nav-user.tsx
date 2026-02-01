@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/avatar"
 import {
   DropdownMenu,
-  DropdownMeuContent,
+  DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
