@@ -412,49 +412,51 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
 
   return (
     <div className="flex flex-col h-full bg-transparent">
-      { }
+      {/* Liquid Glass Header */}
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-black/10 dark:border-white/10 backdrop-blur-md rounded-t-xl bg-black/[0.02] dark:bg-white/[0.05]"
+        className="
+          relative flex items-center justify-between px-6 py-4 
+          border-b border-white/[0.06]
+          bg-gradient-to-r from-zinc-900/90 via-zinc-900/95 to-black/95
+          backdrop-blur-xl
+        "
       >
+        {/* Subtle header shine */}
         <div
-          className="cursor-pointer rounded-md py-2 px-3 -my-2 -ml-3 transition-colors hover:bg-black/5 dark:hover:bg-white/5 flex-1 flex items-center gap-3 mr-4"
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%)',
+          }}
+        />
+        <div
+          className="relative cursor-pointer rounded-xl py-2 px-3 -my-2 -ml-3 transition-all duration-200 hover:bg-white/[0.05] flex-1 flex items-center gap-3 mr-4"
           onClick={() => setShowTeamManagement(true)}
         >
-          <Avatar className="h-10 w-10 flex-shrink-0">
+          <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-white/10 shadow-lg">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
-            <AvatarFallback className="font-medium bg-muted text-muted-foreground">
+            <AvatarFallback className="font-medium bg-zinc-800 text-white/80 text-sm">
               {team?.name
                 .split(" ")
                 .map((word) => word[0])
                 .join("")
-                .slice(0, 2)}
+                .slice(0, 2).toLowerCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h2 className="font-semibold text-foreground">{team?.name}</h2>
+            <h2 className="font-semibold text-white">{team?.name}</h2>
             <div className="flex items-center gap-2">
-              { }
-              <div className="flex -space-x-2">
-                {[...Array(Math.min(3, teamMembers))].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-5 h-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] font-medium text-white"
-                    style={{ background: `hsl(${(i * 60) + 200}, 60%, 50%)` }}
-                  >
-                    {String.fromCharCode(65 + i)}
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">{teamMembers} members</p>
+              {/* Member indicator dot */}
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_2px_rgba(59,130,246,0.5)]" />
+              <p className="text-sm text-white/50">{teamMembers} members</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className={`h-9 w-9 ${showSearch ? 'text-primary' : 'text-muted-foreground'}`}
+            className={`h-9 w-9 rounded-full transition-colors ${showSearch ? 'text-white bg-white/10' : 'text-white/50 hover:text-white/80 hover:bg-white/[0.08]'}`}
             onClick={() => {
               setShowSearch(!showSearch)
               if (!showSearch) {
@@ -468,25 +470,25 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white/50 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <Plus className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add People</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="bg-zinc-900/95 border-white/10 backdrop-blur-xl">
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)} className="text-white/80 focus:bg-white/10 focus:text-white">Add People</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-white/50 hover:text-white/80 hover:bg-white/[0.08] transition-colors">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Team Info</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowAddPeople(true)}>Add Members</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowTeamManagement(true)}>Manage Team</DropdownMenuItem>
-              <DropdownMenuItem>Archive Team</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="bg-zinc-900/95 border-white/10 backdrop-blur-xl">
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)} className="text-white/80 focus:bg-white/10 focus:text-white">Team Info</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowAddPeople(true)} className="text-white/80 focus:bg-white/10 focus:text-white">Add Members</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowTeamManagement(true)} className="text-white/80 focus:bg-white/10 focus:text-white">Manage Team</DropdownMenuItem>
+              <DropdownMenuItem className="text-white/80 focus:bg-white/10 focus:text-white">Archive Team</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
