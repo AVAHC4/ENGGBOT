@@ -567,12 +567,33 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                 <div className={`max-w-xs lg:max-w-md ${msg.isOwn ? "order-1" : ""}`}>
                   {!msg.isOwn && <p className="text-xs text-muted-foreground mb-1 px-3">{msg.sender}</p>}
                   <div
-                    className={`rounded-xl px-4 py-2.5 backdrop-blur-md border cursor-pointer ${msg.isOwn ? "bg-black/5 dark:bg-white/10 border-black/10 dark:border-white/15 text-foreground ml-auto" : "bg-black/[0.03] dark:bg-white/8 border-black/5 dark:border-white/10 text-foreground"
-                      }`}
+                    className={`
+                      relative overflow-hidden cursor-pointer
+                      px-4 py-2.5
+                      rounded-[20px]
+                      backdrop-blur-xl
+                      transition-all duration-300 ease-out
+                      hover:scale-[1.02]
+                      ${msg.isOwn
+                        ? "bg-gradient-to-br from-zinc-700/80 via-zinc-800/90 to-zinc-900/95 text-white ml-auto shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.1)] border border-white/10"
+                        : "bg-gradient-to-br from-zinc-800/70 via-zinc-900/80 to-black/90 text-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.08)] border border-white/[0.06]"
+                      }
+                    `}
+                    style={{
+                      borderRadius: msg.isOwn ? '20px 20px 6px 20px' : '20px 20px 20px 6px'
+                    }}
                     onContextMenu={(event) => handleContextMenu(event, msg)}
                   >
-                    <p className="text-sm">{msg.content}</p>
-                    <p className="text-xs mt-1 text-muted-foreground">
+                    {/* Liquid glass highlight effect */}
+                    <div
+                      className="absolute inset-0 opacity-30 pointer-events-none"
+                      style={{
+                        background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.15), transparent)',
+                      }}
+                    />
+                    {/* Content */}
+                    <p className="relative text-sm leading-relaxed">{msg.content}</p>
+                    <p className="relative text-[11px] mt-1.5 opacity-60">
                       {msg.timestamp}
                     </p>
                   </div>
@@ -606,11 +627,27 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         </div>
       )}
 
-      { }
+      {/* Liquid Glass Input */}
       <div className="p-4 pb-6 bg-transparent">
         <div
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-black/10 dark:border-white/15 backdrop-blur-md bg-black/[0.02] dark:bg-white/[0.05]"
+          className="
+            relative flex items-center gap-2 px-4 py-3 
+            rounded-full 
+            bg-gradient-to-r from-zinc-800/60 via-zinc-900/70 to-black/80
+            border border-white/[0.08]
+            shadow-[0_4px_30px_-4px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.06)]
+            backdrop-blur-xl
+            transition-all duration-300
+            focus-within:border-white/20 focus-within:shadow-[0_4px_30px_-4px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.1)]
+          "
         >
+          {/* Subtle liquid shine effect */}
+          <div
+            className="absolute inset-0 rounded-full pointer-events-none opacity-40"
+            style={{
+              background: 'radial-gradient(ellipse 60% 40% at 25% 0%, rgba(255,255,255,0.1), transparent)',
+            }}
+          />
           <input
             type="file"
             className="hidden"
@@ -625,7 +662,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 flex-shrink-0 rounded-full text-muted-foreground cursor-pointer"
+            className="relative h-9 w-9 flex-shrink-0 rounded-full text-white/50 hover:text-white/80 hover:bg-white/10 cursor-pointer transition-colors"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="h-4 w-4" />
@@ -636,24 +673,24 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground"
+            className="relative flex-1 bg-transparent border-none outline-none text-sm text-white placeholder:text-white/40"
           />
           <div className="relative">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 flex-shrink-0 rounded-full text-muted-foreground cursor-pointer"
+              className="relative h-8 w-8 flex-shrink-0 rounded-full text-white/50 hover:text-white/80 hover:bg-white/10 cursor-pointer transition-colors"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             >
               <Smile className="h-4 w-4" />
             </Button>
             {showEmojiPicker && (
-              <div className="absolute bottom-12 right-0 z-50 bg-popover border border-border rounded-xl shadow-lg p-3 min-w-[280px]">
+              <div className="absolute bottom-12 right-0 z-50 rounded-2xl p-3 min-w-[280px] bg-gradient-to-br from-zinc-800/95 via-zinc-900/95 to-black/98 border border-white/10 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
                 <div className="grid grid-cols-8 gap-1">
                   {['😀', '😂', '😍', '🥰', '😊', '😎', '🤔', '😅', '😭', '😤', '🥳', '🤩', '😇', '🙄', '😏', '😴', '👍', '👎', '❤️', '🔥', '✨', '🎉', '💯', '👀', '🙌', '💪', '🤝', '👋', '✅', '❌', '⭐', '💡'].map((emoji) => (
                     <button
                       key={emoji}
-                      className="h-8 w-8 flex items-center justify-center text-xl hover:bg-muted rounded transition-colors cursor-pointer"
+                      className="h-8 w-8 flex items-center justify-center text-xl hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                       onClick={() => {
                         setMessage((prev) => prev + emoji)
                         setShowEmojiPicker(false)
