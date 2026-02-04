@@ -421,6 +421,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
           backdrop-blur-xl
         "
       >
+        {/* Subtle header shine */}
         <div
           className="absolute inset-0 pointer-events-none opacity-30"
           style={{
