@@ -434,7 +434,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
         >
           <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-white/10 shadow-lg">
             <AvatarImage src={team?.avatar || "/placeholder.svg"} alt={team?.name} />
-            <AvatarFallback className="font-medium bg-zinc-800 text-white/80 text-sm">
+            <AvatarFallback className="font-medium bg-zinc-80 text-white/80 text-sm">
               {team?.name
                 .split(" ")
                 .map((word) => word[0])
