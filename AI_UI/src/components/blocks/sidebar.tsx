@@ -697,7 +697,7 @@ const SidebarMenuSub = React.forwardRef<
     {...props}
   />
 ))
-SidebarMenuSub.displayName = "SidebarMenuSub"
+SidebarMenuSub.displayNme = "SidebarMenuSub"
 
 const SidebarMenuSubItem = React.forwardRef<
   HTMLLIElement,
