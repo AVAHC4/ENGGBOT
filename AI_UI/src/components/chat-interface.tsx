@@ -276,9 +276,9 @@ export function ChatInterface({ className, customHeader }: ChatInterfaceProps) {
             <div className="header-actions">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <button className="clear-chat-button inline-flex items-center gap-2" aria-label="Clear chat">
+                  <button className="clear-chat-button inline-flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded-md p-1.5 transition-colors" aria-label="Clear chat">
                     <Trash2 className="h-4 w-4 md:hidden inline" aria-hidden="true" />
-                    <span className="hidden md:inline">Clear chat</span>
+                    <span className="hidden md:inline cursor-pointer">Clear chat</span>
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
