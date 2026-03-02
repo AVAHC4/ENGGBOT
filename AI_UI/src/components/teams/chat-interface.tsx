@@ -604,13 +604,19 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                         className="teams-msg-dot"
                         onClick={(e) => {
                           e.stopPropagation()
-                          const rect = e.currentTarget.getBoundingClientRect()
-                          setContextMenu({
-                            x: msg.isOwn ? rect.left : rect.right,
-                            y: rect.top + rect.height / 2,
-                            message: msg,
-                            isOwn: msg.isOwn,
-                          })
+                          e.nativeEvent.stopImmediatePropagation()
+                          // Use the message bubble's rect (grandparent), same as right-click
+                          const bubbleEl = e.currentTarget.parentElement?.parentElement
+                          if (!bubbleEl) return
+                          const rect = bubbleEl.getBoundingClientRect()
+                          setTimeout(() => {
+                            setContextMenu({
+                              x: msg.isOwn ? rect.left : rect.right,
+                              y: rect.top + rect.height / 2,
+                              message: msg,
+                              isOwn: msg.isOwn,
+                            })
+                          }, 0)
                         }}
                         aria-label="Message options"
                       >
