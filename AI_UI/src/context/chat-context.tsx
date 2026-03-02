@@ -34,6 +34,7 @@ interface ChatContextType {
   stopGeneration: () => void;
   sendMessage: (content: string, files?: File[], replyToId?: string) => Promise<void>;
   clearMessages: () => void;
+  deleteMessage: (messageId: string, deleteForEveryone: boolean) => void;
   thinkingMode: boolean;
   toggleThinkingMode: () => void;
   webSearchMode: boolean;
@@ -555,6 +556,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [conversationId, isPrivateMode]);
 
+  const deleteMessage = useCallback((messageId: string, _deleteForEveryone: boolean) => {
+    setMessages(prev => {
+      const updatedMessages = prev.filter(m => m.id !== messageId);
+
+      if (typeof window !== 'undefined' && !isPrivateMode) {
+        saveConversation(conversationId, updatedMessages);
+      }
+
+      return updatedMessages;
+    });
+  }, [conversationId, isPrivateMode]);
+
   const addMessage = useCallback((message: Partial<ExtendedChatMessage>) => {
     const newMessage: ExtendedChatMessage = {
       id: message.id || crypto.randomUUID(),
@@ -937,6 +950,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     stopGeneration,
     sendMessage,
     clearMessages,
+    deleteMessage,
     thinkingMode,
     toggleThinkingMode,
     webSearchMode,

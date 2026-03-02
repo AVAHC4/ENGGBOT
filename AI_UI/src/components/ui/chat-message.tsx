@@ -1,11 +1,10 @@
- 
- 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
 import { cn, openInCompiler } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import dynamic from 'next/dynamic';
 
-import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play, ChevronDown, ChevronRight, Brain } from "lucide-react";
+import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play, ChevronDown, ChevronRight, Brain, Trash2 } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import NextImage from "next/image";
@@ -73,74 +72,104 @@ export function ChatMessage({
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, regenerateLastResponse } = useChat();
+  const { messages, regenerateLastResponse, deleteMessage } = useChat();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [codeExecutionResults, setCodeExecutionResults] = useState<Map<string, any>>(new Map());
   const [executingCode, setExecutingCode] = useState<Set<string>>(new Set());
+  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
+  const deleteMenuRef = useRef<HTMLDivElement>(null);
+  const dotButtonRef = useRef<HTMLButtonElement>(null);
 
-   
+  // Close popup on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showDeleteMenu &&
+        deleteMenuRef.current &&
+        !deleteMenuRef.current.contains(event.target as Node) &&
+        dotButtonRef.current &&
+        !dotButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowDeleteMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDeleteMenu]);
+
+  const handleDeleteForMe = () => {
+    deleteMessage(messageData.id, false);
+    setShowDeleteMenu(false);
+  };
+
+  const handleDeleteForEveryone = () => {
+    deleteMessage(messageData.id, true);
+    setShowDeleteMenu(false);
+  };
+
+
   const replyToMessage = messageData.replyToId
     ? messages.find(msg => msg.id === messageData.replyToId)
     : null;
 
-   
+
   const isStreaming = messageData.isStreaming === true;
 
-   
+
   let thinkingContent = null;
   let mainContent = message;
 
-   
-   
+
+
   const thinkMatch = /^(<think>)([\s\S]*?)(?:<\/think>|$)/.exec(message);
 
   if (thinkMatch && !isUser) {
     thinkingContent = thinkMatch[2];
-     
-     
+
+
     if (message.includes('</think>')) {
       mainContent = message.split('</think>')[1] || '';
-       
+
       mainContent = mainContent.replace(/^\n+/, '');
     } else {
-      mainContent = '';  
+      mainContent = '';
     }
   }
 
-   
+
   const handleCopy = () => {
     navigator.clipboard.writeText(message).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);  
+      setTimeout(() => setCopied(false), 2000);
     });
   };
 
-   
+
   const handleCopyCode = (code: string, blockId: number) => {
     navigator.clipboard.writeText(code).then(() => {
       setCodeCopied(blockId.toString());
-      setTimeout(() => setCodeCopied(null), 2000);  
+      setTimeout(() => setCodeCopied(null), 2000);
     });
   };
 
-   
+
   const handleOpenInCompiler = (code: string, language: string) => {
-     
-     
+
+
     const compilerUrl = `/compiler?code=${encodeURIComponent(code)}&language=${encodeURIComponent(language)}`;
     window.open(compilerUrl, '_blank');
   };
 
-   
+
   const handleRegenerate = async () => {
     setIsRegenerating(true);
     await regenerateLastResponse();
     setIsRegenerating(false);
   };
 
-   
+
   const getFileIcon = (type: string) => {
     if (type.startsWith("image/")) return <ImageIcon className="h-4 w-4" />;
     if (type.startsWith("audio/")) return <FileAudio className="h-4 w-4" />;
@@ -149,11 +178,11 @@ export function ChatMessage({
   };
 
 
-   
-  useEffect(() => {
-    if (isUser) return;  
 
-     
+  useEffect(() => {
+    if (isUser) return;
+
+
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     let match;
     let index = 0;
@@ -168,7 +197,7 @@ export function ChatMessage({
       const currentlyExecuting = executingCode.has(codeKey);
 
       if (hasVisualization && !alreadyExecuted && !currentlyExecuting) {
-         
+
         const executeCode = async () => {
           setExecutingCode(prev => new Set(prev).add(codeKey));
           try {
@@ -194,7 +223,7 @@ export function ChatMessage({
   }, [mainContent, messageData.id, isUser, codeExecutionResults, executingCode]);
 
 
-   
+
   const renderAttachments = () => {
     if (!attachments || !attachments.length) return null;
 
@@ -237,13 +266,13 @@ export function ChatMessage({
     );
   };
 
-   
+
   const truncateReplyText = (text: string, maxLength = 50) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
-   
+
   const renderReplyQuote = () => {
     if (!replyToMessage) return null;
 
@@ -265,7 +294,7 @@ export function ChatMessage({
     );
   };
 
-   
+
   const renderStreamingIndicator = () => {
     if (!isStreaming) return null;
 
@@ -276,16 +305,16 @@ export function ChatMessage({
     );
   };
 
-   
+
   const processMessageContent = (content: string) => {
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
 
-     
+
     while ((match = codeBlockRegex.exec(content)) !== null) {
-       
+
       if (match.index > lastIndex) {
         parts.push({
           type: 'text',
@@ -293,7 +322,7 @@ export function ChatMessage({
         });
       }
 
-       
+
       const language = match[1] || 'text';
       const code = match[2];
       parts.push({
@@ -305,7 +334,7 @@ export function ChatMessage({
       lastIndex = match.index + match[0].length;
     }
 
-     
+
     if (lastIndex < content.length) {
       parts.push({
         type: 'text',
@@ -313,7 +342,7 @@ export function ChatMessage({
       });
     }
 
-     
+
     if (parts.length === 0) {
       return [{
         type: 'text',
@@ -324,7 +353,7 @@ export function ChatMessage({
     return parts;
   };
 
-   
+
   const renderMessageContent = (content: string, skipAnim = skipGeneration || isUser) => {
     const parts = processMessageContent(content);
 
@@ -443,7 +472,7 @@ export function ChatMessage({
           </div>
         );
       } else {
-         
+
         const shouldUseStreamingEffect = !skipAnim && !isUser && !isStreaming;
 
         return shouldUseStreamingEffect ? (
@@ -468,7 +497,7 @@ export function ChatMessage({
                     );
                   }
 
-                  return null;  
+                  return null;
                 },
                 a: ({ node, ...props }) => (
                   <a
@@ -478,7 +507,7 @@ export function ChatMessage({
                     rel="noopener noreferrer"
                   />
                 ),
-                 
+
                 img: ({ node, alt, ...props }) => (
                   <img
                     {...props}
@@ -492,7 +521,7 @@ export function ChatMessage({
                     }}
                   />
                 ),
-                 
+
                 table: ({ node, ...props }) => (
                   <table {...props} />
                 ),
@@ -543,7 +572,33 @@ export function ChatMessage({
             {renderAttachments()}
             {renderStreamingIndicator()}
           </div>
-          {timestamp && <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>}
+          {timestamp && (
+            <div className="message-timestamp-row">
+              <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>
+              <div className="message-menu-wrapper">
+                <button
+                  ref={dotButtonRef}
+                  className="message-menu-dot"
+                  onClick={() => setShowDeleteMenu(!showDeleteMenu)}
+                  aria-label="Message options"
+                >
+                  <ChevronDown size={14} />
+                </button>
+                {showDeleteMenu && (
+                  <div ref={deleteMenuRef} className="message-delete-popup">
+                    <button className="delete-option" onClick={handleDeleteForMe}>
+                      <Trash2 size={14} />
+                      <span>Delete for me</span>
+                    </button>
+                    <button className="delete-option delete-everyone" onClick={handleDeleteForEveryone}>
+                      <Trash2 size={14} />
+                      <span>Delete for everyone</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           { }
           <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
