@@ -600,49 +600,22 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                       <p className="text-[11px] opacity-60">
                         {msg.timestamp}
                       </p>
-                      <div className="relative">
-                        <button
-                          className="teams-msg-dot"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setDotMenu(dotMenu === msg.id ? null : msg.id)
-                          }}
-                          aria-label="Message options"
-                        >
-                          <ChevronDown size={12} />
-                        </button>
-                        {dotMenu === msg.id && (
-                          <div
-                            className="teams-msg-delete-popup"
-                            style={{
-                              right: msg.isOwn ? 0 : 'auto',
-                              left: msg.isOwn ? 'auto' : 0,
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              className="teams-delete-option"
-                              onClick={() => {
-                                handleDeleteForMe(msg)
-                                setDotMenu(null)
-                              }}
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete for me</span>
-                            </button>
-                            <button
-                              className="teams-delete-option teams-delete-everyone"
-                              onClick={() => {
-                                handleDeleteForEveryone(msg)
-                                setDotMenu(null)
-                              }}
-                            >
-                              <Trash2 size={14} />
-                              <span>Delete for everyone</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        className="teams-msg-dot"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setContextMenu({
+                            x: msg.isOwn ? rect.left : rect.right,
+                            y: rect.top + rect.height / 2,
+                            message: msg,
+                            isOwn: msg.isOwn,
+                          })
+                        }}
+                        aria-label="Message options"
+                      >
+                        <ChevronDown size={12} />
+                      </button>
                     </div>
                   </div>
                 </div>
