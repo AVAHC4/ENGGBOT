@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreVertical, Search, Paperclip, Smile, Plus, X, Sparkles } from "lucide-react"
+import { MoreVertical, Search, Paperclip, Smile, Plus, X, Sparkles, ChevronDown, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TeamManagementDialog } from "@/components/teams/team-management-dialog"
 import { AddPeopleDialog } from "@/components/teams/add-people-dialog"
@@ -88,6 +88,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   const [showAddPeople, setShowAddPeople] = useState(false)
   const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; message: Message; isOwn: boolean } | null>(null)
+  const [dotMenu, setDotMenu] = useState<string | null>(null)
   const [teamMembers, setTeamMembers] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
@@ -119,7 +120,7 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
   }, [selectedTeamId])
 
   useEffect(() => {
-    const closeMenu = () => setContextMenu(null)
+    const closeMenu = () => { setContextMenu(null); setDotMenu(null) }
     window.addEventListener('click', closeMenu)
     window.addEventListener('scroll', closeMenu, true)
     window.addEventListener('resize', closeMenu)
@@ -595,9 +596,54 @@ export function ChatInterface({ selectedTeamId, teams, onTeamNameUpdate, onTeamA
                     />
                     {/* Content */}
                     <p className="relative text-sm leading-relaxed">{msg.content}</p>
-                    <p className="relative text-[11px] mt-1.5 opacity-60">
-                      {msg.timestamp}
-                    </p>
+                    <div className="relative flex items-center gap-1 mt-1.5">
+                      <p className="text-[11px] opacity-60">
+                        {msg.timestamp}
+                      </p>
+                      <div className="relative">
+                        <button
+                          className="teams-msg-dot"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDotMenu(dotMenu === msg.id ? null : msg.id)
+                          }}
+                          aria-label="Message options"
+                        >
+                          <ChevronDown size={12} />
+                        </button>
+                        {dotMenu === msg.id && (
+                          <div
+                            className="teams-msg-delete-popup"
+                            style={{
+                              right: msg.isOwn ? 0 : 'auto',
+                              left: msg.isOwn ? 'auto' : 0,
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              className="teams-delete-option"
+                              onClick={() => {
+                                handleDeleteForMe(msg)
+                                setDotMenu(null)
+                              }}
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete for me</span>
+                            </button>
+                            <button
+                              className="teams-delete-option teams-delete-everyone"
+                              onClick={() => {
+                                handleDeleteForEveryone(msg)
+                                setDotMenu(null)
+                              }}
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete for everyone</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

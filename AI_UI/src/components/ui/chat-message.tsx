@@ -1,10 +1,10 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { cn, openInCompiler } from "@/lib/utils";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import dynamic from 'next/dynamic';
 
-import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play, ChevronDown, ChevronRight, Brain, Trash2 } from "lucide-react";
+import { User, File, Image as ImageIcon, FileAudio, FileVideo, Download, CornerUpLeft, Copy, Check, RefreshCw, Play, ChevronDown, ChevronRight, Brain } from "lucide-react";
 import { Attachment, ExtendedChatMessage, useChat } from "@/context/chat-context";
 import { Button } from "@/components/ui/button";
 import NextImage from "next/image";
@@ -72,42 +72,12 @@ export function ChatMessage({
   skipGeneration = false,
   messageData
 }: ChatMessageProps) {
-  const { messages, regenerateLastResponse, deleteMessage } = useChat();
+  const { messages, regenerateLastResponse } = useChat();
   const [copied, setCopied] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [codeExecutionResults, setCodeExecutionResults] = useState<Map<string, any>>(new Map());
   const [executingCode, setExecutingCode] = useState<Set<string>>(new Set());
-  const [showDeleteMenu, setShowDeleteMenu] = useState(false);
-  const deleteMenuRef = useRef<HTMLDivElement>(null);
-  const dotButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Close popup on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showDeleteMenu &&
-        deleteMenuRef.current &&
-        !deleteMenuRef.current.contains(event.target as Node) &&
-        dotButtonRef.current &&
-        !dotButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowDeleteMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showDeleteMenu]);
-
-  const handleDeleteForMe = () => {
-    deleteMessage(messageData.id, false);
-    setShowDeleteMenu(false);
-  };
-
-  const handleDeleteForEveryone = () => {
-    deleteMessage(messageData.id, true);
-    setShowDeleteMenu(false);
-  };
 
 
   const replyToMessage = messageData.replyToId
@@ -572,33 +542,7 @@ export function ChatMessage({
             {renderAttachments()}
             {renderStreamingIndicator()}
           </div>
-          {timestamp && (
-            <div className="message-timestamp-row">
-              <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>
-              <div className="message-menu-wrapper">
-                <button
-                  ref={dotButtonRef}
-                  className="message-menu-dot"
-                  onClick={() => setShowDeleteMenu(!showDeleteMenu)}
-                  aria-label="Message options"
-                >
-                  <ChevronDown size={14} />
-                </button>
-                {showDeleteMenu && (
-                  <div ref={deleteMenuRef} className="message-delete-popup">
-                    <button className="delete-option" onClick={handleDeleteForMe}>
-                      <Trash2 size={14} />
-                      <span>Delete for me</span>
-                    </button>
-                    <button className="delete-option delete-everyone" onClick={handleDeleteForEveryone}>
-                      <Trash2 size={14} />
-                      <span>Delete for everyone</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {timestamp && <div className="message-timestamp mt-1 text-xs text-gray-400">{timestamp}</div>}
 
           { }
           <div className="message-actions flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
