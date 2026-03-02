@@ -179,8 +179,9 @@ export async function POST(request: Request) {
         }
       });
     } catch (error) {
-      console.error("Error generating streaming response:", error);
-      return new Response(`data: ${JSON.stringify({ error: "Error generating streaming response" })}\n\ndata: [DONE]\n\n`, {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("Error generating streaming response:", errorMessage, error);
+      return new Response(`data: ${JSON.stringify({ error: `Error generating streaming response: ${errorMessage}` })}\n\ndata: [DONE]\n\n`, {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
