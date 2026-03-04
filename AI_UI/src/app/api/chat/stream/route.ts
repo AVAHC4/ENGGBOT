@@ -18,15 +18,23 @@ function processOpenRouterStream(
       let isClosed = false;
 
       const safeEnqueue = (chunk: Uint8Array) => {
-        if (!isClosed) {
-          controller.enqueue(chunk);
+        try {
+          if (!isClosed) {
+            controller.enqueue(chunk);
+          }
+        } catch {
+          isClosed = true;
         }
       };
 
       const safeClose = () => {
-        if (!isClosed) {
+        try {
+          if (!isClosed) {
+            isClosed = true;
+            controller.close();
+          }
+        } catch {
           isClosed = true;
-          controller.close();
         }
       };
 
@@ -107,7 +115,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "meta-llama/llama-3.3-70b-instruct:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []

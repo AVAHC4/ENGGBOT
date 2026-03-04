@@ -2,7 +2,7 @@
 
 
 export const AVAILABLE_MODELS = {
-    "gpt-oss": "meta-llama/llama-3.3-70b-instruct:free",
+    "gpt-oss": "z-ai/glm-4.5-air:free",
 };
 
 

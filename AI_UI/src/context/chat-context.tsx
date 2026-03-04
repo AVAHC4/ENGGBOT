@@ -66,7 +66,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(true);
   const [webSearchMode, setWebSearchMode] = useState(false);
-  const currentModel = "meta-llama/llama-3.3-70b-instruct:free";
+  const currentModel = "z-ai/glm-4.5-air:free";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);

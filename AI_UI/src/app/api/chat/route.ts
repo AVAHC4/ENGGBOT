@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const {
       message,
       hasAttachments = false,
-      model = "meta-llama/llama-3.3-70b-instruct:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
