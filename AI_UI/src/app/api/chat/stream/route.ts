@@ -15,8 +15,25 @@ function processOpenRouterStream(
 
   return new ReadableStream({
     async start(controller) {
+      let isClosed = false;
+
+      const safeEnqueue = (chunk: Uint8Array) => {
+        if (!isClosed) {
+          controller.enqueue(chunk);
+        }
+      };
+
+      const safeClose = () => {
+        if (!isClosed) {
+          isClosed = true;
+          controller.close();
+        }
+      };
+
       try {
         let buffer = '';
+        let doneSent = false;
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
@@ -36,21 +53,17 @@ function processOpenRouterStream(
               if (!jsonData) continue;
 
               if (jsonData === "[DONE]") {
-                const doneEvent = `data: [DONE]\n\n`;
-                controller.enqueue(encoder.encode(doneEvent));
+                safeEnqueue(encoder.encode(`data: [DONE]\n\n`));
+                doneSent = true;
                 continue;
               }
               const data = JSON.parse(jsonData);
-              console.log('[STREAM DEBUG] Parsed chunk:', JSON.stringify(data).substring(0, 200));
 
               if (data.choices && data.choices[0]?.delta?.content) {
                 const content = data.choices[0].delta.content;
-
-
                 const processedContent = processAIResponse(content, userMessage);
-
                 const event = `data: ${JSON.stringify({ text: processedContent })}\n\n`;
-                controller.enqueue(encoder.encode(event));
+                safeEnqueue(encoder.encode(event));
               }
             } catch (e) {
               console.error("Error processing stream line:", e, "Line:", line);
@@ -58,13 +71,19 @@ function processOpenRouterStream(
             }
           }
         }
-        const doneEvent = `data: [DONE]\n\n`;
-        controller.enqueue(encoder.encode(doneEvent));
+
+        // Only send [DONE] if it wasn't already sent from the upstream data
+        if (!doneSent) {
+          safeEnqueue(encoder.encode(`data: [DONE]\n\n`));
+        }
       } catch (error) {
         console.error("Stream processing error:", error);
-        controller.error(error);
+        if (!isClosed) {
+          isClosed = true;
+          controller.error(error);
+        }
       } finally {
-        controller.close();
+        safeClose();
       }
     },
 
