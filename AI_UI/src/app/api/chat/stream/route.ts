@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "openai/gpt-oss-120b:free",
+      model = "meta-llama/llama-3.3-70b-instruct:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []

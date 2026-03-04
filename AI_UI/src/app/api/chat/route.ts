@@ -7,7 +7,7 @@ import crypto from 'crypto';
 
 export const runtime = 'nodejs';
 
- 
+
 export interface ChatMessage {
   id: string;
   content: string;
@@ -15,7 +15,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
- 
+
 function formatConversationHistory(history: ChatMessage[]): Array<{ role: string, content: string }> {
   if (!history || history.length === 0) return [];
 
@@ -25,13 +25,13 @@ function formatConversationHistory(history: ChatMessage[]): Array<{ role: string
   });
 }
 
- 
+
 export async function POST(request: Request) {
   try {
     const {
       message,
       hasAttachments = false,
-      model = "openai/gpt-oss-120b:free",
+      model = "meta-llama/llama-3.3-70b-instruct:free",
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-     
+
     if (isIdentityQuestion(message)) {
       const chatMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -54,33 +54,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: chatMessage });
     }
 
-     
+
     if (!isClientInitialized()) {
       await initializeAIClient();
     }
 
-     
+
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       console.warn("OPENROUTER_API_KEY is not set. Configure this env var in production.");
     }
     const openRouterClient = new OpenRouterClient({ apiKey });
 
-     
+
     const formattedMessages = formatConversationHistory(conversationHistory);
 
-     
+
     const systemMessage = {
       role: 'system',
       content: generateMarkdownSystemPrompt()
     };
 
-     
+
     const messages = formattedMessages.length > 0 && formattedMessages[0].role === 'system' ?
       formattedMessages :
       [systemMessage, ...formattedMessages];
 
-     
+
     messages.push({
       role: 'user',
       content: hasAttachments
@@ -88,11 +88,11 @@ export async function POST(request: Request) {
         : message
     });
 
-     
+
     const modelName = AVAILABLE_MODELS["gpt-oss"];
 
     try {
-       
+
       const response = await openRouterClient.generate({
         prompt: message,
         model: modelName,
@@ -102,10 +102,10 @@ export async function POST(request: Request) {
         messages: messages
       });
 
-       
+
       const processedResponse = processAIResponse(response, message);
 
-       
+
       const chatMessage: ChatMessage = {
         id: crypto.randomUUID(),
         content: processedResponse,
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error("Error generating AI response:", error);
 
-       
+
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         content: "I apologize, but I'm having trouble processing your request right now. Please try again.",

@@ -66,7 +66,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(true);
   const [webSearchMode, setWebSearchMode] = useState(false);
-  const currentModel = "openai/gpt-oss-120b:free";
+  const currentModel = "meta-llama/llama-3.3-70b-instruct:free";
   const [replyToMessage, setReplyToMessage] = useState<ExtendedChatMessage | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [isPrivateMode, setIsPrivateMode] = useState(false);
