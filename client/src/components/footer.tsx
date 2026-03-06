@@ -1,6 +1,7 @@
 import React from "react"
 import { Link } from "wouter"
 import { Logo } from "./logo"
+import { motion } from "framer-motion"
 
 const links = [
   {
@@ -27,7 +28,13 @@ const links = [
 
 export default function FooterSection() {
   return (
-    <footer className="py-16 md:py-32">
+    <motion.footer
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.6 }}
+      className="py-16 md:py-32"
+    >
       <div className="mx-auto max-w-5xl px-6">
         <Link href="/" aria-label="go home" className="mx-auto block size-fit">
           <div className="flex items-center space-x-2">
@@ -91,6 +98,6 @@ export default function FooterSection() {
           © {new Date().getFullYear()} ENGGBOT, All rights reserved
         </span>
       </div>
-    </footer>
+    </motion.footer>
   )
 } 
