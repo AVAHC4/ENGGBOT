@@ -1,16 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
-import { motion } from "framer-motion"
 
 export default function ContentSection() {
   return (
-    <section className="py-16 md:py-32 overflow-hidden">
+    <section className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-12">
-        <motion.img
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8 }}
+        <img
           className="rounded-(--radius) grayscale"
           src="https://images.unsplash.com/photo-1530099486328-e021101a494a?q=80&w=2747&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
           alt="team image"
@@ -19,13 +14,7 @@ export default function ContentSection() {
           loading="lazy"
         />
 
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid gap-6 md:grid-cols-2 md:gap-12"
-        >
+        <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           <h2 className="text-4xl font-medium">
             The ENGGBOT ecosystem brings together cutting-edge AI, university resources, and student innovation.
           </h2>
@@ -41,7 +30,7 @@ export default function ContentSection() {
               </a>
             </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
