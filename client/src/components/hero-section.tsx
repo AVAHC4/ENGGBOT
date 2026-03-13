@@ -7,7 +7,7 @@ import { HeroHeader } from "@/components/hero5-header"
 import { Link } from "wouter"
 import { HeroSectionSkeleton } from "./hero-section-skeleton"
 import { useState, useEffect } from "react"
-
+import { motion } from "framer-motion"
 const transitionVariants = {
   item: {
     hidden: {
@@ -21,8 +21,8 @@ const transitionVariants = {
       y: 0,
       transition: {
         type: "spring",
-        bounce: 0.3,
-        duration: 1.5,
+        bounce: 0.4,
+        duration: 2.5,
       },
     },
   },
@@ -142,7 +142,7 @@ export default function HeroSection() {
                   }}
                   className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
                 >
-                  <div key={1} className="relative">
+                  <motion.div key={1} className="relative" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/80 to-gray-100/80 opacity-80 blur-xl"></div>
                     <Button
                       asChild
@@ -153,12 +153,14 @@ export default function HeroSection() {
                         <span className="text-nowrap">AI Chat Interface</span>
                       </Link>
                     </Button>
-                  </div>
-                  <Button key={2} asChild size="lg" variant="ghost" className="h-14 rounded-xl px-6 text-lg">
-                    <Link href="/login">
-                      <span className="text-nowrap">Try Demo</span>
-                    </Link>
-                  </Button>
+                  </motion.div>
+                  <motion.div key={2} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button asChild size="lg" variant="ghost" className="h-14 rounded-xl px-6 text-lg">
+                      <Link href="/login">
+                        <span className="text-nowrap">Try Demo</span>
+                      </Link>
+                    </Button>
+                  </motion.div>
                 </AnimatedGroup>
               </div>
             </div>

@@ -5,10 +5,12 @@ import { motion } from "framer-motion"
 
 const BackgroundPaths: React.FC = () => {
   return (
-    <div 
-      className="absolute inset-0 overflow-hidden" 
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 2, ease: "easeOut" }}
+      className="absolute inset-0 overflow-hidden pointer-events-none" 
       style={{ 
-        backgroundColor: 'white',
         zIndex: -5,
         position: 'absolute'
       }}
@@ -22,10 +24,10 @@ const BackgroundPaths: React.FC = () => {
       >
         <defs>
           <linearGradient id="fadeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#d1d5db" stopOpacity="0" />
-            <stop offset="20%" stopColor="#d1d5db" stopOpacity="1" />
-            <stop offset="80%" stopColor="#d1d5db" stopOpacity="1" />
-            <stop offset="100%" stopColor="#d1d5db" stopOpacity="0" />
+            <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0" />
+            <stop offset="20%" stopColor="#3b82f6" stopOpacity="0.8" />
+            <stop offset="80%" stopColor="#8b5cf6" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
           </linearGradient>
         </defs>
         <g opacity="0.4">
@@ -181,7 +183,7 @@ const BackgroundPaths: React.FC = () => {
           ))}
         </g>
       </svg>
-    </div>
+    </motion.div>
   )
 }
 
