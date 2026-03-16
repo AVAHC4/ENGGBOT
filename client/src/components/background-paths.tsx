@@ -5,20 +5,20 @@ import { motion } from "framer-motion"
 
 const BackgroundPaths: React.FC = () => {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 2, ease: "easeOut" }}
-      className="absolute inset-0 overflow-hidden pointer-events-none" 
-      style={{ 
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{
         zIndex: -5,
         position: 'absolute'
       }}
     >
-      <svg 
-        width="100%" 
-        height="100%" 
-        viewBox="0 0 1440 900" 
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 1440 900"
         preserveAspectRatio="xMinYMin slice"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -39,19 +39,19 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="1"
-              animate={{ 
+              animate={{
                 y: [0, -2, 0, 2, 0],
                 opacity: [0.7, 1, 0.7]
               }}
-              transition={{ 
-                duration: 8 + i * 0.5, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 8 + i * 0.5,
+                ease: "easeInOut",
                 repeat: Infinity,
-                times: [0, 0.25, 0.5, 0.75, 1] 
+                times: [0, 0.25, 0.5, 0.75, 1]
               }}
             />
           ))}
-          
+
           {/* Additional arcs for the dense effect from bottom */}
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.path
@@ -60,20 +60,20 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="0.5"
-              animate={{ 
+              animate={{
                 y: [0, -1, 0, 1, 0],
                 opacity: [0.5, 0.8, 0.5]
               }}
-              transition={{ 
-                duration: 10 + i * 0.2, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 10 + i * 0.2,
+                ease: "easeInOut",
                 repeat: Infinity,
                 times: [0, 0.25, 0.5, 0.75, 1],
                 delay: i * 0.1
               }}
             />
           ))}
-          
+
           {/* Top rays */}
           {Array.from({ length: 6 }).map((_, i) => (
             <motion.path
@@ -82,19 +82,19 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="1"
-              animate={{ 
+              animate={{
                 y: [0, 2, 0, -2, 0],
                 opacity: [0.7, 1, 0.7]
               }}
-              transition={{ 
-                duration: 8 + i * 0.5, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 8 + i * 0.5,
+                ease: "easeInOut",
                 repeat: Infinity,
-                times: [0, 0.25, 0.5, 0.75, 1] 
+                times: [0, 0.25, 0.5, 0.75, 1]
               }}
             />
           ))}
-          
+
           {/* Additional arcs for the dense effect from top */}
           {Array.from({ length: 20 }).map((_, i) => (
             <motion.path
@@ -103,20 +103,20 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="0.5"
-              animate={{ 
+              animate={{
                 y: [0, 1, 0, -1, 0],
                 opacity: [0.5, 0.8, 0.5]
               }}
-              transition={{ 
-                duration: 10 + i * 0.2, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 10 + i * 0.2,
+                ease: "easeInOut",
                 repeat: Infinity,
                 times: [0, 0.25, 0.5, 0.75, 1],
                 delay: i * 0.1
               }}
             />
           ))}
-          
+
           {/* New rays from right side */}
           {Array.from({ length: 5 }).map((_, i) => (
             <motion.path
@@ -125,19 +125,19 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="1"
-              animate={{ 
+              animate={{
                 x: [0, -2, 0, 2, 0],
                 opacity: [0.7, 1, 0.7]
               }}
-              transition={{ 
-                duration: 8 + i * 0.5, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 8 + i * 0.5,
+                ease: "easeInOut",
                 repeat: Infinity,
-                times: [0, 0.25, 0.5, 0.75, 1] 
+                times: [0, 0.25, 0.5, 0.75, 1]
               }}
             />
           ))}
-          
+
           {/* Additional rays from right side */}
           {Array.from({ length: 15 }).map((_, i) => (
             <motion.path
@@ -146,13 +146,13 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="0.5"
-              animate={{ 
+              animate={{
                 x: [0, -1, 0, 1, 0],
                 opacity: [0.5, 0.8, 0.5]
               }}
-              transition={{ 
-                duration: 10 + i * 0.2, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 10 + i * 0.2,
+                ease: "easeInOut",
                 repeat: Infinity,
                 times: [0, 0.25, 0.5, 0.75, 1],
                 delay: i * 0.1
@@ -168,13 +168,13 @@ const BackgroundPaths: React.FC = () => {
               fill="none"
               stroke="url(#fadeGradient)"
               strokeWidth="0.5"
-              animate={{ 
+              animate={{
                 x: [0, -1.5, 0, 1.5, 0],
                 opacity: [0.5, 0.8, 0.5]
               }}
-              transition={{ 
-                duration: 9 + i * 0.3, 
-                ease: "easeInOut", 
+              transition={{
+                duration: 9 + i * 0.3,
+                ease: "easeInOut",
                 repeat: Infinity,
                 times: [0, 0.25, 0.5, 0.75, 1],
                 delay: i * 0.15
