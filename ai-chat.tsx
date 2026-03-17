@@ -276,7 +276,7 @@ In a real implementation, this would be replaced with an actual API call to the 
             className={cn("text-center mb-10", "opacity-100 scale-100")}
           >
             <h1 className="text-5xl md:text-6xl font-medium mb-4 tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-gray-400">
-              Welcome Traveler
+              Welcome Traler
             </h1>
             <p className="text-xl text-zinc-400">What can I do for you today?</p>
             <p className="text-md text-zinc-500 mt-2">Try typing "show me streaming" to see streaming responses in action!</p>
