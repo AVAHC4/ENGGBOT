@@ -28,13 +28,12 @@ export default function Home() {
     const hasLogoutParams = urlParams.has("logout") || urlParams.has("force_logout");
 
     if (forcedMain || forcedLogout || hasLogoutParams) {
-      // Clear the flags so future visits behave normally
+
       localStorage.removeItem("forceMainPage");
       localStorage.removeItem("forceLogout");
       return;
     }
 
-    // Fast path: local evidence of auth or prior intent to go to chat
     const cookies = document.cookie || "";
     const aiUiAuthenticated = localStorage.getItem("ai_ui_authenticated") === "true";
     const externalAuthenticatedLS = localStorage.getItem("authenticated") === "true";
