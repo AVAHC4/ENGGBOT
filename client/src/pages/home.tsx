@@ -16,12 +16,12 @@ export default function Home() {
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    // Only apply the redirect logic on the Vercel (production) deployment, not localhost
+
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return;
     }
 
-    // Skip auto-redirect if we just logged out or explicitly forced the main page
+
     const urlParams = new URLSearchParams(window.location.search);
     const forcedMain = localStorage.getItem("forceMainPage") === "true";
     const forcedLogout = localStorage.getItem("forceLogout") === "true";
@@ -97,7 +97,7 @@ export default function Home() {
       <BackgroundPaths />
       <div className="relative z-10 container mx-auto px-4 md:px-0">
         <HeroSection />
-        
+
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp}>
           <ContentSection />
         </motion.div>
