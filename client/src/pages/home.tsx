@@ -56,11 +56,11 @@ export default function Home() {
       return;
     }
 
-    // Fallback path: ask the backend if the session is authenticated
+
     const controller = new AbortController();
     const checkAuth = async () => {
       try {
-        const apiUrl = window.location.origin; // vercel.json rewrites /api/* to the AI_UI deployment
+        const apiUrl = window.location.origin;
         const res = await fetch(`${apiUrl}/api/auth/status`, {
           credentials: "include",
           headers: { Accept: "application/json" },
@@ -73,7 +73,7 @@ export default function Home() {
           window.location.replace("/AI_UI");
         }
       } catch (_) {
-        // ignore – show landing
+
       }
     };
     checkAuth();
