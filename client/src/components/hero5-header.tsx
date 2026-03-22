@@ -11,7 +11,7 @@ import { Link, useLocation } from "wouter"
 export const HeroHeader = () => {
   const [menuState, setMenuState] = React.useState(false)
   const [isScrolled, setIsScrolled] = React.useState(false)
-  const [, setLocion] = useLocation();
+  const [, setLocation] = useLocation();
 
   React.useEffect(() => {
     const handleScroll = () => {
