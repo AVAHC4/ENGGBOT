@@ -14,9 +14,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Generate and download document
-   */
+
   const generateDocument = async () => {
     setIsGenerating(true);
     setError(null);
@@ -81,8 +79,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
               <button
                 type="button"
                 className={`px-4 py-2 rounded-md ${format === 'docx'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 onClick={() => setFormat('docx')}
               >
@@ -91,8 +89,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
               <button
                 type="button"
                 className={`px-4 py-2 rounded-md ${format === 'pdf'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   }`}
                 onClick={() => setFormat('pdf')}
               >
@@ -148,8 +146,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
               onClick={generateDocument}
               disabled={isGenerating}
               className={`px-4 py-2 rounded-md ${isGenerating
-                  ? 'bg-indigo-700 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-500'
+                ? 'bg-indigo-700 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-500'
                 } text-white`}
             >
               {isGenerating ? 'Generating...' : 'Generate Document'}
