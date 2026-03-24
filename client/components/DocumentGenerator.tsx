@@ -39,7 +39,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
 
       const data = await response.json();
 
-      // Generate and download the document
+
       const documentService = new DocumentService();
 
       if (format === 'docx') {
