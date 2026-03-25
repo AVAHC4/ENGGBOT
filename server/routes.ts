@@ -9,14 +9,14 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import axios from 'axios';
 
-// Load environment variables
+
 dotenv.config();
 
 const execAsync = promisify(exec);
 const router = express.Router();
 
 // Configure multer for file uploads with specific destination for audio files
-const upload = multer({ 
+const upload = multer({
   dest: path.join(__dirname, '../uploads/'),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max file size
@@ -36,7 +36,7 @@ router.get('/hello', (_req: Request, res: Response) => {
 // Transcribe endpoint using NVIDIA Riva
 router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, res: Response) => {
   console.log('Transcribe endpoint called');
-  
+
   try {
     // Check if file was provided
     if (!req.file) {
@@ -45,9 +45,9 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
     }
 
     console.log(`Received audio file: ${req.file.originalname}, saved at: ${req.file.path}`);
-    
+
     const audioFilePath = req.file.path;
-    
+
     // Get the NVIDIA API key from environment variables
     const apiKey = process.env.NVIDIA_API_KEY;
     if (!apiKey) {
@@ -58,7 +58,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
     // Ensure clients directory exists
     const rootDir = path.resolve(__dirname, '..');
     const pythonClientsPath = path.join(rootDir, 'python-clients');
-    
+
     // Check if python-clients directory exists, if not clone it
     if (!fs.existsSync(pythonClientsPath)) {
       console.log('Cloning NVIDIA Riva Python clients repository...');
@@ -88,43 +88,43 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
 
     // Run the transcription command
     console.log('Running transcription with NVIDIA Riva...');
-    
+
     const transcribeCommand = `python ${pythonClientsPath}/scripts/asr/transcribe_file_offline.py \
       --server grpc.nvcf.nvidia.com:443 --use-ssl \
       --metadata function-id "b702f636-f60c-4a3d-a6f4-f3568c13bd7d" \
       --metadata "authorization" "Bearer ${apiKey}" \
       --language-code en \
       --input-file "${audioFilePath}"`;
-    
+
     console.log('Executing command:', transcribeCommand);
-    
+
     try {
       const { stdout, stderr } = await execAsync(transcribeCommand);
-      
+
       if (stderr && stderr.includes('error')) {
         console.error('Transcription error:', stderr);
         throw new Error(stderr);
       }
-      
+
       console.log('Transcription successful:', stdout);
-      
+
       // Parse the output to extract the transcription text
       let text = stdout.trim();
-      
+
       // Clean up the temporary audio file
       fs.unlink(audioFilePath, err => {
         if (err) console.error('Error deleting temporary file:', err);
         else console.log(`Deleted temporary file: ${audioFilePath}`);
       });
-      
+
       return res.json({ text });
     } catch (execError) {
       console.error('Transcription execution error:', execError);
-      
+
       // Fallback to mock transcription if NVIDIA Riva fails
       console.log('Falling back to mock transcription...');
       const text = "I couldn't connect to the NVIDIA Riva service. This is a fallback transcription.";
-      
+
       return res.json({
         text,
         fallback: true,
@@ -134,7 +134,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
   } catch (error: unknown) {
     console.error('Transcribe endpoint error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to process audio',
       details: errorMessage
     });
@@ -144,7 +144,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
 // Speech to text endpoint (original)
 router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest, res: Response) => {
   console.log('Speech-to-text endpoint called');
-  
+
   try {
     // Check if file was provided
     if (!req.file) {
@@ -153,7 +153,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
     }
 
     console.log(`Received audio file: ${req.file.originalname}, saved at: ${req.file.path}`);
-    
+
     const audioFilePath = req.file.path;
     const apiKey = process.env.NVIDIA_API_KEY;
 
@@ -161,17 +161,17 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
       console.error('NVIDIA API key not configured');
       return res.status(500).json({ error: 'NVIDIA API key not configured' });
     }
-    
+
     console.log('API key found, length:', apiKey.length);
 
     // Root directory of the project
     const rootDir = path.resolve(__dirname, '..');
     const pythonScriptPath = path.join(rootDir, 'AI_UI', 'speech_recognition.py');
     const clientRepoPath = path.join(rootDir, 'AI_UI', 'python-clients');
-    
+
     console.log('Python script path:', pythonScriptPath);
     console.log('Client repo path:', clientRepoPath);
-    
+
     // Check if speech recognition script exists
     if (!fs.existsSync(pythonScriptPath)) {
       console.error(`Speech recognition script not found at: ${pythonScriptPath}`);
@@ -201,7 +201,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
     // Run the speech recognition script
     console.log(`Processing audio file: ${audioFilePath}`);
     console.log(`Command: python ${pythonScriptPath} --input-file ${audioFilePath} --language en`);
-    
+
     const { stdout, stderr } = await execAsync(
       `python ${pythonScriptPath} --input-file "${audioFilePath}" --language en`
     );
@@ -218,11 +218,11 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
     // Extract the transcribed text from the output
     const transcriptionResult = stdout.trim();
     console.log('Transcription result:', transcriptionResult);
-    
-    const text = transcriptionResult.includes('Transcription result:') 
+
+    const text = transcriptionResult.includes('Transcription result:')
       ? transcriptionResult.split('Transcription result:').pop()?.trim() || ''
       : transcriptionResult;
-    
+
     console.log('Extracted text:', text);
 
     // Delete the temporary audio file
@@ -235,7 +235,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
   } catch (error: unknown) {
     console.error('Speech-to-text error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to process speech recognition',
       details: errorMessage
     });
@@ -247,13 +247,13 @@ router.get('/test-speech-recognition', async (_req: Request, res: Response) => {
   try {
     const rootDir = path.resolve(__dirname, '..');
     const pythonScriptPath = path.join(rootDir, 'AI_UI', 'speech_recognition.py');
-    
+
     if (!fs.existsSync(pythonScriptPath)) {
       return res.status(500).json({ error: 'Speech recognition script not found' });
     }
-    
+
     const { stdout, stderr } = await execAsync(`python ${pythonScriptPath} --help`);
-    
+
     return res.json({
       status: 'success',
       message: 'Speech recognition script executed successfully',
@@ -269,7 +269,7 @@ router.get('/test-speech-recognition', async (_req: Request, res: Response) => {
 // Add a test endpoint to check if NVIDIA Riva is working
 router.get('/test-riva', async (_req: Request, res: Response) => {
   console.log('Testing NVIDIA Riva connection...');
-  
+
   try {
     // Get the NVIDIA API key from environment variables
     const apiKey = process.env.NVIDIA_API_KEY;
@@ -277,9 +277,9 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       console.error('NVIDIA API key not configured');
       return res.status(500).json({ error: 'NVIDIA API key not configured' });
     }
-    
+
     console.log('API key found. Testing connection...');
-    
+
     // Check if python is available
     let pythonVersionStr = 'unknown';
     try {
@@ -290,11 +290,11 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       console.error('Python not available:', pythonError);
       return res.status(500).json({ error: 'Python not available on the server' });
     }
-    
+
     // Ensure clients directory exists
     const rootDir = path.resolve(__dirname, '..');
     const pythonClientsPath = path.join(rootDir, 'python-clients');
-    
+
     // Check if python-clients directory exists, if not clone it
     if (!fs.existsSync(pythonClientsPath)) {
       console.log('Cloning NVIDIA Riva Python clients repository...');
@@ -306,20 +306,20 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
         return res.status(500).json({ error: 'Failed to setup speech recognition dependencies' });
       }
     }
-    
+
     // Test with a simple command that just prints help information
     const testCommand = `python ${pythonClientsPath}/scripts/asr/transcribe_file_offline.py --help`;
-    
+
     try {
       const { stdout: helpOutput } = await execAsync(testCommand);
       console.log('Successfully executed test command');
-      
+
       // Now try to make a simple API call to verify the API key works
       // We'll use curl to make a simple request to check if the API key is valid
       const apiTestCommand = `curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${apiKey}" https://api.nvcf.nvidia.com/v2/endpoint`;
-      
+
       const { stdout: statusCode } = await execAsync(apiTestCommand);
-      
+
       if (statusCode === '200' || statusCode === '401') {
         // If we get 200 or 401, it means the API endpoint is reachable
         // 401 would mean authentication failed but the endpoint exists
@@ -327,8 +327,8 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
           status: 'success',
           toolsAvailable: true,
           apiKeyValid: statusCode === '200',
-          message: statusCode === '200' 
-            ? 'NVIDIA Riva is properly configured and ready to use.' 
+          message: statusCode === '200'
+            ? 'NVIDIA Riva is properly configured and ready to use.'
             : 'NVIDIA Riva tools are available but the API key may be invalid.',
           statusCode,
           pythonVersion: pythonVersionStr,
@@ -347,7 +347,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       }
     } catch (execError) {
       console.error('Test command error:', execError);
-      return res.status(500).json({ 
+      return res.status(500).json({
         status: 'error',
         toolsAvailable: false,
         error: execError instanceof Error ? execError.message : 'Unknown error',
@@ -357,7 +357,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
   } catch (error: unknown) {
     console.error('Test-riva endpoint error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ 
+    return res.status(500).json({
       status: 'error',
       error: 'Failed to test NVIDIA Riva',
       details: errorMessage
@@ -371,22 +371,22 @@ export default router;
 export async function registerRoutes(app: express.Express): Promise<Server> {
   // Use the router
   app.use('/api', router);
-  
+
   // Create uploads directory if it doesn't exist
   const uploadsDir = path.join(path.resolve(__dirname, '..'), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     console.log(`Creating uploads directory at ${uploadsDir}`);
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
-  
+
   const server = createServer(app);
   const port = process.env.PORT || 3001;
-  
+
   server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
     console.log(`Speech-to-text API available at http://localhost:${port}/api/speech-to-text`);
     console.log(`Transcribe API available at http://localhost:${port}/api/transcribe`);
   });
-  
+
   return server;
 }
