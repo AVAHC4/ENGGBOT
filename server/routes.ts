@@ -37,7 +37,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
   console.log('Transcribe endpoint called');
 
   try {
-    // Check if file was provided
+
     if (!req.file) {
       console.error('No audio file uploaded');
       return res.status(400).json({ error: 'No audio file uploaded' });
