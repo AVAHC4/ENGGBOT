@@ -47,7 +47,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
 
     const audioFilePath = req.file.path;
 
-    // Get the NVIDIA API key from environment variables
+
     const apiKey = process.env.NVIDIA_API_KEY;
     if (!apiKey) {
       console.error('NVIDIA API key not configured');
