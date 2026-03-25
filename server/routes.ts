@@ -27,12 +27,12 @@ interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
 
-// Sample route
+
 router.get('/hello', (_req: Request, res: Response) => {
   res.json({ message: 'Hello, world!' });
 });
 
-// Transcribe endpoint using NVIDIA Riva
+
 router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, res: Response) => {
   console.log('Transcribe endpoint called');
 
