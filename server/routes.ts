@@ -23,7 +23,6 @@ const upload = multer({
   }
 });
 
-// Define a request type with file property for multer
 interface MulterRequest extends Request {
   file?: Express.Multer.File;
 }
