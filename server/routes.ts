@@ -34,7 +34,7 @@ router.get('/hello', (_req: Request, res: Response) => {
 
 
 router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, res: Response) => {
-  console.log('Transcribe endpoit called');
+  console.log('Transcribe endpoint called');
 
   try {
 
