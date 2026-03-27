@@ -361,7 +361,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
 export default router;
 
 export async function registerRoutes(app: express.Express): Promise<Server> {
-  // Use the router
+
   app.use('/api', router);
 
 
