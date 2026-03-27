@@ -311,7 +311,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
 
       if (statusCode === '200' || statusCode === '401') {
         // If we get 200 or 401, it means the API endpoint is reachable
-        // 401 would mean authentication failed but the endpoint exists
+
         return res.json({
           status: 'success',
           toolsAvailable: true,
