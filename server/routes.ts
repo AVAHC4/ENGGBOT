@@ -201,7 +201,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
     console.log('Speech recognition stdout:', stdout);
     if (stderr) console.log('Speech recognition stderr:', stderr);
 
-    // Check for errors
+
     if (stderr && stderr.includes('error')) {
       console.error('Speech recognition error:', stderr);
       return res.status(500).json({ error: 'Speech recognition failed', details: stderr });
