@@ -54,7 +54,6 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
       return res.status(500).json({ error: 'NVIDIA API key not configured' });
     }
 
-    // Ensure clients directory exists
     const rootDir = path.resolve(__dirname, '..');
     const pythonClientsPath = path.join(rootDir, 'python-clients');
 
