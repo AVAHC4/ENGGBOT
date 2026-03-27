@@ -171,7 +171,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
     console.log('Python script path:', pythonScriptPath);
     console.log('Client repo path:', clientRepoPath);
 
-    // Check if speech recognition script exists
+
     if (!fs.existsSync(pythonScriptPath)) {
       console.error(`Speech recognition script not found at: ${pythonScriptPath}`);
       return res.status(500).json({ error: 'Speech recognition script not found' });
@@ -188,7 +188,6 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
       }
     }
 
-    // Test if python is available
     try {
       const { stdout: pythonVersion } = await execAsync('python --version');
       console.log('Python version:', pythonVersion);
@@ -197,7 +196,6 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
       return res.status(500).json({ error: 'Python not available on the server' });
     }
 
-    // Run the speech recognition script
     console.log(`Processing audio file: ${audioFilePath}`);
     console.log(`Command: python ${pythonScriptPath} --input-file ${audioFilePath} --language en`);
 
