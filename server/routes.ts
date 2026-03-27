@@ -177,7 +177,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
       return res.status(500).json({ error: 'Speech recognition script not found' });
     }
 
-    // Check if python client repo was cloned
+
     if (!fs.existsSync(clientRepoPath)) {
       try {
         console.log('Cloning NVIDIA Riva Python clients repository...');
@@ -290,11 +290,11 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       return res.status(500).json({ error: 'Python not available on the server' });
     }
 
-    // Ensure clients directory exists
+
     const rootDir = path.resolve(__dirname, '..');
     const pythonClientsPath = path.join(rootDir, 'python-clients');
 
-    // Check if python-clients directory exists, if not clone it
+
     if (!fs.existsSync(pythonClientsPath)) {
       console.log('Cloning NVIDIA Riva Python clients repository...');
       try {
