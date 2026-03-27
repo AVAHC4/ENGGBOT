@@ -357,7 +357,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
   }
 });
 
-// Export the router for use in index.ts
+
 export default router;
 
 export async function registerRoutes(app: express.Express): Promise<Server> {
