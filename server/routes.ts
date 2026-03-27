@@ -217,7 +217,6 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
 
     console.log('Extracted text:', text);
 
-    // Delete the temporary audio file
     fs.unlink(audioFilePath, (err) => {
       if (err) console.error('Error deleting temporary file:', err);
       else console.log(`Deleted temporary file: ${audioFilePath}`);
