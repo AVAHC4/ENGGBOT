@@ -258,7 +258,6 @@ router.get('/test-speech-recognition', async (_req: Request, res: Response) => {
   }
 });
 
-// Add a test endpoint to check if NVIDIA Riva is working
 router.get('/test-riva', async (_req: Request, res: Response) => {
   console.log('Testing NVIDIA Riva connection...');
 
