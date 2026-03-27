@@ -310,7 +310,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       const { stdout: statusCode } = await execAsync(apiTestCommand);
 
       if (statusCode === '200' || statusCode === '401') {
-        // If we get 200 or 401, it means the API endpoint is reachable
+
 
         return res.json({
           status: 'success',
