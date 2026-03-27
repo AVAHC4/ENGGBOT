@@ -263,7 +263,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
   console.log('Testing NVIDIA Riva connection...');
 
   try {
-    // Get the NVIDIA API key from environment variables
+
     const apiKey = process.env.NVIDIA_API_KEY;
     if (!apiKey) {
       console.error('NVIDIA API key not configured');
