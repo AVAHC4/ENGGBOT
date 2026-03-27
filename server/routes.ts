@@ -364,7 +364,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   // Use the router
   app.use('/api', router);
 
-  // Create uploads directory if it doesn't exist
+
   const uploadsDir = path.join(path.resolve(__dirname, '..'), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     console.log(`Creating uploads directory at ${uploadsDir}`);
