@@ -234,7 +234,6 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
   }
 });
 
-// Add a test endpoint for the speech recognition script
 router.get('/test-speech-recognition', async (_req: Request, res: Response) => {
   try {
     const rootDir = path.resolve(__dirname, '..');
