@@ -58,7 +58,7 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
     const rootDir = path.resolve(__dirname, '..');
     const pythonClientsPath = path.join(rootDir, 'python-clients');
 
-    // Check if python-clients directory exists, if not clone it
+
     if (!fs.existsSync(pythonClientsPath)) {
       console.log('Cloning NVIDIA Riva Python clients repository...');
       try {
