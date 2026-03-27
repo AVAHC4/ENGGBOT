@@ -85,7 +85,6 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
       }
     }
 
-    // Run the transcription command
     console.log('Running transcription with NVIDIA Riva...');
 
     const transcribeCommand = `python ${pythonClientsPath}/scripts/asr/transcribe_file_offline.py \
