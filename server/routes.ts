@@ -70,7 +70,6 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
       }
     }
 
-    // Check if nvidia-riva-client is installed
     try {
       await execAsync('pip list | grep nvidia-riva-client');
       console.log('NVIDIA Riva client is installed');
