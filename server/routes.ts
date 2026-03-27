@@ -207,7 +207,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
       return res.status(500).json({ error: 'Speech recognition failed', details: stderr });
     }
 
-    // Extract the transcribed text from the output
+
     const transcriptionResult = stdout.trim();
     console.log('Transcription result:', transcriptionResult);
 
