@@ -140,12 +140,12 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
   }
 });
 
-// Speech to text endpoint (original)
+
 router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest, res: Response) => {
   console.log('Speech-to-text endpoint called');
 
   try {
-    // Check if file was provided
+
     if (!req.file) {
       console.error('No audio file uploaded');
       return res.status(400).json({ error: 'No audio file uploaded' });
@@ -163,7 +163,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req: MulterRequest
 
     console.log('API key found, length:', apiKey.length);
 
-    // Root directory of the project
+
     const rootDir = path.resolve(__dirname, '..');
     const pythonScriptPath = path.join(rootDir, 'AI_UI', 'speech_recognition.py');
     const clientRepoPath = path.join(rootDir, 'AI_UI', 'python-clients');
