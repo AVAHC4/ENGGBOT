@@ -107,10 +107,9 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
 
       console.log('Transcription successful:', stdout);
 
-      // Parse the output to extract the transcription text
+
       let text = stdout.trim();
 
-      // Clean up the temporary audio file
       fs.unlink(audioFilePath, err => {
         if (err) console.error('Error deleting temporary file:', err);
         else console.log(`Deleted temporary file: ${audioFilePath}`);
@@ -120,7 +119,6 @@ router.post('/transcribe', upload.single('audio'), async (req: MulterRequest, re
     } catch (execError) {
       console.error('Transcription execution error:', execError);
 
-      // Fallback to mock transcription if NVIDIA Riva fails
       console.log('Falling back to mock transcription...');
       const text = "I couldn't connect to the NVIDIA Riva service. This is a fallback transcription.";
 
