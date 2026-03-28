@@ -296,7 +296,6 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       }
     }
 
-    // Test with a simple command that just prints help information
     const testCommand = `python ${pythonClientsPath}/scripts/asr/transcribe_file_offline.py --help`;
 
     try {
