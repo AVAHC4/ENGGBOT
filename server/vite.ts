@@ -6,7 +6,7 @@ import { createServer as createViteServer, createLogger } from "vite";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { type Server } from "http";
-// Import the config as a function to avoid issues with the Vite API
+
 import viteConfigFile from "../vite.config.ts";
 import { nanoid } from "nanoid";
 
