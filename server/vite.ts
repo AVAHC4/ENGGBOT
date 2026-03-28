@@ -24,13 +24,13 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
-  // Create Vite server in middleware mode with HMR
+
   const vite = await createViteServer({
-    // Instead of spreading the entire config, extract what we need
+
     root: viteConfigFile.root,
     resolve: viteConfigFile.resolve,
     plugins: viteConfigFile.plugins,
-    // Override with our custom settings
+
     configFile: false,
     customLogger: {
       ...viteLogger,
