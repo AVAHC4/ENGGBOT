@@ -303,8 +303,7 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
       const { stdout: helpOutput } = await execAsync(testCommand);
       console.log('Successfully executed test command');
 
-      // Now try to make a simple API call to verify the API key works
-      // We'll use curl to make a simple request to check if the API key is valid
+
       const apiTestCommand = `curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${apiKey}" https://api.nvcf.nvidia.com/v2/endpoint`;
 
       const { stdout: statusCode } = await execAsync(apiTestCommand);
