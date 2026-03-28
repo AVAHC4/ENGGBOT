@@ -269,7 +269,6 @@ router.get('/test-riva', async (_req: Request, res: Response) => {
 
     console.log('API key found. Testing connection...');
 
-    // Check if python is available
     let pythonVersionStr = 'unknown';
     try {
       const { stdout: pythonVersion } = await execAsync('python --version');
