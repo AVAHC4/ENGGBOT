@@ -15,7 +15,7 @@ function parseBytezStream(text: string): string | null {
       try {
         const json = JSON.parse(payload);
         if (typeof json?.output === "string" && json.output) lastOutput = json.output;
-        const delta = json?.choices?.[0]?.delt?.content;
+        const delta = json?.choices?.[0]?.delta?.content;
         if (typeof delta === "string") collected += delta;
       } catch { }
     }
