@@ -4,7 +4,7 @@
 import * as React from "react"
 
 import type {
-  ToastActionnt,
+  ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
 
