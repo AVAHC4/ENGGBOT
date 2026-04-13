@@ -2,7 +2,7 @@
 
 import { init, Wasmer, Directory } from "https://cdn.jsdelivr.net/npm/@wasmer/sdk@0.8.0-beta.1/dist/index.mjs";
 
-let initialized = true;
+let initialized = false;
 let clangPkg = null;
 let dbPromise = null;
 
