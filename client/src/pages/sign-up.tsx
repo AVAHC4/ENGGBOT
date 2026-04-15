@@ -505,57 +505,20 @@ export default function SignUpPage() {
                     </div>
                   </div>
 
-                  {/* Assisted password confirmation visual indicator */}
-                  {password.length > 0 && (
-                    <motion.div
-                      className="h-[44px] w-full rounded-lg border-2 bg-background px-2 py-2"
-                      animate={{
-                        ...bounceAnimation,
-                        ...matchAnimation,
-                        ...borderAnimation,
-                      }}
-                    >
-                      <div className="relative h-full w-fit overflow-hidden rounded-md">
-                        <div className="z-10 flex h-full items-center justify-center bg-transparent px-0 py-1 tracking-[0.15em]">
-                          {password.split('').map((_, index) => (
-                            <div
-                              key={index}
-                              className="flex h-full w-4 shrink-0 items-center justify-center"
-                            >
-                              <span className="size-[5px] rounded-full bg-foreground"></span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="absolute bottom-0 left-0 top-0 z-0 flex h-full w-full items-center justify-start">
-                          {password.split('').map((letter, index) => (
-                            <motion.div
-                              key={index}
-                              className={`ease absolute h-full w-4 transition-all duration-300 ${getLetterStatus(
-                                letter,
-                                index,
-                              )}`}
-                              style={{
-                                left: `${index * 16}px`,
-                                scaleX: confirmPassword[index] ? 1 : 0,
-                                transformOrigin: 'left',
-                              }}
-                            ></motion.div>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="block text-sm">
                       Confirm Password
                     </Label>
                     <motion.div
-                      className="overflow-hidden rounded-lg"
-                      animate={matchAnimation}
+                      className="relative overflow-hidden rounded-lg"
+                      animate={{
+                        ...bounceAnimation,
+                        ...matchAnimation,
+                      }}
                     >
                       <motion.input
-                        className="flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 md:text-sm tracking-[0.2em]"
+                        className="flex h-9 w-full rounded-lg border-2 bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 md:text-sm tracking-[0.2em] relative z-10"
+                        style={{ color: 'transparent', caretColor: 'var(--foreground)' }}
                         type="password"
                         required
                         name="confirmPassword"
@@ -566,6 +529,41 @@ export default function SignUpPage() {
                         minLength={6}
                         animate={borderAnimation}
                       />
+                      {/* Dot overlay + green/red character feedback */}
+                      {password.length > 0 && (
+                        <div className="absolute inset-0 flex items-center pointer-events-none z-0 px-3">
+                          <div className="relative h-full w-fit overflow-hidden">
+                            <div className="flex h-full items-center bg-transparent tracking-[0.15em]">
+                              {password.split('').map((_, index) => (
+                                <div
+                                  key={index}
+                                  className="flex h-full w-4 shrink-0 items-center justify-center"
+                                >
+                                  {confirmPassword[index] && (
+                                    <span className="size-[5px] rounded-full bg-foreground"></span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="absolute bottom-0 left-0 top-0 z-0 flex h-full w-full items-center justify-start">
+                              {password.split('').map((letter, index) => (
+                                <motion.div
+                                  key={index}
+                                  className={`ease absolute h-full w-4 transition-all duration-300 ${getLetterStatus(
+                                    letter,
+                                    index,
+                                  )}`}
+                                  style={{
+                                    left: `${index * 16}px`,
+                                    scaleX: confirmPassword[index] ? 1 : 0,
+                                    transformOrigin: 'left',
+                                  }}
+                                ></motion.div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   </div>
 
