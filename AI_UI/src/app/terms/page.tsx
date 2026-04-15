@@ -9,7 +9,7 @@ export default function TermsPage() {
   return (
     <div className="relative">
 
-      <ScrollProgress className="fixed left-0 right-0 top-0 z-50 bg-primary" containerRef={containerRef} />
+      <ScrollProgress className="fixed left-0 right-0 top-0 z-50 h-[3px] bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]" containerRef={containerRef} />
 
       <div className="mx-auto w-full max-w-4xl px-6 pt-0 pb-0">
         <h1 className="mb-0 text-3xl font-bold">Terms and Conditions</h1>
