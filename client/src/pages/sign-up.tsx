@@ -517,7 +517,7 @@ export default function SignUpPage() {
                       }}
                     >
                       <Input
-                        className={`bg-transparent pr-10 relative z-10 transition-colors duration-300 ${!showPassword ? 'tracking-[0.2em]' : ''} ${passwordsMatch ? 'border-[#10B981]' : ''}`}
+                        className={`bg-transparent pr-10 relative z-10 transition-colors duration-300 placeholder:tracking-normal ${!showPassword ? 'tracking-[0.2em]' : ''} ${passwordsMatch ? 'border-[#10B981]' : ''}`}
                         style={{ color: showPassword ? 'var(--foreground)' : 'transparent', caretColor: 'var(--foreground)' }}
                         type={showPassword ? "text" : "password"}
                         required
