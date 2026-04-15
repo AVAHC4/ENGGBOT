@@ -32,7 +32,7 @@ const transitionVariants = {
   },
 }
 
-// Preload critical resources before React even renders
+
 if (typeof document !== 'undefined') {
   // Add resource hints in the document head
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
@@ -517,7 +517,7 @@ export default function SignUpPage() {
                       }}
                     >
                       <Input
-                        className={`bg-transparent pr-10 relative z-10 transition-colors duration-300 placeholder:tracking-normal ${!showPassword ? 'tracking-[0.2em]' : ''} ${passwordsMatch ? 'border-[#10B981]' : ''}`}
+                        className={`bg-transparent pr-10 relative z-10 transition-colors duration-300 placeholder:tracking-normal ${!showPassword ? 'font-mono tracking-[0.2em]' : ''} ${passwordsMatch ? 'border-[#10B981]' : ''}`}
                         style={{ color: 'var(--foreground)', WebkitTextFillColor: showPassword ? 'initial' : 'transparent', caretColor: 'var(--foreground)' }}
                         type={showPassword ? "text" : "password"}
                         required
@@ -547,36 +547,29 @@ export default function SignUpPage() {
                       </button>
                       {/* Dot overlay + green/red character feedback */}
                       {password.length > 0 && !showPassword && (
-                        <div className="absolute inset-0 flex items-center pointer-events-none z-0 px-3 overflow-hidden rounded-md">
-                          <div className="relative h-full w-fit overflow-hidden">
-                            <div className="flex h-full items-center bg-transparent tracking-[0.15em]">
-                              {password.split('').map((_, index) => (
+                        <div className="absolute inset-0 flex items-center pointer-events-none z-0 px-3 overflow-hidden rounded-md font-mono text-sm tracking-[0.2em]">
+                          <div className="relative h-full flex items-center">
+                            {password.split('').map((letter, index) => {
+                              const isTyped = confirmPassword.length > index;
+                              return (
                                 <div
                                   key={index}
-                                  className="flex h-full w-4 shrink-0 items-center justify-center"
+                                  style={{ width: 'calc(1ch + 0.2em)' }}
+                                  className="flex h-full shrink-0 relative items-center"
                                 >
-                                  {confirmPassword[index] && (
-                                    <span className="size-[5px] rounded-full bg-foreground"></span>
-                                  )}
+                                  <motion.div
+                                    className={`absolute inset-y-[6px] left-[1px] right-[1px] ease transition-all duration-300 rounded-sm z-0 ${getLetterStatus(letter, index)}`}
+                                    style={{ scaleX: isTyped ? 1 : 0, transformOrigin: 'left' }}
+                                  ></motion.div>
+
+                                  <div className="w-[1ch] relative z-10 flex justify-center items-center h-full">
+                                    {isTyped && (
+                                      <span className="size-[5px] rounded-full bg-foreground"></span>
+                                    )}
+                                  </div>
                                 </div>
-                              ))}
-                            </div>
-                            <div className="absolute bottom-0 left-0 top-0 z-0 flex h-full w-full items-center justify-start">
-                              {password.split('').map((letter, index) => (
-                                <motion.div
-                                  key={index}
-                                  className={`ease absolute h-full w-4 transition-all duration-300 ${getLetterStatus(
-                                    letter,
-                                    index,
-                                  )}`}
-                                  style={{
-                                    left: `${index * 16}px`,
-                                    scaleX: confirmPassword[index] ? 1 : 0,
-                                    transformOrigin: 'left',
-                                  }}
-                                ></motion.div>
-                              ))}
-                            </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
