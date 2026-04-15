@@ -34,11 +34,11 @@ const transitionVariants = {
 
 
 if (typeof document !== 'undefined') {
-  // Add resource hints in the document head
+
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
 
   googleDomains.forEach(domain => {
-    // DNS prefetch - start DNS resolution early
+
     const dnsPrefetch = document.createElement('link');
     dnsPrefetch.rel = 'dns-prefetch';
     dnsPrefetch.href = `https://${domain}`;
