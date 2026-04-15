@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label"
 import { Link } from "wouter"
 import { AnimatedGroup } from "@/components/motion-primitives/animated-group"
 import { TextEffect } from "@/components/motion-primitives/text-effect"
-import React from "react"
+import React, { useEffect } from "react"
+import { motion } from "framer-motion"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { setRedirectToChat } from "@/lib/auth-storage"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -66,6 +67,51 @@ export default function SignUpPage() {
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
+  const [shake, setShake] = React.useState(false);
+
+  // Assisted password confirmation: shake when confirm exceeds password length
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (
+      confirmPassword.length >= password.length &&
+      password.length > 0 &&
+      e.target.value.length > confirmPassword.length
+    ) {
+      setShake(true);
+    } else {
+      setConfirmPassword(e.target.value);
+    }
+  };
+
+  useEffect(() => {
+    if (shake) {
+      const timer = setTimeout(() => setShake(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [shake]);
+
+  const getLetterStatus = (letter: string, index: number) => {
+    if (!confirmPassword[index]) return '';
+    return confirmPassword[index] === letter
+      ? 'bg-green-500/20'
+      : 'bg-red-500/20';
+  };
+
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
+
+  const bounceAnimation = {
+    x: shake ? [-10, 10, -10, 10, 0] : 0,
+    transition: { duration: 0.5 },
+  };
+
+  const matchAnimation = {
+    scale: passwordsMatch ? [1, 1.05, 1] : 1,
+    transition: { duration: 0.3 },
+  };
+
+  const borderAnimation = {
+    borderColor: passwordsMatch ? '#10B981' : '',
+    transition: { duration: 0.3 },
+  };
 
   // Check for errors and set up connection optimizations
   React.useEffect(() => {
@@ -429,7 +475,13 @@ export default function SignUpPage() {
                         id="password"
                         className="pr-10"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          // Trim confirm password if it's longer than new password
+                          if (confirmPassword.length > e.target.value.length) {
+                            setConfirmPassword(confirmPassword.slice(0, e.target.value.length));
+                          }
+                        }}
                         minLength={6}
                         placeholder="Minimum 6 characters"
                       />
@@ -453,19 +505,68 @@ export default function SignUpPage() {
                     </div>
                   </div>
 
+                  {/* Assisted password confirmation visual indicator */}
+                  {password.length > 0 && (
+                    <motion.div
+                      className="h-[44px] w-full rounded-lg border-2 bg-background px-2 py-2"
+                      animate={{
+                        ...bounceAnimation,
+                        ...matchAnimation,
+                        ...borderAnimation,
+                      }}
+                    >
+                      <div className="relative h-full w-fit overflow-hidden rounded-md">
+                        <div className="z-10 flex h-full items-center justify-center bg-transparent px-0 py-1 tracking-[0.15em]">
+                          {password.split('').map((_, index) => (
+                            <div
+                              key={index}
+                              className="flex h-full w-4 shrink-0 items-center justify-center"
+                            >
+                              <span className="size-[5px] rounded-full bg-foreground"></span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="absolute bottom-0 left-0 top-0 z-0 flex h-full w-full items-center justify-start">
+                          {password.split('').map((letter, index) => (
+                            <motion.div
+                              key={index}
+                              className={`ease absolute h-full w-4 transition-all duration-300 ${getLetterStatus(
+                                letter,
+                                index,
+                              )}`}
+                              style={{
+                                left: `${index * 16}px`,
+                                scaleX: confirmPassword[index] ? 1 : 0,
+                                transformOrigin: 'left',
+                              }}
+                            ></motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="block text-sm">
                       Confirm Password
                     </Label>
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      name="confirmPassword"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      minLength={6}
-                    />
+                    <motion.div
+                      className="overflow-hidden rounded-lg"
+                      animate={matchAnimation}
+                    >
+                      <motion.input
+                        className="flex h-9 w-full rounded-lg border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 md:text-sm tracking-[0.2em]"
+                        type="password"
+                        required
+                        name="confirmPassword"
+                        id="confirmPassword"
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={handleConfirmPasswordChange}
+                        minLength={6}
+                        animate={borderAnimation}
+                      />
+                    </motion.div>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isEmailLoading}>
