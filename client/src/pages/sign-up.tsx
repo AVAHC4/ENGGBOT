@@ -516,9 +516,31 @@ export default function SignUpPage() {
                         ...matchAnimation,
                       }}
                     >
+                      {/* Dot overlay + green/red character feedback MUST render BEFORE Input to be UNDER it */}
+                      {password.length > 0 && !showPassword && (
+                        <div className="absolute inset-0 flex items-center pointer-events-none z-0 px-3 overflow-hidden rounded-md font-mono text-sm tracking-[0.2em]">
+                          <div className="relative h-full flex items-center">
+                              {password.split('').map((letter, index) => {
+                                const isTyped = confirmPassword.length > index;
+                                return (
+                                  <div
+                                    key={index}
+                                    style={{ width: 'calc(1ch + 0.2em)' }}
+                                    className="flex h-full shrink-0 relative items-center"
+                                  >
+                                    <motion.div
+                                      className={`absolute inset-y-[6px] left-0 right-0 ease transition-all duration-300 rounded-sm z-0 ${getLetterStatus(letter, index)}`}
+                                      style={{ scaleX: isTyped ? 1 : 0, transformOrigin: 'left' }}
+                                    ></motion.div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
+                      
                       <Input
                         className={`bg-transparent pr-10 relative z-10 transition-colors duration-300 placeholder:tracking-normal ${!showPassword ? 'font-mono tracking-[0.2em]' : ''} ${passwordsMatch ? 'border-[#10B981]' : ''}`}
-                        style={{ color: 'var(--foreground)', WebkitTextFillColor: showPassword ? 'initial' : 'transparent', caretColor: 'var(--foreground)' }}
                         type={showPassword ? "text" : "password"}
                         required
                         name="confirmPassword"
@@ -545,34 +567,6 @@ export default function SignUpPage() {
                           </svg>
                         )}
                       </button>
-                      {/* Dot overlay + green/red character feedback */}
-                      {password.length > 0 && !showPassword && (
-                        <div className="absolute inset-0 flex items-center pointer-events-none z-0 px-3 overflow-hidden rounded-md font-mono text-sm tracking-[0.2em]">
-                          <div className="relative h-full flex items-center">
-                            {password.split('').map((letter, index) => {
-                              const isTyped = confirmPassword.length > index;
-                              return (
-                                <div
-                                  key={index}
-                                  style={{ width: 'calc(1ch + 0.2em)' }}
-                                  className="flex h-full shrink-0 relative items-center"
-                                >
-                                  <motion.div
-                                    className={`absolute inset-y-[6px] left-[1px] right-[1px] ease transition-all duration-300 rounded-sm z-0 ${getLetterStatus(letter, index)}`}
-                                    style={{ scaleX: isTyped ? 1 : 0, transformOrigin: 'left' }}
-                                  ></motion.div>
-
-                                  <div className="w-[1ch] relative z-10 flex justify-center items-center h-full">
-                                    {isTyped && (
-                                      <span className="size-[5px] rounded-full bg-foreground"></span>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </motion.div>
                   </div>
 
