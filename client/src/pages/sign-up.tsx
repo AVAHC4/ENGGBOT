@@ -286,7 +286,6 @@ export default function SignUpPage() {
 
       setRedirectToChat(true);
 
-      // Optimize API URL resolution
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
 
       // Use sessionStorage instead of localStorage (faster)
