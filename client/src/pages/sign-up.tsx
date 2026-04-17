@@ -290,8 +290,6 @@ export default function SignUpPage() {
 
       const state = Math.random().toString(36).substring(2, 15);
       sessionStorage.setItem('oauth_state', state);
-
-      // Set a timeout to reset loading state if redirect takes too long
       const timeout = setTimeout(() => {
         setIsLoading(false);
         setFastAuth(false);
