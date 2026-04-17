@@ -294,7 +294,7 @@ export default function SignUpPage() {
         setIsLoading(false);
         setFastAuth(false);
         setAuthError("Connection to Google is taking longer than expected. Please check your network and try again.");
-      }, 8000); // Shorter timeout
+      }, 8000);
 
       // Direct navigation to Google auth endpoint with the state parameter
       // Use clean URL construction to prevent double requests
