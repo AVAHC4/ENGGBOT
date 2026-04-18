@@ -302,7 +302,7 @@ export default function SignUpPage() {
       // Use faster navigation method
       window.location.replace(googleAuthUrl);
 
-      // Clear timeout if navigation happens quickly
+
       window.onbeforeunload = () => {
         clearTimeout(timeout);
       };
