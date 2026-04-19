@@ -22,7 +22,7 @@ export default function ChatDashboard() {
   const [, setLocation] = useLocation();
   const [showProfileCard, setShowProfileCard] = useState(false);
   const queryClient = useQueryClient();
-  // Add a redirect state to handle AI UI redirection
+
   const [redirecting, setRedirecting] = useState(false);
 
   // Fetch user data to check authentication
