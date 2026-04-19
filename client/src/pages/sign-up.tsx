@@ -471,7 +471,7 @@ export default function SignUpPage() {
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          // Trim confirm password if it's longer than new password
+
                           if (confirmPassword.length > e.target.value.length) {
                             setConfirmPassword(confirmPassword.slice(0, e.target.value.length));
                           }
