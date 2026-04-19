@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-// import AiChat from "../../../ai-chat";
+
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { Link } from "wouter";
