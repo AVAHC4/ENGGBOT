@@ -52,7 +52,7 @@ export default function ChatDashboard() {
         const data = await response.json();
         console.log("Received user data:", data);
 
-        // Store user data using the new helper
+
         storeUserData(data);
 
         return data as UserData;
