@@ -25,7 +25,6 @@ export default function ChatDashboard() {
 
   const [redirecting, setRedirecting] = useState(false);
 
-  // Fetch user data to check authentication
   const { data: user, isLoading, error } = useQuery({
     queryKey: ["user"],
     queryFn: async () => {
