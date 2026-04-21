@@ -100,8 +100,6 @@ export default function ChatDashboard() {
     // Check immediately on mount
     checkCookies();
 
-    // Also check for cookies when window gets focus
-    // This helps when returning from the OAuth provider
     const handleFocus = () => {
       console.log("Window received focus - checking auth cookies");
       checkCookies();
