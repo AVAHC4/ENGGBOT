@@ -108,7 +108,7 @@ export default function ChatDashboard() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [queryClient]);
 
-  // Handle authentication check
+
   useEffect(() => {
     if (!isLoading && (!user || error)) {
       console.log("Not authenticated in ChatDashboard, redirecting to login");
