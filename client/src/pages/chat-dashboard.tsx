@@ -97,7 +97,6 @@ export default function ChatDashboard() {
       }
     };
 
-    // Check immediately on mount
     checkCookies();
 
     const handleFocus = () => {
