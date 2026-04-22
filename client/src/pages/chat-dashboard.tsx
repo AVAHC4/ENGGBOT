@@ -77,7 +77,7 @@ export default function ChatDashboard() {
 
   const userData = isUserData(user) ? user : null;
 
-  // Check for authentication success cookie on mount
+
   useEffect(() => {
     // Check for authentication success cookie
     const checkCookies = () => {
