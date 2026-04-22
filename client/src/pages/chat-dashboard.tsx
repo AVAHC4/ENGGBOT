@@ -67,7 +67,6 @@ export default function ChatDashboard() {
     staleTime: 30000,
   });
 
-  // Type guard for user data
   const isUserData = (data: any): data is UserData => {
     return data && typeof data === 'object' &&
       'name' in data &&
