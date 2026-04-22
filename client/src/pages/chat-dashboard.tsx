@@ -79,7 +79,7 @@ export default function ChatDashboard() {
 
 
   useEffect(() => {
-    // Check for authentication success cookie
+
     const checkCookies = () => {
       const authSuccess = document.cookie.includes('auth_success=true');
       const authAttempt = document.cookie.includes('auth_attempt=true');
