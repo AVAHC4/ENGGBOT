@@ -85,7 +85,7 @@ export default function ChatDashboard() {
 
       if (authSuccess) {
         console.log("Found auth success cookie in ChatDashboard");
-        // Clear the cookies
+
         document.cookie = 'auth_success=; max-age=0; path=/';
         document.cookie = 'auth_attempt=; max-age=0; path=/';
         // Refresh user data
