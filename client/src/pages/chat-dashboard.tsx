@@ -88,7 +88,7 @@ export default function ChatDashboard() {
 
         document.cookie = 'auth_success=; max-age=0; path=/';
         document.cookie = 'auth_attempt=; max-age=0; path=/';
-        // 
+
         queryClient.invalidateQueries({ queryKey: ["user"] });
       } else if (authAttempt) {
         console.log("Found auth attempt cookie but no success - authentication may have failed");
