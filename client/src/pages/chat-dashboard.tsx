@@ -115,11 +115,10 @@ export default function ChatDashboard() {
     }
   }, [user, isLoading, error, setLocation]);
 
-  // Handle logout
   const handleLogout = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      // Call the logout endpoint
+
       await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
         credentials: "include",
         method: "GET",
