@@ -124,7 +124,7 @@ export default function ChatDashboard() {
         method: "GET",
       });
 
-      // Clear auth data using the new helper
+
       clearAuthData();
 
       // Clear auth-related query cache
