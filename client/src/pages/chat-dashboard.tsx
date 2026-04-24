@@ -134,7 +134,6 @@ export default function ChatDashboard() {
 
       setShowProfileCard(false);
 
-      // Redirect to home page
       setLocation("/");
 
       // Reload the page to ensure all state is cleared
