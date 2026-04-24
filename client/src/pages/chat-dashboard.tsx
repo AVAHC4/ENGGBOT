@@ -127,7 +127,7 @@ export default function ChatDashboard() {
 
       clearAuthData();
 
-      // Clear auth-related query cache
+
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.setQueryData(["user"], null);
 
