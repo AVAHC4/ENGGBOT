@@ -131,7 +131,7 @@ export default function ChatDashboard() {
       queryClient.invalidateQueries({ queryKey: ["user"] });
       queryClient.setQueryData(["user"], null);
 
-      // Close the profile card
+
       setShowProfileCard(false);
 
       // Redirect to home page
