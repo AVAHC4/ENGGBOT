@@ -143,7 +143,7 @@ export default function ChatDashboard() {
     }
   };
 
-  // Show loading state while checking authentication
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black flex items-center justify-center">
