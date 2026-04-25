@@ -136,7 +136,7 @@ export default function ChatDashboard() {
 
       setLocation("/");
 
-      // Reload the page to ensure all state is cleared
+
       window.location.reload();
     } catch (error) {
       console.error("Logout error:", error);
