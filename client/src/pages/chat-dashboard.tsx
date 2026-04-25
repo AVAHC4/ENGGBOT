@@ -165,7 +165,7 @@ export default function ChatDashboard() {
     return null;
   }
 
-  // Force redirect to the AI_UI app when we have a valid user
+
   useEffect(() => {
     if (!userData) return;
 
