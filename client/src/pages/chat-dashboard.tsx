@@ -172,7 +172,6 @@ export default function ChatDashboard() {
     const aiUiUrl = import.meta.env.VITE_AI_UI_URL || "/AI_UI";
     console.log(`Redirecting to AI_UI at ${aiUiUrl}`);
 
-    // Store auth info and mark for redirection using new helpers
     setRedirectToChat(true);
 
     const redirectUrl = new URL(aiUiUrl, window.location.origin);
