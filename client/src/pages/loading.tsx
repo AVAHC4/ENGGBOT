@@ -14,7 +14,7 @@ export default function LoadingPage() {
         });
 
         if (response.ok) {
-          // If authenticated, redirect to chat page instead of welcome page
+
           setLocation("/chat");
         } else {
           // If not authenticated, redirect to login page
