@@ -14,10 +14,8 @@ export default function LoadingPage() {
         });
 
         if (response.ok) {
-
           setLocation("/chat");
         } else {
-          // If not authenticated, redirect to login page
           setLocation("/login?error=auth_failed");
         }
       } catch (error) {
