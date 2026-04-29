@@ -24,7 +24,6 @@ export default function LoadingPage() {
       }
     };
 
-    // Check auth status after a delay to ensure session is set
     const timer = setTimeout(() => {
       checkAuth();
     }, 1500);
