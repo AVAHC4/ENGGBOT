@@ -43,7 +43,6 @@ if (typeof document !== 'undefined') {
     dnsPrefetch.href = `https://${domain}`;
     document.head.appendChild(dnsPrefetch);
 
-    // Preconnect - establish early connection
     const preconnect = document.createElement('link');
     preconnect.rel = 'preconnect';
     preconnect.href = `https://${domain}`;
