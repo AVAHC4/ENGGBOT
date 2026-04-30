@@ -33,7 +33,7 @@ const transitionVariants = {
 
 // Preload critical resources before React even renders
 if (typeof document !== 'undefined') {
-  // Add resource hints in the document head
+
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
 
   googleDomains.forEach(domain => {
