@@ -31,7 +31,6 @@ const transitionVariants = {
   },
 }
 
-// Preload critical resources before React even renders
 if (typeof document !== 'undefined') {
 
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
