@@ -37,7 +37,7 @@ if (typeof document !== 'undefined') {
   const googleDomains = ['accounts.google.com', 'ssl.gstatic.com'];
 
   googleDomains.forEach(domain => {
-    // DNS prefetch - start DNS resolution early
+
     const dnsPrefetch = document.createElement('link');
     dnsPrefetch.rel = 'dns-prefetch';
     dnsPrefetch.href = `https://${domain}`;
