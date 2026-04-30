@@ -80,7 +80,7 @@ export default function LoginPage() {
       .find(row => row.startsWith('auth_attempt='));
 
     if (authCookie && !document.cookie.includes('auth_success=true')) {
-      // Clear the cookie to prevent repeated checks
+
       document.cookie = "auth_attempt=; max-age=0; path=/";
     }
   }, []);
