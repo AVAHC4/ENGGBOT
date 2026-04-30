@@ -74,7 +74,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
 
-    // Check if we've returned from a failed auth attempt
+
     const authCookie = document.cookie
       .split('; ')
       .find(row => row.startsWith('auth_attempt='));
