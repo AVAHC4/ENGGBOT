@@ -167,7 +167,7 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      // Check if response has content before parsing
+
       const contentType = response.headers.get('content-type');
       let data;
 
