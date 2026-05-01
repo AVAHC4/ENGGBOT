@@ -176,7 +176,7 @@ export default function LoginPage() {
         if (text) {
           data = JSON.parse(text);
         } else {
-          // Empty response - likely server not configured or route not found
+
           setAuthError('Server did not respond. Please check if the API server is running.');
           setIsEmailLoading(false);
           return;
