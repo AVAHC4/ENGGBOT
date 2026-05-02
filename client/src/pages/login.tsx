@@ -100,7 +100,7 @@ export default function LoginPage() {
     setIsEmailLoading(true);
     setAuthError('');
 
-    // Basic validation using controlled state
+
     if (!email) {
       setAuthError('Email is required');
       setIsEmailLoading(false);
