@@ -65,7 +65,6 @@ export default function LoginPage() {
 
 
   React.useEffect(() => {
-    // Check for error in URL
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {
