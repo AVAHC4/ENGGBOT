@@ -64,7 +64,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = React.useState(false);
 
 
-  // Check for errors and set up connection optimizations
   React.useEffect(() => {
     // Check for error in URL
     const urlParams = new URLSearchParams(window.location.search);
