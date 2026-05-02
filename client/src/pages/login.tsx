@@ -89,7 +89,7 @@ export default function LoginPage() {
     iframe.src = 'https://accounts.google.com/favicon.ico';
     document.body.appendChild(iframe);
 
-    // Remove after connection is established
+
     return () => {
       document.body.removeChild(iframe);
     };
