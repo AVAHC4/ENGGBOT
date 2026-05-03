@@ -297,7 +297,6 @@ export default function LoginPage() {
 
       document.cookie = "auth_attempt=true; max-age=300; path=/";
 
-      // Mark that we should redirect to chat when auth is successful
       setRedirectToChat(true);
 
       // Optimize API URL resolution
