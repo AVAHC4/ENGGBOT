@@ -256,7 +256,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Success - store user data and redirect
+
       if (data.user) {
         localStorage.setItem('authenticated', 'true');
         localStorage.setItem('user', JSON.stringify(data.user));
