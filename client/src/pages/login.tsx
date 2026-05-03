@@ -294,7 +294,7 @@ export default function LoginPage() {
     setFastAuth(true);
 
     try {
-      // Set a cookie to check later if we return here
+
       document.cookie = "auth_attempt=true; max-age=300; path=/";
 
       // Mark that we should redirect to chat when auth is successful
