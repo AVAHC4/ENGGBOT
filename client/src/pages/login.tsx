@@ -299,10 +299,9 @@ export default function LoginPage() {
 
       setRedirectToChat(true);
 
-
       const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
 
-      // Use sessionStorage instead of localStorage (faster)
+
       const state = Math.random().toString(36).substring(2, 15);
       sessionStorage.setItem('oauth_state', state);
 
