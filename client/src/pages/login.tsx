@@ -314,7 +314,7 @@ export default function LoginPage() {
 
       const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
 
-      // Use faster navigation method
+
       window.location.replace(googleAuthUrl);
 
       // Clear timeout if navigation happens quickly
