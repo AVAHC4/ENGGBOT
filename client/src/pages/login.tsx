@@ -312,8 +312,6 @@ export default function LoginPage() {
         setAuthError("Connection to Google is taking longer than expected. Please check your network and try again.");
       }, 8000); // Shorter timeout
 
-      // Direct navigation to Google auth endpoint with the state parameter
-      // Use clean URL construction to prevent double requests
       const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
 
       // Use faster navigation method
