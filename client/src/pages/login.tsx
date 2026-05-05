@@ -310,7 +310,7 @@ export default function LoginPage() {
         setIsLoading(false);
         setFastAuth(false);
         setAuthError("Connection to Google is taking longer than expected. Please check your network and try again.");
-      }, 8000); // Shorter timeout
+      }, 8000);
 
       const googleAuthUrl = `${apiUrl}/api/auth/google?state=${state}&prompt=select_account`;
 
