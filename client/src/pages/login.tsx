@@ -317,7 +317,7 @@ export default function LoginPage() {
 
       window.location.replace(googleAuthUrl);
 
-      // Clear timeout if navigation happens quickly
+
       window.onbeforeunload = () => {
         clearTimeout(timeout);
       };
