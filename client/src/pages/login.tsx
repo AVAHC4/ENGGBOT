@@ -329,7 +329,7 @@ export default function LoginPage() {
     }
   };
 
-  // If in fast auth mode, show a minimal UI for faster performance
+
   if (fastAuth) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
