@@ -203,7 +203,6 @@ export default function LoginPage() {
       // Redirect to chat
       let redirectUrl = data.redirectUrl || '/AI_UI/?auth_success=true';
 
-      // Append user data to URL params for cross-origin/port persistence
       if (data.user) {
         const separator = redirectUrl.includes('?') ? '&' : '?';
         const params = new URLSearchParams();
