@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { checkExternalAuth } from "@/lib/auth-helpers";
 import { useChat } from "@/context/chat-context";
@@ -9,20 +9,21 @@ export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const { startNewConversation } = useChat();
+    const hasInitialized = useRef(false);
 
     useEffect(() => {
-
         const authenticated = checkExternalAuth();
         setIsAuthenticated(authenticated);
         setIsLoading(false);
 
         if (!authenticated) {
             window.location.href = process.env.NEXT_PUBLIC_MAIN_APP_URL || 'http://localhost:3000/login';
-        } else {
-             
+        } else if (!hasInitialized.current) {
+            hasInitialized.current = true;
             startNewConversation();
         }
-    }, [startNewConversation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     if (isLoading) {
         return (
