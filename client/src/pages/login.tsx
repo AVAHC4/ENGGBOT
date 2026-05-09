@@ -200,7 +200,6 @@ export default function LoginPage() {
         setRedirectToChat(true);
       }
 
-      // Redirect to chat
       let redirectUrl = data.redirectUrl || '/AI_UI/?auth_success=true';
 
       if (data.user) {
