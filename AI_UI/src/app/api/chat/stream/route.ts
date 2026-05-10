@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { AVAILABLE_MODELS, OpenRouterClient } from '@/lib/ai/openrouter-client';
 import { processAIResponse, BOT_CONFIG, generateMarkdownSystemPrompt, isIdentityQuestion, EXACT_IDENTITY_REPLY } from '@/lib/ai/response-middleware';
 import { ENGINEERING_SYSTEM_PROMPT } from '@/lib/prompts/engineering-prompt';
+import { getPredefinedAnswer } from '@/lib/ai/predefined-answers';
 
 export const runtime = 'nodejs';
 
@@ -129,6 +130,49 @@ export async function POST(request: Request) {
     }
 
     const identityProbeText = typeof rawMessage === 'string' && rawMessage.trim().length > 0 ? rawMessage : message;
+
+    // ── Predefined answers – stream in chunks to feel natural (3-5s) ──
+    const predefined = getPredefinedAnswer(identityProbeText);
+    if (predefined) {
+      const encoder = new TextEncoder();
+
+      // Split answer into small word-based chunks for realistic streaming
+      const words = predefined.split(/(\s+)/); // keep whitespace as separate tokens
+      const CHUNK_SIZE = 6; // words per chunk
+      const chunks: string[] = [];
+      for (let i = 0; i < words.length; i += CHUNK_SIZE) {
+        chunks.push(words.slice(i, i + CHUNK_SIZE).join(''));
+      }
+      // Target ~4 seconds total; compute delay per chunk
+      const totalMs = 6000;
+      const delayMs = Math.max(15, Math.floor(totalMs / chunks.length));
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            for (const chunk of chunks) {
+              const event = `data: ${JSON.stringify({ text: chunk })}\n\n`;
+              controller.enqueue(encoder.encode(event));
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+            controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+            controller.close();
+          } catch {
+            controller.close();
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache, no-transform',
+          'Connection': 'keep-alive',
+          'Transfer-Encoding': 'chunked',
+          'X-Accel-Buffering': 'no'
+        }
+      });
+    }
 
     if (isIdentityQuestion(identityProbeText)) {
       const encoder = new TextEncoder();
