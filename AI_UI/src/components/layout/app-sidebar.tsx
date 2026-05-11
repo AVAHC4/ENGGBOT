@@ -1107,7 +1107,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     </SidebarMenuButton>
 
                     {projectsExpanded && (
-                      <SidebarMenuSub>
+                      <SidebarMenuSub style={{ maxHeight: '140px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
                         { }
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
