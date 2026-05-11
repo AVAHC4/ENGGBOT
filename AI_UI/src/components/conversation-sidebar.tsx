@@ -364,7 +364,7 @@ export function ConversationSidebar() {
       </div>
 
       { }
-      <ScrollArea className="flex-1 px-2">
+      <ScrollArea className="px-2" style={{ maxHeight: '260px' }}>
         <div className="space-y-1 py-2">
           {isLoading ? (
              
