@@ -979,7 +979,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                   </SidebarMenuButton>
 
                   {conversationsExpanded && (
-                    <SidebarMenuSub>
+                    <SidebarMenuSub style={{ maxHeight: '180px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
 
                       {conversationsLoading ? (
 
