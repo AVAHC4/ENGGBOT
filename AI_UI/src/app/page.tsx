@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat-interface";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 import AvatarGroup from "@/components/ui/avatar-group";
 
 import { checkExternalAuth } from "@/lib/auth-helpers";
@@ -38,7 +38,7 @@ export default function Home() {
     return (
       <main className="min-h-screen chat-page overflow-hidden">
         <div className="absolute top-4 right-4 z-10 hidden md:block">
-
+          <ThemeSwitch variant="circle" start="top-right" />
         </div>
 
 

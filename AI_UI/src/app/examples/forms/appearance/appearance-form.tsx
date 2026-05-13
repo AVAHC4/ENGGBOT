@@ -24,6 +24,7 @@ import { useBackground } from "@/context/background-context"
 import { useAvatar } from "@/context/avatar-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
+import { generateTransitionCSS } from "@/lib/theme-animations"
 
 
 function getUserEmail(): string | null {
@@ -256,7 +257,32 @@ export function AppearanceForm() {
               <RadioGroup
                 onValueChange={(value: "light" | "dark") => {
                   field.onChange(value)
-                  setTheme(value)
+
+                  // Use View Transitions API for smooth circle-reveal
+                  const switchTheme = () => setTheme(value)
+
+                  if (
+                    typeof document !== "undefined" &&
+                    "startViewTransition" in document &&
+                    typeof (document as any).startViewTransition === "function"
+                  ) {
+                    const STYLE_ID = "theme-transition-styles"
+                    const css = generateTransitionCSS("circle", "top-right")
+                    let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null
+                    if (!el) {
+                      el = document.createElement("style")
+                      el.id = STYLE_ID
+                      document.head.appendChild(el)
+                    }
+                    el.textContent = css
+
+                    const transition = (document as any).startViewTransition(switchTheme)
+                    transition.finished.finally(() => {
+                      document.getElementById(STYLE_ID)?.remove()
+                    })
+                  } else {
+                    switchTheme()
+                  }
                 }}
                 defaultValue={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"

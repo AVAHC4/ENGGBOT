@@ -9,7 +9,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       attribute="class"
       defaultTheme="system"
       enableSystem
-      disableTransitionOnChange
+      /* disableTransitionOnChange — removed to allow View Transition animations */
       enableColorScheme
        
       storageKey="ui-theme"
