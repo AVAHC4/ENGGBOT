@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { checkExternalAuth } from "@/lib/auth-helpers";
 import { useChat } from "@/context/chat-context";
+import { ThemeSwitch } from "@/components/ui/theme-switch";
 
 export default function Home() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -60,7 +61,7 @@ export default function Home() {
         return (
             <main className="min-h-screen chat-page overflow-hidden">
                 <div className="absolute top-4 right-4 z-10 hidden md:block">
-
+                    <ThemeSwitch variant="circle" start="top-right" />
                 </div>
 
 

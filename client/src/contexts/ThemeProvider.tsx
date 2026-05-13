@@ -40,9 +40,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, [theme]);
 
-  // Toggle between themes
   const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    
+    if (typeof document !== "undefined" && "startViewTransition" in document && typeof (document as any).startViewTransition === "function") {
+      const { generateTransitionCSS } = require('../lib/theme-animations');
+      const css = generateTransitionCSS("circle", "top-right");
+      const STYLE_ID = "theme-transition-styles";
+      let el = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+      if (!el) {
+        el = document.createElement("style");
+        el.id = STYLE_ID;
+        document.head.appendChild(el);
+      }
+      el.textContent = css;
+
+      const transition = (document as any).startViewTransition(() => {
+        setTheme(nextTheme);
+      });
+      transition.finished.finally(() => {
+        document.getElementById(STYLE_ID)?.remove();
+      });
+    } else {
+      setTheme(nextTheme);
+    }
   };
 
   return (
