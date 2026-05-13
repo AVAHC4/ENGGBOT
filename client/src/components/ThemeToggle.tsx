@@ -73,25 +73,27 @@ export function ThemeToggle() {
   }, [theme]);
 
   return (
-    <button
-      onClick={handleClick}
-      className="fixed top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 z-50 relative overflow-hidden"
-      aria-label="Toggle theme"
-    >
-      <Sun 
-        className={`h-5 w-5 text-yellow-500 transition-all duration-300 ${
-          theme === "dark"
-            ? "rotate-0 scale-100 opacity-100"
-            : "-rotate-90 scale-0 opacity-0 absolute"
-        }`} 
-      />
-      <Moon 
-        className={`h-5 w-5 text-gray-700 transition-all duration-300 ${
-          theme === "dark"
-            ? "rotate-90 scale-0 opacity-0 absolute"
-            : "rotate-0 scale-100 opacity-100"
-        }`} 
-      />
-    </button>
+    <div className="fixed top-4 right-4 z-50">
+      <button
+        onClick={handleClick}
+        className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden flex items-center justify-center"
+        aria-label="Toggle theme"
+      >
+        <Sun 
+          className={`h-5 w-5 text-yellow-500 transition-all duration-300 ${
+            theme === "dark"
+              ? "rotate-0 scale-100 opacity-100"
+              : "-rotate-90 scale-0 opacity-0 absolute"
+          }`} 
+        />
+        <Moon 
+          className={`h-5 w-5 text-gray-700 transition-all duration-300 ${
+            theme === "dark"
+              ? "rotate-90 scale-0 opacity-0 absolute"
+              : "rotate-0 scale-100 opacity-100"
+          }`} 
+        />
+      </button>
+    </div>
   );
 }
