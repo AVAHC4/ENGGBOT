@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { useBackground } from "@/context/background-context"
 import { useAvatar } from "@/context/avatar-context"
+import { useFont } from "@/context/font-context"
 import { ProfileCard } from "@/components/ui/profile-card"
 import { compressImage } from "@/lib/image-utils"
 import { generateTransitionCSS } from "@/lib/theme-animations"
@@ -45,7 +46,7 @@ const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark"], {
     required_error: "Please select a theme.",
   }),
-  font: z.enum(["inter", "manrope", "system"], {
+  font: z.enum(["inter", "manrope", "system", "chatgpt", "claude"], {
     invalid_type_error: "Select a font",
     required_error: "Please select a font.",
   }),
@@ -64,6 +65,7 @@ export function AppearanceForm() {
   const { toast } = useToast()
   const [isMounted, setIsMounted] = React.useState(false);
   const { background, setBackground, options } = useBackground()
+  const { font, setFont } = useFont()
   const { avatar: profileImage, setAvatar: setProfileImage } = useAvatar()
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
@@ -86,6 +88,9 @@ export function AppearanceForm() {
       }
       if (background) {
         form.setValue("background", background as AppearanceFormValues["background"])
+      }
+      if (font) {
+        form.setValue("font", font as AppearanceFormValues["font"])
       }
 
 
@@ -229,10 +234,16 @@ export function AppearanceForm() {
                       "w-[200px] appearance-none font-normal"
                     )}
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      setFont(e.target.value as any);
+                    }}
                   >
                     <option value="inter">Inter</option>
                     <option value="manrope">Manrope</option>
                     <option value="system">System</option>
+                    <option value="chatgpt">ChatGPT (Söhne)</option>
+                    <option value="claude">Claude (Serif)</option>
                   </select>
                 </FormControl>
                 <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />

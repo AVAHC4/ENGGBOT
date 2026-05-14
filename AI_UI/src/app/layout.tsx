@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import { Inter, Manrope } from "next/font/google";
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
+
 import "./globals.css";
 import "./sidebar-fixes.css";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -16,6 +21,7 @@ import { AvatarProvider } from "@/context/avatar-context";
 import { Analytics } from "@vercel/analytics/react";
 import { BackgroundRenderer } from "@/components/background/background-renderer";
 import { LanguageProvider } from "@/context/language-context";
+import { FontProvider } from "@/context/font-context";
 
 
 
@@ -37,25 +43,27 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body
-        className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${manrope.variable} antialiased`}
       >
         <ThemeProvider>
           <LanguageProvider>
-            <BackgroundProvider>
-              { }
-              <BackgroundRenderer />
-              <AvatarProvider>
-                <ChatProvider>
-                  <SidebarWrapper defaultOpen={true}>
-                    <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
-                      <AppSidebar className="hidden lg:block border-none" />
-                      <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
-                    </div>
-                    <ProfileVisibilityFixer />
-                  </SidebarWrapper>
-                </ChatProvider>
-              </AvatarProvider>
-            </BackgroundProvider>
+            <FontProvider>
+              <BackgroundProvider>
+                { }
+                <BackgroundRenderer />
+                <AvatarProvider>
+                  <ChatProvider>
+                    <SidebarWrapper defaultOpen={true}>
+                      <div className="grid min-h-screen w-full lg:grid-cols-[200px_1fr] sidebar-container border-none">
+                        <AppSidebar className="hidden lg:block border-none" />
+                        <main className="transition-all duration-300 w-full p-0 m-0 border-none">{children}</main>
+                      </div>
+                      <ProfileVisibilityFixer />
+                    </SidebarWrapper>
+                  </ChatProvider>
+                </AvatarProvider>
+              </BackgroundProvider>
+            </FontProvider>
           </LanguageProvider>
         </ThemeProvider>
         { } { }
