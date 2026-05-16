@@ -25,29 +25,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
-html.font-inter, html.font-inter body {
+html.font-inter,
+html.font-inter body {
   font-family: var(--font-inter), "Geist Sans", ui-sans-serif, system-ui, sans-serif !important;
   --font-sans: var(--font-inter), "Geist Sans", ui-sans-serif, system-ui, sans-serif !important;
 }
 
-html.font-manrope, html.font-manrope body {
+html.font-manrope,
+html.font-manrope body {
   font-family: var(--font-manrope), "Geist Sans", ui-sans-serif, system-ui, sans-serif !important;
   --font-sans: var(--font-manrope), "Geist Sans", ui-sans-serif, system-ui, sans-serif !important;
 }
 
-html.font-chatgpt, html.font-chatgpt body {
-  /* ChatGPT font stack */
+html.font-sohne,
+html.font-sohne body {
   font-family: "Söhne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", sans-serif, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
   --font-sans: "Söhne", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, "Noto Sans", sans-serif, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
 }
 
-html.font-claude, html.font-claude body {
-  /* Claude uses a serif font stack for reading */
+html.font-serif,
+html.font-serif body {
+
   font-family: "Tieme", "Signifier", "Tiempos Text", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
   --font-sans: "Tieme", "Signifier", "Tiempos Text", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
 }
 
-html.font-system, html.font-system body {
+html.font-system,
+html.font-system body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }

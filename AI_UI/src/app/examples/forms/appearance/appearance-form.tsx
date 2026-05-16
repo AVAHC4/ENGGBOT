@@ -46,7 +46,7 @@ const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark"], {
     required_error: "Please select a theme.",
   }),
-  font: z.enum(["inter", "manrope", "system", "chatgpt", "claude"], {
+  font: z.enum(["inter", "manrope", "system", "sohne", "serif"], {
     invalid_type_error: "Select a font",
     required_error: "Please select a font.",
   }),
@@ -242,8 +242,8 @@ export function AppearanceForm() {
                     <option value="inter">Inter</option>
                     <option value="manrope">Manrope</option>
                     <option value="system">System</option>
-                    <option value="chatgpt">ChatGPT (Söhne)</option>
-                    <option value="claude">Claude (Serif)</option>
+                    <option value="sohne">Söhne</option>
+                    <option value="serif">Serif</option>
                   </select>
                 </FormControl>
                 <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 opacity-50" />

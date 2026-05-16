@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 
-export type FontOption = "inter" | "manrope" | "system" | "chatgpt" | "claude";
+export type FontOption = "inter" | "manrope" | "system" | "sohne" | "serif";
 
 interface FontContextValue {
   font: FontOption;
@@ -11,7 +11,7 @@ interface FontContextValue {
 }
 
 const STORAGE_KEY = "ui-font";
-const VALID_FONTS: FontOption[] = ["inter", "manrope", "system", "chatgpt", "claude"];
+const VALID_FONTS: FontOption[] = ["inter", "manrope", "system", "sohne", "serif"];
 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null;
@@ -85,7 +85,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       const root = document.documentElement;
       
       // Remove any existing font- related classes
-      const classesToRemove = Array.from(root.classList).filter(c => c.startsWith('font-') && ['inter', 'manrope', 'system', 'chatgpt', 'claude'].includes(c.replace('font-', '')));
+      const classesToRemove = Array.from(root.classList).filter(c => c.startsWith('font-') && ['inter', 'manrope', 'system', 'sohne', 'serif'].includes(c.replace('font-', '')));
       root.classList.remove(...classesToRemove);
       
       // Add the new font class
@@ -143,8 +143,8 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       { value: "inter" as const, label: "Inter" },
       { value: "manrope" as const, label: "Manrope" },
       { value: "system" as const, label: "System" },
-      { value: "chatgpt" as const, label: "ChatGPT" },
-      { value: "claude" as const, label: "Claude" },
+      { value: "sohne" as const, label: "Söhne" },
+      { value: "serif" as const, label: "Serif" },
     ],
     [],
   );
