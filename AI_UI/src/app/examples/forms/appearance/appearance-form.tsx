@@ -380,10 +380,10 @@ export function AppearanceForm() {
                     <FormControl>
                       <RadioGroupItem value="flicker" className="sr-only" />
                     </FormControl>
-                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-slate-900 bg-[radial-gradient(circle_at_1px_1px,#444_1px,transparent_1px)] [background-size:8px_8px] dark:bg-slate-800 dark:bg-[radial-gradient(circle_at_1px_1px,#666_1px,transparent_1px)]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent cursor-pointer transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-slate-900 bg-[radial-gradient(circle_at_1px_1px,#444_1px,transparent_1px)] [background-size:8px_8px] dark:bg-slate-800 dark:bg-[radial-gradient(circle_at_1px_1px,#666_1px,transparent_1px)] pointer-events-none" />
                     </div>
-                    <span className="block w-full p-2 text-center font-normal">Flickering Grid</span>
+                    <span className="block w-full p-2 text-center font-normal cursor-pointer">Flickering Grid</span>
                   </FormLabel>
                 </FormItem>
 
@@ -393,10 +393,10 @@ export function AppearanceForm() {
                     <FormControl>
                       <RadioGroupItem value="radial-vignette" className="sr-only" />
                     </FormControl>
-                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-slate-800 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(255,255,255,0.15),rgba(0,0,0,0))]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent cursor-pointer transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-slate-800 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(255,255,255,0.15),rgba(0,0,0,0))] pointer-events-none" />
                     </div>
-                    <span className="block w-full p-2 text-center font-normal">Radial Vignette</span>
+                    <span className="block w-full p-2 text-center font-normal cursor-pointer">Radial Vignette</span>
                   </FormLabel>
                 </FormItem>
 
@@ -406,10 +406,10 @@ export function AppearanceForm() {
                     <FormControl>
                       <RadioGroupItem value="sunset-gradient" className="sr-only" />
                     </FormControl>
-                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-[linear-gradient(135deg,#ff9a9e_0%,#fad0c4_55%,#fbc2eb_100%)] dark:bg-[linear-gradient(135deg,#0f0c29_0%,#302b63_50%,#24243e_100%)]" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent cursor-pointer transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-[linear-gradient(135deg,#ff9a9e_0%,#fad0c4_55%,#fbc2eb_100%)] dark:bg-[linear-gradient(135deg,#0f0c29_0%,#302b63_50%,#24243e_100%)] pointer-events-none" />
                     </div>
-                    <span className="block w-full p-2 text-center font-normal">Sunset Gradient</span>
+                    <span className="block w-full p-2 text-center font-normal cursor-pointer">Sunset Gradient</span>
                   </FormLabel>
                 </FormItem>
 
@@ -419,10 +419,10 @@ export function AppearanceForm() {
                     <FormControl>
                       <RadioGroupItem value="solid" className="sr-only" />
                     </FormControl>
-                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent transition-colors">
-                      <div className="h-24 w-full rounded-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-700" />
+                    <div className="w-full rounded-md border-2 border-muted p-2 hover:border-accent cursor-pointer transition-colors">
+                      <div className="h-24 w-full rounded-sm bg-white dark:bg-black border border-slate-200 dark:border-slate-700 pointer-events-none" />
                     </div>
-                    <span className="block w-full p-2 text-center font-normal">Solid</span>
+                    <span className="block w-full p-2 text-center font-normal cursor-pointer">Solid</span>
                   </FormLabel>
                 </FormItem>
               </RadioGroup>
