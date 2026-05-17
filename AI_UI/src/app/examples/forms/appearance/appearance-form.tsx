@@ -298,13 +298,13 @@ export function AppearanceForm() {
                 defaultValue={field.value}
                 className="grid max-w-md grid-cols-2 gap-8 pt-2"
               >
-                <FormItem>
-                  <FormLabel className="cursor-pointer [&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="light" className="sr-only" />
                     </FormControl>
-                    <div className="items-center rounded-md border-2 border-muted p-1 hover:border-accent cursor-pointer">
-                      <div className="space-y-2 rounded-sm bg-[#ecedef] p-2">
+                    <div className="items-center w-full rounded-md border-2 border-muted p-1 hover:border-accent cursor-pointer transition-colors">
+                      <div className="space-y-2 rounded-sm bg-[#ecedef] p-2 pointer-events-none">
                         <div className="space-y-2 rounded-md bg-white p-2 shadow-sm">
                           <div className="h-2 w-[80px] rounded-lg bg-[#ecedef]" />
                           <div className="h-2 w-[100px] rounded-lg bg-[#ecedef]" />
@@ -324,13 +324,13 @@ export function AppearanceForm() {
                     </span>
                   </FormLabel>
                 </FormItem>
-                <FormItem>
-                  <FormLabel className="cursor-pointer [&:has([data-state=checked])>div]:border-primary">
+                <FormItem className="w-full">
+                  <FormLabel className="w-full cursor-pointer [&:has([data-state=checked])>div]:border-primary">
                     <FormControl>
                       <RadioGroupItem value="dark" className="sr-only" />
                     </FormControl>
-                    <div className="items-center rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground cursor-pointer">
-                      <div className="space-y-2 rounded-sm bg-slate-950 p-2">
+                    <div className="items-center w-full rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors">
+                      <div className="space-y-2 rounded-sm bg-slate-950 p-2 pointer-events-none">
                         <div className="space-y-2 rounded-md bg-slate-800 p-2 shadow-sm">
                           <div className="h-2 w-[80px] rounded-lg bg-slate-400" />
                           <div className="h-2 w-[100px] rounded-lg bg-slate-400" />
