@@ -763,7 +763,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 });
               }
             } catch (parseError) {
-              console.error("Error parsing JSON data:", parseError);
+              console.error(Error parsing JSON data: ", parseError);
             }
           } catch (error) {
             console.error("Error processing stream line:", error);
