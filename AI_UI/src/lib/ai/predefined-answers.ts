@@ -1,7 +1,3 @@
-/**
- * Predefined answers for common engineering questions.
- * These are returned instantly without calling the AI API.
- */
 
 interface PredefinedEntry {
   /** Keywords / phrases that trigger this answer (all lowercased) */
