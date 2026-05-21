@@ -825,6 +825,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     conversationIdRef.current = id;
 
+    // Immediately persist to localStorage so navigation/remounts restore the correct ID
+    const userPrefix = getUserPrefix();
+    const storageKey = `${userPrefix}-activeConversation`;
+    localStorage.setItem(storageKey, id);
+
 
     const cachedMessages = conversationsCacheRef.current[id];
     if (cachedMessages && cachedMessages.length > 0) {
