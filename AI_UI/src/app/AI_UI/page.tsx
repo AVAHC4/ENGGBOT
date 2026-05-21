@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ChatInterface } from "@/components/chat-interface";
 import { checkExternalAuth } from "@/lib/auth-helpers";
-import { useChat } from "@/context/chat-context";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 
 export default function Home() {
