@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Manrope, Playfair_Display, Outfit, Fira_Code, Plus_Jakarta_Sans, Lora } from "next/font/google";
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
+const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair', display: 'swap' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
+const firaCode = Fira_Code({ subsets: ['latin'], variable: '--font-fira-code', display: 'swap' });
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-plus-jakarta', display: 'swap' });
+const lora = Lora({ subsets: ['latin'], variable: '--font-lora', display: 'swap' });
 
 import "./globals.css";
 import "./sidebar-fixes.css";
@@ -43,7 +48,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body
-        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${manrope.variable} antialiased`}
+        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} ${inter.variable} ${manrope.variable} ${playfair.variable} ${outfit.variable} ${firaCode.variable} ${plusJakarta.variable} ${lora.variable} antialiased`}
       >
         <ThemeProvider>
           <LanguageProvider>

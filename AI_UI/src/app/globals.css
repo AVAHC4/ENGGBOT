@@ -56,6 +56,36 @@ html.font-system body {
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
 
+html.font-playfair,
+html.font-playfair body {
+  font-family: var(--font-playfair), Georgia, serif !important;
+  --font-sans: var(--font-playfair), Georgia, serif !important;
+}
+
+html.font-outfit,
+html.font-outfit body {
+  font-family: var(--font-outfit), sans-serif !important;
+  --font-sans: var(--font-outfit), sans-serif !important;
+}
+
+html.font-fira-code,
+html.font-fira-code body {
+  font-family: var(--font-fira-code), monospace !important;
+  --font-sans: var(--font-fira-code), monospace !important;
+}
+
+html.font-plus-jakarta,
+html.font-plus-jakarta body {
+  font-family: var(--font-plus-jakarta), sans-serif !important;
+  --font-sans: var(--font-plus-jakarta), sans-serif !important;
+}
+
+html.font-lora,
+html.font-lora body {
+  font-family: var(--font-lora), Georgia, serif !important;
+  --font-sans: var(--font-lora), Georgia, serif !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
