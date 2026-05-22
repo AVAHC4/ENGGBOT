@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 
-export type FontOption = "inter" | "manrope" | "system" | "sohne" | "serif";
+export type FontOption = "inter" | "manrope" | "system" | "sohne" | "serif" | "playfair" | "outfit" | "fira-code" | "plus-jakarta" | "lora";
 
 interface FontContextValue {
   font: FontOption;
@@ -11,7 +11,7 @@ interface FontContextValue {
 }
 
 const STORAGE_KEY = "ui-font";
-const VALID_FONTS: FontOption[] = ["inter", "manrope", "system", "sohne", "serif"];
+const VALID_FONTS: FontOption[] = ["inter", "manrope", "system", "sohne", "serif", "playfair", "outfit", "fira-code", "plus-jakarta", "lora"];
 
 function getUserEmail(): string | null {
   if (typeof window === 'undefined') return null;
@@ -85,7 +85,7 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       const root = document.documentElement;
       
       // Remove any existing font- related classes
-      const classesToRemove = Array.from(root.classList).filter(c => c.startsWith('font-') && ['inter', 'manrope', 'system', 'sohne', 'serif'].includes(c.replace('font-', '')));
+      const classesToRemove = Array.from(root.classList).filter(c => c.startsWith('font-') && ['inter', 'manrope', 'system', 'sohne', 'serif', 'playfair', 'outfit', 'fira-code', 'plus-jakarta', 'lora'].includes(c.replace('font-', '')));
       root.classList.remove(...classesToRemove);
       
       // Add the new font class
@@ -145,6 +145,11 @@ export function FontProvider({ children }: { children: React.ReactNode }) {
       { value: "system" as const, label: "System" },
       { value: "sohne" as const, label: "Söhne" },
       { value: "serif" as const, label: "Serif" },
+      { value: "playfair" as const, label: "Playfair Display" },
+      { value: "outfit" as const, label: "Outfit" },
+      { value: "fira-code" as const, label: "Fira Code" },
+      { value: "plus-jakarta" as const, label: "Plus Jakarta Sans" },
+      { value: "lora" as const, label: "Lora" },
     ],
     [],
   );
