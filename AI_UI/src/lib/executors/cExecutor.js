@@ -179,7 +179,7 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
 
     if (prompts.length === 0) {
       try {
-        const input = await onInputRequest('Enter input:');
+        const input = await onInputRequest('');
         collectedStdin = input;
       } catch (e) {
         collectedStdin = '';

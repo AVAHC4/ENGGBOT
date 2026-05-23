@@ -113,7 +113,7 @@ function analyzeInputPrompts(originalSource) {
   const clean = stripComments(String(originalSource || ''));
   const scannerVars = findScannerVars(clean);
   const calls = findInputCalls(clean, scannerVars);
-  const prompts = calls.map(c => findPromptBefore(clean, c.idx) || 'Enter value:');
+  const prompts = calls.map(c => findPromptBefore(clean, c.idx) || '');
   return prompts;
 }
 
@@ -195,7 +195,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
   const lines = [];
   if (prompts.length > 0) {
     for (let i = 0; i < prompts.length; i++) {
-      const p = prompts[i] || `Enter value ${i + 1}:`;
+      const p = prompts[i] || '';
       const ans = await onInputRequest(p);
       if (ans == null) break;
       lines.push(String(ans));
@@ -205,7 +205,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
   }
   // Fallback: collect until empty line, but limit to 10
   for (let i = 0; i < 10; i++) {
-    const ans = await onInputRequest(`Enter line ${i + 1} (leave empty to run):`);
+    const ans = await onInputRequest('');
     if (ans == null) break;
     const t = String(ans);
     if (t === '') break;

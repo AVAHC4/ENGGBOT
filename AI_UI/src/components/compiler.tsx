@@ -57,6 +57,7 @@ export function Compiler() {
   const [isWaitingForInput, setIsWaitingForInput] = useState(false);
   const [inputPrompt, setInputPrompt] = useState('');
   const [inlineInput, setInlineInput] = useState('');
+  const [accumulatedInput, setAccumulatedInput] = useState('');
   const consoleRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bundlerRef = useRef<Bundler | null>(null);
@@ -270,6 +271,7 @@ export function Compiler() {
 
           echoPromptsRef.current.push(p);
           setInlineInput('');
+          setAccumulatedInput('');
           setInputPrompt(p);
           setIsWaitingForInput(true);
 
@@ -367,6 +369,7 @@ export function Compiler() {
     } finally {
       setIsWaitingForInput(false);
       setInlineInput('');
+      setAccumulatedInput('');
       setInputPrompt('');
       setIsRunning(false);
       setConsoleOutput(prev => [...prev, 'Program stopped by user']);
@@ -402,26 +405,51 @@ export function Compiler() {
     if (!isWaitingForInput) return;
     if (e.key === 'Enter') {
       e.preventDefault();
-      const toSend = inlineInput;
+      
+      // Submit if Shift/Ctrl/Meta+Enter OR if Enter is pressed on an empty line (double Enter)
+      const isSubmit = e.shiftKey || e.ctrlKey || e.metaKey || inlineInput === '';
 
+      if (isSubmit) {
+        const toSend = accumulatedInput + (accumulatedInput && inlineInput ? '\n' : '') + inlineInput;
+
+        setConsoleOutput(prev => {
+          const arr = [...prev];
+          if (arr.length > 0) {
+            const lastLine = arr[arr.length - 1];
+            if (typeof lastLine === 'string') {
+              arr[arr.length - 1] = lastLine + inlineInput;
+            }
+          }
+          return arr;
+        });
+        echoInputsRef.current.push(toSend);
+        setIsWaitingForInput(false);
+        setInputPrompt('');
+        setInlineInput('');
+        setAccumulatedInput('');
+        if (pendingInputResolve.current) {
+          pendingInputResolve.current(toSend);
+          pendingInputResolve.current = null;
+        }
+        return;
+      }
+
+      // Not submitting, just inserting a newline
+      setAccumulatedInput(prev => prev + (prev ? '\n' : '') + inlineInput);
+      
       setConsoleOutput(prev => {
         const arr = [...prev];
         if (arr.length > 0) {
           const lastLine = arr[arr.length - 1];
           if (typeof lastLine === 'string') {
-            arr[arr.length - 1] = lastLine + toSend;
+            arr[arr.length - 1] = lastLine + inlineInput;
           }
         }
+        arr.push(''); // move cursor to new line
         return arr;
       });
-      echoInputsRef.current.push(toSend);
-      setIsWaitingForInput(false);
-      setInputPrompt('');
+      
       setInlineInput('');
-      if (pendingInputResolve.current) {
-        pendingInputResolve.current(toSend);
-        pendingInputResolve.current = null;
-      }
       return;
     }
     if (e.key === 'Backspace') {
