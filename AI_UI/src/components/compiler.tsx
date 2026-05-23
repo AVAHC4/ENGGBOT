@@ -54,19 +54,12 @@ export function Compiler() {
   const [isRunning, setIsRunning] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
-  const [isWaitingForInput, setIsWaitingForInput] = useState(false);
-  const [inputPrompt, setInputPrompt] = useState('');
-  const [inlineInput, setInlineInput] = useState('');
-  const [accumulatedInput, setAccumulatedInput] = useState('');
+  const [stdInput, setStdInput] = useState('');
+  const [activeTab, setActiveTab] = useState<'console' | 'input'>('console');
   const consoleRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const bundlerRef = useRef<Bundler | null>(null);
-  const pendingInputResolve = useRef<((v: string) => void) | null>(null);
   const [pythonBooting, setPythonBooting] = useState(false);
   const [pythonLoadingProgress, setPythonLoadingProgress] = useState({ stage: '', progress: 0 });
-
-  const echoPromptsRef = useRef<string[]>([]);
-  const echoInputsRef = useRef<string[]>([]);
 
   const searchParams = useSearchParams();
   const { resolvedTheme } = useTheme();
@@ -241,14 +234,13 @@ export function Compiler() {
 
     try {
       setIsCompiling(false);
-
+      setActiveTab('console'); // switch to console when running
 
       const executor = EXECUTORS[selectedLanguage.id];
       if (!executor || typeof executor.execute !== 'function') {
         setConsoleOutput(prev => [...prev, `Error: No executor available for ${selectedLanguage.name}`]);
         return;
       }
-
 
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
         setConsoleOutput(prev => [...prev, '[C/C++] Compiling and executing...']);
@@ -258,31 +250,8 @@ export function Compiler() {
 
       const result = await executor.execute(
         code,
-        '',
-        async (prompt: string) => {
-
-          const p = String(prompt || '');
-
-
-
-          if (p) {
-            setConsoleOutput(prev => [...prev, p.replace(/\n$/, '')]);
-          } else {
-            setConsoleOutput(prev => [...prev, '']);
-          }
-
-          echoPromptsRef.current.push(p);
-          setInlineInput('');
-          setAccumulatedInput('');
-          setInputPrompt(p);
-          setIsWaitingForInput(true);
-
-          setTimeout(() => consoleRef.current?.focus(), 0);
-          return await new Promise<string>((resolve) => {
-            (pendingInputResolve.current as any) = resolve;
-          });
-        },
-
+        stdInput,
+        undefined,
         selectedLanguage.id
       );
 
@@ -297,28 +266,6 @@ export function Compiler() {
       } else {
         if (out.trim().length > 0) {
           let lines = out.split('\n');
-
-          // Filter out echoed prompts from output (only exact line matches)
-          if (echoPromptsRef.current.length > 0) {
-            const promptSet = new Set(echoPromptsRef.current.map((p: string) => p.trim()));
-
-            lines = lines.filter((line: string) => {
-              const trimmed = line.trim();
-
-              // Keep non-empty content
-              if (trimmed === '') {
-                return true;
-              }
-
-              // Filter out lines that are exact matches of prompts
-              if (promptSet.has(trimmed)) {
-                return false;
-              }
-
-              return true;
-            });
-          }
-
           setConsoleOutput(prev => [...prev, ...lines]);
         } else {
           if (!result.plots || result.plots.length === 0) {
@@ -344,10 +291,6 @@ export function Compiler() {
     } finally {
       setIsRunning(false);
 
-      echoPromptsRef.current = [];
-      echoInputsRef.current = [];
-
-
       if (consoleRef.current) {
         consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
       }
@@ -369,10 +312,6 @@ export function Compiler() {
     } catch (e) {
 
     } finally {
-      setIsWaitingForInput(false);
-      setInlineInput('');
-      setAccumulatedInput('');
-      setInputPrompt('');
       setIsRunning(false);
       setConsoleOutput(prev => [...prev, 'Program stopped by user']);
     }
@@ -397,80 +336,7 @@ export function Compiler() {
   };
 
 
-  const handleCursorPositionChange = (line: number, column: number) => {
-    setCursorPosition({ line, column });
-  };
 
-
-
-  const handleConsoleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!isWaitingForInput) return;
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      // Submit if Shift/Ctrl/Meta+Enter OR if Enter is pressed on an empty line (double Enter)
-      const isSubmit = e.shiftKey || e.ctrlKey || e.metaKey || inlineInput === '';
-
-      if (isSubmit) {
-        const toSend = accumulatedInput + (accumulatedInput && inlineInput ? '\n' : '') + inlineInput;
-
-        setConsoleOutput(prev => {
-          const arr = [...prev];
-          if (arr.length > 0) {
-            const lastLine = arr[arr.length - 1];
-            if (typeof lastLine === 'string') {
-              arr[arr.length - 1] = lastLine + inlineInput;
-            }
-          }
-          return arr;
-        });
-        echoInputsRef.current.push(toSend);
-        setIsWaitingForInput(false);
-        setInputPrompt('');
-        setInlineInput('');
-        setAccumulatedInput('');
-        if (pendingInputResolve.current) {
-          pendingInputResolve.current(toSend);
-          pendingInputResolve.current = null;
-        }
-        return;
-      }
-
-      // Not submitting, just inserting a newline
-      setAccumulatedInput(prev => prev + (prev ? '\n' : '') + inlineInput);
-      
-      setConsoleOutput(prev => {
-        const arr = [...prev];
-        if (arr.length > 0) {
-          const lastLine = arr[arr.length - 1];
-          if (typeof lastLine === 'string') {
-            arr[arr.length - 1] = lastLine + inlineInput;
-          }
-        }
-        arr.push(''); // move cursor to new line
-        return arr;
-      });
-      
-      setInlineInput('');
-      return;
-    }
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      setInlineInput((s) => s.slice(0, -1));
-      return;
-    }
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      e.preventDefault();
-      setInlineInput((s) => s + e.key);
-    }
-  };
-
-  const handleConsolePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-    if (!isWaitingForInput) return;
-    e.preventDefault();
-    const text = e.clipboardData.getData('text');
-    if (text) setInlineInput((s) => s + text.replace(/\r/g, ''));
-  };
 
   return (
     <div className={cn("flex flex-col h-screen", isLightMode ? "bg-white text-black" : "bg-[#1e1e1e] text-white")}>
@@ -521,93 +387,105 @@ export function Compiler() {
             value={code}
             onChange={setCode}
             language={getLanguageFromExtension(selectedLanguage.extension)}
-            onCursorPositionChange={handleCursorPositionChange}
+            onCursorPositionChange={(line, column) => setCursorPosition({ line, column })}
           />
         </div>
 
         { }
         <div className={cn("h-1/3 border-t flex flex-col", isLightMode ? "bg-gray-50 border-gray-200" : "bg-black border-[#3c3c3c]")}>
-          <div className={cn("flex items-center justify-between px-4 py-1 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
-            <span className="text-xs font-medium">Console</span>
-            <button
-              className={cn("text-xs hover:opacity-80", isLightMode ? "text-gray-600 hover:text-black" : "text-gray-400 hover:text-white")}
-              onClick={() => setConsoleOutput([])}
+          <div className={cn("flex items-center justify-between px-0 py-0 border-b", isLightMode ? "bg-gray-100 border-gray-200" : "bg-[#252526] border-[#3c3c3c]")}>
+            <div className="flex">
+              <button 
+                className={cn("px-4 py-2 text-xs font-medium border-b-2", activeTab === 'console' ? "border-blue-500 text-blue-500" : "border-transparent text-gray-500 hover:text-gray-700")}
+                onClick={() => setActiveTab('console')}
+              >
+                Console
+              </button>
+              <button 
+                className={cn("px-4 py-2 text-xs font-medium border-b-2", activeTab === 'input' ? "border-blue-500 text-blue-500" : "border-transparent text-gray-500 hover:text-gray-700")}
+                onClick={() => setActiveTab('input')}
+              >
+                Custom Input
+              </button>
+            </div>
+            <div className="px-4">
+              <button
+                className={cn("text-xs hover:opacity-80", isLightMode ? "text-gray-600 hover:text-black" : "text-gray-400 hover:text-white")}
+                onClick={() => activeTab === 'console' ? setConsoleOutput([]) : setStdInput('')}
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {activeTab === 'console' ? (
+            <div
+              ref={consoleRef}
+              className="flex-1 overflow-auto p-2 font-mono text-sm outline-none"
+              tabIndex={0}
             >
-              Clear
-            </button>
-          </div>
+              {consoleOutput.length > 0 ? (
+                consoleOutput.map((line, i) => {
+                  if (typeof line === 'string') {
+                    const cls = line.startsWith('Error') ? 'text-red-500' :
+                      (line.trim() === 'Program exited with code 0' ? 'text-green-500' : (isLightMode ? 'text-black' : 'text-white'));
 
+                    if (line.startsWith('data:image/png;base64,')) {
+                      return (
+                        <div key={i} className="py-2">
+                          <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
+                        </div>
+                      );
+                    }
 
-          <div
-            ref={consoleRef}
-            className="flex-1 overflow-auto p-2 font-mono text-sm outline-none"
-            tabIndex={0}
-            onKeyDown={handleConsoleKeyDown}
-            onPaste={handleConsolePaste}
-          >
-            {consoleOutput.length > 0 ? (
-              consoleOutput.map((line, i) => {
-                const isPromptLine = isWaitingForInput && i === consoleOutput.length - 1;
-
-                if (typeof line === 'string') {
-                  const display = isPromptLine ? (line + inlineInput) : line;
-                  const cls = line.startsWith('Error') ? 'text-red-500' :
-                    (line.trim() === 'Program exited with code 0' ? 'text-green-500' : (isLightMode ? 'text-black' : 'text-white'));
-
-                  if (line.startsWith('data:image/png;base64,')) {
                     return (
-                      <div key={i} className="py-2">
-                        { }
-                        <img src={line} alt="Plot" className="max-w-full h-auto rounded border border-gray-700" />
+                      <div key={i} className={cls}>
+                        {line}
+                        {!line && '\u00A0'}
                       </div>
                     );
                   }
 
-                  return (
-                    <div key={i} className={cls}>
-                      {display}
-                      {isPromptLine && (
-                        <span className={cn("relative inline-block w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]", display.length > 0 ? "ml-1" : "")} />
-                      )}
-                      {!display && !isPromptLine && '\u00A0'}
-                    </div>
-                  );
-                }
-
-                if (typeof line === 'object' && line.type === 'plotly') {
-                  try {
-                    const plotData = JSON.parse(line.data);
-                    return (
-                      <div key={i} className="py-2 w-full h-[400px] bg-white rounded border border-gray-700 overflow-hidden">
-                        <Plot
-                          data={plotData.data}
-                          layout={{
-                            ...plotData.layout,
-                            autosize: true,
-                            margin: { t: 30, r: 20, l: 40, b: 40 },
-                            paper_bgcolor: 'rgba(0,0,0,0)',
-                            plot_bgcolor: 'rgba(0,0,0,0)',
-                            font: { color: '#fff' }
-                          }}
-                          config={{ responsive: true }}
-                          style={{ width: '100%', height: '100%' }}
-                          useResizeHandler={true}
-                        />
-                      </div>
-                    );
-                  } catch (e) {
-                    return <div key={i} className="text-red-400">Error rendering plot</div>;
+                  if (typeof line === 'object' && line.type === 'plotly') {
+                    try {
+                      const plotData = JSON.parse(line.data);
+                      return (
+                        <div key={i} className="py-2 w-full h-[400px] bg-white rounded border border-gray-700 overflow-hidden">
+                          <Plot
+                            data={plotData.data}
+                            layout={{
+                              ...plotData.layout,
+                              autosize: true,
+                              margin: { t: 30, r: 20, l: 40, b: 40 },
+                              paper_bgcolor: 'rgba(0,0,0,0)',
+                              plot_bgcolor: 'rgba(0,0,0,0)',
+                              font: { color: '#fff' }
+                            }}
+                            config={{ responsive: true }}
+                            style={{ width: '100%', height: '100%' }}
+                            useResizeHandler={true}
+                          />
+                        </div>
+                      );
+                    } catch (e) {
+                      return <div key={i} className="text-red-400">Error rendering plot</div>;
+                    }
                   }
-                }
 
-                return null;
-              })
-            ) : (
-              <div className="text-gray-500 italic">Run your code to see output here</div>
-            )}
-          </div>
-
-          { }
+                  return null;
+                })
+              ) : (
+                <div className="text-gray-500 italic">Run your code to see output here</div>
+              )}
+            </div>
+          ) : (
+            <textarea
+              className={cn("flex-1 p-2 font-mono text-sm resize-none outline-none", isLightMode ? "bg-white text-black" : "bg-[#1e1e1e] text-white")}
+              placeholder="Enter custom standard input here...\nExample:\n3\n10 20 30"
+              value={stdInput}
+              onChange={(e) => setStdInput(e.target.value)}
+            />
+          )}
         </div>
       </div>
 
