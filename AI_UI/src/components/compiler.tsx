@@ -267,6 +267,8 @@ export function Compiler() {
 
           if (p) {
             setConsoleOutput(prev => [...prev, p.replace(/\n$/, '')]);
+          } else {
+            setConsoleOutput(prev => [...prev, '']);
           }
 
           echoPromptsRef.current.push(p);
@@ -563,10 +565,11 @@ export function Compiler() {
 
                   return (
                     <div key={i} className={cls}>
-                      {display || '\u00A0'}
+                      {display}
                       {isPromptLine && (
-                        <span className="relative inline-block ml-1 w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]" />
+                        <span className={cn("relative inline-block w-[6px] h-[1.1em] bg-green-500 align-text-bottom animate-pulse top-[1px]", display.length > 0 ? "ml-1" : "")} />
                       )}
+                      {!display && !isPromptLine && '\u00A0'}
                     </div>
                   );
                 }
