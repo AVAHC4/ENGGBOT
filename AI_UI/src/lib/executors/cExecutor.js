@@ -62,11 +62,9 @@ async function sha256(text) {
  * https://wandbox.org/api/compile.json — no API key required.
  */
 async function executeWandbox(code, lang = 'c', stdin = '') {
-  const compiler = 'gcc-head';
-
-  // For C: force -x c so gcc treats the source as C, not C++
-  const options = lang === 'c' ? 'warning,c17' : 'warning,c++2b';
-  const compilerOptionRaw = lang === 'c' ? '-x c\n-lm' : '';
+  // Wandbox has separate compilers for C and C++
+  const compiler = lang === 'c' ? 'gcc-head-c' : 'gcc-head';
+  const options = 'warning';
 
   const payload = {
     compiler,
@@ -76,8 +74,9 @@ async function executeWandbox(code, lang = 'c', stdin = '') {
     save: false,
   };
 
-  if (compilerOptionRaw) {
-    payload['compiler-option-raw'] = compilerOptionRaw;
+  // For C, link math library
+  if (lang === 'c') {
+    payload['compiler-option-raw'] = '-lm';
   }
 
   try {

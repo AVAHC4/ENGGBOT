@@ -11,17 +11,17 @@ const WANDBOX_API_URL = 'https://wandbox.org/api/compile.json';
  * Mapping from our internal language identifiers to Wandbox compiler names.
  */
 export const WANDBOX_COMPILERS: Record<string, string> = {
-  c: 'gcc-head',
+  c: 'gcc-head-c',
   cpp: 'gcc-head',
-  java: 'openjdk-head',
+  java: 'openjdk-jdk-22+36',
 };
 
 /**
  * Default compiler options per language.
  */
 const COMPILER_OPTIONS: Record<string, string> = {
-  c: 'warning,c17',
-  cpp: 'warning,c++2b',
+  c: 'warning',
+  cpp: 'warning',
   java: '',
 };
 
@@ -50,24 +50,29 @@ interface WandboxResponse {
  * `public class Main { public static void main(String[] args) { ... } }`.
  */
 function processJavaCode(code: string): string {
+  // Wandbox saves Java to prog.java, so 'public class' won't compile
+  // unless the class name is 'prog'. Strip 'public' from class declarations.
   if (!/class\s+\w+/.test(code)) {
-    return `public class Main {\n    public static void main(String[] args) {\n${code}\n    }\n}`;
+    return `class Main {\n    public static void main(String[] args) {\n${code}\n    }\n}`;
   }
 
+  // Strip 'public' keyword from class declaration for Wandbox compatibility
+  let processed = code.replace(/public\s+class\b/g, 'class');
+
   // If there's a class but no main method, inject one
-  const classMatch = code.match(/class\s+(\w+)/);
-  if (classMatch && !/public\s+static\s+void\s+main/.test(code)) {
+  const classMatch = processed.match(/class\s+(\w+)/);
+  if (classMatch && !/public\s+static\s+void\s+main/.test(processed)) {
     const className = classMatch[1];
     const braceRegex = new RegExp(`(class\\s+${className}\\s*\\{)`);
-    if (braceRegex.test(code)) {
-      return code.replace(
+    if (braceRegex.test(processed)) {
+      return processed.replace(
         braceRegex,
         `$1\n    public static void main(String[] args) {\n        // Auto-generated main method\n    }\n`
       );
     }
   }
 
-  return code;
+  return processed;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,10 +111,9 @@ export async function executeCode(
       save: false,
     };
 
-    // For C we need to tell gcc to treat the source as C (not C++)
-    // gcc-head defaults to C++; passing -x c forces C mode
+    // For C, link math library
     if (lang === 'c') {
-      payload['compiler-option-raw'] = '-x c\n-lm';
+      payload['compiler-option-raw'] = '-lm';
     }
 
     const controller = new AbortController();
