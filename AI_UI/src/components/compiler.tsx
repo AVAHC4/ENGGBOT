@@ -250,7 +250,7 @@ export function Compiler() {
 
 
       if (selectedLanguage.id === 'c' || selectedLanguage.id === 'cpp') {
-        setConsoleOutput(prev => [...prev, '[C/C++] First run can take a few seconds please wait...']);
+        setConsoleOutput(prev => [...prev, '[C/C++] Compiling and executing...']);
       } else if (selectedLanguage.id === 'java') {
         setConsoleOutput(prev => [...prev, '[Java] Compiling and executing...']);
       }
