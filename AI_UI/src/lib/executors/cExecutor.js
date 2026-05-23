@@ -1,9 +1,6 @@
 
 
-let worker = null;
-let isInitialized = false;
-let initPromise = null;
-let usePistonFirst = true;
+let isInitialized = true; // No init needed — Wandbox is a REST API
 let dbPromise = null;
 
 
@@ -60,155 +57,75 @@ async function sha256(text) {
 }
 
 
-async function executePiston(code, lang = 'c', stdin = '') {
-  const langMap = {
-    'c': { language: 'c', version: '10.2.0' },
-    'cpp': { language: 'c++', version: '10.2.0' }
+/**
+ * Execute C/C++ code using the Wandbox API.
+ * https://wandbox.org/api/compile.json — no API key required.
+ */
+async function executeWandbox(code, lang = 'c', stdin = '') {
+  const compiler = 'gcc-head';
+
+  // For C: force -x c so gcc treats the source as C, not C++
+  const options = lang === 'c' ? 'warning,c17' : 'warning,c++2b';
+  const compilerOptionRaw = lang === 'c' ? '-x c\n-lm' : '';
+
+  const payload = {
+    compiler,
+    code,
+    options,
+    stdin: stdin || '',
+    save: false,
   };
 
-  const langConfig = langMap[lang] || langMap['c'];
+  if (compilerOptionRaw) {
+    payload['compiler-option-raw'] = compilerOptionRaw;
+  }
 
   try {
-    const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+    const response = await fetch('https://wandbox.org/api/compile.json', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language: langConfig.language,
-        version: langConfig.version,
-        files: [{ name: lang === 'cpp' ? 'main.cpp' : 'main.c', content: code }],
-        stdin: stdin || '',
-        run_timeout: 10000,
-        compile_timeout: 10000,
-      }),
-      signal: AbortSignal.timeout(12000),
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
-      console.warn('[cExecutor] Piston API returned non-OK status:', response.status);
+      console.warn('[cExecutor] Wandbox API returned non-OK status:', response.status);
       return null;
     }
 
     const data = await response.json();
-    if (!data.run) {
-      console.warn('[cExecutor] Piston returned no run result');
-      return null;
-    }
 
-    const compileError = data.compile?.stderr || '';
-    const runError = data.run.stderr || '';
-    const output = data.run.stdout || '';
+    const compileError = data.compiler_error || '';
+    const runError = data.program_error || '';
+    const output = data.program_output || '';
 
     return {
       output: output,
-      error: compileError || runError || (data.run.code !== 0 ? `Exit code: ${data.run.code}` : ''),
+      error: compileError || runError || (data.signal ? `Signal: ${data.signal}` : '') || (data.status !== '0' && data.status ? `Exit code: ${data.status}` : ''),
     };
   } catch (e) {
-    console.warn('[cExecutor] Piston API failed:', e.message);
+    console.warn('[cExecutor] Wandbox API failed:', e.message);
     return null;
   }
 }
 
 
 export async function init() {
-  if (isInitialized) return;
-  if (initPromise) return initPromise;
-
-  initPromise = new Promise((resolve, reject) => {
-    try {
-      worker = new Worker('/workers/cWorker.js', { type: 'module' });
-
-      const onMessage = (e) => {
-        const msg = e.data || {};
-        if (msg.type === 'BOOT') {
-          worker.postMessage({ type: 'INIT' });
-        } else if (msg.type === 'READY') {
-          isInitialized = true;
-          cleanup();
-          resolve();
-        } else if (msg.type === 'ERROR') {
-          cleanup();
-          reject(new Error(msg.error || 'C worker init error'));
-        }
-      };
-      const onError = (ev) => {
-        cleanup();
-        reject(new Error('C worker failed to start'));
-      };
-
-      let initTimeout;
-      function cleanup() {
-        try { worker?.removeEventListener('message', onMessage); } catch { }
-        try { worker?.removeEventListener('error', onError); } catch { }
-        if (initTimeout) clearTimeout(initTimeout);
-      }
-
-      worker.addEventListener('message', onMessage);
-      worker.addEventListener('error', onError);
-
-      initTimeout = setTimeout(() => {
-        cleanup();
-        initPromise = null;
-        reject(new Error('C worker initialization timed out'));
-      }, 20000);
-    } catch (err) {
-      initPromise = null;
-      reject(err);
-    }
-  });
-
-  return initPromise;
+  // No initialization needed for Wandbox REST API
+  isInitialized = true;
 }
-
-
-async function executeWasmer(code, lang, stdin) {
-  if (!isInitialized) {
-    await init();
-  }
-
-  return new Promise((resolve) => {
-    const handler = (e) => {
-      const msg = e.data || {};
-      if (msg.type === 'EXECUTION_RESULT') {
-        try { worker?.removeEventListener('message', handler); } catch { }
-        resolve({ output: msg.output || '', error: msg.error || '' });
-      }
-    };
-
-    worker.addEventListener('message', handler);
-    worker.postMessage({
-      type: 'EXECUTE',
-      code: String(code),
-      lang: lang === 'cpp' ? 'cpp' : 'c',
-      stdin: stdin || ''
-    });
-
-
-    setTimeout(() => {
-      try { worker?.removeEventListener('message', handler); } catch { }
-      try { worker?.terminate(); } catch { }
-      isInitialized = false;
-      worker = null;
-      initPromise = null;
-      resolve({ output: '', error: 'Execution timeout (Wasmer)' });
-    }, 60000);
-  });
-}
-
 
 
 function extractPrompts(code) {
   const prompts = [];
 
-
   const cleanCode = code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-
 
   const printfPromptMatches = cleanCode.matchAll(/printf\s*\(\s*"([^"]*?)"\s*\)\s*;[\s\n]*(?:scanf|fgets|gets|getchar)/g);
   for (const match of printfPromptMatches) {
     const prompt = match[1].replace(/\\n/g, '\n').replace(/\\t/g, '\t');
     if (prompt.trim()) prompts.push(prompt);
   }
-
 
   const coutPromptMatches = cleanCode.matchAll(/(?:std::)?cout\s*<<\s*"([^"]+)"[^;]*;[\s\n]*(?:(?:std::)?(?:cin|getline))/g);
   for (const match of coutPromptMatches) {
@@ -220,7 +137,6 @@ function extractPrompts(code) {
 }
 
 
-
 function stripProgramPrompts(text, prompts) {
   if (!text || !prompts || !prompts.length) return text;
 
@@ -229,14 +145,11 @@ function stripProgramPrompts(text, prompts) {
   for (const prompt of prompts) {
     if (!prompt) continue;
 
-
     const escapedPrompt = prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 
     const regex = new RegExp(escapedPrompt, 'g');
     output = output.replace(regex, '');
   }
-
 
   output = output.replace(/\n{3,}/g, '\n\n').trim();
 
@@ -247,15 +160,13 @@ function stripProgramPrompts(text, prompts) {
 export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
   const lang = langId === 'cpp' ? 'cpp' : 'c';
 
-
+  // Check if program needs stdin
   const needsInput = /\b(scanf|cin|getchar|gets|fgets|getline)\b/.test(code);
 
   let collectedStdin = stdin;
 
   if (needsInput && !stdin && onInputRequest) {
-
     const prompts = extractPrompts(code);
-
 
     const inputs = [];
     for (const prompt of prompts) {
@@ -267,7 +178,6 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
       }
     }
 
-
     if (prompts.length === 0) {
       try {
         const input = await onInputRequest('Enter input:');
@@ -276,39 +186,25 @@ export async function execute(code, stdin = '', onInputRequest, langId = 'c') {
         collectedStdin = '';
       }
     } else {
-
       collectedStdin = inputs.join('\n');
     }
   }
 
-
   const prompts = extractPrompts(code);
 
-
-  if (usePistonFirst) {
-    console.log('[cExecutor] Trying Piston API first...');
-    const pistonResult = await executePiston(code, lang, collectedStdin);
-    if (pistonResult) {
-      console.log('[cExecutor] Piston API succeeded');
-
-      if (prompts.length > 0) {
-        pistonResult.output = stripProgramPrompts(pistonResult.output, prompts);
-      }
-      return pistonResult;
+  // Use Wandbox API
+  console.log('[cExecutor] Using Wandbox API...');
+  const wandboxResult = await executeWandbox(code, lang, collectedStdin);
+  if (wandboxResult) {
+    console.log('[cExecutor] Wandbox API succeeded');
+    if (prompts.length > 0) {
+      wandboxResult.output = stripProgramPrompts(wandboxResult.output, prompts);
     }
-    console.log('[cExecutor] Piston failed, falling back to Wasmer...');
+    return wandboxResult;
   }
 
-
-  console.log('[cExecutor] Using Wasmer SDK...');
-  const wasmerResult = await executeWasmer(code, lang, collectedStdin);
-
-
-  if (prompts.length > 0) {
-    wasmerResult.output = stripProgramPrompts(wasmerResult.output, prompts);
-  }
-
-  return wasmerResult;
+  // If Wandbox fails, return an error
+  return { output: '', error: 'Code execution failed. Wandbox API is currently unavailable.' };
 }
 
 export function isReady() {
@@ -317,34 +213,18 @@ export function isReady() {
 
 export function getInfo() {
   return {
-    name: 'C/C++ Hybrid Executor',
-    runtime: 'Piston API + Wasmer SDK (WASM)',
-    version: '2.0.0',
+    name: 'C/C++ Executor (Wandbox)',
+    runtime: 'Wandbox API (gcc-head)',
+    version: '3.0.0',
     ready: isInitialized,
-    strategy: usePistonFirst ? 'Piston first, Wasmer fallback' : 'Wasmer only',
+    strategy: 'Wandbox API',
   };
 }
 
 export async function cancel() {
-  try {
-    if (worker) {
-      try { worker.terminate(); } catch { }
-    }
-  } finally {
-    isInitialized = false;
-    worker = null;
-    initPromise = null;
-  }
+  // No worker to cancel — Wandbox requests are fire-and-forget
 }
-
-
-export function setUsePistonFirst(value) {
-  usePistonFirst = Boolean(value);
-}
-
 
 export function preload() {
-  if (!isInitialized && !initPromise) {
-    init().catch(() => { });
-  }
+  // No preloading needed for REST API
 }

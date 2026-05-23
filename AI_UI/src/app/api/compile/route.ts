@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { executeCode } from '@/lib/judge0';
+import { executeCode } from '@/lib/wandbox';
 
 export async function POST(request: Request) {
   try {
