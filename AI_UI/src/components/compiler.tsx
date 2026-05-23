@@ -228,7 +228,6 @@ export function Compiler() {
     setIsRunning(true);
     setIsCompiling(true);
     setConsoleOutput([]);
-    setIsWaitingForInput(false);
 
 
 
