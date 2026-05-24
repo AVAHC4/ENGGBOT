@@ -150,37 +150,40 @@ function processJavaCode(code) {
 }
 
 /**
- * Execute Java code using the Wandbox API.
- * https://wandbox.org/api/compile.json — no API key required.
+ * Execute Java code using the Piston API.
+ * https://emkc.org/api/v2/piston/execute
  */
-async function executeWandbox(code, stdin = '') {
+async function executePiston(code, stdin = '') {
   try {
-    const response = await fetch('https://wandbox.org/api/compile.json', {
+    const response = await fetch('https://emkc.org/api/v2/piston/execute', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        compiler: 'openjdk-jdk-22+36',
-        code: code,
-        options: '',
-        stdin: stdin || '',
-        save: false,
+        language: 'java',
+        version: '15.0.2',
+        files: [{ content: code }],
+        stdin: stdin || ''
       }),
       signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
-      console.warn('[JavaExecutor] Wandbox API returned non-OK status:', response.status);
+      console.warn('[JavaExecutor] Piston API returned non-OK status:', response.status);
       return null;
     }
 
     const data = await response.json();
+    
+    if (data.compile && data.compile.code !== 0) {
+      return { output: '', error: data.compile.output || 'Compilation failed' };
+    }
 
     return {
-      output: data.program_output || '',
-      error: data.compiler_error || data.program_error || (data.signal ? `Signal: ${data.signal}` : '') || (data.status !== '0' && data.status ? `Exit code: ${data.status}` : ''),
+      output: data.run?.stdout || data.run?.output || '',
+      error: data.run?.stderr || (data.run?.code !== 0 ? `Exit code: ${data.run?.code}` : ''),
     };
   } catch (e) {
-    console.warn('[JavaExecutor] Wandbox API failed:', e.message);
+    console.warn('[JavaExecutor] Piston API failed:', e.message);
     return null;
   }
 }
@@ -215,7 +218,7 @@ async function collectStdinIfNeeded(sourceForAnalysis, stdin, onInputRequest) {
 }
 
 export async function init() {
-  // No initialization needed for Wandbox REST API
+  // No initialization needed for Piston REST API
   isInitialized = true;
 }
 
@@ -227,19 +230,19 @@ export async function execute(code, stdin = '', onInputRequest) {
   const prompts = analyzeInputPrompts(code);
   const collected = await collectStdinIfNeeded(code, stdin, onInputRequest);
 
-  // Use Wandbox API
-  console.log('[JavaExecutor] Using Wandbox API...');
-  const wandboxResult = await executeWandbox(processed, collected);
-  if (wandboxResult) {
-    console.log('[JavaExecutor] Wandbox API succeeded');
+  // Use Piston API
+  console.log('[JavaExecutor] Using Piston API...');
+  const result = await executePiston(processed, collected);
+  if (result) {
+    console.log('[JavaExecutor] Piston API succeeded');
     if (prompts && prompts.length) {
-      wandboxResult.output = stripProgramPrompts(wandboxResult.output, prompts);
+      result.output = stripProgramPrompts(result.output, prompts);
     }
-    return wandboxResult;
+    return result;
   }
 
-  // If Wandbox fails, return an error
-  return { output: '', error: 'Code execution failed. Wandbox API is currently unavailable.' };
+  // If Piston fails, return an error
+  return { output: '', error: 'Code execution failed. Piston API is currently unavailable.' };
 }
 
 export function isReady() {
@@ -248,8 +251,8 @@ export function isReady() {
 
 export function getInfo() {
   return {
-    name: 'Java Executor (Wandbox)',
-    runtime: 'Wandbox API (openjdk-head)',
+    name: 'Java Executor (Piston)',
+    runtime: 'Piston API (Java 15.0.2)',
     version: '3.0.0',
     ready: isInitialized,
   };
