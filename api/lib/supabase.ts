@@ -23,7 +23,6 @@ export const supabase = createClient(
     }
 );
 
-// Also export a client with the anon key for frontend use
 export const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
         autoRefreshToken: false,
