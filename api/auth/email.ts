@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { supabase, supabaseAnon } from "../lib/supabase.js";
 import bcrypt from "bcrypt";
 
-// Determine redirect URLs based on environment
+
 const BASE_URL = process.env.NODE_ENV === 'production'
     ? 'https://www.enggbot.me'
     : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
