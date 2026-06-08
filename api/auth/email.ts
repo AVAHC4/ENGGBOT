@@ -197,7 +197,6 @@ export const initEmailAuth = (app: any) => {
                 // If DB fails (e.g. columns missing), we can still fallback to a basic session 
                 // using the authData.user or fail gracefully.
                 // However, without a public user record, our app might break elsewhere.
-                // But for now, let's report the error clearly to the user if it's a 500.
 
                 if (dbError.code === '42703') { // Undefined column
                     return res.status(500).json({ error: "Database needs migration. Please run the email_auth_migration.sql script." });
