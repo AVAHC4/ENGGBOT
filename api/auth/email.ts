@@ -115,8 +115,6 @@ export const initEmailAuth = (app: any) => {
 
             const updates: any = {
                 email: email.toLowerCase(),
-                // Map Supabase auth ID to our user ID if we want them consistent, 
-
 
 
             };
