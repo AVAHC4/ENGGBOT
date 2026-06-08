@@ -130,7 +130,6 @@ export const initEmailAuth = (app: any) => {
                 updates.password_hash = await bcrypt.hash(password, saltRounds);
             }
 
-            // Upsert user in our public.users table (Non-fatal if it fails)
             try {
                 // Check if user exists in public.users (use maybeSingle to avoid error on no match)
                 const { data: existingUser, error: selectError } = await supabase
