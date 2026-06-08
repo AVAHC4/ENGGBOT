@@ -11,7 +11,7 @@ const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'
     ? `${BASE_URL}/AI_UI/?auth_success=true`
     : (process.env.AUTH_REDIRECT_URL || 'http://localhost:3001/?auth_success=true');
 
-// Email validation regex
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface OtpSendBody {
