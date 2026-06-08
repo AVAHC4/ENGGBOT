@@ -117,7 +117,7 @@ export const initEmailAuth = (app: any) => {
                 email: email.toLowerCase(),
                 // Map Supabase auth ID to our user ID if we want them consistent, 
                 // OR we just use the email matching if we already have a record.
-                // Usually, 'id' in public.users is UUID. 
+
 
             };
 
