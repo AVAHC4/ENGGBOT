@@ -131,7 +131,7 @@ export const initEmailAuth = (app: any) => {
             }
 
             try {
-                // Check if user exists in public.users (use maybeSingle to avoid error on no match)
+
                 const { data: existingUser, error: selectError } = await supabase
                     .from('users')
                     .select('*')
