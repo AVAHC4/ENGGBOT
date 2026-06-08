@@ -118,7 +118,7 @@ export const initEmailAuth = (app: any) => {
                 // Map Supabase auth ID to our user ID if we want them consistent, 
                 // OR we just use the email matching if we already have a record.
                 // Usually, 'id' in public.users is UUID. 
-                // Let's try to find by email first.
+
             };
 
             // Only update name fields if provided (e.g. during signup)
