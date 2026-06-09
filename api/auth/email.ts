@@ -146,7 +146,7 @@ export const initEmailAuth = (app: any) => {
 
                 if (existingUser) {
                     console.log("Updating existing user:", existingUser.id);
-                    // Update existing
+
                     const { data: updated, error: updateError } = await supabase
                         .from('users')
                         .update(updates)
