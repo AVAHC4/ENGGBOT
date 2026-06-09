@@ -207,7 +207,7 @@ export const initEmailAuth = (app: any) => {
 
         } catch (error: any) {
             console.error("OTP verify error:", error);
-            // Return detailed error for debugging (remove in production if sensitive)
+
             return res.status(500).json({
                 error: `Verification failed: ${error.message || String(error)}`
             });
