@@ -198,7 +198,7 @@ export const initEmailAuth = (app: any) => {
                 // using the authData.user or fail gracefully.
 
 
-                if (dbError.code === '42703') { // Undefined column
+                if (dbError.code === '42703') {
                     return res.status(500).json({ error: "Database needs migration. Please run the email_auth_migration.sql script." });
                 }
 
