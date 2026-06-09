@@ -202,7 +202,7 @@ export const initEmailAuth = (app: any) => {
                     return res.status(500).json({ error: "Database needs migration. Please run the email_auth_migration.sql script." });
                 }
 
-                throw dbError; // Re-throw to be caught by outer catch
+                throw dbError;
             }
 
         } catch (error: any) {
