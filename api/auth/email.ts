@@ -195,7 +195,7 @@ export const initEmailAuth = (app: any) => {
             } catch (dbError: any) {
                 console.error("Database upsert error (Login proceeded via Auth only):", dbError);
                 // If DB fails (e.g. columns missing), we can still fallback to a basic session 
-                // using the authData.user or fail gracefully.
+
 
 
                 if (dbError.code === '42703') {
