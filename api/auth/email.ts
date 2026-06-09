@@ -159,7 +159,7 @@ export const initEmailAuth = (app: any) => {
                     console.log("Updated user:", publicUser);
                 } else {
                     console.log("Creating new user with:", updates);
-                    // Create new
+
 
                     const { data: created, error: createError } = await supabase
                         .from('users')
