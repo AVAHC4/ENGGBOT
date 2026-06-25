@@ -15,7 +15,7 @@ interface PositionConfig {
 
   cx: number;
   cy: number;
-
+  /** CSS background-position for the mask */
   maskPosition: string;
   /** CSS transform-origin */
   transformOrigin: string;
