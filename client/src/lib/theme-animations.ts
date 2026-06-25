@@ -1,3 +1,12 @@
+/**
+ * Generates CSS strings for View Transition theme-switch animations.
+ *
+ * Supported variants:
+ *   - "circle" : A circle-reveal that expands from one of the four corners.
+ *
+ * The generated rules override the default cross-fade behaviour of
+ * `::view-transition-old(root)` / `::view-transition-new(root)`.
+ */
 
 export type TransitionVariant = "circle";
 export type StartPosition = "top-right" | "top-left" | "bottom-right" | "bottom-left";
