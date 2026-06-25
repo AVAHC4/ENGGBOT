@@ -12,7 +12,7 @@ export type TransitionVariant = "circle";
 export type StartPosition = "top-right" | "top-left" | "bottom-right" | "bottom-left";
 
 interface PositionConfig {
-  /** SVG circle cx / cy */
+
   cx: number;
   cy: number;
   /** CSS background-position for the mask */
