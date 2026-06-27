@@ -58,9 +58,7 @@ function buildCircleSvgUri(cx: number, cy: number): string {
   return `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="${cx}" cy="${cy}" r="20" fill="white"/></svg>`;
 }
 
-/**
- * Returns a CSS string that drives a circle-reveal View Transition.
- */
+
 function generateCircleCSS(start: StartPosition): string {
   const pos = POSITION_MAP[start];
   const svgUri = buildCircleSvgUri(pos.cx, pos.cy);
