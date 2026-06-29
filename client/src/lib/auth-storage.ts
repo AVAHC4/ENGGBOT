@@ -8,7 +8,9 @@
 const AUTH_STORAGE_KEY = 'auth_user_data';
 const AUTH_STATE_KEY = 'auth_state';
 
-
+/**
+ * User data interface
+ */
 export interface UserData {
   id?: string;
   name: string;
