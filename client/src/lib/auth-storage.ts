@@ -8,9 +8,7 @@
 const AUTH_STORAGE_KEY = 'auth_user_data';
 const AUTH_STATE_KEY = 'auth_state';
 
-/**
- * User data interface
- */
+
 export interface UserData {
   id?: string;
   name: string;
@@ -89,13 +87,13 @@ export function clearAuthData(): void {
   localStorage.removeItem(AUTH_STORAGE_KEY);
   localStorage.removeItem(AUTH_STATE_KEY);
   localStorage.removeItem('redirectToChat');
-  
+
   // Also clear legacy auth data
   localStorage.removeItem('user');
   localStorage.removeItem('user_info');
   localStorage.removeItem('authenticated');
   localStorage.removeItem('auth_token');
-  
+
   // Clear sessionStorage auth data
   sessionStorage.removeItem('authenticated');
 } 
