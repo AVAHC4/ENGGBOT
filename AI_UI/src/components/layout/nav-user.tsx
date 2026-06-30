@@ -11,8 +11,6 @@ import {
   Sparkles,
 } from "lucide-react"
 
-import { AccountDialog } from "@/components/ui/account-dialog"
-
 import {
   Avatar,
   AvatarFallback,
@@ -46,7 +44,6 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
-  const [showAccountDialog, setShowAccountDialog] = React.useState(false)
 
   const handleLogout = () => {
     console.log('Logout clicked - starting logout process')
@@ -100,7 +97,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer" onClick={() => setShowAccountDialog(true)}>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/examples/forms/account')}>
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
@@ -129,12 +126,6 @@ export function NavUser({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-
-      <AccountDialog
-        open={showAccountDialog}
-        onOpenChange={setShowAccountDialog}
-        user={user}
-      />
     </SidebarMenu>
   )
 }
