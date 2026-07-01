@@ -83,7 +83,6 @@ export default function LoginPage() {
     }
   }, []);
   React.useEffect(() => {
-    // Create hidden iframe to pre-establish connection
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     iframe.src = 'https://accounts.google.com/favicon.ico';
