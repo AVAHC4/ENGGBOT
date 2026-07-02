@@ -12,7 +12,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
   const [template, setTemplate] = useState<'default' | 'resume' | 'report' | 'letter'>('default');
   const [fileName, setFileName] = useState('document');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]  useState<string | null > (null);
 
 
   const generateDocument = async () => {
