@@ -2,7 +2,7 @@
 
 
 export const AVAILABLE_MODELS = {
-    "gpt-oss": "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "gpt-oss": "google/gemma-4-26b-a4b-it:free",
 };
 
 

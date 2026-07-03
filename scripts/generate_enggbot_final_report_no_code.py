@@ -36,10 +36,10 @@ TITLE = "ENGGBOT: A HIGHLY SCALABLE MULTI-MODAL CONVERSATIONAL AI PLATFORM"
 SHORT_TITLE = "ENGGBOT FINAL REPORT"
 
 ABSTRACT = [
-    "This project presents the development of a highly scalable, multi-modal conversational AI platform named ENGGBOT. The system architecture is designed to overcome common limitations in standard API wrappers by implementing a model-agnostic backend, dynamic prompt engineering, and a dual-pipeline speech recognition system.",
-    "At the core of the natural language processing pipeline is an LLM multiplexing gateway powered by OpenRouter, which decouples the application from any single AI vendor. This allows for dynamic routing to cost-effective, open-source models such as glm-4.5-air while maintaining the flexibility to utilize proprietary models when complex reasoning is required. To improve the accuracy and logical consistency of model outputs, a custom Thinking Mode was engineered, utilizing Chain-of-Thought prompt injection to guide the model's reasoning processes prior to generation.",
+    "This project presents the development of a scalable, multi-modal Retrieval-Augmented Generation platform named ENGGBOT. The system architecture is designed to overcome common limitations in static document search by implementing document ingestion, OCR-supported extraction, chunking, metadata preparation, keyword extraction, and a dual-pipeline speech recognition system.",
+    "At the core of the natural language processing pipeline is a RAG preparation layer that converts uploaded files into usable context. The implemented route classifies PDFs, DOCX files, spreadsheets, HTML, JSON, plain text, and images; extracts readable text; normalizes content; creates overlapping chunks; estimates token cost; and returns combined chunks for downstream retrieval and answer grounding.",
     "Furthermore, to ensure strict adherence to the application's persona and mitigate base-model hallucinations, a robust interception middleware was developed. This layer utilizes regex-based sanitization and intent-matching to dynamically strip out underlying provider artifacts such as OpenAI or Anthropic mentions and enforce a consistent, branded identity.",
-    "In addition to text generation, the platform integrates an enterprise-grade Speech-to-Text architecture. By implementing a dual-pipeline approach - utilizing NVIDIA Riva via gRPC for high-performance offline inference, and OpenAI's Whisper API as a cloud-based fallback - the system guarantees low latency and high resilience for audio processing tasks. The resulting application demonstrates a comprehensive, production-ready approach to AI integration, highlighting advanced techniques in prompt engineering, context management, and model orchestration.",
+    "In addition to text generation, the platform integrates an enterprise-grade Speech-to-Text architecture and a Retrieval-Augmented Generation preparation layer. The speech path uses NVIDIA Riva through gRPC-oriented tooling and Whisper-compatible cloud endpoints as fallback options, while the document path applies parsing, OCR, normalization, keyword extraction, chunking, and context-window budgeting. The resulting application demonstrates a comprehensive approach to NLP integration, highlighting prompt engineering, context management, document grounding, speech resilience, and model orchestration.",
 ]
 
 
@@ -326,7 +326,7 @@ def contents(c: canvas.Canvas):
     c.showPage()
     entries2 = [
         ("4.4 Speech-to-Text Design", "57"), ("CHAPTER 5 IMPLEMENTATION METHODOLOGY", "60"),
-        ("5.1 Frontend Implementation", "61"), ("5.2 Backend Implementation", "64"),
+        ("5.1 NLP Request Assembly", "61"), ("5.2 RAG and Speech Implementation", "64"),
         ("5.3 Data and Context Management", "67"), ("CHAPTER 6 RESULTS AND DISCUSSION", "70"),
         ("6.1 Build and Module Verification", "71"), ("6.2 Discussion", "73"),
         ("CHAPTER 7 CONCLUSION AND FUTURE WORK", "74"), ("References", "75"),
@@ -404,34 +404,34 @@ def lists(c: canvas.Canvas):
 
 BASE_PARAGRAPHS = {
     "intro": [
-        "ENGGBOT is designed as a complete conversational AI platform rather than a thin wrapper around a single model endpoint. The project combines a polished web application, a model-agnostic natural language processing gateway, prompt control mechanisms, response middleware, and resilient speech processing. This combination allows the system to support text and voice interaction while preserving a consistent branded assistant identity.",
-        "The motivation for the project comes from the limitations observed in many basic chatbot implementations. Such systems often depend on one provider, expose raw model behavior to users, fail to control identity leakage, and treat speech input as an optional add-on. ENGGBOT addresses these issues through modular design and explicit orchestration layers.",
-        "The platform is particularly relevant for engineering education and technical assistance. Students require fast explanations, programming help, conceptual clarification, and interactive reasoning support. A multi-modal assistant improves this workflow by accepting typed prompts and speech input while returning structured responses through a modern user interface.",
+        "ENGGBOT is designed as a document-grounded AI platform rather than a thin wrapper around a single model endpoint. The project combines RAG file processing, OCR-supported extraction, chunk preparation, response governance, and resilient speech processing. This combination allows the system to support text files, scanned images, and speech-derived input while preserving a consistent branded assistant identity.",
+        "The motivation for the project comes from the limitations observed in many basic document-query systems. Such systems often depend on keyword lookup, fail to parse mixed file types, lose context across long documents, and treat speech input as an optional add-on. ENGGBOT addresses these issues through modular ingestion and explicit orchestration layers.",
+        "The platform is particularly relevant for engineering education and technical documentation. Students and reviewers require grounded explanations, source-aware summaries, procedural clarification, and support for scanned or mixed-format material. A RAG-based assistant improves this workflow by preparing document evidence before generation.",
     ],
     "study": [
-        "A review of modern conversational AI systems shows that production readiness depends on more than the choice of base model. Practical systems require model routing, prompt templates, latency handling, fallback behavior, stream processing, observability, and output governance. ENGGBOT adopts these ideas through a gateway-oriented architecture.",
-        "Prompt engineering is a central element of the platform. The system does not rely only on a user's raw question. It enriches requests with controlled instructions, optional Thinking Mode guidance, and persona constraints. This improves coherence and allows the assistant to reason more explicitly when the task demands multi-step analysis.",
+        "A review of modern RAG systems shows that production readiness depends on more than the choice of base model. Practical systems require file parsing, OCR handling, chunk boundaries, metadata retention, retrieval ranking, fallback behavior, observability, and output governance. ENGGBOT adopts these ideas through a document-processing architecture.",
+        "Context preparation is a central element of the platform. The system does not rely only on a raw question. It prepares extracted document text, chunk identifiers, keyword highlights, token estimates, and truncation warnings so that later retrieval or generation stages can work with controlled evidence.",
         "Speech recognition is also studied as a reliability problem. A single speech provider may fail due to network conditions, credential limits, endpoint changes, or local device issues. Therefore, ENGGBOT uses a dual-pipeline approach in which high-performance Riva processing and Whisper-based fallback can support each other.",
     ],
     "requirements": [
-        "The requirements analysis focuses on usability, scalability, correctness, latency, resilience, and maintainability. A conversational AI platform must feel responsive to the user, but it must also protect internal implementation details and remain flexible as AI providers change.",
-        "Functional requirements include authentication, chat interaction, model selection, thinking mode control, response streaming, speech input, conversation management, user profile handling, and consistent rendering of assistant responses. Non-functional requirements include availability, portability, security, and graceful degradation.",
-        "The system is feasible because the chosen stack separates responsibilities clearly. The user interface is implemented independently from model access, while middleware and speech services can evolve without replacing the entire application.",
+        "The requirements analysis focuses on extraction accuracy, chunk quality, scalability, latency, resilience, and maintainability. A RAG platform must process uploaded material predictably, but it must also protect internal implementation details and remain flexible as AI providers change.",
+        "Functional requirements include document ingestion, file-type detection, OCR extraction, text normalization, chunk generation, keyword extraction, token-budget estimation, speech input, response governance, and retrieval-ready output. Non-functional requirements include availability, portability, security, and graceful degradation.",
+        "The system is feasible because the chosen stack separates responsibilities clearly. File processing is implemented independently from speech services and response governance, so each layer can evolve without replacing the entire application.",
     ],
     "design": [
-        "The system design follows a layered architecture. The client layer manages interaction, layout, message rendering, and mode toggles. The context layer maintains chat state, current model choices, conversation identity, and user preferences. The gateway layer communicates with OpenRouter to decouple the application from any single model provider.",
+        "The system design follows a layered architecture. The ingestion layer accepts mixed document types and audio input. The processing layer performs parsing, OCR, normalization, and chunking. The retrieval-preparation layer organizes chunks, keywords, previews, and token estimates so the later answer-generation layer can use grounded evidence.",
         "The middleware layer enforces response governance. It detects identity-related prompts, sanitizes provider artifacts, and replaces unwanted base-model references with the ENGGBOT identity. This design is important because a multiplexed model backend may otherwise expose inconsistent provider names or internal model details.",
         "The speech layer handles audio input through independent processing paths. Riva supports high-performance speech recognition using gRPC-based workflows, while Whisper-based processing provides cloud fallback and broader compatibility. This improves resilience for real-world usage.",
     ],
     "implementation": [
-        "The implementation is divided across the main application, AI user interface, API routes, speech modules, and data services. The frontend provides an animated landing experience and a feature-rich chat interface. The backend provides authentication, model interaction, transcription endpoints, and persistence support.",
-        "OpenRouter integration gives ENGGBOT a model-agnostic foundation. The application can route requests to cost-effective open-source models such as glm-4.5-air while preserving the possibility of using more capable proprietary models for complex reasoning. This avoids vendor lock-in and improves long-term adaptability.",
-        "Thinking Mode is implemented as a request-time prompt modification strategy. When enabled, the system appends reasoning-oriented guidance so that the model structures its answer more carefully. This does not change the base model, but it changes the inference context in a predictable way.",
+        "The implementation is divided across document-processing routes, speech modules, response-governance utilities, and data services. The backend provides file parsing, OCR-supported extraction, chunk generation, keyword analysis, transcription endpoints, and persistence support.",
+        "RAG route integration gives ENGGBOT a document-grounded foundation. The implementation evidence identifies the file-processing endpoint as the completed preparation layer for future retrieval and citation workflows. This avoids overreliance on raw model memory and improves long-term adaptability.",
+        "The NLP layer is implemented as document context assembly. The system normalizes extracted text, creates overlapping chunks, records chunk offsets, calculates token estimates, extracts keyword highlights, and limits combined context to a safe size. This makes the later retrieval and answer-generation stage predictable.",
     ],
     "results": [
-        "The completed project demonstrates a working multi-modal conversational platform with model gateway integration, branded response control, speech-processing paths, authentication-related infrastructure, and a modern user interface. The production build verifies that the main application compiles successfully.",
-        "The major result of the work is architectural rather than only visual. ENGGBOT shows how a conversational AI system can be designed for portability across models, improved reliability across speech providers, and consistent identity across unpredictable model outputs.",
-        "The system is also designed for future extension. Conversation history, teams, projects, web search, engineering prompts, and compiler-related tools can be integrated into the same architecture without replacing the core gateway or middleware design.",
+        "The completed project demonstrates a working multi-modal RAG preparation platform with document ingestion, OCR-supported extraction, chunk preparation, branded response control, speech-processing paths, and authentication-related infrastructure. The production build verifies that the main application compiles successfully.",
+        "The major result of the work is architectural rather than only visual. ENGGBOT shows how a document-grounded AI system can be designed for portability across models, improved reliability across speech providers, and consistent identity across unpredictable model outputs.",
+        "The system is also designed for future extension. Vector databases, metadata filters, citation generation, visual drawing retrieval, repository dashboards, and evaluation tools can be integrated into the same architecture without replacing the ingestion and preprocessing design.",
     ],
 }
 
@@ -470,14 +470,14 @@ def build_plan():
         "Reliability Requirements", "Feasibility Study", "Technology Stack", "Summary",
     ])
     add_pages(45, 59, "CHAPTER 4 SYSTEM DESIGN", "design", [
-        "Architectural Overview", "Layered Design", "Client Layer", "Context Layer",
-        "LLM Gateway", "Model Routing", "Prompt Builder", "Middleware Design",
+        "Architectural Overview", "Layered Design", "Ingestion Layer", "Retrieval Context Layer",
+        "Document Processing Layer", "Metadata Preparation", "Context Builder", "Middleware Design",
         "Identity Interception", "Response Sanitization", "Speech Architecture",
         "Fallback Strategy", "Data Design", "Deployment Design", "Summary",
     ])
     add_pages(60, 69, "CHAPTER 5 IMPLEMENTATION METHODOLOGY", "implementation", [
-        "Frontend Implementation", "Chat Interface", "Thinking Mode", "OpenRouter Integration",
-        "Streaming Response Flow", "Speech-to-Text Flow", "Authentication Flow",
+        "RAG Context Assembly", "RAG File Processing", "OCR and Chunking", "Retrieval Preparation",
+        "Combined Chunk Output", "Speech-to-Text Flow", "Metadata and Token Budget",
         "Context Management", "Error Handling", "Deployment Preparation",
     ])
     add_pages(70, 73, "CHAPTER 6 RESULTS AND DISCUSSION", "results", [
@@ -513,9 +513,9 @@ def special_page(c: canvas.Canvas, page_no: int, heading: str, paras: list[str])
     if page_no == 38:
         table = ([90, 120, 120, 120], [
             ["Layer", "Technology", "Purpose", "Justification"],
-            ["Frontend", "React / Next / TypeScript", "Interactive chat and layout", "Reusable UI and maintainability"],
+            ["Client", "React / Next / TypeScript", "Message capture and rendering", "Reusable UI and maintainability"],
             ["Gateway", "OpenRouter", "Model multiplexing", "Avoids single-vendor dependency"],
-            ["Reasoning", "Thinking Mode", "Guided reasoning", "Improves logical answer structure"],
+            ["Reasoning", "Prompt conditioning", "Guided answer structure", "Improves logical response quality"],
             ["Middleware", "Intent and sanitization layer", "Identity enforcement", "Reduces provider leakage"],
             ["Speech", "Riva and Whisper", "Speech-to-text", "Resilience through fallback"],
         ])
@@ -537,7 +537,7 @@ def special_page(c: canvas.Canvas, page_no: int, heading: str, paras: list[str])
         table = ([105, 115, 115, 115], [
             ["Area", "Requirement", "Current Handling", "Future Improvement"],
             ["Model Access", "Flexible provider support", "Gateway abstraction", "Add policy-based routing"],
-            ["Reasoning", "Better structured answers", "Thinking Mode", "Evaluate answer quality"],
+            ["Reasoning", "Better structured answers", "Prompt conditioning", "Evaluate answer quality"],
             ["Identity", "Consistent persona", "Middleware interception", "Expand test corpus"],
             ["Speech", "Reliable transcription", "Dual pipeline", "Add automatic provider selection"],
             ["Deployment", "Production readiness", "Build and env setup", "Add monitoring dashboard"],
@@ -569,7 +569,7 @@ def appendix(c: canvas.Canvas):
     page(c, 76, "APPENDIX: NON-CODE SUPPORTING MATERIAL", [
         "This appendix summarizes the non-code project evidence used in preparing the final report. The report is based on the implemented ENGGBOT repository, which includes the animated user interface, AI user interface, OpenRouter client, response middleware, speech recognition routes, authentication modules, project documentation, and deployment configuration.",
         "No source-code listing is included in this final report. The appendix is intentionally limited to descriptive supporting material so that the document remains a formal report rather than a code dump.",
-        "Key project artifacts reviewed include the OpenRouter model gateway, Thinking Mode prompt behavior, middleware-based identity control, NVIDIA Riva speech support, Whisper fallback routes, chat context management, user interface components, and production build output.",
+        "Key project artifacts reviewed include the OpenRouter model gateway, prompt-conditioning behavior, middleware-based identity control, file-processing and chunking routes, NVIDIA Riva speech support, Whisper-compatible fallback routes, context management, and production build output.",
     ], items=[
         "Primary system focus: model-agnostic conversational AI platform.",
         "Major technical contribution: controlled orchestration of model routing, prompt behavior, identity enforcement, and speech fallback.",
