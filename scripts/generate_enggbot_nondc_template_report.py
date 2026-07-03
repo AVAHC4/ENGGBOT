@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Generate ENGGBOT final report using NonCDC.docx as the visual template.
+"""Generate ENGGBOT final report using the Non-CDC Internship Report template.
 
 Contract for this artifact:
-- Use /Users/akhil/Downloads/NonCDC.docx as the formatting base.
+- Use /Users/akhil/Downloads/Non-CDC Internship Report.docx as the formatting base.
 - Keep the first 70 rendered pages free of code.
 - Start source-code appendix after page 70.
-- Match the template's academic Times New Roman layout, wide left margin,
-  centered headings, justified body text, and spacious appendix code layout.
+- Match the template's Times New Roman report layout, wider left margin,
+  centered front matter, justified body text, and appendix code layout.
 """
 
 from __future__ import annotations
@@ -24,9 +24,11 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = Path("/Users/akhil/Downloads/NonCDC.docx")
+TEMPLATE = Path("/Users/akhil/Downloads/Non-CDC Internship Report.docx")
 OUT_DIR = ROOT / "output" / "docx"
 OUT_DOCX = OUT_DIR / "ENGGBOT_NonCDC_FORMAT_FINAL_REPORT.docx"
+TEMPLATE_LOGO = OUT_DIR / "assets" / "image24.png"
+NONCDC_ASSET_DIR = OUT_DIR / "assets" / "noncdc"
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import generate_enggbot_final_report_no_code as report  # noqa: E402
@@ -36,13 +38,34 @@ TITLE = "ENGGBOT: A HIGHLY SCALABLE MULTI-MODAL CONVERSATIONAL AI PLATFORM"
 CHAPTER_RE = re.compile(r"^CHAPTER\s+(\d+)\s+(.+?)\s+-\s+(.+)$")
 
 FIGURE_SLOTS = {
-    45: ("Fig 1: Layered architecture of ENGGBOT", "Add the complete system architecture diagram showing client UI, context layer, OpenRouter gateway, response middleware, and speech services."),
-    46: ("Fig 2: Dual text and speech request pipeline", "Add the flow diagram comparing typed chat requests with voice transcription requests."),
-    49: ("Fig 3: OpenRouter gateway abstraction", "Add a diagram showing the application calling one gateway while different LLM providers remain replaceable behind it."),
-    52: ("Fig 4: Response middleware interception flow", "Add the response governance diagram showing identity detection, sanitization, validation, and final answer delivery."),
-    25: ("Fig 5: Speech-to-text fallback architecture", "Add the Riva primary path and Whisper fallback path with the failure-handling decision point."),
-    47: ("Fig 6: User interface verification screenshot", "Add a screenshot of the ENGGBOT chat interface with text input, speech control, and response area visible."),
-    53: ("Fig 7: Module readiness assessment", "Add a result chart or dashboard screenshot showing the status of model routing, middleware, speech, UI, and deployment modules."),
+    25: ("Fig 1: Document-wise distribution used for RAG preprocessing", NONCDC_ASSET_DIR / "rag_document_distribution.png", 5.4),
+    31: ("Fig 2: Comparison between traditional search and proposed RAG system", NONCDC_ASSET_DIR / "rag_comparison_table.png", 5.6),
+    39: ("Fig 3: RAG document-processing and retrieval workflow", NONCDC_ASSET_DIR / "rag_workflow.png", 3.8),
+    45: ("Fig 4: Dataset upload interface for repository ingestion", NONCDC_ASSET_DIR / "dataset_upload.png", 5.6),
+    49: ("Fig 5: Dataset preprocessing summary dashboard", NONCDC_ASSET_DIR / "preprocessing_summary.png", 5.6),
+}
+
+RAG_INSERTS = {
+    17: [
+        "The RAG-oriented extension of ENGGBOT treats institutional documents as an indexed knowledge base rather than as passive files. In this model, uploaded reports, manuals, policy documents, and engineering records are parsed, segmented, embedded, and retrieved before the language model generates an answer.",
+        "This approach improves grounding because the model is not expected to answer only from its pretrained knowledge. Instead, relevant document chunks are selected from the repository and supplied as context, allowing the final response to remain tied to available evidence.",
+    ],
+    25: [
+        "The source report describes a document-ingestion pipeline in which heterogeneous records such as PDFs, scanned files, Word documents, spreadsheets, and technical drawings are converted into searchable content. OCR extraction is applied to scanned material, while digital files are parsed directly before text cleaning and normalization.",
+        "After preprocessing, the content is divided into contextual chunks. Chunking keeps each retrieved unit small enough for efficient model use while preserving semantic continuity across adjacent sections.",
+    ],
+    31: [
+        "The RAG framework uses embedding generation to convert text chunks and extracted annotations into dense vector representations. These embeddings allow the retrieval layer to identify conceptually related information even when the query and the source document use different wording.",
+        "Vector indexing is handled through a vector database such as Qdrant. Each indexed item can store the embedding together with metadata including document type, section title, page reference, repository source, and engineering identifiers, making semantic retrieval and metadata filtering work together.",
+    ],
+    39: [
+        "Hybrid retrieval improves the basic RAG pipeline by combining semantic vector search with exact keyword retrieval. This is important in technical domains because semantic similarity is useful for conceptual questions, while exact matching is still needed for specification IDs, procurement references, drawing numbers, and equipment codes.",
+        "The source report also describes multimodal retrieval for engineering drawings. OCR extracts visible annotations, VQA-style descriptions provide semantic interpretation of diagrams, and CLIP-style visual embeddings support image similarity search across related schematics.",
+    ],
+    45: [
+        "In an ENGGBOT deployment, RAG can be placed beside the existing OpenRouter model gateway. The gateway continues to route prompts to the selected model, while the retrieval layer prepares grounded context from institutional documents before the prompt is sent.",
+        "This separation keeps the application model-agnostic while improving factual reliability. The conversational interface can remain the same, but answers become more useful because they are supported by repository content, metadata, and retrieved evidence.",
+    ],
 }
 
 
@@ -51,6 +74,19 @@ def clear_body(doc: Document):
     for child in list(body):
         if child.tag != qn("w:sectPr"):
             body.remove(child)
+
+
+def configure_page(section):
+    # The supplied format document specifies A4-style academic margins with
+    # a wider binding margin on the left.
+    section.page_width = Inches(8.27)
+    section.page_height = Inches(11.69)
+    section.top_margin = Inches(1.0)
+    section.right_margin = Inches(1.0)
+    section.bottom_margin = Inches(1.0)
+    section.left_margin = Inches(1.5)
+    section.header_distance = Inches(0.5)
+    section.footer_distance = Inches(0.5)
 
 
 def font_run(run, size=12, bold=False, italic=False, underline=False, name="Times New Roman"):
@@ -114,9 +150,27 @@ def set_cell_shading(cell, fill: str):
     tc_pr.append(shd)
 
 
+def set_table_borders(tbl):
+    tbl_pr = tbl._tbl.tblPr
+    borders = tbl_pr.first_child_found_in("w:tblBorders")
+    if borders is None:
+        borders = OxmlElement("w:tblBorders")
+        tbl_pr.append(borders)
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        tag = f"w:{edge}"
+        element = borders.find(qn(tag))
+        if element is None:
+            element = OxmlElement(tag)
+            borders.append(element)
+        element.set(qn("w:val"), "single")
+        element.set(qn("w:sz"), "6")
+        element.set(qn("w:space"), "0")
+        element.set(qn("w:color"), "000000")
+
+
 def table(doc: Document, rows: list[list[str]], widths: list[float] | None = None):
     t = doc.add_table(rows=len(rows), cols=len(rows[0]))
-    t.style = "Table Grid"
+    set_table_borders(t)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     for r_i, row in enumerate(rows):
         for c_i, value in enumerate(row):
@@ -134,28 +188,29 @@ def table(doc: Document, rows: list[list[str]], widths: list[float] | None = Non
     blank(doc, 1)
 
 
-def picture_slot(doc: Document, caption: str, instruction: str):
+def picture_slot(doc: Document, caption: str, image_path: Path, width: float):
     blank(doc, 1)
-    t = doc.add_table(rows=1, cols=1)
-    t.style = "Table Grid"
-    t.alignment = WD_TABLE_ALIGNMENT.CENTER
-    t.autofit = False
-    row = t.rows[0]
-    row.height = Inches(1.85)
-    row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
-    cell = row.cells[0]
-    cell.width = Inches(5.7)
-    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-    set_cell_margins(cell, top=180, start=180, bottom=180, end=180)
-    cell.text = ""
-    p = cell.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r = p.add_run("SPACE FOR PICTURE / SCREENSHOT")
-    font_run(r, size=12, bold=True)
-    p2 = cell.add_paragraph()
-    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r2 = p2.add_run(instruction)
-    font_run(r2, size=10, italic=True)
+    if image_path.exists():
+        p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.add_run().add_picture(str(image_path), width=Inches(width))
+    else:
+        t = doc.add_table(rows=1, cols=1)
+        set_table_borders(t)
+        t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        t.autofit = False
+        row = t.rows[0]
+        row.height = Inches(1.85)
+        row.height_rule = WD_ROW_HEIGHT_RULE.EXACTLY
+        cell = row.cells[0]
+        cell.width = Inches(5.7)
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        set_cell_margins(cell, top=180, start=180, bottom=180, end=180)
+        cell.text = ""
+        p = cell.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run("RAG DIAGRAM FROM SOURCE DOCUMENT")
+        font_run(r, size=12, bold=True)
     para(doc, caption, align=WD_ALIGN_PARAGRAPH.CENTER, size=11, bold=True, after=8)
 
 
@@ -206,8 +261,8 @@ def expansion_paragraphs(section: str, chapter_title: str | None) -> list[str]:
 def figure_followup(caption: str) -> list[str]:
     topic = caption.split(":", 1)[-1].strip().lower()
     return [
-        f"The space above should be replaced with the final {topic} visual. The figure is intended to make the written explanation easier to verify by showing the same modules and flow relationships in diagram form.",
-        "During final submission, the inserted image should be centered inside the bordered area and should remain readable in black-and-white print. The caption should be kept below the image so that the list of figures remains meaningful.",
+        f"The figure above presents the {topic} view used to connect the written design discussion with the implementation workflow. It gives a visual reference for how the RAG pipeline prepares content before the conversational model generates a response.",
+        "The figure also supports verification during review because it shows the document-processing or retrieval stage as a concrete system artifact rather than as a purely theoretical description.",
     ]
 
 
@@ -265,29 +320,28 @@ def parse_plan_heading(raw: str):
 
 
 def cover(doc: Document):
-    blank(doc, 2)
+    blank(doc, 3)
     para(doc, "A project report on", WD_ALIGN_PARAGRAPH.CENTER, size=12, italic=True)
     blank(doc, 1)
     for line in ["ENGGBOT: A HIGHLY SCALABLE MULTI-MODAL", "CONVERSATIONAL AI PLATFORM"]:
-        para(doc, line, WD_ALIGN_PARAGRAPH.CENTER, size=20, bold=True, style="No Spacing")
+        para(doc, line, WD_ALIGN_PARAGRAPH.CENTER, size=20, bold=True, after=0)
     blank(doc, 1)
-    para(doc, "Submitted in partial fulfilment for the award of the degree of", WD_ALIGN_PARAGRAPH.CENTER, size=14, italic=True)
+    para(doc, "Submitted in partial fulfillment for the award of the degree of", WD_ALIGN_PARAGRAPH.CENTER, size=14, italic=True)
     blank(doc, 1)
     para(doc, "Bachelor of Technology in", WD_ALIGN_PARAGRAPH.CENTER, size=22, bold=True, after=0)
     para(doc, "Computer Science and Engineering", WD_ALIGN_PARAGRAPH.CENTER, size=22, bold=True, after=0)
-    blank(doc, 1)
+    blank(doc, 3)
     para(doc, "by", WD_ALIGN_PARAGRAPH.CENTER, size=14, italic=True)
-    para(doc, "NAME OF THE STUDENT (REGISTRATION NO.)", WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True)
     blank(doc, 1)
-    report.prepare_logo()
-    logo = report.LOGO_WHITE
+    para(doc, "NAME OF THE STUDENT (REGISTRATION NO.)", WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True)
+    blank(doc, 4)
+    logo = TEMPLATE_LOGO
     if logo.exists():
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p.add_run().add_picture(str(logo), width=Inches(3.0))
+        p.add_run().add_picture(str(logo), width=Inches(3.7))
     blank(doc, 2)
-    para(doc, "SCHOOL OF COMPUTER", WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True)
-    para(doc, "SCIENCE AND ENGINEERING (SCOPE)", WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True)
+    para(doc, "SCHOOL OF COMPUTER SCIENCE AND ENGINEERING", WD_ALIGN_PARAGRAPH.CENTER, size=16, bold=True)
     blank(doc, 1)
     para(doc, "May, 2026", WD_ALIGN_PARAGRAPH.CENTER, size=12)
     page_break(doc)
@@ -328,6 +382,7 @@ def abstract_pages(doc: Document):
     front_heading(doc, "ABSTRACT")
     for p in report.ABSTRACT:
         body_para(doc, p, first_line=0)
+    body_para(doc, "The report also incorporates a Retrieval-Augmented Generation layer in which uploaded institutional and technical documents are processed through OCR, chunking, embedding generation, vector indexing, and hybrid retrieval. This extension allows ENGGBOT to combine model-agnostic conversational generation with grounded answers supported by repository content and multimodal document evidence.", first_line=0)
     page_break(doc)
 
 
@@ -352,29 +407,29 @@ def contents(doc: Document):
     heading(doc, "CONTENTS", size=14)
     entries = [
         ("Abstract", "4"),
-        ("List of Figures, Tables and acronyms", "9"),
+        ("List of Figures, Tables and acronyms", "7"),
         ("CHAPTER 1", ""),
-        ("INTRODUCTION", "13"),
-        ("1.1 Background", "15"),
-        ("1.2 Problem Statement", "17"),
-        ("1.3 Organization of the Report", "19"),
-        ("1.4 Scope of the Project", "20"),
+        ("INTRODUCTION", "9"),
+        ("1.1 Background", "11"),
+        ("1.2 Problem Statement", "13"),
+        ("1.3 Organization of the Report", "15"),
+        ("1.4 Scope of the Project", "16"),
         ("CHAPTER 2", ""),
-        ("2.1 Literature Survey", "21"),
-        ("2.2 Gaps Identified", "25"),
-        ("2.3 Objectives", "27"),
-        ("2.4 Applications of the System", "28"),
+        ("2.1 Literature Survey", "19"),
+        ("2.2 Gaps Identified", "30"),
+        ("2.3 Objectives", "31"),
+        ("2.4 Applications of the System", "32"),
         ("CHAPTER 3", ""),
-        ("3.1 System Description", "30"),
-        ("3.2 Methodology", "32"),
-        ("3.2.1 System Flow", "36"),
-        ("3.2.2 Web Integration", "38"),
+        ("3.1 System Description", "34"),
+        ("3.2 Methodology", "36"),
+        ("3.2.1 System Flow", "39"),
+        ("3.2.2 Web Integration", "41"),
         ("CHAPTER 4", ""),
-        ("RESULTS & DISCUSSION", "60"),
+        ("RESULTS & DISCUSSION", "45"),
         ("CHAPTER 5", ""),
-        ("CONCLUSION AND FUTURE WORK", "69"),
-        ("Reference", "70"),
-        ("Appendix", "71"),
+        ("CONCLUSION AND FUTURE WORK", "70"),
+        ("Reference", "71"),
+        ("Appendix", "72"),
     ]
     para(doc, "CONTENTS                                                                     Page No.", align=WD_ALIGN_PARAGRAPH.JUSTIFY, size=12)
     for name, page in entries:
@@ -385,13 +440,11 @@ def contents(doc: Document):
 def lists(doc: Document):
     heading(doc, "LIST OF FIGURES", size=14)
     figures = [
-        ("Fig 1: Layered architecture of ENGGBOT", "53"),
-        ("Fig 2: Dual text and speech request pipeline", "54"),
-        ("Fig 3: OpenRouter gateway abstraction", "59"),
-        ("Fig 4: Response middleware interception flow", "63"),
-        ("Fig 5: Speech-to-text fallback architecture", "29"),
-        ("Fig 6: User interface verification screenshot", "56"),
-        ("Fig 7: Module readiness assessment", "65"),
+        ("Fig 1: Document-wise distribution used for RAG preprocessing", "27"),
+        ("Fig 2: Comparison between traditional search and proposed RAG system", "34"),
+        ("Fig 3: RAG document-processing and retrieval workflow", "44"),
+        ("Fig 4: Dataset upload interface for repository ingestion", "51"),
+        ("Fig 5: Dataset preprocessing summary dashboard", "56"),
     ]
     for f, pno in figures:
         para(doc, f"{f:<78}{pno}", size=12)
@@ -451,14 +504,18 @@ def no_code_page(
         ], widths=[1.25, 1.55, 1.75, 1.45])
     for p in paras:
         body_para(doc, p)
+    if page_index in RAG_INSERTS:
+        for p in RAG_INSERTS[page_index]:
+            body_para(doc, p)
     if page_index in FIGURE_SLOTS:
-        caption, instruction = FIGURE_SLOTS[page_index]
-        picture_slot(doc, caption, instruction)
+        caption, image_path, width = FIGURE_SLOTS[page_index]
+        picture_slot(doc, caption, image_path, width)
         for p in figure_followup(caption):
             body_para(doc, p)
-    extra = expansion_paragraphs(section_name or heading_text, chapter_title)
-    for p in extra:
-        body_para(doc, p)
+    if not (chapter_num and chapter_title):
+        extra = expansion_paragraphs(section_name or heading_text, chapter_title)
+        for p in extra:
+            body_para(doc, p)
     page_break(doc)
 
 
@@ -473,11 +530,11 @@ def build_no_code_body(doc: Document):
     for page_no_s, heading_text, paras, *_ in report.PAGE_PLAN:
         sections.append((heading_text, paras))
     # The extra figure slots and expanded matter make several logical sections
-    # spill onto a second rendered page. Stop earlier so the appendix still
-    # starts after the required no-code report pages.
+    # spill onto a second rendered page. This stop point keeps the appendix
+    # after the required no-code report pages in the rendered document.
     previous_chapter = None
     section_counts: dict[str, int] = {}
-    while current <= 55:
+    while current <= 62:
         idx = (current - 9) % len(sections)
         heading_text, paras = sections[idx]
         chapter_num, chapter_title, section = parse_plan_heading(heading_text)
@@ -586,6 +643,8 @@ def build():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     doc = Document(str(TEMPLATE))
     clear_body(doc)
+    for section in doc.sections:
+        configure_page(section)
     cover(doc)
     declaration(doc)
     certificate(doc)
