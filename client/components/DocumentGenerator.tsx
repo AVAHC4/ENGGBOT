@@ -13,8 +13,6 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({ aiOutput, onClose
   const [fileName, setFileName] = useState('document');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-
   const generateDocument = async () => {
     setIsGenerating(true);
     setError(null);
