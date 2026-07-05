@@ -2,6 +2,7 @@
 interface PredefinedEntry {
   /** Keywords / phrases that trigger this answer (all lowercased) */
   keywords: string[];
+  /** The full markdown answer */
   answer: string;
 }
 
