@@ -2,7 +2,7 @@
 unstructured>=0.10.0
 unstructured-inference>=0.5.0
 
-# PDF processing
+
 pdf2image>=1.16.3
 pdfminer.six>=20221105
 pytesseract>=0.3.10
