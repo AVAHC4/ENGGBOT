@@ -266,7 +266,7 @@ export default function SettingsAccountPage() {
         <CardFooter>
           {!isPaid ? (
             <Button
-              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-semibold shadow-lg shadow-amber-500/20 hover:shadow-amber-500/30 group"
+              className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:via-purple-400 hover:to-pink-400 text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 group transition-all duration-200"
               size="lg"
             >
               <Sparkles className="h-4 w-4 mr-2" />
