@@ -90,11 +90,9 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => router.push('/examples/forms/account')}>
-                <Sparkles className="mr-2 h-4 w-4 text-violet-500 fill-violet-500/20 animate-pulse" />
-                <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                  Upgrade to Pro
-                </span>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push('/examples/forms/account')}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
