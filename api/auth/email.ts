@@ -18,7 +18,7 @@ interface OtpSendBody {
     email: string;
     firstname?: string;
     lastname?: string;
-    type?: 'signup' | 'login';
+    type?: 'sinup' | 'login';
 }
 
 interface OtpVerifyBody {
