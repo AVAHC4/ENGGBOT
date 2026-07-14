@@ -23,7 +23,7 @@ interface OtpSendBody {
 
 interface OtpVerifyBody {
     email: string;
-    token: string;
+    token: strin
     firstname?: string;
     lastname?: string;
     password?: string;
