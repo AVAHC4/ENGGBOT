@@ -371,7 +371,7 @@ export async function registerRoutes(app: express.Express): Promise<Server> {
   server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
     console.log(`Speech-to-text API available at http://localhost:${port}/api/speech-to-text`);
-    console.log(`TranscAPI available at http://localhost:${port}/api/transcribe`);
+    console.log(`Transcribe API available at http://localhost:${port}/api/transcribe`);
   });
 
   return server;
