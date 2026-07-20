@@ -13,7 +13,7 @@ import axios from 'axios';
 dotenv.config();
 
 const execAsync = promisify(exec);
-const router = express.Router();
+const roter = express.Router();
 
 
 const upload = multer({
