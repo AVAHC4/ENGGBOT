@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const {
       message,
       hasAttachments = false,
-      model = "z-ai/glm-4.5-air:free",
+      model = "google/gemma-4-31b-it:free",
       thinkingMode = true,
       conversationHistory = []
     } = await request.json();
