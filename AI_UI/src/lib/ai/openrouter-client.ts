@@ -101,15 +101,7 @@ export class OpenRouterClient {
                 "messages": messagePayload,
                 "temperature": temperature,
                 "max_tokens": max_tokens,
-                "stream": stream,
-                "provider": {
-                    "safety_settings": [
-                        { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
-                        { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" },
-                        { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
-                        { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" }
-                    ]
-                }
+                "stream": stream
             };
 
             const controller = new AbortController();
@@ -192,15 +184,7 @@ export class OpenRouterClient {
             "messages": messagePayload,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "stream": true,
-            "provider": {
-                "safety_settings": [
-                    { "category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE" },
-                    { "category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE" },
-                    { "category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE" },
-                    { "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE" }
-                ]
-            }
+            "stream": true
         };
 
         const controller = new AbortController();
