@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       message,
       rawMessage,
       hasAttachments = false,
-      model = "google/gemma-4-31b-it:free",
+      model = "z-ai/glm-4.5-air:free",
       thinkingMode = true,
       engineeringMode = false,
       conversationHistory = []
