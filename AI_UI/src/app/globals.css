@@ -307,11 +307,6 @@ html.font-lora body {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 
-
-
-
-
-
   @media (min-width: 1024px) {
     body:not(.sidebar-collapsed) .chatgpt-container {
       left: 280px;
