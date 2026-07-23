@@ -11,7 +11,6 @@ int main() {
     cin.tie(NULL);
 
     int n;
-    // Reading the number of test cases or total inputs
 
     if (!(cin >> n)) return 0;
 
