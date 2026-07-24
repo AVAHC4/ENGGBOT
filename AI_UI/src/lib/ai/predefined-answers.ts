@@ -494,7 +494,7 @@ Programming abstraction works similarly.
 * GUI applications
 * Enterprise software
 
-OOP transformed programming from chaotic instruction jungles into organized digital cities where classes behave like carefully engineered architecture instead of tangled spaghetti vines 🌆`,
+OOP transformed programming from chaotic instruction jungles into organized digital cities where classes behave like carefully engineered architecture instead of tangled spaghetti vines.`,
   },
 ];
 

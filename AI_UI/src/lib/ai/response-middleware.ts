@@ -6,12 +6,12 @@ export const BOT_CONFIG = {
   PERSONALITY: "helpful, friendly, and enthusiastic engineering assistant",
   VERSION: "1.0",
   EMOJI: {
-    DEFAULT: "🛠️",
-    THINKING: "💡",
-    SUCCESS: "✅",
-    ERROR: "⚠️",
-    CODE: "💻",
-    IDEA: "💡"
+    DEFAULT: "",
+    THINKING: "",
+    SUCCESS: "",
+    ERROR: "",
+    CODE: "",
+    IDEA: ""
   }
 };
 
@@ -70,27 +70,27 @@ export function isIdentityQuestion(message: string): boolean {
 
  
 export function generateIdentityResponse(): string {
-  const { NAME, PERSONALITY, VERSION, EMOJI } = BOT_CONFIG;
+  const { NAME, PERSONALITY, VERSION } = BOT_CONFIG;
   
    
-  return `${EMOJI.IDEA} I'm ${NAME} (v${VERSION}), your ${PERSONALITY}! 
+  return `I'm ${NAME} (v${VERSION}), your ${PERSONALITY}! 
 
 I'm a custom-built engineering assistant designed specifically to help with coding, technical problems, and engineering challenges. I'm not based on any existing public AI model or service.
 
-${EMOJI.CODE} My focus is on providing practical solutions to engineering problems, explaining technical concepts clearly, and helping you with your code. I can assist with many programming languages and development tasks.
+My focus is on providing practical solutions to engineering problems, explaining technical concepts clearly, and helping you with your code. I can assist with many programming languages and development tasks.
 
-${EMOJI.DEFAULT} I was built from the ground up as ${NAME} - that's my complete identity! I'm here to assist you with whatever engineering challenges you're facing today.`;
+I was built from the ground up as ${NAME} - that's my complete identity! I'm here to assist you with whatever engineering challenges you're facing today.`;
 }
 
  
 export function generateProviderResponse(): string {
-  const { NAME, EMOJI } = BOT_CONFIG;
+  const { NAME } = BOT_CONFIG;
   
-  return `${EMOJI.IDEA} ${NAME} is a purpose-built engineering assistant created by a specialized team of developers. 
+  return `${NAME} is a purpose-built engineering assistant created by a specialized team of developers. 
 
 I'm designed from the ground up specifically as ${NAME} - not based on any public large language model. My purpose is to focus exclusively on engineering tasks, coding assistance, and technical problem-solving.
 
-${EMOJI.CODE} I'm maintained by a dedicated engineering team that continually improves my abilities to better assist with your technical questions and coding challenges. 
+I'm maintained by a dedicated engineering team that continually improves my abilities to better assist with your technical questions and coding challenges. 
 
 Is there a specific engineering task or coding challenge I can help you with today?`;
 }
@@ -117,6 +117,9 @@ When responding, use Markdown formatting to enhance readability:
 8. Use --- for horizontal separators between sections
 9. Use [text](url) for links
 
+CRITICAL FORMATTING RULE - NO EMOJIS:
+- Strictly DO NOT use any emojis anywhere in your output, including section headers (e.g., write "### The Logic" NOT "🛠️ The Logic", write "### The C Program" NOT "💻 The C Program"), titles, bullet points, or body text. Keep all responses clean, professional, and completely free of emojis.
+
 Always maintain this formatting style to ensure your responses are clear, well-structured, and easy to read.`;
 }
 
@@ -134,7 +137,7 @@ export function processAIResponse(response: string, userMessage: string): string
 
  
 function sanitizeResponse(text: string): string {
-  const { NAME, EMOJI } = BOT_CONFIG;
+  const { NAME } = BOT_CONFIG;
   
    
   let sanitized = text
@@ -181,7 +184,10 @@ function sanitizeResponse(text: string): string {
     .replace(/I('m| am) powered by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) developed by/gi, `I'm ${NAME}, `)
     .replace(/I('m| am) created by/gi, `I'm ${NAME}, `)
-    .replace(/I('m| am) made by/gi, `I'm ${NAME}, `);
+    .replace(/I('m| am) made by/gi, `I'm ${NAME}, `)
+     
+    .replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu, '')
+    .replace(/^(#{1,6}\s+)\s+/gm, '$1');
   
    
   
