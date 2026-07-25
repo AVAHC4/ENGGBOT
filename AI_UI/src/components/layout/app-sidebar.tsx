@@ -39,6 +39,7 @@ import {
   Pencil,
   Share2,
   MoreVertical,
+  Pin,
   Code
 } from "lucide-react"
 import Link from "next/link"
@@ -824,6 +825,17 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
     setEditingConversationId(null);
   };
 
+  const handleTogglePinConversation = async (conversation: any) => {
+    const pinned = !conversation.pinned;
+    const updatedConversation = { ...conversation, pinned };
+
+    setConversations((current) => current
+      .map((item) => item.id === conversation.id ? updatedConversation : item)
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.updated).getTime() - new Date(a.updated).getTime()));
+
+    saveConversationMetadata(conversation.id, { ...conversation, pinned });
+  };
+
   const handleShareConversation = (id: string) => {
 
     navigator.clipboard.writeText(`${window.location.origin}?conversation=${id}`)
@@ -1035,8 +1047,20 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                               </div>
 
                               { }
-                              {!editingConversationId && convo.id === conversationId && (
-                                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                              {!editingConversationId && (
+                                <div className={cn("flex opacity-0 group-hover:opacity-100 transition-opacity", convo.pinned && "opacity-100")}>
+                                  <button
+                                    type="button"
+                                    aria-label={convo.pinned ? "Unpin conversation" : "Pin conversation"}
+                                    title={convo.pinned ? "Unpin conversation" : "Pin conversation"}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTogglePinConversation(convo);
+                                    }}
+                                    className={cn("p-1 rounded hover:bg-muted", convo.pinned && "opacity-100 text-foreground")}
+                                  >
+                                    <Pin className={cn("h-3 w-3", convo.pinned && "fill-current")} />
+                                  </button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                       <button className="p-1">
@@ -1062,6 +1086,15 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                       >
                                         <Share2 className="h-3 w-3 mr-2" />
                                         Share
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTogglePinConversation(convo);
+                                        }}
+                                      >
+                                        <Pin className="h-3 w-3 mr-2" />
+                                        {convo.pinned ? "Unpin" : "Pin"}
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={(e) => handleDeleteRequest(e, convo.id, convo.title)}
@@ -1361,4 +1394,4 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
       )}
     </>
   )
-} 
+}

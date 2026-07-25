@@ -335,6 +335,7 @@ export interface ConversationMetadata {
   title: string;
   created: string;
   updated: string;
+  pinned?: boolean;
 }
 
 
@@ -602,8 +603,10 @@ export function saveConversationMetadata(id: string, metadata: ConversationMetad
     fetch(`/api/conversations/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, title: metadata.title }),
-    }).catch(err => console.log('Failed to update conversation title in database:', err));
+      body: JSON.stringify({ email, title: metadata.title, pinned: metadata.pinned }),
+    }).then((response) => {
+      if (response.ok) dispatchConversationUpdated();
+    }).catch(err => console.log('Failed to update conversation metadata in database:', err));
   }
 }
 
@@ -619,10 +622,12 @@ export async function getConversationMetadata(id: string): Promise<ConversationM
     if (!response.ok) return null;
 
     const data = await response.json();
+    const conversation = data.conversation ?? data;
     return {
-      title: data.title,
-      created: data.created_at,
-      updated: data.updated_at,
+      title: conversation.title,
+      created: conversation.created_at ?? conversation.createdAt,
+      updated: conversation.updated_at ?? conversation.updatedAt,
+      pinned: conversation.pinned ?? false,
     };
   } catch (error) {
     console.error('Error getting conversation metadata:', error);
@@ -641,7 +646,11 @@ export async function getAllConversationsMetadata(): Promise<any[]> {
     title: c.title,
     created: c.created_at || c.createdAt,
     updated: c.updated_at || c.updatedAt,
-  })).sort((a: any, b: any) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+    pinned: c.pinned ?? false,
+  })).sort((a: any, b: any) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+  });
 }
 
 

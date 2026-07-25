@@ -12,6 +12,7 @@ create table public.conversations (
   id uuid primary key default gen_random_uuid(),
   user_email text not null,
   title text not null,
+  pinned boolean not null default false,
   project_id uuid, -- nullable, links to project if conversation is project-specific
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -20,6 +21,7 @@ create table public.conversations (
 create index idx_conversations_user_email on public.conversations(user_email);
 create index idx_conversations_project_id on public.conversations(project_id);
 create index idx_conversations_updated on public.conversations(updated_at desc);
+create index idx_conversations_pinned_updated on public.conversations(user_email, pinned desc, updated_at desc);
 
 -- Conversation messages table
 create table public.conversation_messages (

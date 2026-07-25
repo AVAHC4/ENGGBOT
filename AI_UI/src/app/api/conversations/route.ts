@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
          
         const { data, error } = await supabaseAdmin
             .from('conversations')
-            .select('id, title, created_at, updated_at')
+            .select('id, title, pinned, created_at, updated_at')
             .eq('user_email', email)
             .order('updated_at', { ascending: false });
 
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         const email = (body?.email || '').toLowerCase();
         const title = body?.title || 'New Conversation';
         const id = body?.id;  
+        const pinned = body?.pinned === true;
 
         console.log('[API] POST /api/conversations - Creating conversation:', { email, title, id: id?.substring(0, 8) });
 
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
         const insertData: any = {
             user_email: email,
             title,
+            pinned,
         };
 
          
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
         const { data, error } = await supabaseAdmin
             .from('conversations')
             .insert(insertData)
-            .select('id, title, created_at, updated_at')
+            .select('id, title, pinned, created_at, updated_at')
             .single();
 
         if (error) {

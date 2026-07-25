@@ -17,6 +17,7 @@ import {
   Trash2,
   Pencil,
   Share2,
+  Pin,
   X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,8 @@ interface ConversationItemProps {
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onShare?: (id: string) => void;
+  pinned?: boolean;
+  onTogglePin: (id: string) => void;
 }
 
 function ConversationItem({
@@ -50,7 +53,9 @@ function ConversationItem({
   onSwitch,
   onDelete,
   onRename,
-  onShare
+  onShare,
+  pinned = false,
+  onTogglePin
 }: ConversationItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(title);
@@ -139,17 +144,24 @@ function ConversationItem({
         </div>
 
         {!isEditing && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 opacity-0 group-hover:opacity-100"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+          <div className={cn('flex items-center opacity-0 group-hover:opacity-100 transition-opacity', pinned && 'opacity-100')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={pinned ? 'Unpin conversation' : 'Pin conversation'}
+              title={pinned ? 'Unpin conversation' : 'Pin conversation'}
+              onClick={(e) => { e.stopPropagation(); onTogglePin(id); }}
+              className="h-7 w-7"
+            >
+              <Pin className={cn('h-4 w-4', pinned && 'fill-current')} />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
                 setIsEditing(true);
@@ -163,6 +175,10 @@ function ConversationItem({
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onTogglePin(id); }}>
+                <Pin className="h-4 w-4 mr-2" />
+                {pinned ? 'Unpin' : 'Pin'}
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleDeleteRequest}
                 className="text-destructive focus:text-destructive"
@@ -170,8 +186,9 @@ function ConversationItem({
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
 
@@ -306,6 +323,17 @@ export function ConversationSidebar() {
     ));
   };
 
+  const handleTogglePin = async (id: string) => {
+    const conversation = conversations.find((item) => item.id === id);
+    if (!conversation) return;
+
+    const pinned = !conversation.pinned;
+    setConversations((current) => current
+      .map((item) => item.id === id ? { ...item, pinned } : item)
+      .sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || new Date(b.updated).getTime() - new Date(a.updated).getTime()));
+    saveConversationMetadata(id, { ...conversation, pinned });
+  };
+
    
   const handleShare = (id: string) => {
      
@@ -383,6 +411,8 @@ export function ConversationSidebar() {
                 onDelete={handleDelete}
                 onRename={handleRename}
                 onShare={handleShare}
+                pinned={conversation.pinned}
+                onTogglePin={handleTogglePin}
               />
             ))
           ) : searchTerm ? (

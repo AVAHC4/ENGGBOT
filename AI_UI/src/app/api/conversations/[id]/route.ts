@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
         const { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
-            .select('id, title, created_at, updated_at, user_email')
+            .select('id, title, pinned, created_at, updated_at, user_email')
             .eq('id', conversationId)
             .single();
 
@@ -65,6 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             conversation: {
                 id: conversation.id,
                 title: conversation.title,
+                pinned: conversation.pinned ?? false,
                 createdAt: conversation.created_at,
                 updatedAt: conversation.updated_at,
             },
@@ -82,6 +83,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         const body = await req.json();
         const email = (body?.email || '').toLowerCase();
         const title = body?.title;
+        const pinned = body?.pinned;
 
         if (!conversationId || !email) {
             return NextResponse.json({ error: 'Missing conversation ID or email' }, { status: 400 });
@@ -107,12 +109,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         if (title !== undefined) {
             updates.title = title;
         }
+        if (pinned !== undefined) {
+            updates.pinned = Boolean(pinned);
+        }
 
         const { data, error } = await supabaseAdmin
             .from('conversations')
             .update(updates)
             .eq('id', conversationId)
-            .select('id, title, created_at, updated_at')
+            .select('id, title, pinned, created_at, updated_at')
             .single();
 
         if (error) {
