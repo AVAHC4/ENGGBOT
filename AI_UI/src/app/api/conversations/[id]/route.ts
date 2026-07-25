@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+const isMissingPinnedColumn = (error: any) =>
+    error?.code === '42703' || /pinned/i.test(error?.message || '');
 
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -18,11 +20,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
 
-        const { data: conversation, error: convError } = await supabaseAdmin
+        let { data: conversation, error: convError } = await supabaseAdmin
             .from('conversations')
             .select('id, title, pinned, created_at, updated_at, user_email')
             .eq('id', conversationId)
             .single();
+
+        if (convError && isMissingPinnedColumn(convError)) {
+            const fallback = await supabaseAdmin
+                .from('conversations')
+                .select('id, title, created_at, updated_at, user_email')
+                .eq('id', conversationId)
+                .single();
+            conversation = fallback.data ? { ...fallback.data, pinned: false } : fallback.data;
+            convError = fallback.error;
+        }
 
         console.log('[API GET /conversations/[id]] conversationId:', conversationId, 'email:', email, 'found:', !!conversation, 'convEmail:', conversation?.user_email);
 
@@ -113,12 +125,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             updates.pinned = Boolean(pinned);
         }
 
-        const { data, error } = await supabaseAdmin
+        let { data, error } = await supabaseAdmin
             .from('conversations')
             .update(updates)
             .eq('id', conversationId)
             .select('id, title, pinned, created_at, updated_at')
             .single();
+
+        if (error && isMissingPinnedColumn(error)) {
+            const { pinned: _pinned, ...legacyUpdates } = updates;
+            const fallback = await supabaseAdmin
+                .from('conversations')
+                .update(legacyUpdates)
+                .eq('id', conversationId)
+                .select('id, title, created_at, updated_at')
+                .single();
+            data = fallback.data ? { ...fallback.data, pinned: false } : fallback.data;
+            error = fallback.error;
+        }
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
