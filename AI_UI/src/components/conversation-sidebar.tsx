@@ -150,7 +150,7 @@ function ConversationItem({
               size="icon"
               aria-label={pinned ? 'Unpin conversation' : 'Pin conversation'}
               title={pinned ? 'Unpin conversation' : 'Pin conversation'}
-              onClick={(e) => { e.stopPropagation(); onTogglePin(id); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin(id); }}
               className="h-7 w-7"
             >
               <Pin

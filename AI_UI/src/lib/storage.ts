@@ -604,8 +604,6 @@ export function saveConversationMetadata(id: string, metadata: ConversationMetad
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, title: metadata.title, pinned: metadata.pinned }),
-    }).then((response) => {
-      if (response.ok) dispatchConversationUpdated();
     }).catch(err => console.log('Failed to update conversation metadata in database:', err));
   }
 }

@@ -1054,6 +1054,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                     aria-label={convo.pinned ? "Unpin conversation" : "Pin conversation"}
                                     title={convo.pinned ? "Unpin conversation" : "Pin conversation"}
                                     onClick={(e) => {
+                                      e.preventDefault();
                                       e.stopPropagation();
                                       handleTogglePinConversation(convo);
                                     }}
