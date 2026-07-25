@@ -1011,7 +1011,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                             <SidebarMenuSubButton
                               onClick={() => handleSwitchConversation(convo.id)}
                               className={cn(
-                                "w-full justify-between group pr-1 cursor-pointer",
+                                "w-full justify-between group/conversation pr-1 cursor-pointer",
                                 convo.id === conversationId && pathname === '/AI_UI' && "bg-neutral-700 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:text-white dark:hover:bg-neutral-700"
                               )}
                             >
@@ -1048,7 +1048,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
                               { }
                               {!editingConversationId && (
-                                <div className={cn("flex opacity-0 group-hover:opacity-100 transition-opacity", convo.pinned && "opacity-100")}>
+                                <div className="flex opacity-0 transition-opacity group-hover/conversation:opacity-100">
                                   <button
                                     type="button"
                                     aria-label={convo.pinned ? "Unpin conversation" : "Pin conversation"}
@@ -1057,7 +1057,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                       e.stopPropagation();
                                       handleTogglePinConversation(convo);
                                     }}
-                                    className={cn("p-1 rounded hover:bg-muted", convo.pinned && "opacity-100 text-foreground")}
+                                    className="p-1 rounded hover:bg-muted"
                                   >
                                     <Pin className={cn("h-3 w-3", convo.pinned && "fill-current")} />
                                   </button>

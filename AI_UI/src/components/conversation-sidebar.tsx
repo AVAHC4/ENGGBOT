@@ -118,7 +118,7 @@ function ConversationItem({
     <>
       <div
         className={cn(
-          "flex items-center justify-between p-2 rounded-md hover:bg-primary/5 transition-all cursor-pointer group",
+          "flex items-center justify-between p-2 rounded-md hover:bg-primary/5 transition-all cursor-pointer group/conversation",
           isActive && "bg-primary/10 hover:bg-primary/10"
         )}
         onClick={() => onSwitch(id)}
@@ -144,7 +144,7 @@ function ConversationItem({
         </div>
 
         {!isEditing && (
-          <div className={cn('flex items-center opacity-0 group-hover:opacity-100 transition-opacity', pinned && 'opacity-100')}>
+          <div className="flex items-center opacity-0 transition-opacity group-hover/conversation:opacity-100">
             <Button
               variant="ghost"
               size="icon"
