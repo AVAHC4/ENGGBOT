@@ -1059,7 +1059,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                     }}
                                     className="p-1 rounded hover:bg-muted"
                                   >
-                                    <Pin className={cn("h-3 w-3", convo.pinned && "fill-current")} />
+                                    <Pin
+                                      className={cn("h-3 w-3", convo.pinned && "fill-current")}
+                                      strokeWidth={convo.pinned ? 3 : 2}
+                                    />
                                   </button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>

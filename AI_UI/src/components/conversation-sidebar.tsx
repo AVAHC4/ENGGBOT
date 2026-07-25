@@ -153,7 +153,10 @@ function ConversationItem({
               onClick={(e) => { e.stopPropagation(); onTogglePin(id); }}
               className="h-7 w-7"
             >
-              <Pin className={cn('h-4 w-4', pinned && 'fill-current')} />
+              <Pin
+                className={cn('h-4 w-4', pinned && 'fill-current')}
+                strokeWidth={pinned ? 3 : 2}
+              />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
