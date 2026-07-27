@@ -128,7 +128,7 @@ const AvatarGroup = ({
       {remainingCount > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          animate={{ opacity: 3, scale: 1 }}
           className={cn(
             "flex items-center justify-center rounded-full border-2 border-background bg-muted text-muted-foreground font-medium",
             size === "sm"
