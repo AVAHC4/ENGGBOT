@@ -18,7 +18,7 @@ interface AvatarGroupProps {
   size?: "sm" | "md" | "lg";
 }
 
- 
+
 const Avatar = ({
   item,
   index,
@@ -128,14 +128,14 @@ const AvatarGroup = ({
       {remainingCount > 0 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 3, scale: 1 }}
+          animate={{ opacity: 1, scale: 1 }}
           className={cn(
             "flex items-center justify-center rounded-full border-2 border-background bg-muted text-muted-foreground font-medium",
             size === "sm"
               ? "h-8 w-8"
               : size === "md"
-              ? "h-10 w-10"
-              : "h-12 w-12",
+                ? "h-10 w-10"
+                : "h-12 w-12",
             "ml-[-0.5rem]"
           )}
         >
