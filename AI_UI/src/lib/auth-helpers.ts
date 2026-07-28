@@ -83,15 +83,10 @@ export function checkExternalAuth(): boolean {
 
 
   if (hasAuthCookie || isAuthenticatedLS || isAuthenticatedSS || hasAuthParam) {
-
     localStorage.setItem('ai_ui_authenticated', 'true');
-
-
     if (hasAuthCookie) {
       document.cookie = 'auth_success=; max-age=0; path=/';
     }
-
-
     if ((hasAuthParam || userName || userEmail || userAvatar || userDataParam) && window.history && window.history.replaceState) {
 
       const newUrl = window.location.pathname +
