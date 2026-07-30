@@ -8,7 +8,6 @@ export function checkExternalAuth(): boolean {
 
   const hasAuthCookie = document.cookie.includes('auth_success=true');
 
-
   const isAuthenticatedLS = localStorage.getItem('authenticated') === 'true';
   const isAuthenticatedSS = sessionStorage.getItem('authenticated') === 'true';
 
