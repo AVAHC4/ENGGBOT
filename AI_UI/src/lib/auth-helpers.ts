@@ -12,7 +12,7 @@ export function checkExternalAuth(): boolean {
   const isAuthenticatedSS = sessionStorage.getItem('authenticated') === 'true';
 
 
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParms(window.location.search);
   const hasAuthParam = urlParams.get('auth_success') === 'true';
 
 
