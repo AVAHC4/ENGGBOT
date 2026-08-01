@@ -7,7 +7,7 @@ let isInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
 
-const SUPPRES_INIT_LOG = true;
+const SUPPRESS_INIT_LOG = true;
 
 
 let _openRouterClientInstance: OpenRouterClient | null = null;
