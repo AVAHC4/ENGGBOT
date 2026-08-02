@@ -6,7 +6,7 @@ const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
 
 
 export const LANGUAGE_IDS = {
-  python: 1,
+  python: 71,
   javascript: 63,
   java: 91,
   c: 50,
