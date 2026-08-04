@@ -1,4 +1,4 @@
- 
+
 
 type FileMap = Record<string, string>;
 
@@ -7,10 +7,9 @@ interface BundleResult {
   error?: string;
 }
 
- 
+
 export class Bundler {
   private files: FileMap;
-
   constructor(files: FileMap = {}) {
     this.files = files;
   }
@@ -20,20 +19,20 @@ export class Bundler {
   }
 
   getFile(path: string): string | null {
-     
+
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return this.files[normalizedPath] || null;
   }
 
-   
+
   async bundle(): Promise<BundleResult> {
     try {
-       
+
       const htmlFile = this.getFile('/index.html') || this.createDefaultHtml();
-      
-       
+
+
       const processedHtml = this.processHtml(htmlFile);
-      
+
       return {
         html: this.injectConsoleCapture(processedHtml)
       };
@@ -45,9 +44,9 @@ export class Bundler {
     }
   }
 
-   
+
   private processHtml(html: string): string {
-     
+
     let processedHtml = html.replace(
       /<script\s+src=["']([^"']+)["']><\/script>/g,
       (match, src) => {
@@ -55,11 +54,11 @@ export class Bundler {
         if (scriptContent) {
           return `<script>${scriptContent}</script>`;
         }
-        return match;  
+        return match;
       }
     );
 
-     
+
     processedHtml = processedHtml.replace(
       /<link\s+rel=["']stylesheet["']\s+href=["']([^"']+)["']\s*\/?>/g,
       (match, href) => {
@@ -142,7 +141,7 @@ export class Bundler {
         })();
       </script>
     `;
-    
+
     // Insert the console capture script at the beginning of the head
     return html.replace('<head>', '<head>' + consoleCapture);
   }
