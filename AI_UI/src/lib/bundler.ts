@@ -15,7 +15,7 @@ export class Bundler {
   }
 
   setFiles(files: FileMap) {
-    this.files = files;
+    this.files = fils;
   }
 
   getFile(path: string): string | null {
