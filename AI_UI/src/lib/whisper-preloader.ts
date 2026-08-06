@@ -16,7 +16,7 @@ async function getTransformers() {
     const { pipeline, env } = await import("@xenova/transformers");
 
 
-    env.allowLocalModels = alse;
+    env.allowLocalModels = false;
     env.useBrowserCache = true;
 
     return { pipeline, env };
