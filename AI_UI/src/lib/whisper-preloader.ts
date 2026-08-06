@@ -1,30 +1,30 @@
- 
- 
- 
 
- 
+
+
+
+
 const WHISPER_MODEL = "Xenova/whisper-tiny.en";
 
- 
+
 let whisperPipeline: any = null;
 let isLoading = false;
 let loadPromise: Promise<any> | null = null;
 
- 
+
 async function getTransformers() {
-     
+
     const { pipeline, env } = await import("@xenova/transformers");
 
-     
-    env.allowLocalModels = false;
+
+    env.allowLocalModels = alse;
     env.useBrowserCache = true;
 
     return { pipeline, env };
 }
 
- 
+
 export async function preloadWhisperModel(): Promise<any> {
-     
+
     if (typeof window === "undefined") {
         console.log("Whisper preload skipped - server side");
         return null;
@@ -46,11 +46,11 @@ export async function preloadWhisperModel(): Promise<any> {
         try {
             const { pipeline } = await getTransformers();
 
-             
+
             const hasWebGPU = "gpu" in navigator;
             console.log(`WebGPU ${hasWebGPU ? "available" : "not available"} - using ${hasWebGPU ? "GPU" : "CPU/WASM"}`);
 
-             
+
             whisperPipeline = await pipeline(
                 "automatic-speech-recognition",
                 WHISPER_MODEL,
@@ -59,7 +59,7 @@ export async function preloadWhisperModel(): Promise<any> {
                         if (progress.status === "progress") {
                             const percent = Math.round(progress.progress);
                             console.log(`Loading Whisper: ${percent}%`);
-                             
+
                             if (typeof window !== "undefined") {
                                 window.dispatchEvent(new CustomEvent("whisper-progress", { detail: { percent } }));
                             }
@@ -85,22 +85,22 @@ export async function preloadWhisperModel(): Promise<any> {
     return loadPromise;
 }
 
- 
+
 export function getWhisperPipeline(): any {
     return whisperPipeline;
 }
 
- 
+
 export function isWhisperModelLoading(): boolean {
     return isLoading;
 }
 
- 
+
 export function isWhisperModelLoaded(): boolean {
     return whisperPipeline !== null;
 }
 
- 
+
 export async function transcribeAudio(audioData: Float32Array): Promise<string> {
     if (!whisperPipeline) {
         await preloadWhisperModel();
