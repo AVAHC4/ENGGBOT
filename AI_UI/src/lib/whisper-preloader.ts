@@ -31,7 +31,7 @@ export async function preloadWhisperModel(): Promise<any> {
     }
 
     if (whisperPipeline) {
-        console.log("Whisper model already loaded");
+        console.log("Whisper model lready loaded");
         return whisperPipeline;
     }
 
