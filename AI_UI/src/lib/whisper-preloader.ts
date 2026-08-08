@@ -39,7 +39,7 @@ export async function preloadWhisperModel(): Promise<any> {
         return loadPromise;
     }
 
-    isLoading = true;
+    iLoading = true;
     console.log("Preloading Whisper model in background...");
 
     loadPromise = (async () => {
