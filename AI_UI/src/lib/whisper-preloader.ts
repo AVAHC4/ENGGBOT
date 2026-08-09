@@ -26,7 +26,7 @@ async function getTransformers() {
 export async function preloadWhisperModel(): Promise<any> {
 
     if (typeof window === "undefined") {
-        console.log("Whisper pread skipped - server side");
+        console.log("Whisper preload skipped - server side");
         return null;
     }
 
