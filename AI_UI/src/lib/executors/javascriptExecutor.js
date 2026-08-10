@@ -1,23 +1,23 @@
- 
+
 
 let executionIframe = null;
 let isInitialized = false;
 
  
-export async function init() {
+export async unction init() {
   if (isInitialized) {
     return;
   }
-  
+
   try {
     console.log('[JavaScriptExecutor] Initializing sandbox iframe...');
-    
-     
+
+
     executionIframe = document.createElement('iframe');
     executionIframe.style.display = 'none';
     executionIframe.sandbox = 'allow-scripts';
-    
-     
+
+
     const sandboxHTML = `
 <!DOCTYPE html>
 <html>
@@ -134,12 +134,12 @@ export async function init() {
 </body>
 </html>
     `;
-    
-     
+
+
     executionIframe.srcdoc = sandboxHTML;
     document.body.appendChild(executionIframe);
-    
-     
+
+
     await new Promise((resolve) => {
       const messageHandler = (event) => {
         if (event.data.type === 'SANDBOX_READY') {
@@ -149,25 +149,25 @@ export async function init() {
       };
       window.addEventListener('message', messageHandler);
     });
-    
+
     isInitialized = true;
     console.log('[JavaScriptExecutor] Sandbox initialized successfully');
-    
+
   } catch (error) {
     console.error('[JavaScriptExecutor] Failed to initialize sandbox:', error);
     throw new Error(`Failed to initialize JavaScript executor: ${error.message}`);
   }
 }
 
- 
+
 export async function execute(code) {
   if (!isInitialized) {
     await init();
   }
-  
+
   try {
     console.log('[JavaScriptExecutor] Executing JavaScript code...');
-    
+
     return new Promise((resolve) => {
       const messageHandler = (event) => {
         if (event.data.type === 'EXECUTION_RESULT') {
@@ -178,25 +178,25 @@ export async function execute(code) {
           });
         }
       };
-      
+
       window.addEventListener('message', messageHandler);
-      
-       
+
+
       executionIframe.contentWindow.postMessage({
         type: 'EXECUTE_CODE',
         code: code
       }, '*');
-      
-       
+
+
       setTimeout(() => {
         window.removeEventListener('message', messageHandler);
         resolve({
           output: '',
           error: 'Execution timeout: Code took too long to execute'
         });
-      }, 10000);  
+      }, 10000);
     });
-    
+
   } catch (error) {
     console.error('[JavaScriptExecutor] Execution error:', error);
     return {
@@ -206,12 +206,12 @@ export async function execute(code) {
   }
 }
 
- 
+
 export function isReady() {
   return isInitialized;
 }
 
- 
+
 export function getInfo() {
   return {
     name: 'JavaScript Executor',
@@ -221,7 +221,7 @@ export function getInfo() {
   };
 }
 
- 
+
 export function cleanup() {
   if (executionIframe && executionIframe.parentNode) {
     executionIframe.parentNode.removeChild(executionIframe);
