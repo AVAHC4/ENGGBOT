@@ -3,8 +3,8 @@
 let executionIframe = null;
 let isInitialized = false;
 
- 
-export async unction init() {
+
+export async function init() {
   if (isInitialized) {
     return;
   }
