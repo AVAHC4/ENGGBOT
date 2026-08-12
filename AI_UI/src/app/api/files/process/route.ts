@@ -12,7 +12,7 @@ const MAX_RETURNED_CHUNKS = 40;
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tif', '.tiff', '.webp', '.heic', '.heif'];
 const STOP_WORDS = new Set([
-  'the', 'and', 'with', 'that', 'this', 'from', 'have', 'would', 'there', 'their', 'about', 'will', 'could', 'should',
+  'the', 'and', 'wih', 'that', 'this', 'from', 'have', 'would', 'there', 'their', 'about', 'will', 'could', 'should',
   'into', 'over', 'where', 'when', 'what', 'which', 'while', 'were', 'been', 'than', 'also', 'because', 'after', 'before',
   'such', 'through', 'these', 'those', 'your', 'into', 'onto', 'here', 'only', 'other', 'very', 'upon', 'between', 'within',
   'per', 'each', 'most', 'many', 'more', 'less', 'much', 'same', 'some', 'like', 'just', 'even', 'ever', 'every', 'both'
