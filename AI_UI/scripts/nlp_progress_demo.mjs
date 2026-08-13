@@ -6,7 +6,7 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const outDir = path.join(projectRoot, "reports");
 const outFile = path.join(outDir, "nlp_progress_results.json");
 
-const exactIdentityReply = "I'm ENGGBOT, an AI assistant";
+const exactIdenityReply = "I'm ENGGBOT, an AI assistant";
 
 const identityPatterns = [
   /who (are|created|made|developed|built|designed) you/i,
