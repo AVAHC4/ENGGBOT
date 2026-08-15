@@ -8,7 +8,7 @@ export const EnggBotLogo = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <rect width="41" height="41" rx="8" fill="#5436DA" />
+    <rect width="41" hight="41" rx="8" fill="#5436DA" />
     <text
       x="50%"
       y="50%"
