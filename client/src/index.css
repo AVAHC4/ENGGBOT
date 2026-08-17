@@ -56,3 +56,74 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* The logo appears to charge as an orbit sweeps around it, instead of showing a generic spinner. */
+@keyframes enggbot-loader-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes enggbot-loader-breathe {
+  0%, 100% { opacity: 0.38; transform: scale(0.94); }
+  50% { opacity: 0.82; transform: scale(1.06); }
+}
+
+@keyframes enggbot-loader-logo {
+  0%, 100% { opacity: 0.62; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.enggbot-loader__mark {
+  position: relative;
+  display: grid;
+  width: 7.5rem;
+  height: 7.5rem;
+  place-items: center;
+}
+
+.enggbot-loader__halo,
+.enggbot-loader__orbit {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+.enggbot-loader__halo--outer {
+  inset: 0;
+  background: radial-gradient(circle, transparent 47%, rgb(139 92 246 / 0.18) 48%, transparent 68%);
+  animation: enggbot-loader-breathe 2.1s ease-in-out infinite;
+}
+
+.enggbot-loader__halo--inner {
+  width: 4.7rem;
+  height: 4.7rem;
+  border: 1px solid rgb(167 139 250 / 0.35);
+  box-shadow: 0 0 30px rgb(124 58 237 / 0.28), inset 0 0 20px rgb(124 58 237 / 0.12);
+  animation: enggbot-loader-breathe 2.1s ease-in-out infinite reverse;
+}
+
+.enggbot-loader__orbit {
+  inset: 0.15rem;
+  border: 2px solid transparent;
+  border-top-color: rgb(221 214 254);
+  border-right-color: rgb(139 92 246 / 0.8);
+  filter: drop-shadow(0 0 5px rgb(167 139 250 / 0.8));
+  animation: enggbot-loader-orbit 1.25s linear infinite;
+}
+
+.enggbot-loader__logo {
+  position: relative;
+  z-index: 1;
+  width: 3.75rem;
+  height: 3.75rem;
+  color: white;
+  filter: drop-shadow(0 0 12px rgb(196 181 253 / 0.65));
+  animation: enggbot-loader-logo 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enggbot-loader__halo--outer,
+  .enggbot-loader__halo--inner,
+  .enggbot-loader__orbit,
+  .enggbot-loader__logo {
+    animation: none;
+  }
+}

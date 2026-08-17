@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { Logo } from "@/components/logo";
+import { BrandedLoader } from "@/components/branded-loader";
 
 export default function LoadingPage() {
   const [, setLocation] = useLocation();
@@ -32,18 +32,8 @@ export default function LoadingPage() {
   }, [setLocation]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black flex items-center justify-center">
-      <div className="text-center">
-        <div className="flex justify-center mb-8">
-          <Logo className="w-24 h-24 animate-pulse" />
-        </div>
-        <h1 className="text-3xl font-bold mb-4">Completing Login...</h1>
-        <p className="text-lg text-zinc-400">Please wait while we set up your account</p>
-
-        <div className="mt-8 flex justify-center">
-          <div className="w-16 h-16 border-t-4 border-b-4 border-white rounded-full animate-spin"></div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_center,_rgb(76_29_149_/_0.22),_transparent_36%),_#030303] flex items-center justify-center px-6">
+      <BrandedLoader message="Completing login…" detail="Please wait while we set up your account" />
     </div>
   );
-} 
+}

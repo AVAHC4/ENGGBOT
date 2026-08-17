@@ -5,6 +5,7 @@ import FooterSection from "@/components/footer";
 import React, { useEffect, useState } from "react";
 import { isAuthenticated, shouldRedirectToChat } from "@/lib/auth-storage";
 import BackgroundPaths from "@/components/background-paths";
+import { BrandedLoader } from "@/components/branded-loader";
 import { motion, Variants } from "framer-motion";
 
 const fadeInUp: Variants = {
@@ -82,11 +83,8 @@ export default function Home() {
 
   if (redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <div className="w-12 h-12 border-t-2 border-b-2 border-white rounded-full animate-spin mx-auto mb-4" />
-          <p>Redirecting to your chat...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_rgb(76_29_149_/_0.22),_transparent_36%),_#030303] px-6">
+        <BrandedLoader message="Redirecting to your chat…" detail="Getting your workspace ready" />
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 // import AiChat from "../../../ai-chat";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
+import { BrandedLoader } from "@/components/branded-loader";
 import { Link } from "wouter";
 import {
   getUserData,
@@ -147,15 +148,7 @@ export default function ChatDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="flex justify-center mb-8">
-            <Logo className="w-16 h-16 animate-pulse" />
-          </div>
-          <h1 className="text-xl font-bold mb-4">Loading your AI Assistant...</h1>
-          <div className="mt-4 flex justify-center">
-            <div className="w-10 h-10 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
-          </div>
-        </div>
+        <BrandedLoader message="Loading your AI Assistant…" />
       </div>
     );
   }
@@ -286,13 +279,10 @@ export default function ChatDashboard() {
       <main className="flex-1">
         {/* Redirect to AI_UI */}
         <div className="min-h-screen flex items-center justify-center bg-black">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">
-              {redirecting ? "Redirecting to AI Interface..." : "Preparing AI Interface..."}
-            </h1>
-            <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-400">Please wait...</p>
-          </div>
+          <BrandedLoader
+            message={redirecting ? "Redirecting to AI Interface…" : "Preparing AI Interface…"}
+            detail="Please wait"
+          />
         </div>
       </main>
     </div>
