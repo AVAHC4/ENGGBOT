@@ -24,7 +24,7 @@ const loaderStyles = tv({
         },
     },
     defaultVariants: {
-        intent: "curent",
+        intent: "current",
         size: "sm",
     },
 })
