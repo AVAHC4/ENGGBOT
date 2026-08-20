@@ -6,14 +6,13 @@ import { cn } from "@/lib/utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useChat } from "@/context/chat-context";
- 
- 
- 
- 
- 
- 
 
- 
+
+
+
+
+
+
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
   resultIndex: number;
@@ -49,7 +48,7 @@ declare global {
   }
 }
 
- 
+
 const hasWebSpeechAPI = typeof window !== "undefined" &&
   (window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -91,32 +90,32 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-   
+
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isLoadingModel, setIsLoadingModel] = useState(false);
   const [useWhisper, setUseWhisper] = useState(!hasWebSpeechAPI);
-  const [modelLoaded, setModelLoaded] = useState(false);  
+  const [modelLoaded, setModelLoaded] = useState(false);
 
-   
+
   const webSpeechRef = useRef<SpeechRecognition | null>(null);
 
-   
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const mediaStreamRef = useRef<MediaStream | null>(null);
 
-   
+
   useEffect(() => {
-     
+
   }, []);
 
-   
+
   useEffect(() => {
     setAwaitingResponse(isAwaitingResponse);
   }, [isAwaitingResponse]);
 
-   
+
   useEffect(() => {
     if (replyToMessage && textareaRef.current) {
       textareaRef.current.focus();
@@ -125,16 +124,16 @@ export function ChatInput({
 
   const handleSend = () => {
     if ((message.trim() || attachments.length > 0) && !disabled) {
-       
+
       setAwaitingResponse(true);
-       
+
       onSend(message, attachments, replyToMessage?.id);
       setMessage("");
       setAttachments([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-       
+
       setReplyToMessage(null);
     }
   };
@@ -142,8 +141,8 @@ export function ChatInput({
   const handleStopGeneration = () => {
     if (onStopGeneration) {
       onStopGeneration();
-       
-       
+
+
     }
   };
 
@@ -152,7 +151,7 @@ export function ChatInput({
       e.preventDefault();
       handleSend();
     } else if (e.key === "Escape" && replyToMessage) {
-       
+
       e.preventDefault();
       setReplyToMessage(null);
     }
@@ -165,7 +164,7 @@ export function ChatInput({
     e.target.value = "";
   };
 
-   
+
   const startWebSpeechRecording = useCallback(() => {
     try {
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -211,13 +210,13 @@ export function ChatInput({
         console.error("Web Speech API error:", event.error);
 
         if (event.error === "network") {
-           
+
           console.log("Web Speech API network error - switching to Whisper");
           setUseWhisper(true);
           webSpeechRef.current = null;
           setIsRecording(false);
           setIsTranscribing(false);
-           
+
           setTimeout(() => startWhisperRecording(), 100);
           return;
         } else if (event.error === "not-allowed") {
@@ -243,7 +242,7 @@ export function ChatInput({
       console.error("Failed to start Web Speech API:", err);
       return false;
     }
-     
+
   }, []);
 
   const stopWebSpeechRecording = useCallback(() => {
@@ -255,7 +254,7 @@ export function ChatInput({
     }
   }, []);
 
-   
+
   const startWhisperRecording = useCallback(async () => {
     console.log("Whisper recording temporarily disabled for debugging.");
     alert("Whisper recording is temporarily unavailable.");
@@ -266,16 +265,16 @@ export function ChatInput({
     setIsRecording(false);
   }, []);
 
-   
+
   const startRecording = useCallback(async () => {
     if (useWhisper) {
-       
+
       await startWhisperRecording();
     } else {
-       
+
       const started = startWebSpeechRecording();
       if (!started) {
-         
+
         console.log("Web Speech API not available, falling back to Whisper");
         setUseWhisper(true);
         await startWhisperRecording();
@@ -299,7 +298,7 @@ export function ChatInput({
     }
   }, [isRecording, startRecording, stopRecording]);
 
-   
+
   useEffect(() => {
     const mediaRecorder = mediaRecorderRef.current;
     const mediaStream = mediaStreamRef.current;
@@ -319,7 +318,7 @@ export function ChatInput({
   const handleVoiceTranscription = (transcription: string) => {
     setMessage(prev => prev + transcription);
 
-     
+
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
@@ -331,18 +330,18 @@ export function ChatInput({
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-   
+
   const cancelReply = () => {
     setReplyToMessage(null);
   };
 
-   
+
   const truncateReplyText = (text: string, maxLength = 25) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
-   
+
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
