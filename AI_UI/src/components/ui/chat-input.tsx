@@ -65,7 +65,7 @@ interface ChatInputProps {
   isPrivateMode?: boolean;
   togglePrivateMode?: () => void;
   engineeringMode?: boolean;
-  onToggleEngineering?: () => void;
+  onToggleEnginering?: () => void;
 }
 
 export function ChatInput({

@@ -17,6 +17,20 @@ export default function Home() {
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
+    let redirectTimer: number | undefined;
+    let redirectStarted = false;
+
+    const startRedirect = (destination: string) => {
+      if (redirectStarted) return;
+
+      redirectStarted = true;
+      setRedirecting(true);
+
+      // Let the branded animation render before handing control to the AI app.
+      redirectTimer = window.setTimeout(() => {
+        window.location.replace(destination);
+      }, 1200);
+    };
 
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return;
@@ -51,9 +65,10 @@ export default function Home() {
       hasUserData ||
       hasAuthCookie
     ) {
-      setRedirecting(true);
-      window.location.replace("/AI_UI");
-      return;
+      startRedirect("/AI_UI");
+      return () => {
+        if (redirectTimer) window.clearTimeout(redirectTimer);
+      };
     }
 
 
@@ -69,8 +84,7 @@ export default function Home() {
         if (!res.ok) return;
         const data = await res.json();
         if (data?.authenticated) {
-          setRedirecting(true);
-          window.location.replace("/AI_UI");
+          startRedirect("/AI_UI");
         }
       } catch (_) {
 
@@ -78,7 +92,10 @@ export default function Home() {
     };
     checkAuth();
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (redirectTimer) window.clearTimeout(redirectTimer);
+    };
   }, []);
 
   if (redirecting) {

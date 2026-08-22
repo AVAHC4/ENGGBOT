@@ -77,6 +77,28 @@ export default function ChatDashboard() {
 
   const userData = isUserData(user) ? user : null;
 
+  useEffect(() => {
+    if (!userData) return;
+
+    const aiUiUrl = import.meta.env.VITE_AI_UI_URL || "/AI_UI";
+    console.log(`Redirecting to AI_UI at ${aiUiUrl}`);
+
+    setRedirectToChat(true);
+
+    const redirectUrl = new URL(aiUiUrl, window.location.origin);
+    redirectUrl.searchParams.set("auth_success", "true");
+    if (userData.name) redirectUrl.searchParams.set("user_name", userData.name);
+    if (userData.email) redirectUrl.searchParams.set("user_email", userData.email);
+    if (userData.avatar) redirectUrl.searchParams.set("user_avatar", userData.avatar);
+
+    setRedirecting(true);
+    const redirectTimer = window.setTimeout(() => {
+      window.location.replace(redirectUrl.toString());
+    }, 1200);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [userData]);
+
 
   useEffect(() => {
 
@@ -145,10 +167,10 @@ export default function ChatDashboard() {
   };
 
 
-  if (isLoading) {
+  if (isLoading || redirecting) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black flex items-center justify-center">
-        <BrandedLoader message="Loading your AI Assistant…" />
+      <div className="min-h-screen bg-[radial-gradient(circle_at_center,_rgb(76_29_149_/_0.22),_transparent_36%),_#030303] flex items-center justify-center px-6">
+        <BrandedLoader message={redirecting ? "Opening your AI Assistant…" : "Loading your AI Assistant…"} />
       </div>
     );
   }
@@ -157,27 +179,6 @@ export default function ChatDashboard() {
   if (!userData) {
     return null;
   }
-
-
-  useEffect(() => {
-    if (!userData) return;
-
-    const aiUiUrl = import.meta.env.VITE_AI_UI_URL || "/AI_UI";
-    console.log(`Redirecting to AI_UI at ${aiUiUrl}`);
-
-    setRedirectToChat(true);
-
-    const redirectUrl = new URL(aiUiUrl, window.location.origin);
-    redirectUrl.searchParams.set("auth_success", "true");
-    if (userData.name) redirectUrl.searchParams.set("user_name", userData.name);
-    if (userData.email) redirectUrl.searchParams.set("user_email", userData.email);
-    if (userData.avatar) redirectUrl.searchParams.set("user_avatar", userData.avatar);
-
-    setRedirecting(true);
-    window.location.replace(redirectUrl.toString());
-  }, [userData]);
-
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with user info */}
