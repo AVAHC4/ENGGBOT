@@ -25,7 +25,7 @@ type FormFieldContextValue<
 }
 
 const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFildContextValue
+  {} as FormFieldContextValue
 )
 
 const FormField = <
