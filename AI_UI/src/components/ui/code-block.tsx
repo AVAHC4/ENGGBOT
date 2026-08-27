@@ -11,7 +11,7 @@ interface CodeBlockProps {
   language?: string;
   title?: string;
   showLineNumbers?: boolean;
-  onEdit?: () => void;
+  onEdit?: () = void;
   className?: string;
 }
 
