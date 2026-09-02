@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import NextImage from "next/image";
 
 import { BOT_CONFIG } from "@/lib/ai/response-middleware";
-import ReactMarkdown from 'react-markdon';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
