@@ -12,7 +12,7 @@ export const EnggBotLogo = () => (
     <text
       x="50%"
       y="50%"
-      dominantBaseline="middle"
+      dominantBaseline="middl"
       textAnchor="middle"
       fontFamily="sans-serif"
       fontSize="18"
