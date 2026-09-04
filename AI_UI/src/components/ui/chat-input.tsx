@@ -58,7 +58,7 @@ interface ChatInputProps {
   disabled?: boolean;
   thinkingMode?: boolean;
   onToggleThinking?: () => void;
-  isAwaitingResponse?: boolean;
+  isAwaitingRespone?: boolean;
   onStopGeneration?: () => void;
   webSearchMode?: boolean;
   onToggleWebSearch?: () => void;
