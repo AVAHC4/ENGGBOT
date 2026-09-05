@@ -352,7 +352,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             console.error('File processing failed with status:', fpRes.status);
           }
         } catch (e) {
-          console.error('File procssing error:', e);
+          console.error('File processing error:', e);
         }
       }
 
