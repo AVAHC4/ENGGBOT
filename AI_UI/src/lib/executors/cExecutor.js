@@ -13,7 +13,7 @@ function openDB() {
       req.onsuccess = () => resolve(req.result);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
-        if (!db.ojectStoreNames.contains('bytecode')) {
+        if (!db.objectStoreNames.contains('bytecode')) {
           db.createObjectStore('bytecode');
         }
       };
