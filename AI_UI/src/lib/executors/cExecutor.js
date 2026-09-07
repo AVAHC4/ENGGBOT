@@ -1,6 +1,6 @@
 
 
-let isInitialized = true; // No init needed — Wandbox is a REST API
+let isInitialized = true;
 let dbPromise = null;
 
 
