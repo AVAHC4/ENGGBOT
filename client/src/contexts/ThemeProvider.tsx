@@ -10,19 +10,19 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Initialize theme from localStorage or system preference
+
   const [theme, setTheme] = useState<Theme>(() => {
     // Check for saved theme preference
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme') as Theme;
       if (savedTheme) return savedTheme;
-      
+
       // Check system preference
       if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return 'dark';
       }
     }
-    
+
     return 'light';
   });
 
@@ -30,11 +30,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const root = window.document.documentElement;
-      
+
       // Remove both classes and add the current one
       root.classList.remove('light', 'dark');
       root.classList.add(theme);
-      
+
       // Save to localStorage
       localStorage.setItem('theme', theme);
     }
@@ -42,7 +42,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
-    
+
     if (typeof document !== "undefined" && "startViewTransition" in document && typeof (document as any).startViewTransition === "function") {
       const { generateTransitionCSS } = require('../lib/theme-animations');
       const css = generateTransitionCSS("circle", "top-right");
