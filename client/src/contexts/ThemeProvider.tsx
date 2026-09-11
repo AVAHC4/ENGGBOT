@@ -10,7 +10,7 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-
+  // Initialize theme from localStorage or system preference
   const [theme, setTheme] = useState<Theme>(() => {
     // Check for saved theme preference
     if (typeof window !== 'undefined') {
