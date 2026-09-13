@@ -17,7 +17,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 interface OtpSendBody {
     email: string;
     firstname?: string;
-    lastame?: string;
+    lastname?: string;
     type?: 'signup' | 'login';
 }
 
