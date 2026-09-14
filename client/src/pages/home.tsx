@@ -5,7 +5,6 @@ import FooterSection from "@/components/footer";
 import React, { useEffect, useState } from "react";
 import { isAuthenticated, shouldRedirectToChat } from "@/lib/auth-storage";
 import BackgroundPaths from "@/components/background-paths";
-import { BrandedLoader } from "@/components/branded-loader";
 import { motion, Variants } from "framer-motion";
 
 const fadeInUp: Variants = {
@@ -17,20 +16,6 @@ export default function Home() {
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
-    let redirectTimer: number | undefined;
-    let redirectStarted = false;
-
-    const startRedirect = (destination: string) => {
-      if (redirectStarted) return;
-
-      redirectStarted = true;
-      setRedirecting(true);
-
-      // Let the branded animation render before handing control to the AI app.
-      redirectTimer = window.setTimeout(() => {
-        window.location.replace(destination);
-      }, 1200);
-    };
 
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return;
@@ -65,10 +50,9 @@ export default function Home() {
       hasUserData ||
       hasAuthCookie
     ) {
-      startRedirect("/AI_UI");
-      return () => {
-        if (redirectTimer) window.clearTimeout(redirectTimer);
-      };
+      setRedirecting(true);
+      window.location.replace("/AI_UI");
+      return;
     }
 
 
@@ -84,7 +68,8 @@ export default function Home() {
         if (!res.ok) return;
         const data = await res.json();
         if (data?.authenticated) {
-          startRedirect("/AI_UI");
+          setRedirecting(true);
+          window.location.replace("/AI_UI");
         }
       } catch (_) {
 
@@ -92,16 +77,16 @@ export default function Home() {
     };
     checkAuth();
 
-    return () => {
-      controller.abort();
-      if (redirectTimer) window.clearTimeout(redirectTimer);
-    };
+    return () => controller.abort();
   }, []);
 
   if (redirecting) {
     return (
-      <div className="min-h-screen flex items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_rgb(76_29_149_/_0.22),_transparent_36%),_#030303] px-6">
-        <BrandedLoader message="Redirecting to your chat…" detail="Getting your workspace ready" />
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="text-center">
+          <div className="w-12 h-12 border-t-2 border-b-2 border-white rounded-full animate-spin mx-auto mb-4" />
+          <p>Redirecting to your chat...</p>
+        </div>
       </div>
     );
   }

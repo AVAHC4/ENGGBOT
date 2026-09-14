@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 // import AiChat from "../../../ai-chat";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { BrandedLoader } from "@/components/branded-loader";
 import { Link } from "wouter";
 import {
   getUserData,
@@ -92,13 +91,8 @@ export default function ChatDashboard() {
     if (userData.avatar) redirectUrl.searchParams.set("user_avatar", userData.avatar);
 
     setRedirecting(true);
-    const redirectTimer = window.setTimeout(() => {
-      window.location.replace(redirectUrl.toString());
-    }, 1200);
-
-    return () => window.clearTimeout(redirectTimer);
+    window.location.replace(redirectUrl.toString());
   }, [userData]);
-
 
   useEffect(() => {
 
@@ -167,10 +161,18 @@ export default function ChatDashboard() {
   };
 
 
-  if (isLoading || redirecting) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_center,_rgb(76_29_149_/_0.22),_transparent_36%),_#030303] flex items-center justify-center px-6">
-        <BrandedLoader message={redirecting ? "Opening your AI Assistant…" : "Loading your AI Assistant…"} />
+      <div className="min-h-screen bg-gradient-to-b from-black via-gray-800 to-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="flex justify-center mb-8">
+            <Logo className="w-16 h-16 animate-pulse" />
+          </div>
+          <h1 className="text-xl font-bold mb-4">Loading your AI Assistant...</h1>
+          <div className="mt-4 flex justify-center">
+            <div className="w-10 h-10 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -179,6 +181,7 @@ export default function ChatDashboard() {
   if (!userData) {
     return null;
   }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with user info */}
@@ -280,10 +283,13 @@ export default function ChatDashboard() {
       <main className="flex-1">
         {/* Redirect to AI_UI */}
         <div className="min-h-screen flex items-center justify-center bg-black">
-          <BrandedLoader
-            message={redirecting ? "Redirecting to AI Interface…" : "Preparing AI Interface…"}
-            detail="Please wait"
-          />
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">
+              {redirecting ? "Redirecting to AI Interface..." : "Preparing AI Interface..."}
+            </h1>
+            <div className="w-12 h-12 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-400">Please wait...</p>
+          </div>
         </div>
       </main>
     </div>
