@@ -84,7 +84,6 @@ export const initEmailAuth = (app: any) => {
         }
     });
 
-    // Verify OTP endpoint
     app.post("/api/auth/otp/verify", async (req: Request, res: Response) => {
         try {
             const { email, token, firstname, lastname, password } = req.body as OtpVerifyBody;
