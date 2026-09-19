@@ -2,7 +2,7 @@
 
 This document provides a comprehensive overview of the ENGGBOT project, including its architecture, technology stack, directory structure, and key implementation details. This serves as a memory resource for AI assistants to understand the complete project context.
 
-## 1. Project Overview
+## 1. ProjectOverview
 **ENGGBOT** is an AI-powered engineering/study assistant platform. It features a modern web application with an animated landing page, connected to an advanced AI chatbot. The platform acts as a study assistant that leverages course materials to provide academically accurate responses to student queries. It supports multiple AI models (e.g., DeepSeek models via Chutes AI) and features voice-to-text capabilities using NVIDIA Riva.
 
 ## 2. Technology Stack
