@@ -4,7 +4,7 @@ import React from "react"
 import { Bot, FileText, RotateCw, Search, SendIcon, Mic, MicOff, Loader2 } from "lucide-react"
 import { useState, useRef } from "react"
 
-// VoiceInput component inline
+
 interface VoiceInputProps {
   onTranscription: (text: string) => void;
   disabled?: boolean;
@@ -14,10 +14,10 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  
+
   const startRecording = async () => {
     try {
       setError(null);
@@ -25,16 +25,16 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-      
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
-      
+
       mediaRecorder.onstop = async () => {
         setIsProcessing(true);
-        
+
         try {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
           await processAudio(audioBlob);
@@ -44,11 +44,11 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
         } finally {
           setIsProcessing(false);
         }
-        
+
         // Stop all tracks from the stream
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       mediaRecorder.start();
       setIsRecording(true);
     } catch (e) {
@@ -57,41 +57,41 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
       setIsRecording(false);
     }
   };
-  
+
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   };
-  
+
   const processAudio = async (audioBlob: Blob): Promise<void> => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.wav');
-    
+
     try {
       console.log("Sending audio to transcribe endpoint...");
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
-      
+
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       console.log("Speech recognition result:", data);
-      
+
       if (data.text) {
         if (data.fallback) {
           console.warn("Using fallback transcription:", data.error);
           setError("Using fallback: NVIDIA service unavailable");
           setTimeout(() => setError(null), 3000);
         }
-        
+
         onTranscription(data.text);
       } else {
         setError("No speech detected. Please try again.");
@@ -102,18 +102,17 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
       throw e;
     }
   };
-  
+
   return (
     <div className="relative">
       <button
         type="button"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={disabled || isProcessing}
-        className={`p-2 rounded-full transition-all ${
-          isRecording 
-            ? 'bg-red-500 text-white animate-pulse' 
+        className={`p-2 rounded-full transition-all ${isRecording
+            ? 'bg-red-500 text-white animate-pulse'
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-        } ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          } ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
         title={isRecording ? "Stop recording" : "Start voice input"}
       >
         {isProcessing ? (
@@ -124,7 +123,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disabled = fal
           <Mic className="w-5 h-5" />
         )}
       </button>
-      
+
       {error && (
         <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-red-500 text-white text-xs px-2 py-1 rounded">
           {error}
@@ -273,7 +272,7 @@ export function MultimodalInput({ onSubmit, isLoading }) {
               disabled={isLoading}
             />
           </div>
-          
+
           <Button
             className={cn(
               "px-1.5 py-1.5 h-6 rounded-lg text-sm transition-colors hover:bg-zinc-800 flex items-center justify-between gap-1",
