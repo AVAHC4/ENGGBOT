@@ -4,7 +4,7 @@ import React from "react"
 import { Bot, FileText, RotateCw, Search, SendIcon, Mic, MicOff, Loader2 } from "lucide-react"
 import { useState, useRef } from "react"
 
-
+// VoiceInput component inline
 interface VoiceInputProps {
   onTranscription: (text: string) => void;
   disabled?: boolean;
