@@ -10,7 +10,6 @@ import {
 } from "framer-motion"
 import React from "react"
 
-// Module-level cache to track animated text instances (persists across remounts)
 const animatedTexts = new Set<string>()
 
 export type PresetType = "blur" | "fade-in-blur" | "scale" | "fade" | "slide"
