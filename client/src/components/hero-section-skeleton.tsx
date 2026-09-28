@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function HeroSectionSkeleton() {
   return (
     <div className="min-h-screen">
-      {/* Header Skeleton */}
+      { }
       <div className="fixed z-20 w-full px-2">
         <div className="mx-auto mt-2 max-w-6xl px-6">
           <div className="flex items-center justify-between py-4">
@@ -29,7 +29,7 @@ export function HeroSectionSkeleton() {
             <Skeleton className="mx-auto h-16 w-[80%] max-w-3xl mb-6" />
             <Skeleton className="mx-auto h-16 w-[60%] max-w-2xl mb-8" />
             <Skeleton className="mx-auto h-6 w-[90%] max-w-xl mb-12" />
-            
+
             <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
               <Skeleton className="h-14 w-40" />
               <Skeleton className="h-14 w-32" />
