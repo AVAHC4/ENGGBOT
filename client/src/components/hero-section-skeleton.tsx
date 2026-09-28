@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export function HeroSectionSkeleton() {
   return (
     <div className="min-h-screen">
-      { }
+      {/* Header Skeleton */}
       <div className="fixed z-20 w-full px-2">
         <div className="mx-auto mt-2 max-w-6xl px-6">
           <div className="flex items-center justify-between py-4">
