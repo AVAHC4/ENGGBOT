@@ -21,7 +21,7 @@ export function HeroSectionSkeleton() {
         </div>
       </div>
 
-      { }
+      {/* Hero Content Skeleton */}
       <div className="relative pt-24 md:pt-36">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center">
