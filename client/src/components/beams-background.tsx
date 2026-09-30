@@ -120,7 +120,7 @@ export default function BeamsBackground({ className, intensity = "strong" }: Ani
         beam.y -= beam.speed
         beam.pulse += beam.pulseSpeed
 
-
+        // Reset beam when it goes off screen
         if (beam.y + beam.length < -100) {
           resetBeam(beam, index, totalBeams)
         }
