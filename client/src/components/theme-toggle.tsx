@@ -27,7 +27,7 @@ export function ThemeToggle() {
           />
         </svg>
       ) : (
-        // Moon icon for light mode (to switch to dark)
+
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
