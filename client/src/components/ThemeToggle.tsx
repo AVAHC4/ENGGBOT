@@ -2,6 +2,7 @@ import { Moon, Sun } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { generateTransitionCSS } from "../lib/theme-animations";
 
+// ─── Style‑injection helpers ────────────────────────────────────────────────
 
 const STYLE_ID = "theme-transition-styles";
 
