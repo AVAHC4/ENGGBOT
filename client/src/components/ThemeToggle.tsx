@@ -2,7 +2,6 @@ import { Moon, Sun } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { generateTransitionCSS } from "../lib/theme-animations";
 
-// ─── Style‑injection helpers ────────────────────────────────────────────────
 
 const STYLE_ID = "theme-transition-styles";
 
@@ -79,19 +78,17 @@ export function ThemeToggle() {
         className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-all duration-300 relative overflow-hidden flex items-center justify-center"
         aria-label="Toggle theme"
       >
-        <Sun 
-          className={`h-5 w-5 text-yellow-500 transition-all duration-300 ${
-            theme === "dark"
+        <Sun
+          className={`h-5 w-5 text-yellow-500 transition-all duration-300 ${theme === "dark"
               ? "rotate-0 scale-100 opacity-100"
               : "-rotate-90 scale-0 opacity-0 absolute"
-          }`} 
+            }`}
         />
-        <Moon 
-          className={`h-5 w-5 text-gray-700 transition-all duration-300 ${
-            theme === "dark"
+        <Moon
+          className={`h-5 w-5 text-gray-700 transition-all duration-300 ${theme === "dark"
               ? "rotate-90 scale-0 opacity-0 absolute"
               : "rotate-0 scale-100 opacity-100"
-          }`} 
+            }`}
         />
       </button>
     </div>
