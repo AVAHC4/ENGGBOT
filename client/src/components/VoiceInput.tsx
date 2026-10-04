@@ -41,7 +41,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({ onTranscription, disable
           setIsProcessing(false);
         }
 
-
+        // Stop all tracks from the stream
         stream.getTracks().forEach(track => track.stop());
       };
 
