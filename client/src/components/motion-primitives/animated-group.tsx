@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import { motion, type Variants } from "framer-motion"
 import React from "react"
 
-// Module-level cache to track animated instances (persists across remounts)
+
 const animatedInstances = new Set<string>()
 
 export type PresetType =
