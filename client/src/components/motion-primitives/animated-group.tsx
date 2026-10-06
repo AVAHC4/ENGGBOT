@@ -130,7 +130,7 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
   const MotionComponent = React.useMemo(() => motion(as), [as]);
   const MotionChild = React.useMemo(() => motion(asChild), [asChild]);
 
-  // Mark as animated after mount
+
   React.useEffect(() => {
     animatedInstances.add(pageId)
   }, [pageId])
