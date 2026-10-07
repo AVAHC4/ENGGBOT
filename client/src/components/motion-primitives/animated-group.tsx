@@ -135,7 +135,7 @@ function AnimatedGroup({ children, className, variants, preset, as = "div", asCh
     animatedInstances.add(pageId)
   }, [pageId])
 
-  // Skip animation if already animated before
+
   const initialState = hasAnimatedBefore ? "visible" : "hidden"
 
   return (
