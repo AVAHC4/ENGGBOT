@@ -82,7 +82,7 @@ export default function UserProfile() {
               <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900" />
             </div>
 
-            { }
+            {/* Profile Info */}
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{user.name}</h2>
               <p className="text-zinc-600 dark:text-zinc-400">{user.email}</p>
