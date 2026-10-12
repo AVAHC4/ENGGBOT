@@ -17,8 +17,6 @@ import {
   isAuthenticated,
   clearAuthData
 } from "@/lib/auth-storage";
-
-// Wrap the ChatDashboard component to handle authentication
 function ProtectedChatDashboard() {
   const [, setLocation] = useLocation();
   const [localAuth, setLocalAuth] = React.useState(false);
