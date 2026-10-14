@@ -32,7 +32,7 @@ function ProtectedChatDashboard() {
     }
   }, []);
 
-
+  // Only perform API check if quick auth failed
   const { data: authStatus, isLoading } = useQuery({
     queryKey: ["auth-status"],
     queryFn: async () => {
