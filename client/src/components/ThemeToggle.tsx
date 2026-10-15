@@ -53,7 +53,7 @@ export function ThemeToggle() {
 
     const switchTheme = () => setTheme(nextTheme);
 
-
+    // Feature-detect the View Transitions API
     if (
       typeof document !== "undefined" &&
       "startViewTransition" in document &&
