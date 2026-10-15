@@ -53,7 +53,7 @@ export function ThemeToggle() {
 
     const switchTheme = () => setTheme(nextTheme);
 
-    // Feature-detect the View Transitions API
+
     if (
       typeof document !== "undefined" &&
       "startViewTransition" in document &&
@@ -81,14 +81,14 @@ export function ThemeToggle() {
       >
         <Sun
           className={`h-5 w-5 text-yellow-500 transition-all duration-300 ${theme === "dark"
-              ? "rotate-0 scale-100 opacity-100"
-              : "-rotate-90 scale-0 opacity-0 absolute"
+            ? "rotate-0 scale-100 opacity-100"
+            : "-rotate-90 scale-0 opacity-0 absolute"
             }`}
         />
         <Moon
           className={`h-5 w-5 text-gray-700 transition-all duration-300 ${theme === "dark"
-              ? "rotate-90 scale-0 opacity-0 absolute"
-              : "rotate-0 scale-100 opacity-100"
+            ? "rotate-90 scale-0 opacity-0 absolute"
+            : "rotate-0 scale-100 opacity-100"
             }`}
         />
       </button>
