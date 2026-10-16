@@ -47,7 +47,7 @@ export function ThemeToggle() {
   const handleClick = useCallback(() => {
     const nextTheme = theme === "light" ? "dark" : "light";
 
-    // Generate the CSS for the circle variant and inject it
+
     const css = generateTransitionCSS("circle", "top-right");
     updateStyles(css);
 
