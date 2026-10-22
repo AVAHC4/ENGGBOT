@@ -58,7 +58,8 @@ export const initEmailAuth = (app: any) => {
                 }
             }
 
-
+            // Send OTP via Supabase (Use Anon client for auth flow)
+            // For login, we set shouldCreateUser: false to prevent silent account creation without name
             const { error } = await supabaseAnon.auth.signInWithOtp({
                 email: email.toLowerCase(),
                 options: {
