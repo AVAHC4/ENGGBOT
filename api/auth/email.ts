@@ -35,7 +35,7 @@ export const initEmailAuth = (app: any) => {
     // Send OTP endpoint
     app.post("/api/auth/otp/send", async (req: Request, res: Response) => {
         try {
-            // ... variables ...
+
             const { email, firstname, lastname, type } = req.body as OtpSendBody;
 
             console.log(`OTP send request for email: ${email}, type: ${type}`);
