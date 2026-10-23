@@ -14,8 +14,8 @@ interface CodeEditorProps {
 export function ClientCodeEditor({ value, onChange, language, onCursorPositionChange }: CodeEditorProps) {
   const [initialized, setInitialized] = useState(false);
   const [editorValue, setEditorValue] = useState(value);
-  
-   
+
+
   const getMonacoLanguage = (lang: string): string => {
     const languageMap: Record<string, string> = {
       'js': 'javascript',
@@ -29,23 +29,23 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
       'python': 'python',
       'java': 'java',
     };
-    
+
     return languageMap[lang] || 'javascript';
   };
 
-   
+
   useEffect(() => {
     setInitialized(true);
   }, []);
 
-   
+
   useEffect(() => {
     if (value !== editorValue) {
       setEditorValue(value);
     }
   }, [value, editorValue]);
 
-   
+
   const handleEditorChange = (newValue: string | undefined) => {
     if (newValue !== undefined) {
       setEditorValue(newValue);
@@ -53,19 +53,19 @@ export function ClientCodeEditor({ value, onChange, language, onCursorPositionCh
     }
   };
 
-   
+
   const handleCursorPositionChange = (e: Monaco.editor.ICursorPositionChangedEvent) => {
     if (onCursorPositionChange && e.position) {
       onCursorPositionChange(e.position.lineNumber, e.position.column);
     }
   };
 
-   
+
   const handleEditorMount: OnMount = (editor) => {
     editor.onDidChangeCursorPosition(handleCursorPositionChange);
   };
 
-   
+
   if (!initialized) {
     return (
       <textarea
