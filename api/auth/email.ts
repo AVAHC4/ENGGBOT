@@ -32,7 +32,6 @@ interface OtpVerifyBody {
 export const initEmailAuth = (app: any) => {
     console.log("Initializing Email OTP Auth routes");
 
-    // Send OTP endpoint
     app.post("/api/auth/otp/send", async (req: Request, res: Response) => {
         try {
             // ... variables ...
