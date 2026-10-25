@@ -14,7 +14,7 @@ const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Password requirements
+//
 const MIN_PASSWORD_LENGTH = 6;
 
 interface SignupBody {
