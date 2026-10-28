@@ -94,6 +94,7 @@ export const initEmailAuth = (app: any) => {
                 return res.status(400).json({ error: "Email and code are required" });
             }
 
+            // Verify OTP via Supabase (Use Anon client to avoid checking out session on Admin client)
             const { data: authData, error: authError } = await supabaseAnon.auth.verifyOtp({
                 email: email.toLowerCase(),
                 token,
