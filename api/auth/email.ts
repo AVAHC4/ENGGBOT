@@ -108,7 +108,9 @@ export const initEmailAuth = (app: any) => {
 
             console.log("Supabase auth successful for:", authData.user.id);
 
-
+            // Upsert user in our public.users table
+            // We do this to ensure we have a local record of the user (mirroring Supabase auth user)
+            // and to store extra fields like name.
 
             const updates: any = {
                 email: email.toLowerCase(),
