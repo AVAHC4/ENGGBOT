@@ -10,7 +10,7 @@ export function getUserEmail(): string | null {
   if (isServer()) return null;
 
   try {
-    cons userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
     if (userData && userData.email) {
 
       return userData.email.toLowerCase();
