@@ -111,7 +111,7 @@
     }
   ],
   "env": {
-    "CLIENT_URL": "https://www.enggbot.me",
+    "CLIENT_URL": "https://enggbot.vercel.app",
     "NODE_ENV": "production"
   }
 }
