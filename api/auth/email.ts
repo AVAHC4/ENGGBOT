@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 
 
 const BASE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://www.enggbot.me'
+    ? 'https://enggbot.vercel.app'
     : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
 
 const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'

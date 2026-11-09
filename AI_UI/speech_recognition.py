@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("riva_speech")
 
-# Load environment variables
 load_dotenv()
 
 class RivaSpeechClient:

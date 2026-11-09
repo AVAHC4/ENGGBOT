@@ -39,7 +39,7 @@ export class OpenRouterClient {
             ? `https://${process.env.VERCEL_URL}`
             : (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SITE_URL
                 ? process.env.NEXT_PUBLIC_SITE_URL
-                : "https://enggbot.me");
+                : "https://enggbot.vercel.app");
 
         this.headers = {
             "Authorization": `Bearer ${this.apiKey}`,

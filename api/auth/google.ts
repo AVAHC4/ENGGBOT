@@ -36,11 +36,11 @@ export const initGoogleAuth = (app: any) => {
 
 
   const BASE_URL = process.env.NODE_ENV === 'production'
-    ? 'https://www.enggbot.me'
+    ? 'https://enggbot.vercel.app'
     : (process.env.BASE_URL || process.env.CLIENT_URL || 'http://localhost:3000');
 
   const CALLBACK_URL = process.env.NODE_ENV === 'production'
-    ? 'https://www.enggbot.me/api/auth/google/callback'
+    ? 'https://enggbot.vercel.app/api/auth/google/callback'
     : (process.env.CALLBACK_URL || `${BASE_URL}/api/auth/google/callback`);
 
   const AUTH_REDIRECT_URL = process.env.NODE_ENV === 'production'
