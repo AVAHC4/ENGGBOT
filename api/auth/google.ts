@@ -17,7 +17,7 @@ let strategyRegistered = false;
 
 
 export const initGoogleAuth = (app: any) => {
-  console.log("Initializing Google Auth routes");
+  console.log("Initializig Google Auth routes");
 
 
   const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
