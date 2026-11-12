@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-
+// Define the user type to match what we store in the session
 interface GoogleUser {
   id: string;
   name: string;
