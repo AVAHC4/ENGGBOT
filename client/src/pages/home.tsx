@@ -55,7 +55,6 @@ export default function Home() {
       return;
     }
 
-
     const controller = new AbortController();
     const checkAuth = async () => {
       try {
