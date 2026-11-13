@@ -6,7 +6,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import LoginPage from "@/pages/login";
 import SignUpPage from "@/pages/sign-up";
-import WelcomePage from "@/pages/welcome";
 import LoadingPage from "@/pages/loading";
 import ChatDashboard from "@/pages/chat-dashboard";
 import RivaTest from "@/components/RivaTest";
@@ -85,7 +84,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={LoginPage} />
       <Route path="/sign-up" component={SignUpPage} />
-      <Route path="/welcome" component={WelcomePage} />
       <Route path="/auth-loading" component={LoadingPage} />
       <Route path="/chat" component={ProtectedChatDashboard} />
       <Route path="/test-riva" component={RivaTest} />
