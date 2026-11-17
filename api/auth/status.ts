@@ -8,7 +8,7 @@ interface GoogleUser {
   picture?: string;
 }
 
-
+// Extend Express Request to include our user type
 declare global {
   namespace Express {
     interface User extends GoogleUser { }
