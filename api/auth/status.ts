@@ -20,7 +20,7 @@ export default function handler(req: Request, res: Response) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Check if user is authenticated via session
+
   if (!req.user) {
     return res.status(200).json({
       authenticated: false,
