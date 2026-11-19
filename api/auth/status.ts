@@ -30,7 +30,7 @@ export default function handler(req: Request, res: Response) {
 
   const user = req.user as GoogleUser;
 
-  // Return authentication status and user data
+
   return res.status(200).json({
     authenticated: true,
     user: {
