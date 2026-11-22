@@ -39,7 +39,7 @@ export const initEmailAuth = (app: any) => {
 
             console.log(`OTP send request for email: ${email}, type: ${type}`);
 
-
+            // Validate email
             if (!email || !EMAIL_REGEX.test(email)) {
                 return res.status(400).json({ error: "Invalid email address" });
             }
