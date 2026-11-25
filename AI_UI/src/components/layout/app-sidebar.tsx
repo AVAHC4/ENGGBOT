@@ -469,36 +469,30 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
 
 
   React.useEffect(() => {
-    if (isMounted) {
+    if (!isMounted) return;
+    let cancelled = false;
+    const refreshExpandedProjects = () => {
       expandedProjectIds.forEach(async (projectId) => {
-        if (!projectConversations[projectId]) {
-          const convos = await loadProjectConversations(projectId);
-          setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
-        }
+        const convos = await loadProjectConversations(projectId);
+        if (!cancelled) setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
       });
-    }
-
+    };
+    refreshExpandedProjects();
+    window.addEventListener('projectUpdated', refreshExpandedProjects);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('projectUpdated', refreshExpandedProjects);
+    };
   }, [expandedProjectIds, isMounted]);
 
-
-  const toggleProjectExpansion = async (projectId: string) => {
+  const toggleProjectExpansion = (projectId: string) => {
     setExpandedProjectIds(prev => {
       const next = new Set(prev);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
-      }
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
       return next;
     });
-
-
-    if (!projectConversations[projectId]) {
-      const convos = await loadProjectConversations(projectId);
-      setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
-    }
   };
-
 
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) {
@@ -1144,7 +1138,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                     </SidebarMenuButton>
 
                     {projectsExpanded && (
-                      <SidebarMenuSub style={{ maxHeight: '140px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
+                      <SidebarMenuSub style={{ maxHeight: '320px', overflowY: 'auto', scrollbarWidth: 'thin' }}>
                         { }
                         <SidebarMenuSubItem>
                           <SidebarMenuSubButton
@@ -1206,9 +1200,18 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                   )}
                                 </div>
 
-                                { }
                                 {!editingProjectId && (
-                                  <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center shrink-0">
+                                    <button
+                                      type="button"
+                                      className="p-1 rounded hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                                      aria-label={`${expandedProjectIds.has(project.id) ? 'Collapse' : 'Expand'} conversations for ${project.name}`}
+                                      aria-expanded={expandedProjectIds.has(project.id)}
+                                      onClick={(e) => { e.stopPropagation(); toggleProjectExpansion(project.id); }}
+                                    >
+                                      {expandedProjectIds.has(project.id) ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                    </button>
+                                    <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                         <button className="p-1">
@@ -1239,9 +1242,33 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
                                     </DropdownMenu>
+                                    </div>
                                   </div>
                                 )}
                               </SidebarMenuSubButton>
+                              {expandedProjectIds.has(project.id) && (
+                                <ul className="ml-4 border-l border-sidebar-border pl-2 py-1 space-y-0.5">
+                                  {!projectConversations[project.id] ? (
+                                    <li className="px-2 py-1 text-xs text-muted-foreground">Loading conversations...</li>
+                                  ) : projectConversations[project.id].length === 0 ? (
+                                    <li className="px-2 py-1 text-xs text-muted-foreground">No conversations yet</li>
+                                  ) : projectConversations[project.id].map((convo) => (
+                                    <li key={convo.id}>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSwitchToProjectConversation(project.id, convo.id)}
+                                        className={cn(
+                                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+                                          pathname === `/AI_UI/project/${project.id}/c/${convo.id}` && "bg-neutral-700 text-white"
+                                        )}
+                                      >
+                                        <MessageSquare className="h-3.5 w-3.5 shrink-0" />
+                                        <span className="truncate">{convo.title || 'New Conversation'}</span>
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
                             </SidebarMenuSubItem>
                           ))
                         ) : (
