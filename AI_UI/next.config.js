@@ -56,6 +56,14 @@ const nextConfig = {
     });
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: '/AI_UI/:path*',
+        destination: '/:path*',
+      },
+    ];
+  },
   async headers() {
     return [
       {
