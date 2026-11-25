@@ -1,11 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { ChatInterface } from '@/components/chat-interface';
+import { ThemeSwitch } from '@/components/ui/theme-switch';
 import { useChat } from '@/context/chat-context';
 import { loadProjectConversation, saveProjectConversation } from '@/lib/storage';
 import { Loader } from '@/components/ui/loader';
@@ -68,26 +65,15 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         }
     }, [messages, projectId, conversationId, isLoaded, isGenerating]);
 
-    const customHeader = (
-        <div className="flex items-center gap-2 p-4 border-b border-border/50">
-            { }
-            <Link href={`/AI_UI/project/${projectId}`}>
-                <Button variant="ghost" size="sm" className="gap-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Back to Project</span>
-                </Button>
-            </Link>
-        </div>
-    );
-
     if (!isLoaded) {
         return (
             <main className="min-h-screen chat-page overflow-hidden">
-                <div className="flex-1 flex flex-col">
-                    {customHeader}
-                    <div className="flex-1 flex items-center justify-center">
-                        <Loader variant="bars" size="xl" intent="primary" />
-                    </div>
+                <div className="absolute top-4 right-4 z-10 hidden md:block">
+                    <ThemeSwitch variant="circle" start="top-right" />
+                </div>
+
+                <div className="flex-1 flex items-center justify-center min-h-screen">
+                    <Loader variant="bars" size="xl" intent="primary" />
                 </div>
             </main>
         );
@@ -95,8 +81,12 @@ export default function ProjectConversationPageClient({ projectId, conversationI
 
     return (
         <main className="min-h-screen chat-page overflow-hidden">
+            <div className="absolute top-4 right-4 z-10 hidden md:block">
+                <ThemeSwitch variant="circle" start="top-right" />
+            </div>
+
             <div className="flex-1">
-                <ChatInterface customHeader={customHeader} />
+                <ChatInterface />
             </div>
         </main>
     );
