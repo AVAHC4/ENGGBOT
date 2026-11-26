@@ -18,27 +18,31 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
          
-        const { data: project, error: projError } = await supabaseAdmin
-            .from('projects')
-            .select('id, name, description, created_at, updated_at, user_email')
-            .eq('id', projectId)
-            .single();
+        const [projectResult, convosResult] = await Promise.all([
+            supabaseAdmin
+                .from('projects')
+                .select('id, name, description, created_at, updated_at, user_email')
+                .eq('id', projectId)
+                .single(),
+            supabaseAdmin
+                .from('project_conversations')
+                .select('id, title, created_at, updated_at')
+                .eq('project_id', projectId)
+                .order('updated_at', { ascending: false }),
+        ]);
+
+        const { data: project, error: projError } = projectResult;
 
         if (projError || !project) {
             return NextResponse.json({ exists: false }, { status: 200 });
         }
 
-         
+
         if (project.user_email !== email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
-        const { data: conversations, error: convError } = await supabaseAdmin
-            .from('project_conversations')
-            .select('id, title, created_at, updated_at')
-            .eq('project_id', projectId)
-            .order('updated_at', { ascending: false });
+        const { data: conversations, error: convError } = convosResult;
 
         if (convError) {
             return NextResponse.json({ error: convError.message }, { status: 500 });

@@ -12,7 +12,15 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { loadProjectConversations, deleteProjectConversation, renameProject, renameProjectConversation } from '@/lib/storage';
+import {
+    deleteProjectConversation,
+    getCachedProjectDetail,
+    loadProjectDetail,
+    prefetchProjectConversation,
+    renameProject,
+    renameProjectConversation,
+    seedNewProjectConversationCache,
+} from '@/lib/storage';
 
 interface ProjectConversation {
     id: string;
@@ -49,79 +57,51 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
 
     useEffect(() => {
         if (!projectId) {
-            console.log('[ProjectPageClient] No project ID provided');
             return;
         }
 
+        let cancelled = false;
+
         const loadData = async () => {
-            console.log('[ProjectPageClient] Starting loadData for:', projectId);
-            setLoading(true);
-            setError(null);
-
-
-            const userDataStr = localStorage.getItem('user_data');
-            const userData = userDataStr ? JSON.parse(userDataStr) : {};
-            const email = userData.email?.toLowerCase() || localStorage.getItem('user_email')?.toLowerCase();
-
-            console.log('[ProjectPageClient] User email:', email);
-
-            if (!email) {
-                console.error('[ProjectPageClient] No user email found');
-                setError('Please log in to view this project');
+            const cached = getCachedProjectDetail(projectId);
+            if (cached) {
+                setProject(cached.project);
+                setConversations(cached.conversations);
+                setError(null);
                 setLoading(false);
-                return;
+            } else {
+                setLoading(true);
+                setError(null);
             }
 
-            try {
-                console.log('[ProjectPageClient] Fetching project details...');
-                const response = await fetch(`/api/projects/${projectId}?email=${encodeURIComponent(email)}`);
-                console.log('[ProjectPageClient] Project fetch status:', response.status);
+            const result = await loadProjectDetail(projectId);
+            if (cancelled) return;
 
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.error || `Failed to load project (Status: ${response.status})`);
-                }
-
-                const data = await response.json();
-                console.log('[ProjectPageClient] Project data received:', data);
-
-                if (!data.project) {
-                    throw new Error('Project data missing in response');
-                }
-
-                setProject({
-                    id: data.project.id,
-                    name: data.project.name,
-                    description: data.project.description,
-                });
-
-                console.log('[ProjectPageClient] Fetching conversations...');
-                const convos = await loadProjectConversations(projectId);
-                console.log('[ProjectPageClient] Conversations loaded:', convos.length);
-                setConversations(convos);
-            } catch (err: any) {
-                console.error('[ProjectPageClient] Error loading project:', err);
-                setError(err.message || 'Failed to load project. Please check your connection.');
-            } finally {
-                setLoading(false);
+            if (result.project) {
+                setProject(result.project);
+                setConversations(result.conversations);
+                setError(null);
+            } else if (!cached) {
+                setError(result.error || 'Failed to load project. Please check your connection.');
             }
+            setLoading(false);
         };
 
         loadData();
 
-
         const handleUpdate = () => {
-            console.log('[ProjectPageClient] projectUpdated event received, reloading...');
             loadData();
         };
         window.addEventListener('projectUpdated', handleUpdate);
-        return () => window.removeEventListener('projectUpdated', handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener('projectUpdated', handleUpdate);
+        };
     }, [projectId]);
 
     const handleNewConversation = async () => {
-
         const newConversationId = crypto.randomUUID();
-
+        seedNewProjectConversationCache(projectId, newConversationId);
         router.push(`/AI_UI/project/${projectId}/c/${newConversationId}`);
     };
 
@@ -273,6 +253,10 @@ export default function ProjectPageClient({ projectId }: ProjectPageClientProps)
                         <div
                             key={convo.id}
                             className="group flex items-center justify-between p-4 rounded-lg border border-transparent hover:border-primary/40 hover:bg-muted/50 cursor-pointer transition-all"
+                            onMouseEnter={() => {
+                                router.prefetch(`/AI_UI/project/${projectId}/c/${convo.id}`);
+                                prefetchProjectConversation(projectId, convo.id);
+                            }}
                             onClick={() => !editingConversationId && router.push(`/AI_UI/project/${projectId}/c/${convo.id}`)}
                         >
                             <div className="flex items-start gap-3 flex-1 min-w-0 cursor-pointer">

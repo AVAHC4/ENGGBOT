@@ -19,27 +19,31 @@ export async function GET(req: NextRequest, { params }: { params: { id: string; 
         }
 
          
-        const { data: conversation, error: convError } = await supabaseAdmin
-            .from('project_conversations')
-            .select('id, title, created_at, updated_at, user_email, project_id')
-            .eq('id', conversationId)
-            .single();
+        const [convResult, msgResult] = await Promise.all([
+            supabaseAdmin
+                .from('project_conversations')
+                .select('id, title, created_at, updated_at, user_email, project_id')
+                .eq('id', conversationId)
+                .single(),
+            supabaseAdmin
+                .from('project_conversation_messages')
+                .select('id, content, is_user, timestamp, attachments, reply_to_id, metadata, is_streaming')
+                .eq('conversation_id', conversationId)
+                .order('timestamp', { ascending: true }),
+        ]);
+
+        const { data: conversation, error: convError } = convResult;
 
         if (convError || !conversation) {
             return NextResponse.json({ exists: false, messages: [] }, { status: 200 });
         }
 
-         
+
         if (conversation.user_email !== email || conversation.project_id !== projectId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
-        const { data: messages, error: msgError } = await supabaseAdmin
-            .from('project_conversation_messages')
-            .select('id, content, is_user, timestamp, attachments, reply_to_id, metadata, is_streaming')
-            .eq('conversation_id', conversationId)
-            .order('timestamp', { ascending: true });
+        const { data: messages, error: msgError } = msgResult;
 
         if (msgError) {
             return NextResponse.json({ error: msgError.message }, { status: 500 });

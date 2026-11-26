@@ -18,11 +18,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
          
-        const { data: project, error: projError } = await supabaseAdmin
-            .from('projects')
-            .select('user_email')
-            .eq('id', projectId)
-            .single();
+        const [projectResult, convosResult] = await Promise.all([
+            supabaseAdmin
+                .from('projects')
+                .select('user_email')
+                .eq('id', projectId)
+                .single(),
+            supabaseAdmin
+                .from('project_conversations')
+                .select('id, title, created_at, updated_at')
+                .eq('project_id', projectId)
+                .order('updated_at', { ascending: false }),
+        ]);
+
+        const { data: project, error: projError } = projectResult;
 
         if (projError || !project) {
             return NextResponse.json({ error: 'Project not found' }, { status: 404 });
@@ -32,12 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
-         
-        const { data, error } = await supabaseAdmin
-            .from('project_conversations')
-            .select('id, title, created_at, updated_at')
-            .eq('project_id', projectId)
-            .order('updated_at', { ascending: false });
+        const { data, error } = convosResult;
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });

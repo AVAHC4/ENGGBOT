@@ -7,22 +7,64 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const email = searchParams.get('email')?.toLowerCase();
+        const includeConversations = searchParams.get('includeConversations') === 'true';
 
         if (!email) {
             return NextResponse.json({ error: 'Missing email' }, { status: 400 });
         }
 
-        const { data, error } = await supabaseAdmin
-            .from('projects')
-            .select('id, name, description, created_at, updated_at')
-            .eq('user_email', email)
-            .order('updated_at', { ascending: false });
+        if (!includeConversations) {
+            const { data, error } = await supabaseAdmin
+                .from('projects')
+                .select('id, name, description, created_at, updated_at')
+                .eq('user_email', email)
+                .order('updated_at', { ascending: false });
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
+            if (error) {
+                return NextResponse.json({ error: error.message }, { status: 500 });
+            }
+
+            return NextResponse.json({ projects: data || [] });
         }
 
-        return NextResponse.json({ projects: data || [] });
+        const [projectsResult, convosResult] = await Promise.all([
+            supabaseAdmin
+                .from('projects')
+                .select('id, name, description, created_at, updated_at')
+                .eq('user_email', email)
+                .order('updated_at', { ascending: false }),
+            supabaseAdmin
+                .from('project_conversations')
+                .select('id, project_id, title, created_at, updated_at')
+                .eq('user_email', email)
+                .order('updated_at', { ascending: false }),
+        ]);
+
+        if (projectsResult.error) {
+            return NextResponse.json({ error: projectsResult.error.message }, { status: 500 });
+        }
+
+        const projects = projectsResult.data || [];
+        const conversationsByProject: Record<string, any[]> = {};
+
+        for (const project of projects) {
+            conversationsByProject[project.id] = [];
+        }
+
+        if (!convosResult.error && convosResult.data) {
+            for (const convo of convosResult.data) {
+                if (conversationsByProject[convo.project_id]) {
+                    conversationsByProject[convo.project_id].push({
+                        id: convo.id,
+                        title: convo.title,
+                        created_at: convo.created_at,
+                        updated_at: convo.updated_at,
+                    });
+                }
+            }
+        }
+
+        return NextResponse.json({ projects, conversationsByProject });
     } catch (e: any) {
         return NextResponse.json({ error: e?.message || 'Failed to list projects' }, { status: 500 });
     }

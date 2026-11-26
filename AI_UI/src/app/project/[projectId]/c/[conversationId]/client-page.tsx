@@ -4,7 +4,11 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ChatInterface } from '@/components/chat-interface';
 import { ThemeSwitch } from '@/components/ui/theme-switch';
 import { useChat } from '@/context/chat-context';
-import { loadProjectConversation, saveProjectConversation } from '@/lib/storage';
+import {
+    getCachedProjectConversation,
+    loadProjectConversation,
+    saveProjectConversation,
+} from '@/lib/storage';
 import { Loader } from '@/components/ui/loader';
 
 interface ProjectConversationPageClientProps {
@@ -23,6 +27,15 @@ export default function ProjectConversationPageClient({ projectId, conversationI
 
     const [isLoaded, setIsLoaded] = useState(false);
     const prevMessagesLengthRef = useRef(0);
+    const isGeneratingRef = useRef(isGenerating);
+    const dirtyConversationRef = useRef(false);
+
+    useEffect(() => {
+        isGeneratingRef.current = isGenerating;
+        if (isGenerating) {
+            dirtyConversationRef.current = true;
+        }
+    }, [isGenerating]);
 
     useEffect(() => {
         if (projectId) {
@@ -37,10 +50,31 @@ export default function ProjectConversationPageClient({ projectId, conversationI
     useEffect(() => {
         if (!projectId || !conversationId) return;
 
+        let cancelled = false;
+        dirtyConversationRef.current = false;
+
+        const cached = getCachedProjectConversation(projectId, conversationId);
+        if (cached !== null) {
+            setMessages(cached);
+            prevMessagesLengthRef.current = cached.length;
+            setIsLoaded(true);
+
+            loadProjectConversation(projectId, conversationId, (freshMessages) => {
+                if (cancelled || isGeneratingRef.current || dirtyConversationRef.current) return;
+                setMessages(freshMessages);
+                prevMessagesLengthRef.current = freshMessages.length;
+            });
+
+            return () => {
+                cancelled = true;
+            };
+        }
+
         setIsLoaded(false);
 
         const loadMessages = async () => {
             const msgs = await loadProjectConversation(projectId, conversationId);
+            if (cancelled) return;
             if (msgs && msgs.length > 0) {
                 setMessages(msgs);
                 prevMessagesLengthRef.current = msgs.length;
@@ -52,6 +86,10 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         };
 
         loadMessages();
+
+        return () => {
+            cancelled = true;
+        };
     }, [projectId, conversationId, setMessages]);
 
     useEffect(() => {
@@ -60,6 +98,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         if (messages.length === 0) return;
 
         if (messages.length !== prevMessagesLengthRef.current) {
+            dirtyConversationRef.current = true;
             prevMessagesLengthRef.current = messages.length;
             saveProjectConversation(projectId, conversationId, messages);
         }

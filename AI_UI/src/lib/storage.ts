@@ -692,6 +692,331 @@ function dispatchProjectUpdated() {
 const knownProjectConversations = new Set<string>();
 const autoTitledProjectConversations = new Set<string>();
 
+const projectListMemoryCache = new Map<string, { projects: any[]; conversationsByProject?: Record<string, any[]> }>();
+const projectConversationsMemoryCache = new Map<string, any[]>();
+const projectDetailMemoryCache = new Map<string, { project: any; conversations: any[] }>();
+const projectMessageMemoryCache = new Map<string, any[]>();
+const projectConversationInFlight = new Map<string, Promise<any[] | null>>();
+
+
+function getProjectsCacheKey(): string {
+  return `${getUserPrefix()}_projects_cache`;
+}
+
+function getProjectConversationsCacheKey(projectId: string): string {
+  return `${getUserPrefix()}_project_convos_${projectId}`;
+}
+
+function getProjectDetailCacheKey(projectId: string): string {
+  return `${getUserPrefix()}_project_detail_${projectId}`;
+}
+
+function getProjectMessageCacheKey(projectId: string, conversationId: string): string {
+  return `${getUserPrefix()}_project_msg_cache_${projectId}_${conversationId}`;
+}
+
+function getScopedProjectKey(projectId: string, conversationId?: string): string {
+  const prefix = getUserPrefix();
+  return conversationId ? `${prefix}:${projectId}:${conversationId}` : `${prefix}:${projectId}`;
+}
+
+function readJsonCache<T>(key: string): T | null {
+  if (isServer()) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeJsonCache<T>(key: string, value: T): void {
+  if (isServer()) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn('[Cache] Failed to write localStorage cache:', error);
+  }
+}
+
+function removeJsonCache(key: string): void {
+  if (isServer()) return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+  }
+}
+
+function normalizeProjectSummary(p: any) {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    createdAt: p.createdAt ?? p.created_at,
+    updatedAt: p.updatedAt ?? p.updated_at,
+  };
+}
+
+function normalizeProjectConversationSummary(c: any) {
+  return {
+    id: c.id,
+    title: c.title,
+    created: c.created ?? c.created_at,
+    updated: c.updated ?? c.updated_at,
+  };
+}
+
+function areMessageListsEqual(a: any[], b: any[]): boolean {
+  if (a === b) return true;
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (
+      a[i]?.id !== b[i]?.id ||
+      a[i]?.content !== b[i]?.content ||
+      Boolean(a[i]?.isUser) !== Boolean(b[i]?.isUser) ||
+      Boolean(a[i]?.isStreaming) !== Boolean(b[i]?.isStreaming)
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function saveProjectConversationsCache(projectId: string, conversations: any[]): void {
+  const scopedKey = getScopedProjectKey(projectId);
+  projectConversationsMemoryCache.set(scopedKey, conversations);
+  writeJsonCache(getProjectConversationsCacheKey(projectId), { projectId, conversations });
+}
+
+function saveProjectMessageCache(projectId: string, conversationId: string, messages: any[]): void {
+  const scopedKey = getScopedProjectKey(projectId, conversationId);
+  projectMessageMemoryCache.set(scopedKey, messages);
+  writeJsonCache(getProjectMessageCacheKey(projectId, conversationId), {
+    projectId,
+    conversationId,
+    messages,
+    timestamp: Date.now(),
+  });
+}
+
+function clearProjectMessageCache(projectId: string, conversationId: string): void {
+  const scopedKey = getScopedProjectKey(projectId, conversationId);
+  projectMessageMemoryCache.delete(scopedKey);
+  removeJsonCache(getProjectMessageCacheKey(projectId, conversationId));
+}
+
+/**
+ * Synchronously returns cached projects and (when available) their grouped conversations.
+ */
+export function getCachedProjectsWithConversations(): {
+  projects: any[];
+  conversationsByProject: Record<string, any[]>;
+} | null {
+  if (isServer()) return null;
+  const userPrefix = getUserPrefix();
+  const mem = projectListMemoryCache.get(userPrefix);
+  const stored = mem ?? readJsonCache<{ projects: any[]; conversationsByProject?: Record<string, any[]> }>(getProjectsCacheKey());
+  if (!stored || !Array.isArray(stored.projects)) return null;
+
+  if (!mem) {
+    projectListMemoryCache.set(userPrefix, stored);
+  }
+
+  const conversationsByProject: Record<string, any[]> = { ...(stored.conversationsByProject || {}) };
+  for (const project of stored.projects) {
+    if (!conversationsByProject[project.id]) {
+      const perProject = projectConversationsMemoryCache.get(getScopedProjectKey(project.id))
+        ?? readJsonCache<{ conversations?: any[] }>(getProjectConversationsCacheKey(project.id))?.conversations;
+      if (Array.isArray(perProject)) {
+        conversationsByProject[project.id] = perProject;
+      }
+    }
+  }
+
+  return { projects: stored.projects, conversationsByProject };
+}
+
+/**
+ * Fetches all projects and their conversations in a single request and updates caches.
+ */
+export async function loadProjectsWithConversations(): Promise<{
+  projects: any[];
+  conversationsByProject: Record<string, any[]>;
+}> {
+  if (isServer()) return { projects: [], conversationsByProject: {} };
+
+  const email = getUserEmail();
+  if (!email) return { projects: [], conversationsByProject: {} };
+
+  try {
+    const response = await fetch(`/api/projects?email=${encodeURIComponent(email)}&includeConversations=true`);
+    if (!response.ok) {
+      return getCachedProjectsWithConversations() ?? { projects: [], conversationsByProject: {} };
+    }
+
+    const data = await response.json();
+    const projects = (data.projects || []).map(normalizeProjectSummary);
+    const rawGrouped: Record<string, any[]> = data.conversationsByProject || {};
+    const conversationsByProject: Record<string, any[]> = {};
+
+    for (const project of projects) {
+      const normalizedConvos = (rawGrouped[project.id] || []).map(normalizeProjectConversationSummary);
+      conversationsByProject[project.id] = normalizedConvos;
+      saveProjectConversationsCache(project.id, normalizedConvos);
+    }
+
+    const payload = { projects, conversationsByProject };
+    projectListMemoryCache.set(getUserPrefix(), payload);
+    writeJsonCache(getProjectsCacheKey(), payload);
+    return payload;
+  } catch (error) {
+    console.error('Error loading projects with conversations:', error);
+    return getCachedProjectsWithConversations() ?? { projects: [], conversationsByProject: {} };
+  }
+}
+
+/**
+ * Synchronously returns cached project metadata and its conversations for a project page.
+ */
+export function getCachedProjectDetail(projectId: string): { project: any; conversations: any[] } | null {
+  if (isServer() || !projectId) return null;
+  const scopedKey = getScopedProjectKey(projectId);
+  const mem = projectDetailMemoryCache.get(scopedKey);
+  if (mem) return mem;
+
+  const stored = readJsonCache<{ project?: any; conversations?: any[] }>(getProjectDetailCacheKey(projectId));
+  if (stored?.project) {
+    const entry = { project: stored.project, conversations: stored.conversations || [] };
+    projectDetailMemoryCache.set(scopedKey, entry);
+    return entry;
+  }
+
+  return null;
+}
+
+/**
+ * Loads project details and conversations in one API call, updating local caches.
+ */
+export async function loadProjectDetail(projectId: string): Promise<{
+  project: any | null;
+  conversations: any[];
+  error?: string;
+}> {
+  if (isServer()) return { project: null, conversations: [] };
+
+  const email = getUserEmail();
+  if (!email) {
+    return { project: null, conversations: [], error: 'Please log in to view this project' };
+  }
+
+  try {
+    const response = await fetch(`/api/projects/${projectId}?email=${encodeURIComponent(email)}`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      return {
+        project: null,
+        conversations: [],
+        error: err.error || `Failed to load project (Status: ${response.status})`,
+      };
+    }
+
+    const data = await response.json();
+    if (!data.project) {
+      return { project: null, conversations: [], error: 'Project data missing in response' };
+    }
+
+    const project = {
+      id: data.project.id,
+      name: data.project.name,
+      description: data.project.description,
+    };
+    const conversations = (data.conversations || []).map(normalizeProjectConversationSummary);
+    const detail = { project, conversations };
+
+    projectDetailMemoryCache.set(getScopedProjectKey(projectId), detail);
+    writeJsonCache(getProjectDetailCacheKey(projectId), detail);
+    saveProjectConversationsCache(projectId, conversations);
+
+    return detail;
+  } catch (err: any) {
+    console.error('Error loading project detail:', err);
+    return {
+      project: null,
+      conversations: [],
+      error: err?.message || 'Failed to load project. Please check your connection.',
+    };
+  }
+}
+
+/**
+ * Synchronously returns cached messages for a project conversation if available.
+ */
+export function getCachedProjectConversation(projectId: string, conversationId: string): any[] | null {
+  if (isServer() || !projectId || !conversationId) return null;
+  const scopedKey = getScopedProjectKey(projectId, conversationId);
+  const mem = projectMessageMemoryCache.get(scopedKey);
+  if (mem !== undefined) return mem;
+
+  const stored = readJsonCache<{ projectId?: string; conversationId?: string; messages?: any[] }>(
+    getProjectMessageCacheKey(projectId, conversationId)
+  );
+  if (stored && stored.projectId === projectId && stored.conversationId === conversationId && Array.isArray(stored.messages)) {
+    projectMessageMemoryCache.set(scopedKey, stored.messages);
+    return stored.messages;
+  }
+
+  return null;
+}
+
+/**
+ * Seeds an empty cache entry for a newly created project conversation so it opens immediately.
+ */
+export function seedNewProjectConversationCache(projectId: string, conversationId: string): void {
+  if (isServer() || !projectId || !conversationId) return;
+  saveProjectMessageCache(projectId, conversationId, []);
+}
+
+async function fetchProjectConversationFromDatabase(projectId: string, conversationId: string): Promise<any[] | null> {
+  const email = getUserEmail();
+  if (!email) return [];
+
+  const scopedKey = getScopedProjectKey(projectId, conversationId);
+  const existing = projectConversationInFlight.get(scopedKey);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    try {
+      const response = await fetch(
+        `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`
+      );
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      if (data.exists === false) return [];
+
+      return Array.isArray(data.messages) ? data.messages : [];
+    } catch (error) {
+      console.error('Error loading project conversation:', error);
+      return null;
+    } finally {
+      projectConversationInFlight.delete(scopedKey);
+    }
+  })();
+
+  projectConversationInFlight.set(scopedKey, promise);
+  return promise;
+}
+
+/**
+ * Prefetches a project conversation into memory/localStorage cache if not already cached.
+ */
+export function prefetchProjectConversation(projectId: string, conversationId: string): void {
+  if (isServer() || !projectId || !conversationId) return;
+  if (getCachedProjectConversation(projectId, conversationId) !== null) return;
+  void loadProjectConversation(projectId, conversationId);
+}
+
 
 export async function loadProjects(): Promise<any[]> {
   if (isServer()) return [];
@@ -704,13 +1029,15 @@ export async function loadProjects(): Promise<any[]> {
     if (!response.ok) return [];
 
     const data = await response.json();
-    return (data.projects || []).map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      createdAt: p.created_at,
-      updatedAt: p.updated_at,
-    }));
+    const projects = (data.projects || []).map(normalizeProjectSummary);
+    const existing = getCachedProjectsWithConversations();
+    const payload = {
+      projects,
+      conversationsByProject: existing?.conversationsByProject || {},
+    };
+    projectListMemoryCache.set(getUserPrefix(), payload);
+    writeJsonCache(getProjectsCacheKey(), payload);
+    return projects;
   } catch (error) {
     console.error('Error loading projects:', error);
     return [];
@@ -734,6 +1061,19 @@ export async function createProject(name: string, description?: string): Promise
     if (!response.ok) return null;
 
     const data = await response.json();
+    if (data.project) {
+      const normalized = normalizeProjectSummary(data.project);
+      const cached = getCachedProjectsWithConversations();
+      if (cached) {
+        const updated = {
+          projects: [normalized, ...cached.projects.filter(p => p.id !== normalized.id)],
+          conversationsByProject: { ...cached.conversationsByProject, [normalized.id]: [] },
+        };
+        projectListMemoryCache.set(getUserPrefix(), updated);
+        writeJsonCache(getProjectsCacheKey(), updated);
+      }
+      saveProjectConversationsCache(normalized.id, []);
+    }
     dispatchProjectUpdated();
     return data.project;
   } catch (error) {
@@ -755,6 +1095,20 @@ export async function deleteProject(projectId: string): Promise<boolean> {
     });
 
     if (response.ok) {
+      const cached = getCachedProjectsWithConversations();
+      if (cached) {
+        const { [projectId]: _removed, ...restConvos } = cached.conversationsByProject;
+        const updated = {
+          projects: cached.projects.filter(p => p.id !== projectId),
+          conversationsByProject: restConvos,
+        };
+        projectListMemoryCache.set(getUserPrefix(), updated);
+        writeJsonCache(getProjectsCacheKey(), updated);
+      }
+      projectConversationsMemoryCache.delete(getScopedProjectKey(projectId));
+      projectDetailMemoryCache.delete(getScopedProjectKey(projectId));
+      removeJsonCache(getProjectConversationsCacheKey(projectId));
+      removeJsonCache(getProjectDetailCacheKey(projectId));
       dispatchProjectUpdated();
     }
 
@@ -780,6 +1134,21 @@ export async function renameProject(projectId: string, newName: string): Promise
     });
 
     if (response.ok) {
+      const cached = getCachedProjectsWithConversations();
+      if (cached) {
+        const updated = {
+          ...cached,
+          projects: cached.projects.map(p => (p.id === projectId ? { ...p, name: newName } : p)),
+        };
+        projectListMemoryCache.set(getUserPrefix(), updated);
+        writeJsonCache(getProjectsCacheKey(), updated);
+      }
+      const detail = getCachedProjectDetail(projectId);
+      if (detail) {
+        const updatedDetail = { ...detail, project: { ...detail.project, name: newName } };
+        projectDetailMemoryCache.set(getScopedProjectKey(projectId), updatedDetail);
+        writeJsonCache(getProjectDetailCacheKey(projectId), updatedDetail);
+      }
       dispatchProjectUpdated();
     }
 
@@ -802,12 +1171,9 @@ export async function loadProjectConversations(projectId: string): Promise<any[]
     if (!response.ok) return [];
 
     const data = await response.json();
-    return (data.conversations || []).map((c: any) => ({
-      id: c.id,
-      title: c.title,
-      created: c.created_at,
-      updated: c.updated_at,
-    }));
+    const convos = (data.conversations || []).map(normalizeProjectConversationSummary);
+    saveProjectConversationsCache(projectId, convos);
+    return convos;
   } catch (error) {
     console.error('Error loading project conversations:', error);
     return [];
@@ -831,6 +1197,10 @@ export async function createProjectConversation(projectId: string, title?: strin
     if (!response.ok) return null;
 
     const data = await response.json();
+    if (data.conversation?.id) {
+      knownProjectConversations.add(data.conversation.id);
+      seedNewProjectConversationCache(projectId, data.conversation.id);
+    }
     dispatchProjectUpdated();
     return data.conversation;
   } catch (error) {
@@ -840,32 +1210,37 @@ export async function createProjectConversation(projectId: string, title?: strin
 }
 
 
-export async function loadProjectConversation(projectId: string, conversationId: string): Promise<any[]> {
+export async function loadProjectConversation(
+  projectId: string,
+  conversationId: string,
+  onBackgroundUpdate?: (messages: any[]) => void
+): Promise<any[]> {
   if (isServer()) return [];
 
-  const email = getUserEmail();
-  if (!email) return [];
-
-  try {
-    const response = await fetch(
-      `/api/projects/${projectId}/conversations/${conversationId}?email=${encodeURIComponent(email)}`
-    );
-
-    if (!response.ok) return [];
-
-    const data = await response.json();
-    if (data.exists === false) return [];
-
-    return data.messages || [];
-  } catch (error) {
-    console.error('Error loading project conversation:', error);
-    return [];
+  const cachedMessages = getCachedProjectConversation(projectId, conversationId);
+  if (cachedMessages !== null) {
+    fetchProjectConversationFromDatabase(projectId, conversationId).then((dbMessages) => {
+      if (dbMessages === null) return;
+      if (!areMessageListsEqual(cachedMessages, dbMessages)) {
+        saveProjectMessageCache(projectId, conversationId, dbMessages);
+        onBackgroundUpdate?.(dbMessages);
+      }
+    });
+    return cachedMessages;
   }
+
+  const dbMessages = await fetchProjectConversationFromDatabase(projectId, conversationId);
+  if (dbMessages === null) return [];
+
+  saveProjectMessageCache(projectId, conversationId, dbMessages);
+  return dbMessages;
 }
 
 
 export async function saveProjectConversation(projectId: string, conversationId: string, messages: any[]): Promise<boolean> {
   if (isServer()) return false;
+
+  saveProjectMessageCache(projectId, conversationId, messages);
 
   const email = getUserEmail();
   if (!email) return false;
@@ -965,6 +1340,31 @@ export async function saveProjectConversation(projectId: string, conversationId:
 }
 
 
+function updateCachedProjectConversationList(
+  projectId: string,
+  updater: (convos: any[]) => any[]
+): void {
+  const cached = getCachedProjectsWithConversations();
+  if (cached && cached.conversationsByProject[projectId]) {
+    const updatedConvos = updater(cached.conversationsByProject[projectId]);
+    const updated = {
+      ...cached,
+      conversationsByProject: { ...cached.conversationsByProject, [projectId]: updatedConvos },
+    };
+    projectListMemoryCache.set(getUserPrefix(), updated);
+    writeJsonCache(getProjectsCacheKey(), updated);
+    saveProjectConversationsCache(projectId, updatedConvos);
+  }
+
+  const detail = getCachedProjectDetail(projectId);
+  if (detail) {
+    const updatedDetail = { ...detail, conversations: updater(detail.conversations) };
+    projectDetailMemoryCache.set(getScopedProjectKey(projectId), updatedDetail);
+    writeJsonCache(getProjectDetailCacheKey(projectId), updatedDetail);
+  }
+}
+
+
 export async function deleteProjectConversation(projectId: string, conversationId: string): Promise<boolean> {
   if (isServer()) return false;
 
@@ -979,6 +1379,10 @@ export async function deleteProjectConversation(projectId: string, conversationI
 
     if (response.ok) {
       knownProjectConversations.delete(conversationId);
+      clearProjectMessageCache(projectId, conversationId);
+      updateCachedProjectConversationList(projectId, (convos) =>
+        convos.filter((c) => c.id !== conversationId)
+      );
       dispatchProjectUpdated();
     }
 
@@ -1005,6 +1409,12 @@ export async function renameProjectConversation(projectId: string, conversationI
         body: JSON.stringify({ email, title: newTitle }),
       }
     );
+
+    if (response.ok) {
+      updateCachedProjectConversationList(projectId, (convos) =>
+        convos.map((c) => (c.id === conversationId ? { ...c, title: newTitle } : c))
+      );
+    }
 
     return response.ok;
   } catch (error) {

@@ -91,7 +91,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useChat } from "@/context/chat-context"
 import { useAvatar } from "@/context/avatar-context"
-import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, loadProjects, createProject, deleteProject, renameProject, loadProjectConversations, deleteProjectConversation } from "@/lib/storage"
+import { getAllConversationsMetadataSync as getAllConversationsMetadata, saveConversationMetadata, getConversationMetadata, getCachedProjectsWithConversations, loadProjectsWithConversations, createProject, deleteProject, renameProject, loadProjectConversations, prefetchProjectConversation, seedNewProjectConversationCache, deleteProjectConversation } from "@/lib/storage"
 import { useLanguage } from "@/context/language-context"
 
 
@@ -443,45 +443,66 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   }, [isMounted]);
 
 
+  const projectConversationsRef = React.useRef<Record<string, any[]>>(projectConversations);
   React.useEffect(() => {
-    if (isMounted) {
-      const loadAllProjects = async () => {
+    projectConversationsRef.current = projectConversations;
+  }, [projectConversations]);
+
+  React.useEffect(() => {
+    if (!isMounted) return;
+
+    let cancelled = false;
+    const cached = getCachedProjectsWithConversations();
+    if (cached) {
+      setProjects(cached.projects);
+      if (Object.keys(cached.conversationsByProject).length > 0) {
+        setProjectConversations(prev => ({ ...cached.conversationsByProject, ...prev }));
+      }
+      setProjectsLoading(false);
+    }
+
+    const loadAllProjects = async (background = false) => {
+      if (!background && !cached) {
         setProjectsLoading(true);
-        try {
-          const fetchedProjects = await loadProjects();
-          setProjects(fetchedProjects);
-        } finally {
+      }
+      try {
+        const { projects: fetchedProjects, conversationsByProject } = await loadProjectsWithConversations();
+        if (cancelled) return;
+        setProjects(fetchedProjects);
+        setProjectConversations(conversationsByProject);
+      } finally {
+        if (!cancelled) {
           setProjectsLoading(false);
         }
-      };
+      }
+    };
 
-      loadAllProjects();
+    loadAllProjects(Boolean(cached));
 
+    const handleProjectUpdate = () => loadAllProjects(true);
+    window.addEventListener('projectUpdated', handleProjectUpdate);
 
-      const handleProjectUpdate = () => loadAllProjects();
-      window.addEventListener('projectUpdated', handleProjectUpdate);
-
-      return () => {
-        window.removeEventListener('projectUpdated', handleProjectUpdate);
-      };
-    }
+    return () => {
+      cancelled = true;
+      window.removeEventListener('projectUpdated', handleProjectUpdate);
+    };
   }, [isMounted]);
 
 
   React.useEffect(() => {
     if (!isMounted) return;
     let cancelled = false;
-    const refreshExpandedProjects = () => {
-      expandedProjectIds.forEach(async (projectId) => {
-        const convos = await loadProjectConversations(projectId);
-        if (!cancelled) setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
-      });
-    };
-    refreshExpandedProjects();
-    window.addEventListener('projectUpdated', refreshExpandedProjects);
+
+    expandedProjectIds.forEach(async (projectId) => {
+      if (projectConversationsRef.current[projectId] !== undefined) return;
+      const convos = await loadProjectConversations(projectId);
+      if (!cancelled) {
+        setProjectConversations(prev => ({ ...prev, [projectId]: convos }));
+      }
+    });
+
     return () => {
       cancelled = true;
-      window.removeEventListener('projectUpdated', refreshExpandedProjects);
     };
   }, [expandedProjectIds, isMounted]);
 
@@ -557,6 +578,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
   const handleNewProjectConversation = async (projectId: string) => {
 
     const newConversationId = crypto.randomUUID();
+    seedNewProjectConversationCache(projectId, newConversationId);
 
     setActiveProjectId(projectId);
     setActiveProjectConversationId(newConversationId);
@@ -1166,6 +1188,7 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                           projects.map((project) => (
                             <SidebarMenuSubItem key={project.id}>
                               <SidebarMenuSubButton
+                                onMouseEnter={() => router.prefetch(`/AI_UI/project/${project.id}`)}
                                 onClick={() => router.push(`/AI_UI/project/${project.id}`)}
                                 className={cn(
                                   "w-full justify-between group pr-1 cursor-pointer",
@@ -1256,6 +1279,10 @@ export function AppSidebar({ className, ...props }: React.ComponentPropsWithoutR
                                     <li key={convo.id}>
                                       <button
                                         type="button"
+                                        onMouseEnter={() => {
+                                          router.prefetch(`/AI_UI/project/${project.id}/c/${convo.id}`);
+                                          prefetchProjectConversation(project.id, convo.id);
+                                        }}
                                         onClick={() => handleSwitchToProjectConversation(project.id, convo.id)}
                                         className={cn(
                                           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
