@@ -59,7 +59,7 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = React.useState(false);
   const [otp, setOtp] = React.useState("");
   const [email, setEmail] = React.useState("");
-  const [usePassword, setUsePassword] = React.useState(false);
+  const [usePassword, setUsePassword] = React.useState(true);
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
 
@@ -419,7 +419,11 @@ export default function LoginPage() {
                     type="button"
                     variant="ghost"
                     className="text-xs text-muted-foreground"
-                    onClick={() => setOtpSent(false)}
+                    onClick={() => {
+                      setOtpSent(false);
+                      setOtp('');
+                      setAuthError('');
+                    }}
                   >
                     Use a different email
                   </Button>
@@ -502,7 +506,7 @@ export default function LoginPage() {
                       setAuthError('');
                     }}
                   >
-                    {usePassword ? 'Use Email Verification Instead' : 'Use Password Instead'}
+                    {usePassword ? 'Use OTP Instead' : 'Use Password Instead'}
                   </Button>
                 </div>
               )}

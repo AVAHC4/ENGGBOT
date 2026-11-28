@@ -29,6 +29,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
     const prevMessagesLengthRef = useRef(0);
     const isGeneratingRef = useRef(isGenerating);
     const dirtyConversationRef = useRef(false);
+    const loadedConversationKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
         isGeneratingRef.current = isGenerating;
@@ -51,12 +52,15 @@ export default function ProjectConversationPageClient({ projectId, conversationI
         if (!projectId || !conversationId) return;
 
         let cancelled = false;
+        const activeKey = `${projectId}:${conversationId}`;
+        loadedConversationKeyRef.current = null;
         dirtyConversationRef.current = false;
 
         const cached = getCachedProjectConversation(projectId, conversationId);
         if (cached !== null) {
             setMessages(cached);
             prevMessagesLengthRef.current = cached.length;
+            loadedConversationKeyRef.current = activeKey;
             setIsLoaded(true);
 
             loadProjectConversation(projectId, conversationId, (freshMessages) => {
@@ -82,6 +86,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
                 setMessages([]);
                 prevMessagesLengthRef.current = 0;
             }
+            loadedConversationKeyRef.current = activeKey;
             setIsLoaded(true);
         };
 
@@ -94,6 +99,7 @@ export default function ProjectConversationPageClient({ projectId, conversationI
 
     useEffect(() => {
         if (!isLoaded || !projectId || !conversationId) return;
+        if (loadedConversationKeyRef.current !== `${projectId}:${conversationId}`) return;
         if (isGenerating) return;
         if (messages.length === 0) return;
 
